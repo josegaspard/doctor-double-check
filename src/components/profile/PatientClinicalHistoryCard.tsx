@@ -77,21 +77,21 @@ interface ChildProfile {
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const FAMILY_DISEASES = [
-  { key: 'diabetes', label: 'Diabetes' },
-  { key: 'hipertension', label: 'Hipertensión' },
-  { key: 'cancer', label: 'Cáncer' },
-  { key: 'cardiopatia', label: 'Enfermedad cardíaca' },
-  { key: 'mental', label: 'Enfermedad mental' },
-  { key: 'obesidad', label: 'Obesidad' },
+  { key: 'diabetes', labelKey: 'familyDiseases.diabetes' },
+  { key: 'hipertension', labelKey: 'familyDiseases.hipertension' },
+  { key: 'cancer', labelKey: 'familyDiseases.cancer' },
+  { key: 'cardiopatia', labelKey: 'familyDiseases.cardiopatia' },
+  { key: 'mental', labelKey: 'familyDiseases.mental' },
+  { key: 'obesidad', labelKey: 'familyDiseases.obesidad' },
 ];
 const RELATIONS = [
-  { key: 'mama', label: 'Mamá' },
-  { key: 'papa', label: 'Papá' },
-  { key: 'hijos', label: 'Hijos' },
-  { key: 'abuelos', label: 'Abuelos' },
+  { key: 'mama', labelKey: 'relations.mama' },
+  { key: 'papa', labelKey: 'relations.papa' },
+  { key: 'hijos', labelKey: 'relations.hijos' },
+  { key: 'abuelos', labelKey: 'relations.abuelos' },
 ];
 
-const FREQ_OPTIONS = ['Diario', 'Semanal', 'Mensual', 'Ocasional', 'Nunca'];
+const FREQ_OPTION_KEYS = ['diario', 'semanal', 'mensual', 'ocasional', 'nunca'] as const;
 
 function calcAge(dob: string | null): number | null {
   if (!dob) return null;
@@ -173,10 +173,10 @@ export function PatientClinicalHistoryCard() {
 
       setHistory(prev => (prev ? { ...prev, ...payload } : ({ id: '', ...payload } as ClinicalHistory)));
       setIsEditing(false);
-      toast.success(t('clinicalHistory.saved') || 'Historial guardado');
+      toast.success(t('patientClinicalHistoryCard.saved'));
     } catch (e: any) {
       console.error('[ClinicalHistory] save error', e);
-      toast.error(t('clinicalHistory.saveError') || 'Error al guardar');
+      toast.error(t('patientClinicalHistoryCard.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -190,7 +190,7 @@ export function PatientClinicalHistoryCard() {
   };
   const saveChild = async () => {
     if (!user?.id || !childForm.name || !childForm.date_of_birth) {
-      toast.error('Nombre y fecha de nacimiento son obligatorios');
+      toast.error(t('patientClinicalHistoryCard.child.requiredFields'));
       return;
     }
     try {
@@ -232,21 +232,21 @@ export function PatientClinicalHistoryCard() {
       setShowChildForm(false);
       setEditingChild(null);
       setChildForm({});
-      toast.success('Hijo/a guardado');
+      toast.success(t('patientClinicalHistoryCard.child.saved'));
     } catch (e: any) {
       console.error('[ChildProfile] save error', e);
-      toast.error('No se pudo guardar');
+      toast.error(t('patientClinicalHistoryCard.child.saveError'));
     }
   };
   const deleteChild = async (id: string) => {
-    if (!confirm('¿Eliminar este sub-perfil?')) return;
+    if (!confirm(t('patientClinicalHistoryCard.child.confirmDelete'))) return;
     const { error } = await supabase.from('child_profiles').delete().eq('id', id);
     if (error) {
-      toast.error('No se pudo eliminar');
+      toast.error(t('patientClinicalHistoryCard.child.deleteError'));
       return;
     }
     setChildren(prev => prev.filter(c => c.id !== id));
-    toast.success('Eliminado');
+    toast.success(t('patientClinicalHistoryCard.child.deleted'));
   };
 
   if (isLoading) {
@@ -267,7 +267,7 @@ export function PatientClinicalHistoryCard() {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Otras enfermedades crónicas</Label>
+          <Label className="text-sm font-medium">{t('patientClinicalHistoryCard.chronicOther.title')}</Label>
           <Button
             type="button"
             variant="outline"
@@ -276,13 +276,13 @@ export function PatientClinicalHistoryCard() {
               updateExt({ chronic_other: [...list, { cual: '', diagnostico: '', tratamiento: '', fecha: '' }] })
             }
           >
-            <Plus className="w-3 h-3 mr-1" /> Agregar
+            <Plus className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.add')}
           </Button>
         </div>
         {list.map((item, i) => (
           <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-lg bg-muted/30 border">
             <Input
-              placeholder="Cuál"
+              placeholder={t('patientClinicalHistoryCard.chronicOther.whichPlaceholder')}
               value={item.cual}
               onChange={e => {
                 const next = [...list];
@@ -300,7 +300,7 @@ export function PatientClinicalHistoryCard() {
               }}
             />
             <Textarea
-              placeholder="Diagnóstico"
+              placeholder={t('patientClinicalHistoryCard.chronicOther.diagnosisPlaceholder')}
               rows={2}
               value={item.diagnostico}
               onChange={e => {
@@ -310,7 +310,7 @@ export function PatientClinicalHistoryCard() {
               }}
             />
             <Textarea
-              placeholder="Tratamiento"
+              placeholder={t('patientClinicalHistoryCard.chronicOther.treatmentPlaceholder')}
               rows={2}
               value={item.tratamiento}
               onChange={e => {
@@ -326,7 +326,7 @@ export function PatientClinicalHistoryCard() {
                 size="sm"
                 onClick={() => updateExt({ chronic_other: list.filter((_, j) => j !== i) })}
               >
-                <Trash2 className="w-3 h-3 mr-1" /> Quitar
+                <Trash2 className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.remove')}
               </Button>
             </div>
           </div>
@@ -340,20 +340,20 @@ export function PatientClinicalHistoryCard() {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Cirugía previa (con detalle)</Label>
+          <Label className="text-sm font-medium">{t('patientClinicalHistoryCard.surgeries.title')}</Label>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => updateExt({ surgeries: [...list, { description: '', date: '', complications: '' }] })}
           >
-            <Plus className="w-3 h-3 mr-1" /> Agregar
+            <Plus className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.add')}
           </Button>
         </div>
         {list.map((item, i) => (
           <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 rounded-lg bg-muted/30 border">
             <Input
-              placeholder="Descripción"
+              placeholder={t('patientClinicalHistoryCard.surgeries.descriptionPlaceholder')}
               value={item.description}
               onChange={e => {
                 const next = [...list];
@@ -371,7 +371,7 @@ export function PatientClinicalHistoryCard() {
               }}
             />
             <Textarea
-              placeholder="Complicaciones (si las hubo)"
+              placeholder={t('patientClinicalHistoryCard.surgeries.complicationsPlaceholder')}
               rows={2}
               className="sm:col-span-2"
               value={item.complications}
@@ -388,7 +388,7 @@ export function PatientClinicalHistoryCard() {
                 size="sm"
                 onClick={() => updateExt({ surgeries: list.filter((_, j) => j !== i) })}
               >
-                <Trash2 className="w-3 h-3 mr-1" /> Quitar
+                <Trash2 className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.remove')}
               </Button>
             </div>
           </div>
@@ -406,21 +406,21 @@ export function PatientClinicalHistoryCard() {
     };
     return (
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Antecedentes familiares (matriz)</Label>
+        <Label className="text-sm font-medium">{t('patientClinicalHistoryCard.familyMatrix.title')}</Label>
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-xs">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left p-2">Enfermedad</th>
+                <th className="text-left p-2">{t('patientClinicalHistoryCard.familyMatrix.diseaseHeader')}</th>
                 {RELATIONS.map(r => (
-                  <th key={r.key} className="p-2 text-center">{r.label}</th>
+                  <th key={r.key} className="p-2 text-center">{t(`patientClinicalHistoryCard.${r.labelKey}`)}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {FAMILY_DISEASES.map(d => (
                 <tr key={d.key} className="border-t">
-                  <td className="p-2 font-medium">{d.label}</td>
+                  <td className="p-2 font-medium">{t(`patientClinicalHistoryCard.${d.labelKey}`)}</td>
                   {RELATIONS.map(r => (
                     <td key={r.key} className="p-2 text-center">
                       <Checkbox
@@ -456,13 +456,13 @@ export function PatientClinicalHistoryCard() {
             <span className="text-sm">{label}</span>
           </div>
           <Select value={sub.frequency || ''} onValueChange={v => setSub({ frequency: v })}>
-            <SelectTrigger><SelectValue placeholder="Frecuencia" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.habits.frequencyPlaceholder')} /></SelectTrigger>
             <SelectContent>
-              {FREQ_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {FREQ_OPTION_KEYS.map(o => <SelectItem key={o} value={t(`patientClinicalHistoryCard.freq.${o}`)}>{t(`patientClinicalHistoryCard.freq.${o}`)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Input
-            placeholder="Cantidad"
+            placeholder={t('patientClinicalHistoryCard.habits.amountPlaceholder')}
             value={sub.amount || ''}
             onChange={e => setSub({ amount: e.target.value })}
           />
@@ -472,7 +472,7 @@ export function PatientClinicalHistoryCard() {
 
     return (
       <div className="space-y-4">
-        <Label className="text-sm font-medium">Hábitos</Label>
+        <Label className="text-sm font-medium">{t('patientClinicalHistoryCard.habits.title')}</Label>
 
         {/* Alcoholismo */}
         <div className="p-3 rounded-lg bg-muted/30 border space-y-2">
@@ -482,11 +482,11 @@ export function PatientClinicalHistoryCard() {
               checked={!!h.alcoholism?.active}
               onCheckedChange={v => setH({ alcoholism: { ...(h.alcoholism || {}), active: !!v } })}
             />
-            <span className="text-sm font-medium">Alcoholismo</span>
+            <span className="text-sm font-medium">{t('patientClinicalHistoryCard.habits.alcoholism')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Input
-              placeholder="Qué bebida"
+              placeholder={t('patientClinicalHistoryCard.habits.drinkPlaceholder')}
               value={h.alcoholism?.drink || ''}
               onChange={e => setH({ alcoholism: { ...(h.alcoholism || {}), drink: e.target.value } })}
             />
@@ -494,13 +494,13 @@ export function PatientClinicalHistoryCard() {
               value={h.alcoholism?.frequency || ''}
               onValueChange={v => setH({ alcoholism: { ...(h.alcoholism || {}), frequency: v } })}
             >
-              <SelectTrigger><SelectValue placeholder="Frecuencia" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.habits.frequencyPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {FREQ_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {FREQ_OPTION_KEYS.map(o => <SelectItem key={o} value={t(`patientClinicalHistoryCard.freq.${o}`)}>{t(`patientClinicalHistoryCard.freq.${o}`)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Input
-              placeholder="Cantidad"
+              placeholder={t('patientClinicalHistoryCard.habits.amountPlaceholder')}
               value={h.alcoholism?.amount || ''}
               onChange={e => setH({ alcoholism: { ...(h.alcoholism || {}), amount: e.target.value } })}
             />
@@ -511,11 +511,11 @@ export function PatientClinicalHistoryCard() {
         <div className="p-3 rounded-lg bg-muted/30 border space-y-2">
           <div className="flex items-center gap-2">
             <Cigarette className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Tabaquismo</span>
+            <span className="text-sm font-medium">{t('patientClinicalHistoryCard.habits.smoking')}</span>
           </div>
-          {renderSubHabit('Cigarro', 'cigarette')}
-          {renderSubHabit('Vape', 'vape')}
-          {renderSubHabit('Arguile / Hookah', 'hookah')}
+          {renderSubHabit(t('patientClinicalHistoryCard.habits.cigarette'), 'cigarette')}
+          {renderSubHabit(t('patientClinicalHistoryCard.habits.vape'), 'vape')}
+          {renderSubHabit(t('patientClinicalHistoryCard.habits.hookah'), 'hookah')}
         </div>
 
         {/* Otras drogas */}
@@ -525,11 +525,11 @@ export function PatientClinicalHistoryCard() {
               checked={!!h.drugs?.active}
               onCheckedChange={v => setH({ drugs: { ...(h.drugs || {}), active: !!v } })}
             />
-            <span className="text-sm font-medium">Otras drogas</span>
+            <span className="text-sm font-medium">{t('patientClinicalHistoryCard.habits.otherDrugs')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Input
-              placeholder="Sustancia"
+              placeholder={t('patientClinicalHistoryCard.habits.substancePlaceholder')}
               value={h.drugs?.substance || ''}
               onChange={e => setH({ drugs: { ...(h.drugs || {}), substance: e.target.value } })}
             />
@@ -537,13 +537,13 @@ export function PatientClinicalHistoryCard() {
               value={h.drugs?.frequency || ''}
               onValueChange={v => setH({ drugs: { ...(h.drugs || {}), frequency: v } })}
             >
-              <SelectTrigger><SelectValue placeholder="Frecuencia" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.habits.frequencyPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {FREQ_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {FREQ_OPTION_KEYS.map(o => <SelectItem key={o} value={t(`patientClinicalHistoryCard.freq.${o}`)}>{t(`patientClinicalHistoryCard.freq.${o}`)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Input
-              placeholder="Cantidad"
+              placeholder={t('patientClinicalHistoryCard.habits.amountPlaceholder')}
               value={h.drugs?.amount || ''}
               onChange={e => setH({ drugs: { ...(h.drugs || {}), amount: e.target.value } })}
             />
@@ -560,11 +560,11 @@ export function PatientClinicalHistoryCard() {
                 setH({ physical_activity: { ...(h.physical_activity || {}), active: !!v } })
               }
             />
-            <span className="text-sm font-medium">Actividad física</span>
+            <span className="text-sm font-medium">{t('patientClinicalHistoryCard.habits.physicalActivity')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Input
-              placeholder="Tipo de actividad"
+              placeholder={t('patientClinicalHistoryCard.habits.activityTypePlaceholder')}
               value={h.physical_activity?.type || ''}
               onChange={e =>
                 setH({ physical_activity: { ...(h.physical_activity || {}), type: e.target.value } })
@@ -576,13 +576,13 @@ export function PatientClinicalHistoryCard() {
                 setH({ physical_activity: { ...(h.physical_activity || {}), frequency: v } })
               }
             >
-              <SelectTrigger><SelectValue placeholder="Frecuencia" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.habits.frequencyPlaceholder')} /></SelectTrigger>
               <SelectContent>
-                {FREQ_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {FREQ_OPTION_KEYS.map(o => <SelectItem key={o} value={t(`patientClinicalHistoryCard.freq.${o}`)}>{t(`patientClinicalHistoryCard.freq.${o}`)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Input
-              placeholder="Duración / cantidad"
+              placeholder={t('patientClinicalHistoryCard.habits.durationPlaceholder')}
               value={h.physical_activity?.amount || ''}
               onChange={e =>
                 setH({ physical_activity: { ...(h.physical_activity || {}), amount: e.target.value } })
@@ -600,15 +600,15 @@ export function PatientClinicalHistoryCard() {
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium flex items-center gap-2">
             <Baby className="w-4 h-4 text-muted-foreground" />
-            Hijos (sub-perfiles)
+            {t('patientClinicalHistoryCard.children.title')}
           </Label>
           <Button type="button" variant="outline" size="sm" onClick={() => openChildForm()}>
-            <Plus className="w-3 h-3 mr-1" /> Agregar hijo/a
+            <Plus className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.children.add')}
           </Button>
         </div>
 
         {children.length === 0 && !showChildForm && (
-          <p className="text-xs text-muted-foreground italic">Aún no has agregado hijos.</p>
+          <p className="text-xs text-muted-foreground italic">{t('patientClinicalHistoryCard.children.empty')}</p>
         )}
 
         {children.map(c => {
@@ -618,14 +618,14 @@ export function PatientClinicalHistoryCard() {
             <div key={c.id} className="p-3 rounded-lg bg-muted/30 border flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-medium text-sm">
-                  {c.name} <span className="text-xs text-muted-foreground">· {age ?? '?'} años</span>
+                  {c.name} <span className="text-xs text-muted-foreground">· {age ?? '?'} {t('patientClinicalHistoryCard.children.yearsLabel')}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {c.blood_type ? `Sangre ${c.blood_type} · ` : ''}{c.sex || '—'}
+                  {c.blood_type ? `${t('patientClinicalHistoryCard.children.bloodLabel')} ${c.blood_type} · ` : ''}{c.sex || '—'}
                 </p>
                 {adult && (
                   <Badge variant="outline" className="mt-1 text-xs bg-warning/10 text-warning border-warning/30">
-                    Cumplió 18 — invítale a heredar el expediente
+                    {t('patientClinicalHistoryCard.children.adultBadge')}
                   </Badge>
                 )}
               </div>
@@ -635,23 +635,23 @@ export function PatientClinicalHistoryCard() {
                     type="button"
                     size="icon"
                     variant="ghost"
-                    title="Duplicar mi historial a este hijo/a"
+                    title={t('patientClinicalHistoryCard.children.duplicateTitle')}
                     onClick={async () => {
                       if (!user?.id) return;
-                      if (!confirm(`¿Duplicar tu historial clínico al perfil de ${c.name}?`)) return;
+                      if (!confirm(`${t('patientClinicalHistoryCard.children.confirmDuplicatePrefix')} ${c.name}?`)) return;
                       const { data: mine } = await supabase
                         .from('patient_clinical_history')
                         .select('*')
                         .eq('patient_id', user.id)
                         .is('child_id', null)
                         .maybeSingle();
-                      if (!mine) { toast.error('No tienes un historial guardado todavía'); return; }
+                      if (!mine) { toast.error(t('patientClinicalHistoryCard.children.noHistoryYet')); return; }
                       const { id, created_at, updated_at, ...rest } = mine as any;
                       const { error } = await supabase
                         .from('patient_clinical_history')
                         .upsert({ ...rest, patient_id: user.id, child_id: c.id }, { onConflict: 'patient_id,child_id' } as any);
-                      if (error) toast.error('No se pudo duplicar: ' + error.message);
-                      else toast.success(`Historial duplicado a ${c.name}`);
+                      if (error) toast.error(`${t('patientClinicalHistoryCard.children.duplicateError')} ${error.message}`);
+                      else toast.success(`${t('patientClinicalHistoryCard.children.duplicatedTo')} ${c.name}`);
                     }}
                   >
                     <Copy className="w-3 h-3 text-primary" />
@@ -672,11 +672,11 @@ export function PatientClinicalHistoryCard() {
           <div className="p-3 rounded-lg bg-card border-2 border-primary/20 space-y-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs">Nombre *</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.name')}</Label>
                 <Input value={childForm.name || ''} onChange={e => setChildForm(p => ({ ...p, name: e.target.value }))} />
               </div>
               <div>
-                <Label className="text-xs">Fecha de nacimiento *</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.dob')}</Label>
                 <Input
                   type="date"
                   value={childForm.date_of_birth || ''}
@@ -684,44 +684,44 @@ export function PatientClinicalHistoryCard() {
                 />
               </div>
               <div>
-                <Label className="text-xs">Sexo</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.sex')}</Label>
                 <Select value={childForm.sex || ''} onValueChange={v => setChildForm(p => ({ ...p, sex: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.selectPlaceholder')} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="female">Femenino</SelectItem>
-                    <SelectItem value="male">Masculino</SelectItem>
-                    <SelectItem value="other">Otro</SelectItem>
+                    <SelectItem value="female">{t('patientClinicalHistoryCard.sex.female')}</SelectItem>
+                    <SelectItem value="male">{t('patientClinicalHistoryCard.sex.male')}</SelectItem>
+                    <SelectItem value="other">{t('patientClinicalHistoryCard.sex.other')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">Tipo de sangre</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.bloodType')}</Label>
                 <Select value={childForm.blood_type || ''} onValueChange={v => setChildForm(p => ({ ...p, blood_type: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.selectPlaceholder')} /></SelectTrigger>
                   <SelectContent>
                     {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs">Alergias</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.allergies')}</Label>
                 <Textarea rows={2} value={childForm.allergies || ''} onChange={e => setChildForm(p => ({ ...p, allergies: e.target.value }))} />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs">Condiciones crónicas</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.chronicConditions')}</Label>
                 <Textarea rows={2} value={childForm.chronic_conditions || ''} onChange={e => setChildForm(p => ({ ...p, chronic_conditions: e.target.value }))} />
               </div>
               <div className="sm:col-span-2">
-                <Label className="text-xs">Medicación actual</Label>
+                <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.currentMedications')}</Label>
                 <Textarea rows={2} value={childForm.current_medications || ''} onChange={e => setChildForm(p => ({ ...p, current_medications: e.target.value }))} />
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => { setShowChildForm(false); setEditingChild(null); }}>
-                Cancelar
+                {t('patientClinicalHistoryCard.cancel')}
               </Button>
               <Button type="button" size="sm" onClick={saveChild}>
-                <Check className="w-3 h-3 mr-1" /> Guardar
+                <Check className="w-3 h-3 mr-1" /> {t('patientClinicalHistoryCard.save')}
               </Button>
             </div>
           </div>
@@ -731,16 +731,16 @@ export function PatientClinicalHistoryCard() {
   };
 
   const baseFields = [
-    { key: 'blood_type', icon: Droplets, label: 'Tipo de Sangre', type: 'select' },
-    { key: 'height_cm', icon: Ruler, label: 'Estatura (cm)', type: 'number' },
-    { key: 'weight_kg', icon: Weight, label: 'Peso (kg)', type: 'number' },
-    { key: 'allergies', icon: AlertTriangle, label: 'Alergias', type: 'textarea' },
-    { key: 'chronic_conditions', icon: Heart, label: 'Condiciones Crónicas', type: 'textarea' },
-    { key: 'current_medications', icon: Pill, label: 'Medicamentos Actuales', type: 'textarea' },
-    { key: 'previous_surgeries', icon: FileText, label: 'Cirugías Previas (resumen)', type: 'textarea' },
-    { key: 'family_history', icon: Users, label: 'Antecedentes Familiares (notas)', type: 'textarea' },
-    { key: 'emergency_contact_name', icon: Phone, label: 'Contacto de Emergencia', type: 'text' },
-    { key: 'emergency_contact_phone', icon: Phone, label: 'Teléfono de Emergencia', type: 'text' },
+    { key: 'blood_type', icon: Droplets, labelKey: 'fields.bloodType', type: 'select' },
+    { key: 'height_cm', icon: Ruler, labelKey: 'fields.height', type: 'number' },
+    { key: 'weight_kg', icon: Weight, labelKey: 'fields.weight', type: 'number' },
+    { key: 'allergies', icon: AlertTriangle, labelKey: 'fields.allergies', type: 'textarea' },
+    { key: 'chronic_conditions', icon: Heart, labelKey: 'fields.chronicConditions', type: 'textarea' },
+    { key: 'current_medications', icon: Pill, labelKey: 'fields.currentMedications', type: 'textarea' },
+    { key: 'previous_surgeries', icon: FileText, labelKey: 'fields.previousSurgeries', type: 'textarea' },
+    { key: 'family_history', icon: Users, labelKey: 'fields.familyHistory', type: 'textarea' },
+    { key: 'emergency_contact_name', icon: Phone, labelKey: 'fields.emergencyContactName', type: 'text' },
+    { key: 'emergency_contact_phone', icon: Phone, labelKey: 'fields.emergencyContactPhone', type: 'text' },
   ] as const;
 
   return (
@@ -755,12 +755,12 @@ export function PatientClinicalHistoryCard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                {t('clinicalHistory.title') || 'Historial Clínico'}
+                {t('patientClinicalHistoryCard.title')}
               </CardTitle>
               <div className="flex items-center gap-2">
                 {history && !isEditing && (
                   <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/20">
-                    {t('clinicalHistory.completed') || 'Completado'}
+                    {t('patientClinicalHistoryCard.completed')}
                   </Badge>
                 )}
                 <CollapsibleTrigger asChild>
@@ -769,7 +769,7 @@ export function PatientClinicalHistoryCard() {
               </div>
             </div>
             <CardDescription>
-              {t('clinicalHistory.subtitle') || 'Tu historial clínico almacenado de forma segura'}
+              {t('patientClinicalHistoryCard.subtitle')}
             </CardDescription>
           </CardHeader>
           <CollapsibleContent>
@@ -778,11 +778,11 @@ export function PatientClinicalHistoryCard() {
                 <div className="text-center py-4">
                   <FileText className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-sm text-muted-foreground mb-3">
-                    {t('clinicalHistory.empty') || 'No has completado tu historial clínico aún'}
+                    {t('patientClinicalHistoryCard.empty')}
                   </p>
                   <Button size="sm" onClick={() => { setIsEditing(true); setForm({ extended_data: {} }); }}>
                     <Pencil className="w-4 h-4 mr-1" />
-                    {t('clinicalHistory.fillNow') || 'Completar ahora'}
+                    {t('patientClinicalHistoryCard.fillNow')}
                   </Button>
                 </div>
               )}
@@ -792,17 +792,17 @@ export function PatientClinicalHistoryCard() {
                   <div className="flex justify-end">
                     <Button size="sm" variant="outline" onClick={() => { setIsEditing(true); setForm(history); }}>
                       <Pencil className="w-4 h-4 mr-1" />
-                      {t('common.edit') || 'Editar'}
+                      {t('patientClinicalHistoryCard.edit')}
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {baseFields.map(({ key, icon: Icon, label }) => {
+                    {baseFields.map(({ key, icon: Icon, labelKey }) => {
                       const val = (history as any)[key];
                       return (
                         <div key={key} className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/50">
                           <Icon className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">{label}</p>
+                            <p className="text-xs text-muted-foreground">{t(`patientClinicalHistoryCard.${labelKey}`)}</p>
                             <p className="text-sm font-medium truncate">
                               {val || <span className="text-muted-foreground italic text-xs">—</span>}
                             </p>
@@ -815,12 +815,12 @@ export function PatientClinicalHistoryCard() {
                   {/* Read-only summary for extended data */}
                   {(history.extended_data?.chronic_other?.length || 0) > 0 && (
                     <div className="text-xs text-muted-foreground">
-                      <strong>Otras condiciones:</strong> {history.extended_data!.chronic_other!.length} registradas
+                      <strong>{t('patientClinicalHistoryCard.summary.otherConditions')}</strong> {history.extended_data!.chronic_other!.length} {t('patientClinicalHistoryCard.summary.registered')}
                     </div>
                   )}
                   {(history.extended_data?.surgeries?.length || 0) > 0 && (
                     <div className="text-xs text-muted-foreground">
-                      <strong>Cirugías detalladas:</strong> {history.extended_data!.surgeries!.length}
+                      <strong>{t('patientClinicalHistoryCard.summary.detailedSurgeries')}</strong> {history.extended_data!.surgeries!.length}
                     </div>
                   )}
 
@@ -838,21 +838,21 @@ export function PatientClinicalHistoryCard() {
                   {/* Sexo + DOB para activar lógica de hijos */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <Label className="text-xs">Sexo</Label>
+                      <Label className="text-xs">{t('patientClinicalHistoryCard.childForm.sex')}</Label>
                       <Select
                         value={form.sex || ''}
                         onValueChange={v => setForm(p => ({ ...p, sex: v }))}
                       >
-                        <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.selectPlaceholder')} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="female">Femenino</SelectItem>
-                          <SelectItem value="male">Masculino</SelectItem>
-                          <SelectItem value="other">Otro</SelectItem>
+                          <SelectItem value="female">{t('patientClinicalHistoryCard.sex.female')}</SelectItem>
+                          <SelectItem value="male">{t('patientClinicalHistoryCard.sex.male')}</SelectItem>
+                          <SelectItem value="other">{t('patientClinicalHistoryCard.sex.other')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs">Fecha de nacimiento</Label>
+                      <Label className="text-xs">{t('patientClinicalHistoryCard.dobLabel')}</Label>
                       <Input
                         type="date"
                         value={form.date_of_birth || ''}
@@ -862,12 +862,12 @@ export function PatientClinicalHistoryCard() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {baseFields.map(({ key, label, type }) => (
+                    {baseFields.map(({ key, labelKey, type }) => (
                       <div key={key} className={type === 'textarea' ? 'sm:col-span-2' : ''}>
-                        <Label className="text-xs">{label}</Label>
+                        <Label className="text-xs">{t(`patientClinicalHistoryCard.${labelKey}`)}</Label>
                         {type === 'select' ? (
                           <Select value={(form as any)[key] || ''} onValueChange={v => setForm(p => ({ ...p, [key]: v }))}>
-                            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t('patientClinicalHistoryCard.selectPlaceholder')} /></SelectTrigger>
                             <SelectContent>
                               {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}
                             </SelectContent>
@@ -904,10 +904,10 @@ export function PatientClinicalHistoryCard() {
 
                   <Separator />
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Complicaciones generales</Label>
+                    <Label className="text-sm font-medium">{t('patientClinicalHistoryCard.complications.title')}</Label>
                     <Textarea
                       rows={2}
-                      placeholder="Cualquier complicación relevante..."
+                      placeholder={t('patientClinicalHistoryCard.complications.placeholder')}
                       value={ext.complications || ''}
                       onChange={e => updateExt({ complications: e.target.value })}
                     />
@@ -929,11 +929,11 @@ export function PatientClinicalHistoryCard() {
                   <div className="flex justify-end gap-2 pt-2">
                     <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setForm(history || { extended_data: {} }); }}>
                       <X className="w-4 h-4 mr-1" />
-                      {t('common.cancel') || 'Cancelar'}
+                      {t('patientClinicalHistoryCard.cancel')}
                     </Button>
                     <Button size="sm" onClick={handleSave} disabled={isSaving}>
                       {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-                      {t('common.save') || 'Guardar'}
+                      {t('patientClinicalHistoryCard.save')}
                     </Button>
                   </div>
                 </div>

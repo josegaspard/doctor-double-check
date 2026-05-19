@@ -12,6 +12,7 @@ import { FileText, Image, Calendar, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 import { SecureImage } from '@/components/security/SecureImage';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VaultFilePreviewModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ interface VaultFilePreviewModalProps {
 }
 
 export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false }: VaultFilePreviewModalProps) {
+  const { t } = useLanguage();
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
 
   const loadFileAsBlob = async () => {
     if (!file) return;
-    
+
     setIsLoading(true);
     setError(null);
 
@@ -84,7 +86,7 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
       }
     } catch (err) {
       console.error('Error loading file:', err);
-      setError('No se pudo cargar el archivo');
+      setError(t('vaultFilePreviewModal.errorLoadFile'));
 
       // Audit: registrar denegación de acceso
       if (file.patientId) {
@@ -171,7 +173,7 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
               <p className="text-destructive text-center">{error}</p>
-              <Button onClick={loadFileAsBlob}>Reintentar</Button>
+              <Button onClick={loadFileAsBlob}>{t('vaultFilePreviewModal.retry')}</Button>
             </div>
           ) : blobUrl ? (
             <div className="w-full h-full flex items-center justify-center p-4">
@@ -195,7 +197,7 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
                 <div className="text-center p-8">
                   <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
-                    Vista previa no disponible para este tipo de archivo
+                    {t('vaultFilePreviewModal.previewNotAvailable')}
                   </p>
                 </div>
               )}
@@ -207,10 +209,10 @@ export function VaultFilePreviewModal({ isOpen, onClose, file, viewOnly = false 
         <div className="flex justify-end gap-2 pt-4 flex-shrink-0">
           {viewOnly && (
             <p className="text-xs text-muted-foreground mr-auto flex items-center gap-1">
-              🔒 Solo lectura — acceso temporal por OTP
+              {t('vaultFilePreviewModal.readOnlyOtp')}
             </p>
           )}
-          <Button onClick={onClose}>Cerrar</Button>
+          <Button onClick={onClose}>{t('vaultFilePreviewModal.close')}</Button>
         </div>
       </DialogContent>
     </Dialog>

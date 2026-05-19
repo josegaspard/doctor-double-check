@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVault } from '@/contexts/VaultContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,7 @@ export function VaultUploadSimulator({
   categories,
   availableDoctors,
 }: VaultUploadSimulatorProps) {
+  const { t } = useLanguage();
   const { supabaseUser } = useAuth();
   const { refreshVault } = useVault();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,16 +110,16 @@ export function VaultUploadSimulator({
   const validateFile = useCallback((f: File): string | null => {
     const ext = '.' + (f.name.split('.').pop() || '').toLowerCase();
     if (!ALLOWED_EXT.includes(ext) && !ALLOWED_MIME.has(f.type)) {
-      return `Tipo no permitido. Aceptados: ${ALLOWED_EXT.join(', ')}`;
+      return `${t('vaultUploadSimulator.errorTypeNotAllowed')} ${ALLOWED_EXT.join(', ')}`;
     }
     if (f.size > MAX_BYTES) {
-      return `Archivo demasiado grande (${(f.size / 1024 / 1024).toFixed(1)}MB). Máximo 20MB.`;
+      return `${t('vaultUploadSimulator.errorFileTooLargePrefix')} (${(f.size / 1024 / 1024).toFixed(1)}MB). ${t('vaultUploadSimulator.errorFileTooLargeSuffix')}`;
     }
     if (f.size === 0) {
-      return 'Archivo vacío.';
+      return t('vaultUploadSimulator.errorEmptyFile');
     }
     return null;
-  }, []);
+  }, [t]);
 
   const handlePickFile = (selected: File | undefined) => {
     if (!selected) return;
@@ -153,7 +155,7 @@ export function VaultUploadSimulator({
       // Real upload progress via XHR to Supabase Storage REST endpoint
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token;
-      if (!accessToken) throw new Error('Sesión expirada');
+      if (!accessToken) throw new Error(t('vaultUploadSimulator.errorSessionExpired'));
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/vault-files/${encodeURIComponent(path)}`;
 
@@ -174,10 +176,10 @@ export function VaultUploadSimulator({
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve();
           } else {
-            reject(new Error(`Upload fallido (${xhr.status})`));
+            reject(new Error(`${t('vaultUploadSimulator.errorUploadFailed')} (${xhr.status})`));
           }
         };
-        xhr.onerror = () => reject(new Error('Error de red durante upload'));
+        xhr.onerror = () => reject(new Error(t('vaultUploadSimulator.errorNetworkUpload')));
         xhr.send(file);
       });
 
@@ -212,7 +214,7 @@ export function VaultUploadSimulator({
       setStep('permissions');
     } catch (e: any) {
       console.error('[VaultUploadSimulator] upload error', e);
-      setError(e?.message || 'Error subiendo archivo');
+      setError(e?.message || t('vaultUploadSimulator.errorUploadingFile'));
       setStep('select');
     }
   };
@@ -241,13 +243,13 @@ export function VaultUploadSimulator({
       await refreshVault();
       toast.success(
         selectedDoctorIds.size === 0
-          ? 'Archivo guardado en privado (ningún doctor con acceso)'
-          : `Archivo guardado · ${selectedDoctorIds.size} doctor(es) con acceso`
+          ? t('vaultUploadSimulator.toastSavedPrivate')
+          : `${t('vaultUploadSimulator.toastSavedWithAccessPrefix')} · ${selectedDoctorIds.size} ${t('vaultUploadSimulator.toastSavedWithAccessSuffix')}`
       );
       setStep('done');
       setTimeout(() => onOpenChange(false), 800);
     } catch (e: any) {
-      toast.error(e?.message || 'Error otorgando permisos');
+      toast.error(e?.message || t('vaultUploadSimulator.errorGrantingPermissions'));
     } finally {
       setSavingPermissions(false);
     }
@@ -271,13 +273,13 @@ export function VaultUploadSimulator({
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-primary" />
             {step === 'permissions' || step === 'done'
-              ? 'Confirmar permisos'
-              : 'Subir archivo al Vault'}
+              ? t('vaultUploadSimulator.titleConfirmPermissions')
+              : t('vaultUploadSimulator.titleUploadFile')}
           </DialogTitle>
           <DialogDescription>
             {step === 'permissions' || step === 'done'
-              ? 'Selecciona qué doctores podrán ver este archivo. Puedes cambiarlo en cualquier momento.'
-              : 'Acepta PDF, JPG, PNG y estudios DICOM. Máximo 20MB.'}
+              ? t('vaultUploadSimulator.descriptionPermissions')
+              : t('vaultUploadSimulator.descriptionUpload')}
           </DialogDescription>
         </DialogHeader>
 
@@ -286,7 +288,7 @@ export function VaultUploadSimulator({
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('vaultUploadSimulator.labelCategory')}</label>
                   <Select value={category} onValueChange={onCategoryChange}>
                     <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -297,11 +299,11 @@ export function VaultUploadSimulator({
                   </Select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Descripción (opcional)</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">{t('vaultUploadSimulator.labelDescription')}</label>
                   <Input
                     value={description}
                     onChange={(e) => onDescriptionChange(e.target.value)}
-                    placeholder="Ej: Análisis sangre"
+                    placeholder={t('vaultUploadSimulator.placeholderDescription')}
                     maxLength={200}
                     className="h-9 text-sm"
                   />
@@ -310,7 +312,7 @@ export function VaultUploadSimulator({
 
               <div
                 role="region"
-                aria-label="Zona para soltar archivo"
+                aria-label={t('vaultUploadSimulator.ariaDropZone')}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
@@ -336,7 +338,7 @@ export function VaultUploadSimulator({
                     <div className="text-left min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{file.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {(file.size / 1024).toFixed(0)} KB · {file.type || 'binario'}
+                        {(file.size / 1024).toFixed(0)} KB · {file.type || t('vaultUploadSimulator.fileTypeBinary')}
                       </p>
                     </div>
                     {step === 'select' && (
@@ -345,7 +347,7 @@ export function VaultUploadSimulator({
                         size="icon"
                         className="h-7 w-7"
                         onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                        aria-label="Quitar archivo"
+                        aria-label={t('vaultUploadSimulator.ariaRemoveFile')}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -354,9 +356,9 @@ export function VaultUploadSimulator({
                 ) : (
                   <>
                     <Upload className="w-10 h-10 mx-auto text-muted-foreground/60 mb-2" />
-                    <p className="text-sm font-medium">Arrastra un archivo aquí o haz click</p>
+                    <p className="text-sm font-medium">{t('vaultUploadSimulator.dropZoneTitle')}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {ALLOWED_EXT.join(' · ')} · máx 20MB
+                      {ALLOWED_EXT.join(' · ')} {t('vaultUploadSimulator.dropZoneMaxSize')}
                     </p>
                   </>
                 )}
@@ -374,7 +376,7 @@ export function VaultUploadSimulator({
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      Subiendo…
+                      {t('vaultUploadSimulator.uploading')}
                     </span>
                     <span className="font-mono">{progress}%</span>
                   </div>
@@ -389,16 +391,16 @@ export function VaultUploadSimulator({
               <div className="flex items-start gap-2 p-3 rounded-md bg-primary/5 border border-primary/20">
                 <Shield className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                 <div className="text-xs">
-                  <p className="font-medium text-foreground">Privacy-first</p>
+                  <p className="font-medium text-foreground">{t('vaultUploadSimulator.privacyFirstTitle')}</p>
                   <p className="text-muted-foreground mt-0.5">
-                    Por defecto ningún doctor tiene acceso. Marca a quién quieres otorgárselo.
+                    {t('vaultUploadSimulator.privacyFirstDescription')}
                   </p>
                 </div>
               </div>
 
               {availableDoctors.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
-                  No tienes doctores vinculados todavía. El archivo se guardará privado.
+                  {t('vaultUploadSimulator.noDoctorsLinked')}
                 </div>
               ) : (
                 <ScrollArea className="max-h-[280px] pr-2">
@@ -420,7 +422,7 @@ export function VaultUploadSimulator({
                             <p className="text-sm font-medium truncate">{doc.name}</p>
                             <p className="text-xs text-muted-foreground truncate">{doc.specialty}</p>
                           </div>
-                          {checked && <Badge variant="secondary" className="text-[10px]">Acceso</Badge>}
+                          {checked && <Badge variant="secondary" className="text-[10px]">{t('vaultUploadSimulator.badgeAccess')}</Badge>}
                         </label>
                       );
                     })}
@@ -433,7 +435,7 @@ export function VaultUploadSimulator({
           {step === 'done' && (
             <div className="text-center py-8">
               <CheckCircle2 className="w-12 h-12 mx-auto text-success mb-3" />
-              <p className="text-sm font-medium">Archivo guardado correctamente</p>
+              <p className="text-sm font-medium">{t('vaultUploadSimulator.fileSavedSuccess')}</p>
             </div>
           )}
         </div>
@@ -441,23 +443,23 @@ export function VaultUploadSimulator({
         <DialogFooter className="flex-shrink-0">
           {step === 'select' && (
             <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>{t('vaultUploadSimulator.buttonCancel')}</Button>
               <Button onClick={performUpload} disabled={!file}>
                 <Upload className="w-4 h-4 mr-1" />
-                Subir
+                {t('vaultUploadSimulator.buttonUpload')}
               </Button>
             </>
           )}
           {step === 'uploading' && (
             <Button disabled className="gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Subiendo… {progress}%
+              {t('vaultUploadSimulator.uploading')} {progress}%
             </Button>
           )}
           {step === 'permissions' && (
             <>
               <Button variant="outline" onClick={skipPermissions} disabled={savingPermissions}>
-                Guardar privado
+                {t('vaultUploadSimulator.buttonSavePrivate')}
               </Button>
               <Button onClick={finalizeWithPermissions} disabled={savingPermissions}>
                 {savingPermissions ? (
@@ -465,7 +467,7 @@ export function VaultUploadSimulator({
                 ) : (
                   <Shield className="w-4 h-4 mr-1" />
                 )}
-                Confirmar permisos ({selectedDoctorIds.size})
+                {t('vaultUploadSimulator.buttonConfirmPermissions')} ({selectedDoctorIds.size})
               </Button>
             </>
           )}

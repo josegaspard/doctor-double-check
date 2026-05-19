@@ -152,7 +152,7 @@ export default function AdminDoctors() {
           await supabase.functions.invoke('send-approval-email', {
             body: {
               email: actionDialog.doctor.profile.email,
-              name: actionDialog.doctor.profile.name || 'Doctor',
+              name: actionDialog.doctor.profile.name || t('adminDoctorsPage.defaults.doctorName'),
               role: 'doctor',
             },
           });
@@ -164,8 +164,8 @@ export default function AdminDoctors() {
         await supabase.from('notifications').insert({
           user_id: actionDialog.doctor.user_id,
           type: 'system' as any,
-          title: '¡Tu cuenta ha sido aprobada!',
-          message: 'Tu perfil de médico ha sido verificado y aprobado. Ya puedes acceder a todas las funciones de la plataforma.',
+          title: t('adminDoctorsPage.notifications.accountApprovedTitle'),
+          message: t('adminDoctorsPage.notifications.accountApprovedMessage'),
           data: { action_url: '/doctor' },
         });
       }
@@ -191,7 +191,7 @@ export default function AdminDoctors() {
 
   const handleVerifyCedula = async (doctor: DoctorRequest) => {
     if (!doctor.license && !doctor.cedula_profesional) {
-      toast({ title: 'Sin cédula', description: 'Este doctor no tiene número de cédula registrado', variant: 'destructive' });
+      toast({ title: t('adminDoctorsPage.toasts.noCedulaTitle'), description: t('adminDoctorsPage.toasts.noCedulaDescription'), variant: 'destructive' });
       return;
     }
     setVerifyingCedulaId(doctor.id);
@@ -203,14 +203,14 @@ export default function AdminDoctors() {
       if (error) throw error;
       setVerificationResults(prev => ({ ...prev, [doctor.id]: data }));
       if (data?.verified) {
-        toast({ title: '✅ Cédula verificada', description: `${data.nombre} - ${data.titulo}` });
+        toast({ title: t('adminDoctorsPage.toasts.cedulaVerifiedTitle'), description: `${data.nombre} - ${data.titulo}` });
         fetchDoctors(); // Refresh to show updated verification status
       } else {
-        toast({ title: '⚠️ No verificada', description: data?.message || 'No se encontraron resultados en la SEP', variant: 'destructive' });
+        toast({ title: t('adminDoctorsPage.toasts.cedulaNotVerifiedTitle'), description: data?.message || t('adminDoctorsPage.toasts.cedulaNotVerifiedFallback'), variant: 'destructive' });
       }
     } catch (error: any) {
       console.error('Error verifying cedula:', error);
-      toast({ title: 'Error', description: 'No se pudo verificar la cédula. Intente manualmente.', variant: 'destructive' });
+      toast({ title: t('adminDoctorsPage.toasts.cedulaErrorTitle'), description: t('adminDoctorsPage.toasts.cedulaErrorDescription'), variant: 'destructive' });
       setVerificationResults(prev => ({ ...prev, [doctor.id]: { error: true } }));
     } finally {
       setVerifyingCedulaId(null);
@@ -232,20 +232,20 @@ export default function AdminDoctors() {
         await supabase.from('notifications').insert({
           user_id: doctor.user_id,
           type: 'system' as any,
-          title: 'Permiso de publicación otorgado',
-          message: 'Se te ha otorgado permiso para crear y publicar artículos en el blog médico. ¡Ve a la sección de noticias para empezar!',
+          title: t('adminDoctorsPage.notifications.newsPermissionGrantedTitle'),
+          message: t('adminDoctorsPage.notifications.newsPermissionGrantedMessage'),
           data: { action_url: '/news' },
         });
       }
 
       toast({
-        title: newValue ? 'Permiso otorgado' : 'Permiso revocado',
-        description: `${doctor.profile?.name} ${newValue ? 'ahora puede publicar noticias' : 'ya no puede publicar noticias'}`,
+        title: newValue ? t('adminDoctorsPage.toasts.permissionGrantedTitle') : t('adminDoctorsPage.toasts.permissionRevokedTitle'),
+        description: `${doctor.profile?.name} ${newValue ? t('adminDoctorsPage.toasts.permissionGrantedDescription') : t('adminDoctorsPage.toasts.permissionRevokedDescription')}`,
       });
       fetchDoctors();
     } catch (error) {
       console.error('Error toggling news permission:', error);
-      toast({ title: t('common.error'), description: 'Error al cambiar permiso', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('adminDoctorsPage.toasts.errorTogglePermission'), variant: 'destructive' });
     } finally {
       setTogglingNewsId(null);
     }
@@ -263,13 +263,13 @@ export default function AdminDoctors() {
       if (error) throw error;
 
       toast({
-        title: 'Badge actualizado',
-        description: `${doctor.profile?.name}: ${badgeValue === 'pro' ? 'Doctor Pro ⭐' : badgeValue === 'new' ? 'Doctor Nuevo 🔵' : 'Automático'}`,
+        title: t('adminDoctorsPage.toasts.badgeUpdatedTitle'),
+        description: `${doctor.profile?.name}: ${badgeValue === 'pro' ? t('adminDoctorsPage.toasts.badgeProLabel') : badgeValue === 'new' ? t('adminDoctorsPage.toasts.badgeNewLabel') : t('adminDoctorsPage.toasts.badgeAutoLabel')}`,
       });
       fetchDoctors();
     } catch (error) {
       console.error('Error updating badge:', error);
-      toast({ title: t('common.error'), description: 'Error al cambiar badge', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('adminDoctorsPage.toasts.errorUpdateBadge'), variant: 'destructive' });
     } finally {
       setUpdatingBadgeId(null);
     }
@@ -395,7 +395,7 @@ export default function AdminDoctors() {
                           <div className="mt-2 p-2 rounded-md bg-success/10 border border-success/20">
                             <div className="flex items-center gap-1 mb-1 flex-wrap">
                               <ShieldCheck className="w-3.5 h-3.5 text-success flex-shrink-0" />
-                              <span className="text-xs font-semibold text-success">Verificado por SEP</span>
+                              <span className="text-xs font-semibold text-success">{t('adminDoctorsPage.sepVerification.verifiedBySep')}</span>
                               {doctor.cedula_verification.verified_at && (
                                 <span className="text-[10px] text-muted-foreground ml-auto">
                                   {new Date(doctor.cedula_verification.verified_at).toLocaleDateString()}
@@ -417,7 +417,7 @@ export default function AdminDoctors() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3 flex-shrink-0" />
-                                Año: {doctor.cedula_verification.anio_registro}
+                                {t('adminDoctorsPage.sepVerification.yearLabel')} {doctor.cedula_verification.anio_registro}
                               </span>
                             </div>
                           </div>
@@ -427,7 +427,7 @@ export default function AdminDoctors() {
                         <div className="flex items-center gap-1 mt-1">
                           <FileText className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">
-                            Firmas: {doctor.document_signatures_count || 0} documento(s)
+                            {t('adminDoctorsPage.signatures.label')} {doctor.document_signatures_count || 0} {t('adminDoctorsPage.signatures.documentsSuffix')}
                           </span>
                           {(doctor.document_signatures_count || 0) >= 2 && (
                             <Badge variant="success" className="text-[10px] ml-1 px-1.5 py-0">✓</Badge>
@@ -455,7 +455,7 @@ export default function AdminDoctors() {
                               ) : (
                                 <ShieldCheck className="w-3 h-3" />
                               )}
-                              Verificar Cédula SEP
+                              {t('adminDoctorsPage.sepVerification.verifyButton')}
                             </Button>
                             <a
                               href="https://cedulaprofesional.sep.gob.mx"
@@ -464,19 +464,19 @@ export default function AdminDoctors() {
                               className="flex items-center gap-1 text-[10px] text-primary hover:underline"
                             >
                               <ExternalLink className="w-3 h-3" />
-                              Verificar manualmente en SEP
+                              {t('adminDoctorsPage.sepVerification.verifyManuallyLink')}
                             </a>
                             {verificationResults[doctor.id] && !verificationResults[doctor.id].verified && !verificationResults[doctor.id].error && (
                               <div className="p-2 rounded-md bg-warning/10 border border-warning/20">
                                 <div className="flex items-center gap-1 text-xs text-warning">
                                   <AlertTriangle className="w-3 h-3" />
-                                  {verificationResults[doctor.id].message || 'No se encontró en la base de datos de la SEP'}
+                                  {verificationResults[doctor.id].message || t('adminDoctorsPage.sepVerification.notFoundFallback')}
                                 </div>
                               </div>
                             )}
                             {verificationResults[doctor.id]?.error && (
                               <div className="p-2 rounded-md bg-destructive/10 border border-destructive/20">
-                                <p className="text-xs text-destructive">Servicio SEP no disponible. Verifique manualmente.</p>
+                                <p className="text-xs text-destructive">{t('adminDoctorsPage.sepVerification.serviceUnavailable')}</p>
                               </div>
                             )}
                           </div>
@@ -491,7 +491,7 @@ export default function AdminDoctors() {
                           <>
                             <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
                               <Star className="w-4 h-4 text-premium" />
-                              <Label className="text-xs flex-1">Rango</Label>
+                              <Label className="text-xs flex-1">{t('adminDoctorsPage.rank.label')}</Label>
                               {updatingBadgeId === doctor.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                               ) : (
@@ -503,9 +503,9 @@ export default function AdminDoctors() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="auto">Automático</SelectItem>
-                                    <SelectItem value="pro">⭐ Doctor Pro</SelectItem>
-                                    <SelectItem value="new">🔵 Nuevo</SelectItem>
+                                    <SelectItem value="auto">{t('adminDoctorsPage.rank.auto')}</SelectItem>
+                                    <SelectItem value="pro">{t('adminDoctorsPage.rank.pro')}</SelectItem>
+                                    <SelectItem value="new">{t('adminDoctorsPage.rank.new')}</SelectItem>
                                   </SelectContent>
                                 </Select>
                               )}
@@ -513,7 +513,7 @@ export default function AdminDoctors() {
                             <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
                               <Newspaper className="w-4 h-4 text-primary" />
                               <Label htmlFor={`news-${doctor.id}`} className="text-xs cursor-pointer flex-1">
-                                Puede publicar noticias
+                                {t('adminDoctorsPage.news.canPublishLabel')}
                               </Label>
                               {togglingNewsId === doctor.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />

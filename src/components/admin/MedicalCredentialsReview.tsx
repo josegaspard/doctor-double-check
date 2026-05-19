@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/tabs';
 import { CheckCircle, XCircle, Clock, RefreshCw, ShieldCheck, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type CredStatus = 'pending' | 'approved' | 'rejected';
 type CredKind = 'cedula' | 'cofepris';
@@ -39,13 +40,15 @@ interface DoctorRow {
   cofepris_rejection_reason: string | null;
 }
 
-const STATUS_CONFIG: Record<CredStatus, { label: string; variant: any; icon: React.ElementType }> = {
-  pending: { label: 'Pendiente', variant: 'warning', icon: Clock },
-  approved: { label: 'Aprobada', variant: 'success', icon: CheckCircle },
-  rejected: { label: 'Rechazada', variant: 'destructive', icon: XCircle },
-};
-
 export function MedicalCredentialsReview() {
+  const { t } = useLanguage();
+
+  const STATUS_CONFIG: Record<CredStatus, { label: string; variant: any; icon: React.ElementType }> = {
+    pending: { label: t('medicalCredentialsReview.status.pending'), variant: 'warning', icon: Clock },
+    approved: { label: t('medicalCredentialsReview.status.approved'), variant: 'success', icon: CheckCircle },
+    rejected: { label: t('medicalCredentialsReview.status.rejected'), variant: 'destructive', icon: XCircle },
+  };
+
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
@@ -77,7 +80,7 @@ export function MedicalCredentialsReview() {
 
       const merged: DoctorRow[] = (profiles || []).map((dp: any) => ({
         user_id: dp.user_id,
-        name: profileMap.get(dp.user_id)?.name || 'Doctor',
+        name: profileMap.get(dp.user_id)?.name || t('medicalCredentialsReview.doctorFallback'),
         email: profileMap.get(dp.user_id)?.email || null,
         avatar_url: profileMap.get(dp.user_id)?.avatar_url || null,
         cedula_profesional: dp.cedula_profesional,
@@ -94,11 +97,11 @@ export function MedicalCredentialsReview() {
       setDoctors(filtered);
     } catch (err: any) {
       console.error('[MedicalCredentialsReview] fetch error', err);
-      toast.error(err.message || 'Error cargando credenciales');
+      toast.error(err.message || t('medicalCredentialsReview.toast.fetchError'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchDoctors();
@@ -136,31 +139,43 @@ export function MedicalCredentialsReview() {
         .eq('user_id', doctor.user_id);
       if (error) throw error;
 
-      const credLabel = kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS';
+      const credLabel = kind === 'cedula'
+        ? t('medicalCredentialsReview.credential.cedula')
+        : t('medicalCredentialsReview.credential.cofepris');
       const trimmedReason = reason.trim();
       const message =
         action === 'approve'
-          ? `Tu ${credLabel} fue aprobada por el equipo de Medical Masters.\n\n📝 Notas de verificación:\n${trimmedReason}`
-          : `Tu ${credLabel} no fue aprobada.\n\n❌ Motivo:\n${trimmedReason}\n\nPuedes corregir y volver a enviar la documentación desde tu perfil.`;
+          ? t('medicalCredentialsReview.notification.approvedMessage')
+              .replace('{{credLabel}}', credLabel)
+              .replace('{{reason}}', trimmedReason)
+          : t('medicalCredentialsReview.notification.rejectedMessage')
+              .replace('{{credLabel}}', credLabel)
+              .replace('{{reason}}', trimmedReason);
 
       await supabase.from('notifications').insert({
         user_id: doctor.user_id,
         type: 'system',
-        title: action === 'approve' ? '✅ Credencial aprobada' : '❌ Credencial rechazada',
+        title: action === 'approve'
+          ? t('medicalCredentialsReview.notification.approvedTitle')
+          : t('medicalCredentialsReview.notification.rejectedTitle'),
         message,
         data: { kind, status: newStatus, admin_notes: trimmedReason },
       });
 
       toast.success(
         action === 'approve'
-          ? `Credencial ${kind === 'cedula' ? 'Cédula' : 'COFEPRIS'} aprobada`
-          : `Credencial ${kind === 'cedula' ? 'Cédula' : 'COFEPRIS'} rechazada`
+          ? (kind === 'cedula'
+              ? t('medicalCredentialsReview.toast.cedulaApproved')
+              : t('medicalCredentialsReview.toast.cofeprisApproved'))
+          : (kind === 'cedula'
+              ? t('medicalCredentialsReview.toast.cedulaRejected')
+              : t('medicalCredentialsReview.toast.cofeprisRejected'))
       );
       setActionDialog({ open: false, doctor: null, kind: 'cedula', action: 'approve' });
       setConfirmStep('edit');
       fetchDoctors();
     } catch (err: any) {
-      toast.error(err.message || 'No se pudo actualizar la credencial');
+      toast.error(err.message || t('medicalCredentialsReview.toast.updateError'));
     } finally {
       setIsProcessing(false);
     }
@@ -198,10 +213,10 @@ export function MedicalCredentialsReview() {
         <div>
           <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            Credenciales Médicas
+            {t('medicalCredentialsReview.header.title')}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Aprueba o rechaza Cédula Profesional y Permiso COFEPRIS por separado
+            {t('medicalCredentialsReview.header.subtitle')}
           </p>
         </div>
         <Button variant="outline" size="icon" onClick={fetchDoctors} disabled={isLoading} className="h-9 w-9">
@@ -213,29 +228,29 @@ export function MedicalCredentialsReview() {
         <Card>
           <CardContent className="p-3 text-center">
             <div className="text-lg sm:text-2xl font-bold text-warning">{counts.pending}</div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground">Pendientes</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">{t('medicalCredentialsReview.stats.pending')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
             <div className="text-lg sm:text-2xl font-bold text-success">{counts.approved}</div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground">Aprobadas</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">{t('medicalCredentialsReview.stats.approved')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
             <div className="text-lg sm:text-2xl font-bold text-destructive">{counts.rejected}</div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground">Rechazadas</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">{t('medicalCredentialsReview.stats.rejected')}</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="grid w-full grid-cols-4 h-9">
-          <TabsTrigger value="pending" className="text-[10px] sm:text-xs">Pendientes</TabsTrigger>
-          <TabsTrigger value="approved" className="text-[10px] sm:text-xs">Aprobadas</TabsTrigger>
-          <TabsTrigger value="rejected" className="text-[10px] sm:text-xs">Rechazadas</TabsTrigger>
-          <TabsTrigger value="all" className="text-[10px] sm:text-xs">Todos</TabsTrigger>
+          <TabsTrigger value="pending" className="text-[10px] sm:text-xs">{t('medicalCredentialsReview.tabs.pending')}</TabsTrigger>
+          <TabsTrigger value="approved" className="text-[10px] sm:text-xs">{t('medicalCredentialsReview.tabs.approved')}</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-[10px] sm:text-xs">{t('medicalCredentialsReview.tabs.rejected')}</TabsTrigger>
+          <TabsTrigger value="all" className="text-[10px] sm:text-xs">{t('medicalCredentialsReview.tabs.all')}</TabsTrigger>
         </TabsList>
         <TabsContent value={activeTab} className="mt-4">
           {isLoading ? (
@@ -253,7 +268,7 @@ export function MedicalCredentialsReview() {
               <CardContent className="p-8 text-center">
                 <ShieldCheck className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No hay doctores con credenciales en este estado.
+                  {t('medicalCredentialsReview.empty')}
                 </p>
               </CardContent>
             </Card>
@@ -280,24 +295,24 @@ export function MedicalCredentialsReview() {
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-semibold text-foreground">Cédula Profesional</span>
+                              <span className="text-xs font-semibold text-foreground">{t('medicalCredentialsReview.credential.cedula')}</span>
                               {renderStatusBadge(d.cedula_status)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 break-all">{d.cedula_profesional}</p>
                             {d.cedula_status === 'rejected' && d.cedula_rejection_reason && (
                               <p className="text-[11px] text-destructive mt-1">
-                                Motivo: {d.cedula_rejection_reason}
+                                {t('medicalCredentialsReview.reasonPrefix')} {d.cedula_rejection_reason}
                               </p>
                             )}
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">
                             <Button size="sm" variant="success" className="h-7 px-2 text-xs" onClick={() => openAction(d, 'cedula', 'approve')}>
                               <CheckCircle className="w-3 h-3 sm:mr-1" />
-                              <span className="hidden sm:inline">Aprobar</span>
+                              <span className="hidden sm:inline">{t('medicalCredentialsReview.actions.approve')}</span>
                             </Button>
                             <Button size="sm" variant="destructive" className="h-7 px-2 text-xs" onClick={() => openAction(d, 'cedula', 'reject')}>
                               <XCircle className="w-3 h-3 sm:mr-1" />
-                              <span className="hidden sm:inline">Rechazar</span>
+                              <span className="hidden sm:inline">{t('medicalCredentialsReview.actions.reject')}</span>
                             </Button>
                           </div>
                         </div>
@@ -309,24 +324,24 @@ export function MedicalCredentialsReview() {
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-semibold text-foreground">Permiso COFEPRIS</span>
+                              <span className="text-xs font-semibold text-foreground">{t('medicalCredentialsReview.credential.cofepris')}</span>
                               {renderStatusBadge(d.cofepris_status)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-0.5 break-all">{d.cofepris_permit}</p>
                             {d.cofepris_status === 'rejected' && d.cofepris_rejection_reason && (
                               <p className="text-[11px] text-destructive mt-1">
-                                Motivo: {d.cofepris_rejection_reason}
+                                {t('medicalCredentialsReview.reasonPrefix')} {d.cofepris_rejection_reason}
                               </p>
                             )}
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">
                             <Button size="sm" variant="success" className="h-7 px-2 text-xs" onClick={() => openAction(d, 'cofepris', 'approve')}>
                               <CheckCircle className="w-3 h-3 sm:mr-1" />
-                              <span className="hidden sm:inline">Aprobar</span>
+                              <span className="hidden sm:inline">{t('medicalCredentialsReview.actions.approve')}</span>
                             </Button>
                             <Button size="sm" variant="destructive" className="h-7 px-2 text-xs" onClick={() => openAction(d, 'cofepris', 'reject')}>
                               <XCircle className="w-3 h-3 sm:mr-1" />
-                              <span className="hidden sm:inline">Rechazar</span>
+                              <span className="hidden sm:inline">{t('medicalCredentialsReview.actions.reject')}</span>
                             </Button>
                           </div>
                         </div>
@@ -346,22 +361,26 @@ export function MedicalCredentialsReview() {
             <DialogTitle>
               {confirmStep === 'confirm'
                 ? actionDialog.action === 'approve'
-                  ? '¿Confirmas la aprobación?'
-                  : '¿Confirmas el rechazo?'
+                  ? t('medicalCredentialsReview.dialog.confirmApproveTitle')
+                  : t('medicalCredentialsReview.dialog.confirmRejectTitle')
                 : actionDialog.action === 'approve'
-                ? 'Aprobar credencial — confirma verificación'
-                : 'Rechazar credencial — indica motivo'}
+                ? t('medicalCredentialsReview.dialog.editApproveTitle')
+                : t('medicalCredentialsReview.dialog.editRejectTitle')}
             </DialogTitle>
             <DialogDescription>
               {actionDialog.doctor?.name} —{' '}
-              {actionDialog.kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'}
+              {actionDialog.kind === 'cedula'
+                ? t('medicalCredentialsReview.credential.cedula')
+                : t('medicalCredentialsReview.credential.cofepris')}
             </DialogDescription>
           </DialogHeader>
 
           {confirmStep === 'edit' ? (
             <div>
               <label className="text-sm font-medium">
-                {actionDialog.action === 'approve' ? 'Notas de verificación' : 'Motivo del rechazo'}
+                {actionDialog.action === 'approve'
+                  ? t('medicalCredentialsReview.dialog.notesLabel')
+                  : t('medicalCredentialsReview.dialog.reasonLabel')}
                 <span className="text-destructive ml-1">*</span>
               </label>
               <Textarea
@@ -369,33 +388,35 @@ export function MedicalCredentialsReview() {
                 onChange={(e) => setReason(e.target.value)}
                 placeholder={
                   actionDialog.action === 'approve'
-                    ? 'Confirma cómo verificaste esta credencial — visible al doctor y registrado para auditoría'
-                    : 'Explica el motivo (visible al doctor)...'
+                    ? t('medicalCredentialsReview.dialog.notesPlaceholder')
+                    : t('medicalCredentialsReview.dialog.reasonPlaceholder')
                 }
                 className="mt-2"
                 rows={4}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
                 {actionDialog.action === 'approve'
-                  ? 'Ej.: "Verificada en RNPP/SEP por número y nombre el día de hoy."'
-                  : 'El doctor recibirá esta razón en su notificación.'}
+                  ? t('medicalCredentialsReview.dialog.notesHelper')
+                  : t('medicalCredentialsReview.dialog.reasonHelper')}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="rounded-lg border border-border/60 bg-muted/40 p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Doctor:</span>
+                  <span className="text-muted-foreground">{t('medicalCredentialsReview.dialog.summary.doctor')}</span>
                   <span className="font-medium text-foreground text-right">{actionDialog.doctor?.name}</span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Credencial:</span>
+                  <span className="text-muted-foreground">{t('medicalCredentialsReview.dialog.summary.credential')}</span>
                   <span className="font-medium text-foreground text-right">
-                    {actionDialog.kind === 'cedula' ? 'Cédula Profesional' : 'Permiso COFEPRIS'}
+                    {actionDialog.kind === 'cedula'
+                      ? t('medicalCredentialsReview.credential.cedula')
+                      : t('medicalCredentialsReview.credential.cofepris')}
                   </span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Número/Permiso:</span>
+                  <span className="text-muted-foreground">{t('medicalCredentialsReview.dialog.summary.number')}</span>
                   <span className="font-mono text-xs text-foreground text-right break-all">
                     {actionDialog.kind === 'cedula'
                       ? actionDialog.doctor?.cedula_profesional
@@ -403,14 +424,18 @@ export function MedicalCredentialsReview() {
                   </span>
                 </div>
                 <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground">Acción:</span>
+                  <span className="text-muted-foreground">{t('medicalCredentialsReview.dialog.summary.action')}</span>
                   <Badge variant={actionDialog.action === 'approve' ? 'success' : 'destructive'} className="text-[10px]">
-                    {actionDialog.action === 'approve' ? 'APROBAR' : 'RECHAZAR'}
+                    {actionDialog.action === 'approve'
+                      ? t('medicalCredentialsReview.dialog.summary.approveBadge')
+                      : t('medicalCredentialsReview.dialog.summary.rejectBadge')}
                   </Badge>
                 </div>
                 <div className="pt-1.5 border-t border-border/60">
                   <span className="text-muted-foreground text-xs">
-                    {actionDialog.action === 'approve' ? 'Notas:' : 'Motivo:'}
+                    {actionDialog.action === 'approve'
+                      ? t('medicalCredentialsReview.dialog.summary.notes')
+                      : t('medicalCredentialsReview.dialog.summary.reason')}
                   </span>
                   <p className="text-xs text-foreground mt-1 whitespace-pre-wrap">
                     {reason.trim().slice(0, 200)}
@@ -419,7 +444,7 @@ export function MedicalCredentialsReview() {
                 </div>
               </div>
               <p className="text-xs text-warning bg-warning/10 border border-warning/30 rounded-md p-2">
-                ⚠️ Esta acción notificará al doctor inmediatamente y queda registrada en auditoría. ¿Confirmas?
+                {t('medicalCredentialsReview.dialog.confirmWarning')}
               </p>
             </div>
           )}
@@ -428,20 +453,22 @@ export function MedicalCredentialsReview() {
             {confirmStep === 'edit' ? (
               <>
                 <Button variant="outline" onClick={closeDialog}>
-                  Cancelar
+                  {t('medicalCredentialsReview.dialog.cancel')}
                 </Button>
                 <Button
                   variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
                   onClick={() => setConfirmStep('confirm')}
                   disabled={!reason.trim()}
                 >
-                  {actionDialog.action === 'approve' ? 'Aprobar' : 'Rechazar'}
+                  {actionDialog.action === 'approve'
+                    ? t('medicalCredentialsReview.actions.approve')
+                    : t('medicalCredentialsReview.actions.reject')}
                 </Button>
               </>
             ) : (
               <>
                 <Button variant="outline" onClick={() => setConfirmStep('edit')} disabled={isProcessing}>
-                  Volver a editar
+                  {t('medicalCredentialsReview.dialog.backToEdit')}
                 </Button>
                 <Button
                   variant={actionDialog.action === 'approve' ? 'success' : 'destructive'}
@@ -449,7 +476,7 @@ export function MedicalCredentialsReview() {
                   disabled={isProcessing || !reason.trim()}
                 >
                   {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Sí, confirmar y enviar
+                  {t('medicalCredentialsReview.dialog.confirmSend')}
                 </Button>
               </>
             )}

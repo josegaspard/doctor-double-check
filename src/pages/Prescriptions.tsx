@@ -25,7 +25,7 @@ interface PatientOption {
 export default function Prescriptions() {
   const navigate = useNavigate();
   const { supabaseUser, role } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [showPatientPicker, setShowPatientPicker] = useState(false);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [isLoadingPatients, setIsLoadingPatients] = useState(false);
@@ -109,12 +109,12 @@ export default function Prescriptions() {
               </div>
               <div className="min-w-0">
                 <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
-                  {language === 'es' ? 'Recetas Electrónicas' : 'Electronic Prescriptions'}
+                  {t('prescriptionsPage.title')}
                 </h1>
                 <p className="text-muted-foreground text-xs sm:text-sm truncate">
                   {role === 'doctor'
-                    ? (language === 'es' ? 'Crea y gestiona recetas para tus pacientes' : 'Create and manage prescriptions')
-                    : (language === 'es' ? 'Tus recetas médicas' : 'Your medical prescriptions')}
+                    ? t('prescriptionsPage.subtitleDoctor')
+                    : t('prescriptionsPage.subtitlePatient')}
                 </p>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function Prescriptions() {
               }}
             >
               <Plus className="w-5 h-5" />
-              {language === 'es' ? 'Nueva Receta' : 'New Prescription'}
+              {t('prescriptionsPage.newPrescription')}
             </Button>
           )}
         </div>
@@ -142,10 +142,10 @@ export default function Prescriptions() {
             <DialogHeader className="px-5 pt-5 pb-3">
               <DialogTitle className="flex items-center gap-2 text-lg">
                 <FileText className="w-5 h-5 text-primary" />
-                {language === 'es' ? 'Seleccionar Paciente' : 'Select Patient'}
+                {t('prescriptionsPage.selectPatient')}
               </DialogTitle>
               <DialogDescription className="text-sm">
-                {language === 'es' ? 'Elige el paciente para el que quieres crear la receta.' : 'Choose the patient for the prescription.'}
+                {t('prescriptionsPage.selectPatientDescription')}
               </DialogDescription>
             </DialogHeader>
 
@@ -153,7 +153,7 @@ export default function Prescriptions() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder={language === 'es' ? 'Buscar paciente...' : 'Search patient...'}
+                  placeholder={t('prescriptionsPage.searchPlaceholder')}
                   value={patientSearch}
                   onChange={(e) => setPatientSearch(e.target.value)}
                   className="pl-9 h-12 text-base"
@@ -185,8 +185,8 @@ export default function Prescriptions() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <User className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">{language === 'es' ? 'No se encontraron pacientes' : 'No patients found'}</p>
-                  <p className="text-xs mt-1">{language === 'es' ? 'Inicia una consulta o chat para que aparezcan aquí.' : 'Start a consultation or chat first.'}</p>
+                  <p className="text-sm">{t('prescriptionsPage.noPatientsFound')}</p>
+                  <p className="text-xs mt-1">{t('prescriptionsPage.noPatientsHint')}</p>
                 </div>
               )}
             </div>

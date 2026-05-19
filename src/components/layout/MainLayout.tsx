@@ -119,7 +119,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'doctor') {
     return [
       ...common,
-      { label: t('nav.educationShort') || 'Edu', href: '/education', icon: GraduationCap },
+      { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
       { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
@@ -129,7 +129,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     return [
       ...common,
       { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
-      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.doctors'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
     ];
   }
@@ -138,7 +138,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     return [
       ...common,
       { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
-      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
+      { label: t('nav.doctors'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.admin'), href: '/admin', icon: Settings },
     ];
   }
@@ -155,9 +155,9 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   // resident
   return [
     ...common,
-    { label: t('nav.educationShort') || 'Edu', href: '/education', icon: GraduationCap },
+    { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
     { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
-    { label: t('nav.meetings') || 'Reuniones', href: '/meetings', icon: Calendar },
+    { label: t('nav.meetings'), href: '/meetings', icon: Calendar },
   ];
 }
 
@@ -379,7 +379,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
                   {role === 'visitor' && (
                     <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                      <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
+                      <p className="text-sm text-muted-foreground mb-3">{t('mainLayout.loginPrompt')}</p>
                       <div className="flex flex-col gap-2">
                         <Button size="sm" onClick={() => navigate('/login')} className="w-full gap-2">
                           <LogIn className="w-4 h-4" />
@@ -425,7 +425,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {(role === 'patient' || role === 'resident') && hasCampaigns && (
                           <Link to="/advertiser/dashboard" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/advertiser/dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                             <Megaphone className="w-5 h-5" />
-                            {t('nav.advertising') || 'Publicidad'}
+                            {t('nav.advertising')}
                           </Link>
                         )}
                         <Link to="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
@@ -588,7 +588,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
                       <DropdownMenuItem onClick={() => navigate('/advertiser/dashboard')} className="py-3 text-sm">
                         <Megaphone className="w-4 h-4 mr-2" />
-                        {t('nav.advertising') || 'Publicidad'}
+                        {t('nav.advertising')}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
@@ -717,7 +717,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {(!isAuthenticated || role === 'visitor') && (
               <div className="mx-5 mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                <p className="text-sm text-muted-foreground mb-3">Inicia sesión para acceder a todas las funciones</p>
+                <p className="text-sm text-muted-foreground mb-3">{t('mainLayout.loginPrompt')}</p>
                 <Button size="sm" onClick={() => { setMoreSheetOpen(false); navigate('/login'); }} className="w-full gap-2">
                   <LogIn className="w-4 h-4" />
                   {t('nav.login')}
@@ -729,7 +729,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             <div className="px-5 flex-1">
               {moreNavItems.length > 0 && (
                 <div className="space-y-1 mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Navegación</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">{t('mainLayout.sectionNavigation')}</p>
                   {moreNavItems.map((item) => {
                     const isActive = location.pathname === item.href;
                     return (
@@ -755,7 +755,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <>
                   <div className="border-t border-border my-3" />
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Cuenta</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">{t('mainLayout.sectionAccount')}</p>
                     <Link
                       to="/profile"
                       onClick={() => setMoreSheetOpen(false)}
@@ -813,7 +813,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         }`}
                       >
                         <Megaphone className="w-5 h-5" />
-                        <span className="text-sm font-medium">{t('nav.advertising') || 'Publicidad'}</span>
+                        <span className="text-sm font-medium">{t('nav.advertising')}</span>
                       </Link>
                     )}
                     <Link

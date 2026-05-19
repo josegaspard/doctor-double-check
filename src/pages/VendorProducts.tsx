@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Vendor {
   id: string;
@@ -38,6 +39,7 @@ const empty = { name: '', description: '', category: '', price: '', currency: 'M
 export default function VendorProducts() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,7 @@ export default function VendorProducts() {
   const save = async () => {
     if (!vendor) return;
     if (!form.name || !form.price) {
-      toast.error('Nombre y precio son requeridos');
+      toast.error(t('vendorProductsPage.toast.nameAndPriceRequired'));
       return;
     }
     setSaving(true);
@@ -119,16 +121,16 @@ export default function VendorProducts() {
       toast.error(error.message);
       return;
     }
-    toast.success(editingId ? 'Producto actualizado' : 'Producto creado');
+    toast.success(editingId ? t('vendorProductsPage.toast.productUpdated') : t('vendorProductsPage.toast.productCreated'));
     setDialogOpen(false);
     fetchAll();
   };
 
   const remove = async (id: string) => {
-    if (!confirm('¿Eliminar producto?')) return;
+    if (!confirm(t('vendorProductsPage.confirm.deleteProduct'))) return;
     const { error } = await supabase.from('marketplace_products').delete().eq('id', id);
     if (error) toast.error(error.message);
-    else { toast.success('Eliminado'); fetchAll(); }
+    else { toast.success(t('vendorProductsPage.toast.deleted')); fetchAll(); }
   };
 
   const toggleActive = async (p: Product) => {
@@ -151,11 +153,11 @@ export default function VendorProducts() {
         <div className="container mx-auto px-4 py-8 max-w-lg">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" /> Aún no eres vendedor</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" /> {t('vendorProductsPage.notVendor.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <p>Para publicar productos en el marketplace de Medical Masters debes registrarte primero como vendor y esperar la aprobación del equipo.</p>
-              <Button onClick={() => navigate('/vendor')}>Registrarme como vendor</Button>
+              <p>{t('vendorProductsPage.notVendor.description')}</p>
+              <Button onClick={() => navigate('/vendor')}>{t('vendorProductsPage.notVendor.registerCta')}</Button>
             </CardContent>
           </Card>
         </div>
@@ -169,11 +171,11 @@ export default function VendorProducts() {
         <div className="container mx-auto px-4 py-8 max-w-lg">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><AlertCircle className="w-5 h-5 text-warning" /> Cuenta de vendor en revisión</CardTitle>
+              <CardTitle className="flex items-center gap-2"><AlertCircle className="w-5 h-5 text-warning" /> {t('vendorProductsPage.underReview.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <p>Tu solicitud como <strong>{vendor.name}</strong> está en revisión por el equipo de Medical Masters. Te notificaremos por correo cuando sea aprobada.</p>
-              <Badge variant="secondary">Estado: {vendor.status}</Badge>
+              <p>{t('vendorProductsPage.underReview.descriptionPrefix')} <strong>{vendor.name}</strong> {t('vendorProductsPage.underReview.descriptionSuffix')}</p>
+              <Badge variant="secondary">{t('vendorProductsPage.underReview.statusLabel')} {vendor.status}</Badge>
             </CardContent>
           </Card>
         </div>
@@ -188,15 +190,15 @@ export default function VendorProducts() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
               <Package className="w-6 h-6 text-primary" />
-              Mis productos
+              {t('vendorProductsPage.header.title')}
             </h1>
-            <p className="text-sm text-muted-foreground">Gestiona el inventario de <strong>{vendor.name}</strong> en el marketplace.</p>
+            <p className="text-sm text-muted-foreground">{t('vendorProductsPage.header.subtitlePrefix')} <strong>{vendor.name}</strong> {t('vendorProductsPage.header.subtitleSuffix')}</p>
           </div>
-          <Button onClick={openCreate} className="gap-1.5"><Plus className="w-4 h-4" />Agregar producto</Button>
+          <Button onClick={openCreate} className="gap-1.5"><Plus className="w-4 h-4" />{t('vendorProductsPage.header.addProduct')}</Button>
         </div>
 
         {products.length === 0 ? (
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Aún no has agregado productos. Da clic en "Agregar producto" para empezar.</CardContent></Card>
+          <Card><CardContent className="py-12 text-center text-muted-foreground">{t('vendorProductsPage.emptyState')}</CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {products.map((p) => (
@@ -207,14 +209,14 @@ export default function VendorProducts() {
                   )}
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-sm line-clamp-2 flex-1">{p.name}</h3>
-                    <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-[10px]">{p.is_active ? 'Activo' : 'Inactivo'}</Badge>
+                    <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-[10px]">{p.is_active ? t('vendorProductsPage.card.active') : t('vendorProductsPage.card.inactive')}</Badge>
                   </div>
                   {p.category && <p className="text-[11px] text-muted-foreground mt-1">{p.category}</p>}
                   <div className="flex items-baseline gap-2 mt-2">
                     <p className="text-lg font-bold text-primary">${Number(p.price).toFixed(2)}</p>
                     <span className="text-[11px] text-muted-foreground">{p.currency}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1">Stock: <strong>{p.stock}</strong></p>
+                  <p className="text-[11px] text-muted-foreground mt-1">{t('vendorProductsPage.card.stock')} <strong>{p.stock}</strong></p>
                   <div className="flex items-center gap-1 mt-3">
                     <Button size="sm" variant="ghost" className="h-7 px-2 gap-1" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
                     <Button size="sm" variant="ghost" className="h-7 px-2 gap-1" onClick={() => toggleActive(p)}>
@@ -231,26 +233,26 @@ export default function VendorProducts() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? 'Editar producto' : 'Nuevo producto'}</DialogTitle>
+              <DialogTitle>{editingId ? t('vendorProductsPage.dialog.titleEdit') : t('vendorProductsPage.dialog.titleNew')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div><Label>Nombre *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Descripción</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div><Label>{t('vendorProductsPage.dialog.nameLabel')}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label>{t('vendorProductsPage.dialog.descriptionLabel')}</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>Precio *</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-                <div><Label>Moneda</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase().slice(0, 3) })} /></div>
+                <div><Label>{t('vendorProductsPage.dialog.priceLabel')}</Label><Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+                <div><Label>{t('vendorProductsPage.dialog.currencyLabel')}</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase().slice(0, 3) })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>Stock</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></div>
-                <div><Label>Categoría</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Insumos, Equipo, etc" /></div>
+                <div><Label>{t('vendorProductsPage.dialog.stockLabel')}</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></div>
+                <div><Label>{t('vendorProductsPage.dialog.categoryLabel')}</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder={t('vendorProductsPage.dialog.categoryPlaceholder')} /></div>
               </div>
-              <div><Label>URL de imagen</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
+              <div><Label>{t('vendorProductsPage.dialog.imageUrlLabel')}</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder={t('vendorProductsPage.dialog.imageUrlPlaceholder')} /></div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
-                <Label>Activo (visible en marketplace)</Label>
+                <Label>{t('vendorProductsPage.dialog.activeLabel')}</Label>
               </div>
               <Button onClick={save} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? 'Guardar cambios' : 'Crear producto'}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? t('vendorProductsPage.dialog.saveChanges') : t('vendorProductsPage.dialog.createProduct')}
               </Button>
             </div>
           </DialogContent>

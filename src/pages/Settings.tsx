@@ -45,7 +45,7 @@ export default function Settings() {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'ELIMINAR') {
-      toast.error('Escribe ELIMINAR para confirmar');
+      toast.error(t('settingsPage.toastTypeConfirmWord'));
       return;
     }
     setIsDeleting(true);
@@ -55,11 +55,11 @@ export default function Settings() {
       });
       if (error) throw error;
       await supabase.auth.signOut();
-      toast.success('Tu cuenta fue eliminada. Lamentamos verte partir.');
+      toast.success(t('settingsPage.toastAccountDeleted'));
       window.location.replace('/');
     } catch (err: any) {
       console.error('delete account failed', err);
-      toast.error(err?.message || 'No se pudo eliminar la cuenta. Intenta más tarde.');
+      toast.error(err?.message || t('settingsPage.toastDeleteFailed'));
       setIsDeleting(false);
     }
   };
@@ -82,13 +82,13 @@ export default function Settings() {
   const getVerificationBadge = () => {
     switch (verificationStatus) {
       case 'verified':
-        return <Badge variant="success" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{language === 'es' ? 'Verificado' : 'Verified'}</Badge>;
+        return <Badge variant="success" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{t('verification.verified')}</Badge>;
       case 'pending':
         return <Badge variant="warning" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />{t('verification.pending')}</Badge>;
       case 'failed':
-        return <Badge variant="destructive" className="text-xs">{language === 'es' ? 'Fallida' : 'Failed'}</Badge>;
+        return <Badge variant="destructive" className="text-xs">{t('verification.failed')}</Badge>;
       default:
-        return <Badge variant="secondary" className="text-xs">{language === 'es' ? 'No verificado' : 'Not verified'}</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t('settingsPage.notVerifiedBadge')}</Badge>;
     }
   };
 
@@ -114,11 +114,11 @@ export default function Settings() {
           toast.error(data.error);
         }
       } else {
-        toast.error('No se pudo abrir el portal de pagos');
+        toast.error(t('settingsPage.toastPortalFailed'));
       }
     } catch (error: any) {
       console.error('Error opening portal:', error);
-      const msg = error?.message || error?.context?.body?.error || 'Error al abrir el portal de suscripciones';
+      const msg = error?.message || error?.context?.body?.error || t('settingsPage.toastPortalErrorGeneric');
       if (msg.includes('No Stripe customer found')) {
         toast.info(t('paywall.noPaymentHistory'));
       } else {
@@ -182,12 +182,10 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
-                {language === 'es' ? 'Moneda' : 'Currency'}
+                {t('settingsPage.currency')}
               </CardTitle>
               <CardDescription>
-                {language === 'es'
-                  ? 'Los precios se mostrarán convertidos automáticamente desde MXN.'
-                  : 'Prices will be auto-converted from MXN.'}
+                {t('settingsPage.currencyDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -200,18 +198,18 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                {language === 'es' ? 'Apariencia' : 'Appearance'}
+                {t('settingsPage.appearance')}
               </CardTitle>
               <CardDescription>
-                {language === 'es' ? 'Modo claro u oscuro' : 'Light or dark mode'}
+                {t('settingsPage.appearanceDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="dark-mode" className="flex flex-col gap-1 flex-1 min-w-0">
-                  <span>{language === 'es' ? 'Modo oscuro' : 'Dark mode'}</span>
+                  <span>{t('settingsPage.darkMode')}</span>
                   <span className="text-xs text-muted-foreground font-normal">
-                    {language === 'es' ? 'Cambia la apariencia de la aplicación' : 'Change the app appearance'}
+                    {t('settingsPage.darkModeDescription')}
                   </span>
                 </Label>
                 <Switch
@@ -375,7 +373,7 @@ export default function Settings() {
                   {user?.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
-                      alt="Avatar"
+                      alt={t('settingsPage.avatarAlt')}
                       className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
@@ -392,7 +390,7 @@ export default function Settings() {
                 </div>
                 <Button variant="outline" className="w-full sm:w-auto flex-shrink-0" onClick={() => navigate('/verify-identity')}>
                   {verificationStatus === 'verified'
-                    ? (language === 'es' ? 'Ver verificación' : 'View verification')
+                    ? t('settingsPage.viewVerification')
                     : t('verification.startVerification')}
                 </Button>
               </div>
@@ -411,8 +409,8 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={handleManageSubscriptions} 
+              <Button
+                onClick={handleManageSubscriptions}
                 disabled={isLoadingPortal}
                 variant="outline"
                 className="w-full gap-2"
@@ -453,13 +451,12 @@ export default function Settings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg sm:text-xl text-destructive mb-1">
-                        Eliminar mi cuenta
+                        {t('settingsPage.deleteAccountTitle')}
                       </CardTitle>
                       <CardDescription className="text-sm text-muted-foreground">
-                        Esta acción es <strong className="text-foreground">permanente</strong> e
-                        irreversible. Se eliminarán tu perfil, expediente clínico, conversaciones,
-                        suscripciones, contenido publicado y todo registro asociado. No podrás
-                        recuperarlo después.
+                        {t('settingsPage.deleteAccountDescPart1')}{' '}
+                        <strong className="text-foreground">{t('settingsPage.deleteAccountDescStrong')}</strong>
+                        {t('settingsPage.deleteAccountDescPart2')}
                       </CardDescription>
                     </div>
                   </div>
@@ -471,7 +468,7 @@ export default function Settings() {
                     onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
                   >
                     <Trash2 className="w-4 h-4" />
-                    Eliminar mi cuenta permanentemente
+                    {t('settingsPage.deleteAccountButton')}
                   </Button>
                 </CardContent>
               </div>
@@ -483,38 +480,42 @@ export default function Settings() {
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                   <AlertTriangle className="w-5 h-5" />
-                  ¿Eliminar tu cuenta?
+                  {t('settingsPage.deleteDialogTitle')}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   <span className="block">
-                    Esta acción es <strong>irreversible</strong>. Perderás acceso permanente a:
+                    {t('settingsPage.deleteDialogIntroPart1')}{' '}
+                    <strong>{t('settingsPage.deleteDialogIntroStrong')}</strong>
+                    {t('settingsPage.deleteDialogIntroPart2')}
                   </span>
                   <ul className="list-disc pl-5 text-sm space-y-1">
-                    <li>Tu expediente clínico y datos médicos</li>
-                    <li>Historial de consultas, chats y videollamadas</li>
-                    <li>Suscripciones activas (no se reembolsan automáticamente)</li>
-                    <li>Compras, wallet y contenido publicado</li>
+                    <li>{t('settingsPage.deleteDialogBullet1')}</li>
+                    <li>{t('settingsPage.deleteDialogBullet2')}</li>
+                    <li>{t('settingsPage.deleteDialogBullet3')}</li>
+                    <li>{t('settingsPage.deleteDialogBullet4')}</li>
                   </ul>
                   <span className="block pt-2">
-                    Escribe <code className="px-1 py-0.5 bg-muted rounded font-mono">ELIMINAR</code> abajo para confirmar.
+                    {t('settingsPage.deleteDialogConfirmPrefix')}{' '}
+                    <code className="px-1 py-0.5 bg-muted rounded font-mono">ELIMINAR</code>{' '}
+                    {t('settingsPage.deleteDialogConfirmSuffix')}
                   </span>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <Input
-                placeholder="Escribe ELIMINAR"
+                placeholder={t('settingsPage.deleteDialogPlaceholder')}
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 autoComplete="off"
                 disabled={isDeleting}
               />
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel disabled={isDeleting}>{t('settingsPage.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDeleteAccount}
                   disabled={deleteConfirmText !== 'ELIMINAR' || isDeleting}
                   className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
-                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Eliminar permanentemente'}
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('settingsPage.deletePermanently')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

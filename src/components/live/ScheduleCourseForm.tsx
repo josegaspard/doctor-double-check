@@ -11,12 +11,21 @@ import { Button } from '@/components/ui/button';
 import { CalendarClock, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
-const SPECIALTIES = ['Cardiología', 'Pediatría', 'Ginecología', 'Dermatología', 'Neurología', 'Psicología', 'Medicina General', 'Otro'];
-
 export function ScheduleCourseForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
+
+  const SPECIALTIES = [
+    { value: 'Cardiología', label: t('scheduleCourseForm.specialties.cardiology') },
+    { value: 'Pediatría', label: t('scheduleCourseForm.specialties.pediatrics') },
+    { value: 'Ginecología', label: t('scheduleCourseForm.specialties.gynecology') },
+    { value: 'Dermatología', label: t('scheduleCourseForm.specialties.dermatology') },
+    { value: 'Neurología', label: t('scheduleCourseForm.specialties.neurology') },
+    { value: 'Psicología', label: t('scheduleCourseForm.specialties.psychology') },
+    { value: 'Medicina General', label: t('scheduleCourseForm.specialties.generalMedicine') },
+    { value: 'Otro', label: t('scheduleCourseForm.specialties.other') },
+  ];
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -28,10 +37,10 @@ export function ScheduleCourseForm() {
 
   const handleSubmit = async () => {
     if (!user?.id) return;
-    if (!title.trim() || title.trim().length < 4) return toast.error('El título debe tener al menos 4 caracteres');
-    if (!scheduledAt) return toast.error('Elige fecha y hora');
+    if (!title.trim() || title.trim().length < 4) return toast.error(t('scheduleCourseForm.validation.titleTooShort'));
+    if (!scheduledAt) return toast.error(t('scheduleCourseForm.validation.pickDateTime'));
     const when = new Date(scheduledAt);
-    if (isNaN(when.getTime()) || when.getTime() < Date.now()) return toast.error('La fecha debe ser futura');
+    if (isNaN(when.getTime()) || when.getTime() < Date.now()) return toast.error(t('scheduleCourseForm.validation.dateMustBeFuture'));
 
     setSubmitting(true);
     try {
@@ -54,13 +63,13 @@ export function ScheduleCourseForm() {
         await supabase.rpc('notify_subscribers', {
           p_doctor_id: user.id,
           p_notification_type: 'doctor_live' as any,
-          p_title: '📅 Nuevo curso programado',
+          p_title: t('scheduleCourseForm.notification.title'),
           p_message: `${title.trim()} — ${when.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}`,
           p_data: { live_id: data?.id, scheduled_at: when.toISOString() },
         });
       } catch { /* non-blocking */ }
 
-      toast.success('Curso programado exitosamente');
+      toast.success(t('scheduleCourseForm.toast.success'));
       setTitle(''); setDescription(''); setScheduledAt('');
       navigate('/doctor/recordings?tab=lives-pasados');
     } catch (e: any) {
@@ -73,7 +82,7 @@ export function ScheduleCourseForm() {
       if (isRls) {
         toast.error(t('contextErrors.notVerifiedToCreateLive'));
       } else {
-        toast.error(rawMsg || 'Error al programar el curso');
+        toast.error(rawMsg || t('scheduleCourseForm.toast.errorGeneric'));
       }
     } finally {
       setSubmitting(false);
@@ -85,36 +94,36 @@ export function ScheduleCourseForm() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="w-5 h-5 text-primary" />
-          Programar curso
+          {t('scheduleCourseForm.card.title')}
         </CardTitle>
         <CardDescription>
-          Anuncia con anticipación tu live. Tus seguidores recibirán una notificación al momento de programarlo.
+          {t('scheduleCourseForm.card.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
-          <Label>Título del curso *</Label>
-          <Input value={title} onChange={e => setTitle(e.target.value)} maxLength={200} placeholder="Ej. Avances en Cardiología 2026" />
+          <Label>{t('scheduleCourseForm.fields.titleLabel')}</Label>
+          <Input value={title} onChange={e => setTitle(e.target.value)} maxLength={200} placeholder={t('scheduleCourseForm.fields.titlePlaceholder')} />
         </div>
         <div className="space-y-1.5">
-          <Label>Descripción</Label>
-          <Textarea value={description} onChange={e => setDescription(e.target.value)} maxLength={1000} rows={3} placeholder="¿De qué trata? ¿Qué aprenderán los asistentes?" />
+          <Label>{t('scheduleCourseForm.fields.descriptionLabel')}</Label>
+          <Textarea value={description} onChange={e => setDescription(e.target.value)} maxLength={1000} rows={3} placeholder={t('scheduleCourseForm.fields.descriptionPlaceholder')} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label>Especialidad</Label>
+            <Label>{t('scheduleCourseForm.fields.specialtyLabel')}</Label>
             <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={specialty} onChange={e => setSpecialty(e.target.value)}>
-              {SPECIALTIES.map(s => <option key={s} value={s}>{s}</option>)}
+              {SPECIALTIES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label>Fecha y hora *</Label>
+            <Label>{t('scheduleCourseForm.fields.dateTimeLabel')}</Label>
             <Input type="datetime-local" value={scheduledAt} min={minDateTime} onChange={e => setScheduledAt(e.target.value)} />
           </div>
         </div>
         <Button onClick={handleSubmit} disabled={submitting} className="w-full gap-2">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          Programar y notificar a seguidores
+          {t('scheduleCourseForm.submit')}
         </Button>
       </CardContent>
     </Card>

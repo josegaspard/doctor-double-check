@@ -48,13 +48,13 @@ export function MySubscriptions() {
 
     if (result.success) {
       if (confirmCancelSub.tier !== 'free' && confirmCancelSub.expiresAt) {
-        toast.success(`Suscripción cancelada. Mantendrás acceso hasta el ${format(confirmCancelSub.expiresAt, "dd 'de' MMMM", { locale: es })}`);
+        toast.success(`${t('mySubscriptions.cancelSuccessKeepAccess')} ${format(confirmCancelSub.expiresAt, "dd 'de' MMMM", { locale: es })}`);
       } else {
-        toast.success('Suscripción cancelada exitosamente');
+        toast.success(t('mySubscriptions.cancelSuccess'));
       }
       refresh();
     } else {
-      toast.error(result.error || 'Error al cancelar suscripción');
+      toast.error(result.error || t('mySubscriptions.cancelError'));
     }
   };
 
@@ -68,7 +68,7 @@ export function MySubscriptions() {
     setUpdatingPrefs(null);
 
     if (!result.success) {
-      toast.error(result.error || 'Error al actualizar preferencias');
+      toast.error(result.error || t('mySubscriptions.updatePrefsError'));
     }
   };
 
@@ -78,21 +78,21 @@ export function MySubscriptions() {
         return (
           <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white gap-1">
             <Crown className="w-3 h-3" />
-            Premium
+            {t('mySubscriptions.tierPremium')}
           </Badge>
         );
       case 'basic':
         return (
           <Badge variant="secondary" className="gap-1">
             <Star className="w-3 h-3" />
-            Básica
+            {t('mySubscriptions.tierBasic')}
           </Badge>
         );
       default:
         return (
           <Badge variant="outline" className="gap-1">
             <Users className="w-3 h-3" />
-            Gratuita
+            {t('mySubscriptions.tierFree')}
           </Badge>
         );
     }
@@ -114,15 +114,15 @@ export function MySubscriptions() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Mis Suscripciones
+            {t('mySubscriptions.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
             <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground">No tienes suscripciones activas</p>
+            <p className="text-muted-foreground">{t('mySubscriptions.emptyTitle')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Sigue a médicos para recibir notificaciones de sus lives y contenido
+              {t('mySubscriptions.emptyDescription')}
             </p>
           </div>
         </CardContent>
@@ -136,7 +136,7 @@ export function MySubscriptions() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Mis Suscripciones ({subscriptions.length})
+            {t('mySubscriptions.title')} ({subscriptions.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -155,17 +155,17 @@ export function MySubscriptions() {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-semibold truncate">{sub.creatorName || 'Médico'}</h4>
+                    <h4 className="font-semibold truncate">{sub.creatorName || t('mySubscriptions.defaultDoctorName')}</h4>
                     {getTierBadge(sub.tier)}
                   </div>
                   
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Desde {format(sub.createdAt, 'dd MMM yyyy', { locale: es })}
+                      {t('mySubscriptions.since')} {format(sub.createdAt, 'dd MMM yyyy', { locale: es })}
                     </span>
                     {sub.tier !== 'free' && sub.pricePaid > 0 && (
-                      <span>${sub.pricePaid}/mes</span>
+                      <span>${sub.pricePaid}{t('mySubscriptions.perMonth')}</span>
                     )}
                   </div>
 
@@ -178,7 +178,7 @@ export function MySubscriptions() {
                         disabled={updatingPrefs === sub.id}
                       />
                       <span className="flex items-center gap-1">
-                        🔴 Lives
+                        🔴 {t('mySubscriptions.notifyLives')}
                       </span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -187,7 +187,7 @@ export function MySubscriptions() {
                         onCheckedChange={(v) => handleUpdateNotification(sub, 'notifyOnContent', v)}
                         disabled={updatingPrefs === sub.id}
                       />
-                      <span>📄 Contenido</span>
+                      <span>📄 {t('mySubscriptions.notifyContent')}</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <Switch
@@ -195,7 +195,7 @@ export function MySubscriptions() {
                         onCheckedChange={(v) => handleUpdateNotification(sub, 'notifyOnAvailability', v)}
                         disabled={updatingPrefs === sub.id}
                       />
-                      <span>📅 Horarios</span>
+                      <span>📅 {t('mySubscriptions.notifySchedule')}</span>
                     </label>
                   </div>
                 </div>
@@ -224,29 +224,28 @@ export function MySubscriptions() {
       <AlertDialog open={!!confirmCancelSub} onOpenChange={() => setConfirmCancelSub(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Cancelar suscripción?</AlertDialogTitle>
+            <AlertDialogTitle>{t('mySubscriptions.confirmCancelTitle')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Dejarás de seguir a <strong>{confirmCancelSub?.creatorName}</strong> y no recibirás 
-                  más notificaciones de sus lives, contenido ni disponibilidad.
+                  {t('mySubscriptions.confirmCancelDescriptionPrefix')} <strong>{confirmCancelSub?.creatorName}</strong> {t('mySubscriptions.confirmCancelDescriptionSuffix')}
                 </p>
                 {confirmCancelSub?.tier !== 'free' && confirmCancelSub?.expiresAt && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
                     <p className="text-sm font-medium text-warning flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      Tu suscripción de pago se mantendrá activa hasta el{' '}
+                      {t('mySubscriptions.paidActiveUntil')}{' '}
                       <strong>{format(confirmCancelSub.expiresAt, "dd 'de' MMMM yyyy", { locale: es })}</strong>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Después de esa fecha no se realizarán más cobros y perderás los beneficios de tu plan {confirmCancelSub.tier === 'premium' ? 'Premium' : 'Básico'}.
+                      {t('mySubscriptions.afterDateNoChargesPrefix')} {confirmCancelSub.tier === 'premium' ? t('mySubscriptions.tierPremium') : t('mySubscriptions.tierBasic')}.
                     </p>
                   </div>
                 )}
                 {confirmCancelSub?.tier !== 'free' && !confirmCancelSub?.expiresAt && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
                     <p className="text-sm text-warning">
-                      ⚠️ Tu suscripción de pago se cancelará al final del período de facturación actual. No se realizarán más cobros.
+                      {t('mySubscriptions.paidCancelEndOfPeriod')}
                     </p>
                   </div>
                 )}
@@ -254,7 +253,7 @@ export function MySubscriptions() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Mantener suscripción</AlertDialogCancel>
+            <AlertDialogCancel>{t('mySubscriptions.keepSubscription')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelSubscription}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -262,7 +261,7 @@ export function MySubscriptions() {
               {cancelingId ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Cancelar suscripción
+              {t('mySubscriptions.cancelSubscription')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,14 +25,11 @@ interface DoctorNote {
   attachments?: Attachment[] | null;
 }
 
-const noteSchema = z.object({
-  content: z.string().trim().min(1, 'La nota no puede estar vacía').max(2000, 'Máximo 2000 caracteres'),
-});
-
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB por archivo
 const MAX_FILES_PER_NOTE = 5;
 
 export function MyNotesWidget() {
+  const { t } = useLanguage();
   const { supabaseUser } = useAuth();
   const doctorId = supabaseUser?.id;
   const [notes, setNotes] = useState<DoctorNote[]>([]);
@@ -40,6 +38,14 @@ export function MyNotesWidget() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const noteSchema = z.object({
+    content: z
+      .string()
+      .trim()
+      .min(1, t('myNotesWidget.validationEmpty'))
+      .max(2000, t('myNotesWidget.validationMaxLength')),
+  });
 
   // URLs firmadas por path para previews
   const [signedMap, setSignedMap] = useState<Record<string, string>>({});
@@ -75,13 +81,13 @@ export function MyNotesWidget() {
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (pending.length + files.length > MAX_FILES_PER_NOTE) {
-      toast.error(`Máximo ${MAX_FILES_PER_NOTE} archivos por nota`);
+      toast.error(t('myNotesWidget.maxFilesError').replace('{count}', String(MAX_FILES_PER_NOTE)));
       return;
     }
     const valid: File[] = [];
     for (const f of files) {
       if (f.size > MAX_FILE_BYTES) {
-        toast.error(`${f.name} excede 10MB`);
+        toast.error(t('myNotesWidget.fileTooLarge').replace('{name}', f.name));
         continue;
       }
       valid.push(f);
@@ -99,7 +105,7 @@ export function MyNotesWidget() {
       return;
     }
     if (!doctorId) {
-      toast.error('Sesión expirada. Recarga la página.');
+      toast.error(t('myNotesWidget.sessionExpired'));
       return;
     }
     setSaving(true);
@@ -114,7 +120,7 @@ export function MyNotesWidget() {
         const { error: upErr } = await withTimeout(
           supabase.storage.from('doctor-content').upload(path, f, { contentType: f.type, upsert: false }),
           60_000,
-          `subida de ${f.name}`,
+          `${t('myNotesWidget.uploadLabel')} ${f.name}`,
         );
         if (upErr) throw upErr;
         uploaded.push({
@@ -145,49 +151,49 @@ export function MyNotesWidget() {
 
       setDraft('');
       setPending([]);
-      toast.success('Nota guardada');
+      toast.success(t('myNotesWidget.noteSaved'));
       load();
     } catch (err: any) {
       console.error('[MyNotesWidget] save error:', err);
-      if (err.code === '23503') toast.error('Tu perfil no está completo. Termina el onboarding primero.');
-      else if (err.code === '42501' || err.message?.toLowerCase().includes('row-level security')) toast.error('Permisos insuficientes (RLS). Verifica tu sesión.');
-      else toast.error(`No se pudo guardar: ${err.message}`);
+      if (err.code === '23503') toast.error(t('myNotesWidget.profileIncomplete'));
+      else if (err.code === '42501' || err.message?.toLowerCase().includes('row-level security')) toast.error(t('myNotesWidget.rlsError'));
+      else toast.error(`${t('myNotesWidget.saveError')} ${err.message}`);
     } finally {
       setSaving(false);
     }
   };
 
   const emailNote = async (n: DoctorNote) => {
-    const to = prompt('Email destinatario (paciente, colega o tu propio correo):');
+    const to = prompt(t('myNotesWidget.emailPrompt'));
     if (!to) return;
     const trimmed = to.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast.error('Email inválido');
+      toast.error(t('myNotesWidget.invalidEmail'));
       return;
     }
     try {
-      const subject = 'Nota clínica — Medical Masters';
+      const subject = t('myNotesWidget.emailSubject');
       const created = new Date(n.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
       const attachmentsList = (n.attachments && n.attachments.length > 0)
-        ? '\n\nAdjuntos referenciados:\n' + n.attachments.map(a => `• ${a.name}`).join('\n')
+        ? `\n\n${t('myNotesWidget.attachmentsReferenced')}\n` + n.attachments.map(a => `• ${a.name}`).join('\n')
         : '';
-      const body = `Nota guardada el ${created}\n\n${n.content}${attachmentsList}\n\n— Enviado desde Medical Masters`;
+      const body = `${t('myNotesWidget.noteSavedOn')} ${created}\n\n${n.content}${attachmentsList}\n\n— ${t('myNotesWidget.sentFrom')}`;
       const { error } = await supabase.functions.invoke('send-doctor-note', {
         body: { to: trimmed, subject, body, noteId: n.id },
       });
       if (error) throw error;
-      toast.success('Nota enviada por email');
+      toast.success(t('myNotesWidget.emailSent'));
     } catch (err: any) {
       // Fallback: open the user's mail client
-      const subject = encodeURIComponent('Nota clínica — Medical Masters');
+      const subject = encodeURIComponent(t('myNotesWidget.emailSubject'));
       const body = encodeURIComponent(`${n.content}\n\n— Medical Masters`);
       window.location.href = `mailto:${trimmed}?subject=${subject}&body=${body}`;
-      toast.message('Abriendo tu cliente de correo (servicio de email no configurado).');
+      toast.message(t('myNotesWidget.openingMailClient'));
     }
   };
 
   const remove = async (n: DoctorNote) => {
-    if (!confirm('¿Eliminar esta nota? También se borrarán los archivos adjuntos.')) return;
+    if (!confirm(t('myNotesWidget.confirmDelete'))) return;
     try {
       if (n.attachments && n.attachments.length > 0) {
         await supabase.storage.from('doctor-content').remove(n.attachments.map(a => a.path));
@@ -195,9 +201,9 @@ export function MyNotesWidget() {
       const { error } = await supabase.from('doctor_notes' as any).delete().eq('id', n.id);
       if (error) throw error;
       setNotes(prev => prev.filter(x => x.id !== n.id));
-      toast.success('Nota eliminada');
+      toast.success(t('myNotesWidget.noteDeleted'));
     } catch (err: any) {
-      toast.error(`No se pudo eliminar: ${err.message}`);
+      toast.error(`${t('myNotesWidget.deleteError')} ${err.message}`);
     }
   };
 
@@ -212,14 +218,14 @@ export function MyNotesWidget() {
       <CardHeader className="pb-2 sm:pb-3">
         <CardTitle className="text-sm sm:text-base flex items-center gap-2">
           <NotebookPen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-          Mis notas
+          {t('myNotesWidget.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <Textarea
           value={draft}
           onChange={e => setDraft(e.target.value)}
-          placeholder="Escribe una nota rápida (privada)..."
+          placeholder={t('myNotesWidget.placeholder')}
           rows={3}
           maxLength={2000}
           className="text-sm"
@@ -233,7 +239,7 @@ export function MyNotesWidget() {
                 {f.type.startsWith('image/') ? <ImageIcon className="w-3.5 h-3.5 text-primary" /> : <FileText className="w-3.5 h-3.5 text-primary" />}
                 <span className="truncate max-w-[140px]">{f.name}</span>
                 <span className="text-muted-foreground text-[10px]">({fmtBytes(f.size)})</span>
-                <button type="button" onClick={() => removePending(i)} className="text-destructive hover:text-destructive/70" aria-label="Quitar">
+                <button type="button" onClick={() => removePending(i)} className="text-destructive hover:text-destructive/70" aria-label={t('myNotesWidget.removeAria')}>
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -244,7 +250,7 @@ export function MyNotesWidget() {
         <div className="flex items-center justify-between gap-2">
           <Button type="button" size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => fileRef.current?.click()} disabled={saving || pending.length >= MAX_FILES_PER_NOTE}>
             <Paperclip className="w-4 h-4" />
-            Adjuntar
+            {t('myNotesWidget.attach')}
             {pending.length > 0 && <span className="text-[10px] text-muted-foreground">({pending.length}/{MAX_FILES_PER_NOTE})</span>}
           </Button>
           <input
@@ -256,15 +262,15 @@ export function MyNotesWidget() {
             onChange={handleFilePick}
           />
           <Button size="sm" onClick={save} disabled={saving || !draft.trim()}>
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar nota'}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('myNotesWidget.saveNote')}
           </Button>
         </div>
 
         <div className="space-y-2">
           {loading ? (
-            <p className="text-xs text-muted-foreground">Cargando...</p>
+            <p className="text-xs text-muted-foreground">{t('myNotesWidget.loading')}</p>
           ) : notes.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Aún no tienes notas.</p>
+            <p className="text-xs text-muted-foreground">{t('myNotesWidget.noNotes')}</p>
           ) : notes.map(n => (
             <div key={n.id} className="group flex items-start gap-2 p-2.5 bg-muted/50 rounded-lg">
               <div className="flex-1 min-w-0">
@@ -309,8 +315,8 @@ export function MyNotesWidget() {
                   variant="ghost"
                   className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => emailNote(n)}
-                  aria-label="Enviar nota por email"
-                  title="Enviar por email"
+                  aria-label={t('myNotesWidget.sendByEmailAria')}
+                  title={t('myNotesWidget.sendByEmailTitle')}
                 >
                   <Mail className="w-3.5 h-3.5 text-primary" />
                 </Button>
@@ -319,7 +325,7 @@ export function MyNotesWidget() {
                   variant="ghost"
                   className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => remove(n)}
-                  aria-label="Eliminar nota"
+                  aria-label={t('myNotesWidget.deleteNoteAria')}
                 >
                   <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 </Button>

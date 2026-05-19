@@ -274,7 +274,7 @@ export default function UserProfile() {
   const handleSendPhoneOtp = async () => {
     const fullPhone = phoneCountryCode.replace('+', '') + editedPhone.replace(/\D/g, '');
     if (editedPhone.replace(/\D/g, '').length < 10) {
-      toast.error('Ingresa un número de teléfono válido (mínimo 10 dígitos)');
+      toast.error(t('userProfilePage.phoneInvalid'));
       return;
     }
     setPhoneSendingOtp(true);
@@ -287,19 +287,19 @@ export default function UserProfile() {
       const result = res.data;
       if (result.rateLimited) {
         setPhoneRateLimited(true);
-        toast.error(result.error || 'Solo puedes verificar tu teléfono 1 vez al día.');
+        toast.error(result.error || t('userProfilePage.phoneRateLimit'));
         return;
       }
       if (result.alreadyVerified) {
-        toast.success('Este teléfono ya está verificado');
+        toast.success(t('userProfilePage.phoneAlreadyVerified'));
         setUserPhone(fullPhone);
         setIsEditingPhone(false);
         return;
       }
       setPhoneOtpSent(true);
-      toast.success(result.smsSent ? 'Código enviado por SMS' : 'Código enviado (revisa tus notificaciones)');
+      toast.success(result.smsSent ? t('userProfilePage.otpSentSms') : t('userProfilePage.otpSentNotification'));
     } catch (err: any) {
-      toast.error(err.message || 'Error al enviar código');
+      toast.error(err.message || t('userProfilePage.otpSendError'));
     } finally {
       setPhoneSendingOtp(false);
     }
@@ -316,16 +316,16 @@ export default function UserProfile() {
       if (res.error) throw new Error(res.error.message);
       const result = res.data;
       if (!result.success) {
-        toast.error(result.error || 'Código inválido o expirado');
+        toast.error(result.error || t('userProfilePage.otpInvalid'));
         return;
       }
-      toast.success('¡Teléfono verificado exitosamente!');
+      toast.success(t('userProfilePage.phoneVerifiedSuccess'));
       setUserPhone(fullPhone);
       setIsEditingPhone(false);
       setPhoneOtpSent(false);
       setPhoneOtpCode('');
     } catch (err: any) {
-      toast.error(err.message || 'Error al verificar');
+      toast.error(err.message || t('userProfilePage.phoneVerifyError'));
     } finally {
       setIsVerifyingPhone(false);
     }
@@ -333,22 +333,22 @@ export default function UserProfile() {
 
   const handleChangeEmail = async () => {
     if (!editedEmail.trim() || !editedEmail.includes('@')) {
-      toast.error('Ingresa un correo electrónico válido');
+      toast.error(t('userProfilePage.emailInvalid'));
       return;
     }
     if (editedEmail.trim() === user.email) {
-      toast.error('Ingresa un correo diferente al actual');
+      toast.error(t('userProfilePage.emailSameAsCurrent'));
       return;
     }
     setIsSavingEmail(true);
     try {
       const { error } = await supabase.auth.updateUser({ email: editedEmail.trim() });
       if (error) throw error;
-      toast.success('Se envió un enlace de verificación a tu nuevo correo. Tu email cambiará cuando confirmes el enlace.');
+      toast.success(t('userProfilePage.emailVerificationSent'));
       setIsEditingEmail(false);
       setEditedEmail('');
     } catch (err: any) {
-      toast.error(err.message || 'Error al actualizar correo');
+      toast.error(err.message || t('userProfilePage.emailUpdateError'));
     } finally {
       setIsSavingEmail(false);
     }
@@ -676,21 +676,21 @@ export default function UserProfile() {
                               type="email"
                               value={editedEmail}
                               onChange={(e) => setEditedEmail(e.target.value)}
-                              placeholder="nuevo@correo.com"
+                              placeholder={t('userProfilePage.newEmailPlaceholder')}
                               className="flex-1 min-w-[180px] h-9 text-sm"
                               autoFocus
                               onKeyDown={(e) => e.key === 'Enter' && handleChangeEmail()}
                             />
                             <Button size="sm" onClick={handleChangeEmail} disabled={isSavingEmail} className="h-9 min-h-[44px] sm:min-h-0">
                               {isSavingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                              <span className="ml-1 hidden sm:inline">Enviar</span>
+                              <span className="ml-1 hidden sm:inline">{t('userProfilePage.send')}</span>
                             </Button>
                             <Button size="sm" variant="ghost" className="h-9" onClick={() => { setIsEditingEmail(false); setEditedEmail(''); }}>
                               <X className="w-4 h-4" />
                             </Button>
                           </div>
                           <p className="text-[11px] text-muted-foreground ml-1">
-                            Se enviará un enlace de verificación al nuevo correo. Tu email cambiará cuando confirmes el enlace.
+                            {t('userProfilePage.emailVerificationNotice')}
                           </p>
                         </motion.div>
                       ) : (
@@ -700,7 +700,7 @@ export default function UserProfile() {
                             <span className="text-muted-foreground break-all sm:break-normal truncate max-w-[200px] sm:max-w-none">{user.email}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
+                            <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.verified')}</Badge>
                             <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
@@ -741,14 +741,14 @@ export default function UserProfile() {
                                   inputMode="numeric"
                                   value={editedPhone}
                                   onChange={(e) => setEditedPhone(e.target.value.replace(/[^\d]/g, ''))}
-                                  placeholder="10 dígitos"
+                                  placeholder={t('userProfilePage.tenDigits')}
                                   className="flex-1 min-w-[140px] h-9 text-sm"
                                   maxLength={15}
                                   autoFocus
                                 />
                                 <Button size="sm" onClick={handleSendPhoneOtp} disabled={phoneSendingOtp || phoneRateLimited} className="h-9 min-h-[44px] sm:min-h-0">
                                   {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                  <span className="ml-1 hidden sm:inline">Enviar SMS</span>
+                                  <span className="ml-1 hidden sm:inline">{t('userProfilePage.sendSms')}</span>
                                 </Button>
                                 <Button size="sm" variant="ghost" className="h-9" onClick={resetPhoneEdit}>
                                   <X className="w-4 h-4" />
@@ -757,16 +757,16 @@ export default function UserProfile() {
                               {phoneRateLimited && (
                                 <p className="text-[11px] text-destructive flex items-center gap-1">
                                   <AlertCircle className="w-3 h-3" />
-                                  Solo puedes verificar tu teléfono 1 vez al día. Intenta mañana.
+                                  {t('userProfilePage.phoneRateLimitTryTomorrow')}
                                 </p>
                               )}
                               <p className="text-[11px] text-muted-foreground">
-                                Tu número se usa para confirmar códigos de seguridad (OTP) cuando los doctores necesiten acceder a tu expediente. También puedes usar email.
+                                {t('userProfilePage.phoneUsageInfo')}
                               </p>
                             </>
                           ) : (
                             <div className="space-y-3">
-                              <p className="text-sm text-muted-foreground">Ingresa el código de 6 dígitos enviado a {phoneCountryCode} {editedPhone}</p>
+                              <p className="text-sm text-muted-foreground">{t('userProfilePage.enterOtpInstruction')} {phoneCountryCode} {editedPhone}</p>
                               <div className="flex items-center justify-center sm:justify-start">
                                 <InputOTP maxLength={6} value={phoneOtpCode} onChange={setPhoneOtpCode}>
                                   <InputOTPGroup>
@@ -779,10 +779,10 @@ export default function UserProfile() {
                               <div className="flex items-center gap-2">
                                 <Button size="sm" onClick={handleVerifyPhoneOtp} disabled={isVerifyingPhone || phoneOtpCode.length !== 6} className="min-h-[44px] sm:min-h-0">
                                   {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-                                  Verificar
+                                  {t('userProfilePage.verify')}
                                 </Button>
                                 <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>
-                                  Cancelar
+                                  {t('common.cancel')}
                                 </Button>
                               </div>
                             </div>
@@ -800,19 +800,19 @@ export default function UserProfile() {
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
+                                  <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.verified')}</Badge>
                                   <Button size="sm" variant="ghost" className="h-7 text-xs px-2 min-h-[44px] sm:min-h-0" onClick={() => setIsEditingPhone(true)}>
-                                    Cambiar
+                                    {t('userProfilePage.change')}
                                   </Button>
                                 </div>
                               </>
                             ) : (
                               <div className="flex items-center gap-2">
                                 <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                                <span className="text-sm text-muted-foreground italic">Sin verificar</span>
+                                <span className="text-sm text-muted-foreground italic">{t('userProfilePage.notVerified')}</span>
                                 <Button size="sm" variant="outline" className="h-7 text-xs px-2 min-h-[44px] sm:min-h-0" onClick={() => setIsEditingPhone(true)}>
                                   <Phone className="w-3 h-3 mr-1" />
-                                  Agregar teléfono
+                                  {t('userProfilePage.addPhone')}
                                 </Button>
                               </div>
                             )
@@ -823,7 +823,7 @@ export default function UserProfile() {
                   </div>
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1 justify-center sm:justify-start">
                     <Lock className="w-3 h-3" />
-                    Datos privados — solo tú puedes ver esta información
+                    {t('userProfilePage.privateDataNotice')}
                   </p>
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
                     {user.countryFlag && (
@@ -919,7 +919,7 @@ export default function UserProfile() {
                           disabled={isSavingLocation}
                           onClick={() => {
                             if (!('geolocation' in navigator)) {
-                              toast.error('Tu navegador no soporta geolocalización');
+                              toast.error(t('userProfilePage.geolocationUnsupported'));
                               return;
                             }
                             navigator.geolocation.getCurrentPosition(
@@ -939,7 +939,7 @@ export default function UserProfile() {
                                   'toluca': { lat: 19.2826, lng: -99.6557 },
                                 };
                                 const R = 6371;
-                                let nearest = 'Ciudad De Mexico';
+                                let nearest = t('userProfilePage.defaultCity');
                                 let minDist = Infinity;
                                 for (const [city, coords] of Object.entries(CITY_COORDS)) {
                                   const dLat = (coords.lat - pos.coords.latitude) * Math.PI / 180;
@@ -949,9 +949,9 @@ export default function UserProfile() {
                                   if (dist < minDist) { minDist = dist; nearest = city.replace(/\b\w/g, c => c.toUpperCase()); }
                                 }
                                 setEditedLocation(nearest);
-                                toast.success(`Ubicación detectada: ${nearest}`);
+                                toast.success(`${t('userProfilePage.locationDetected')}: ${nearest}`);
                               },
-                              () => toast.error('No se pudo obtener tu ubicación')
+                              () => toast.error(t('userProfilePage.locationError'))
                             );
                           }}
                         >
@@ -1212,33 +1212,33 @@ export default function UserProfile() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-2 space-y-2"
                       >
-                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Actual</Badge></p>
+                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.current')}</Badge></p>
                         <div className="flex items-center gap-2 ml-7 flex-wrap">
                           <Input
                             type="email"
                             value={editedEmail}
                             onChange={(e) => setEditedEmail(e.target.value)}
-                            placeholder="nuevo@correo.com"
+                            placeholder={t('userProfilePage.newEmailPlaceholder')}
                             className="flex-1 min-w-[180px] h-9"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleChangeEmail()}
                           />
                           <Button size="sm" onClick={handleChangeEmail} disabled={isSavingEmail} className="min-h-[44px] sm:min-h-0">
                             {isSavingEmail ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                            Enviar verificación
+                            {t('userProfilePage.sendVerification')}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => { setIsEditingEmail(false); setEditedEmail(''); }}>
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
                         <p className="text-[11px] text-muted-foreground ml-7">
-                          Se enviará un enlace de verificación al nuevo correo. Tu email cambiará cuando confirmes el enlace.
+                          {t('userProfilePage.emailVerificationNotice')}
                         </p>
                       </motion.div>
                     ) : (
                       <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
                         {user.email}
-                        <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
+                        <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.verified')}</Badge>
                       </p>
                     )}
                   </AnimatePresence>
@@ -1250,7 +1250,7 @@ export default function UserProfile() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Teléfono</span>
+                      <span className="text-muted-foreground">{t('userProfilePage.phone')}</span>
                     </div>
                     {!isEditingPhone && (
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setIsEditingPhone(true)}>
@@ -1287,14 +1287,14 @@ export default function UserProfile() {
                                 inputMode="numeric"
                                 value={editedPhone}
                                 onChange={(e) => setEditedPhone(e.target.value.replace(/[^\d]/g, ''))}
-                                placeholder="10 dígitos"
+                                placeholder={t('userProfilePage.tenDigits')}
                                 className="flex-1 min-w-[130px] h-9"
                                 maxLength={15}
                                 autoFocus
                               />
                               <Button size="sm" onClick={handleSendPhoneOtp} disabled={phoneSendingOtp || phoneRateLimited} className="min-h-[44px] sm:min-h-0">
                                 {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                                Enviar SMS
+                                {t('userProfilePage.sendSms')}
                               </Button>
                               <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>
                                 <X className="w-4 h-4" />
@@ -1302,13 +1302,13 @@ export default function UserProfile() {
                             </div>
                             {phoneRateLimited && (
                               <p className="text-[11px] text-destructive flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3" /> Límite alcanzado (1/día). Intenta mañana.
+                                <AlertCircle className="w-3 h-3" /> {t('userProfilePage.phoneRateLimitShort')}
                               </p>
                             )}
                           </>
                         ) : (
                           <div className="space-y-3">
-                            <p className="text-sm text-muted-foreground">Código enviado a {phoneCountryCode} {editedPhone}</p>
+                            <p className="text-sm text-muted-foreground">{t('userProfilePage.codeSentTo')} {phoneCountryCode} {editedPhone}</p>
                             <InputOTP maxLength={6} value={phoneOtpCode} onChange={setPhoneOtpCode}>
                               <InputOTPGroup>
                                 {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
@@ -1317,9 +1317,9 @@ export default function UserProfile() {
                             <div className="flex gap-2">
                               <Button size="sm" onClick={handleVerifyPhoneOtp} disabled={isVerifyingPhone || phoneOtpCode.length !== 6} className="min-h-[44px] sm:min-h-0">
                                 {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-                                Verificar
+                                {t('userProfilePage.verify')}
                               </Button>
-                              <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>Cancelar</Button>
+                              <Button size="sm" variant="ghost" onClick={resetPhoneEdit}>{t('common.cancel')}</Button>
                             </div>
                           </div>
                         )}
@@ -1330,10 +1330,10 @@ export default function UserProfile() {
                           userPhone ? (
                             <>
                               {userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3')}
-                              <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">Verificado</Badge>
+                              <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.verified')}</Badge>
                             </>
                           ) : (
-                            <span className="text-muted-foreground italic">Sin verificar</span>
+                            <span className="text-muted-foreground italic">{t('userProfilePage.notVerified')}</span>
                           )
                         )}
                       </p>
@@ -1421,7 +1421,7 @@ export default function UserProfile() {
                     <>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/doctor/dashboard')}>
                         <Stethoscope className="w-4 h-4" />
-                        Dashboard
+                        {t('userProfilePage.dashboard')}
                       </Button>
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/doctor/recordings')}>
                         <Camera className="w-4 h-4" />
@@ -1464,7 +1464,7 @@ export default function UserProfile() {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
-              <AvatarImage src={previewUrl || undefined} alt="Preview" />
+              <AvatarImage src={previewUrl || undefined} alt={t('userProfilePage.previewAlt')} />
               <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
                 {getInitials(user.name)}
               </AvatarFallback>

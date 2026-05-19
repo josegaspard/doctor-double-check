@@ -10,7 +10,7 @@ import { Upload, Trash2, Loader2, PenLine, Image as ImageIcon } from 'lucide-rea
 
 export function SignatureUpload() {
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -52,11 +52,11 @@ export function SignatureUpload() {
     if (!file || !user?.id) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error(language === 'es' ? 'Solo se permiten imágenes (PNG, JPG)' : 'Only images allowed (PNG, JPG)');
+      toast.error(t('signatureUpload.errorOnlyImages'));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error(language === 'es' ? 'La imagen no debe superar 2MB' : 'Image must be under 2MB');
+      toast.error(t('signatureUpload.errorMaxSize'));
       return;
     }
 
@@ -83,7 +83,7 @@ export function SignatureUpload() {
       const { data: signedData, error: signedErr } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 60 * 24 * 365);
       if (signedErr) throw signedErr;
       const signatureUrl2 = signedData?.signedUrl;
-      if (!signatureUrl2) throw new Error('No se pudo firmar la URL');
+      if (!signatureUrl2) throw new Error(t('signatureUpload.errorSignUrl'));
 
       const { error: updateError } = await supabase
         .from('doctor_profiles')
@@ -92,10 +92,10 @@ export function SignatureUpload() {
       if (updateError) throw updateError;
 
       setSignatureUrl(signatureUrl2);
-      toast.success(language === 'es' ? 'Firma actualizada' : 'Signature updated');
+      toast.success(t('signatureUpload.successUpdated'));
     } catch (err: any) {
       console.error('signature upload error', err);
-      toast.error(err.message || 'Error al subir la firma');
+      toast.error(err.message || t('signatureUpload.errorUpload'));
     } finally {
       setIsUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -121,9 +121,9 @@ export function SignatureUpload() {
         .update({ signature_url: null })
         .eq('user_id', user.id);
       setSignatureUrl(null);
-      toast.success(language === 'es' ? 'Firma eliminada' : 'Signature removed');
+      toast.success(t('signatureUpload.successRemoved'));
     } catch (err: any) {
-      toast.error(err.message || 'Error');
+      toast.error(err.message || t('signatureUpload.errorGeneric'));
     } finally {
       setIsUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -135,21 +135,19 @@ export function SignatureUpload() {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <PenLine className="w-4 h-4 text-primary" />
-          {language === 'es' ? 'Firma / Sello Digital' : 'Digital Signature / Stamp'}
+          {t('signatureUpload.title')}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          {language === 'es' 
-            ? 'Sube una imagen PNG o JPG de tu firma o sello. Se incluirá en las recetas que generes.'
-            : 'Upload a PNG or JPG image of your signature or stamp. It will be included in prescriptions you generate.'}
+          {t('signatureUpload.description')}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {signatureUrl ? (
           <div className="space-y-3">
             <div className="border rounded-lg p-4 bg-muted/30 flex items-center justify-center">
-              <img 
-                src={signatureUrl} 
-                alt="Firma" 
+              <img
+                src={signatureUrl}
+                alt={t('signatureUpload.imageAlt')}
                 className="max-h-24 w-auto object-contain"
               />
             </div>
@@ -162,7 +160,7 @@ export function SignatureUpload() {
                 disabled={isUploading}
               >
                 {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                {language === 'es' ? 'Cambiar' : 'Change'}
+                {t('signatureUpload.change')}
               </Button>
               <Button 
                 variant="outline" 
@@ -172,7 +170,7 @@ export function SignatureUpload() {
                 disabled={isUploading}
               >
                 <Trash2 className="w-3 h-3" />
-                {language === 'es' ? 'Eliminar' : 'Remove'}
+                {t('signatureUpload.remove')}
               </Button>
             </div>
           </div>
@@ -183,9 +181,9 @@ export function SignatureUpload() {
           >
             <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              {language === 'es' ? 'Haz clic para subir tu firma o sello' : 'Click to upload your signature or stamp'}
+              {t('signatureUpload.uploadPrompt')}
             </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG — máx 2MB</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">{t('signatureUpload.fileHint')}</p>
           </div>
         )}
         <input 

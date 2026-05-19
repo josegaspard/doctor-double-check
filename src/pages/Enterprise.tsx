@@ -1,61 +1,64 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Shield, Users, BarChart3, Headphones, Globe, CheckCircle, Zap, Briefcase, Factory, Truck, Banknote, Store, RadioTower } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
-
-const features = [
-  {
-    icon: Users,
-    title: 'Gestión de Empleados',
-    description: 'Administra la salud de tu equipo con acceso a consultas médicas ilimitadas para todos tus colaboradores.',
-  },
-  {
-    icon: Shield,
-    title: 'Cumplimiento Normativo',
-    description: 'Cumple con las regulaciones de salud ocupacional con expedientes digitales y reportes automatizados.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics Avanzados',
-    description: 'Dashboard ejecutivo con métricas de uso, satisfacción y ROI de tu programa de salud corporativa.',
-  },
-  {
-    icon: Headphones,
-    title: 'Soporte Dedicado',
-    description: 'Account manager dedicado y soporte técnico prioritario 24/7 para tu organización.',
-  },
-  {
-    icon: Globe,
-    title: 'Multiubicación',
-    description: 'Gestiona múltiples sucursales y equipos distribuidos geográficamente desde una sola plataforma.',
-  },
-  {
-    icon: Zap,
-    title: 'Integración API',
-    description: 'Conecta con tus sistemas de RRHH, nómina y beneficios existentes mediante nuestra API robusta.',
-  },
-];
-
-const stats = [
-  { value: '40%', label: 'Reducción en ausentismo' },
-  { value: '3x', label: 'ROI promedio' },
-  { value: '95%', label: 'Satisfacción empleados' },
-  { value: '24/7', label: 'Soporte disponible' },
-];
-
-// Industrias representativas (placeholders genéricos, sin marcas reales).
-// El equipo comercial reemplaza estos sectores con casos firmados conforme se
-// cierren contratos. Importante: subir SVG propios de cada cliente, NO usar
-// logos de marcas sin contrato y consentimiento por escrito.
-const trustedBy = [
-  { icon: Factory,    label: 'Manufactura',        sector: 'B2B · 500+ empleados' },
-  { icon: Banknote,   label: 'Servicios Financieros', sector: 'Banca y seguros' },
-  { icon: Truck,      label: 'Logística',          sector: 'Cadena de suministro' },
-  { icon: Store,      label: 'Retail',             sector: 'Cadena nacional' },
-  { icon: RadioTower, label: 'Telecomunicaciones', sector: 'Operador nacional' },
-  { icon: Briefcase,  label: 'Servicios Corporativos', sector: 'Consultoría global' },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Enterprise() {
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: Users,
+      title: t('enterprisePage.features.employeeManagement.title'),
+      description: t('enterprisePage.features.employeeManagement.description'),
+    },
+    {
+      icon: Shield,
+      title: t('enterprisePage.features.compliance.title'),
+      description: t('enterprisePage.features.compliance.description'),
+    },
+    {
+      icon: BarChart3,
+      title: t('enterprisePage.features.analytics.title'),
+      description: t('enterprisePage.features.analytics.description'),
+    },
+    {
+      icon: Headphones,
+      title: t('enterprisePage.features.support.title'),
+      description: t('enterprisePage.features.support.description'),
+    },
+    {
+      icon: Globe,
+      title: t('enterprisePage.features.multiLocation.title'),
+      description: t('enterprisePage.features.multiLocation.description'),
+    },
+    {
+      icon: Zap,
+      title: t('enterprisePage.features.apiIntegration.title'),
+      description: t('enterprisePage.features.apiIntegration.description'),
+    },
+  ];
+
+  const stats = [
+    { value: '40%', label: t('enterprisePage.stats.absenteeism') },
+    { value: '3x', label: t('enterprisePage.stats.roi') },
+    { value: '95%', label: t('enterprisePage.stats.satisfaction') },
+    { value: '24/7', label: t('enterprisePage.stats.support') },
+  ];
+
+  // Industrias representativas (placeholders genéricos, sin marcas reales).
+  // El equipo comercial reemplaza estos sectores con casos firmados conforme se
+  // cierren contratos. Importante: subir SVG propios de cada cliente, NO usar
+  // logos de marcas sin contrato y consentimiento por escrito.
+  const trustedBy = [
+    { icon: Factory,    label: t('enterprisePage.trustedBy.manufacturing.label'), sector: t('enterprisePage.trustedBy.manufacturing.sector') },
+    { icon: Banknote,   label: t('enterprisePage.trustedBy.finance.label'),       sector: t('enterprisePage.trustedBy.finance.sector') },
+    { icon: Truck,      label: t('enterprisePage.trustedBy.logistics.label'),     sector: t('enterprisePage.trustedBy.logistics.sector') },
+    { icon: Store,      label: t('enterprisePage.trustedBy.retail.label'),        sector: t('enterprisePage.trustedBy.retail.sector') },
+    { icon: RadioTower, label: t('enterprisePage.trustedBy.telecom.label'),       sector: t('enterprisePage.trustedBy.telecom.sector') },
+    { icon: Briefcase,  label: t('enterprisePage.trustedBy.corporate.label'),     sector: t('enterprisePage.trustedBy.corporate.sector') },
+  ];
+
   return (
     <MainLayout>
 
@@ -65,26 +68,26 @@ export default function Enterprise() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Enterprise</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('enterprisePage.hero.badge')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Salud corporativa <span className="text-white">de clase mundial</span>
+              {t('enterprisePage.hero.titleStart')} <span className="text-white">{t('enterprisePage.hero.titleEnd')}</span>
             </h1>
             <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
-              Potencia el bienestar de tu equipo con nuestra plataforma de telemedicina diseñada para empresas.
+              {t('enterprisePage.hero.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link 
-                to="/contact" 
+              <Link
+                to="/contact"
                 className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                Solicitar Demo
+                {t('enterprisePage.hero.ctaDemo')}
               </Link>
               <Link
                 to="/contact"
                 className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/15 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
               >
-                Hablar con Ventas
+                {t('enterprisePage.hero.ctaSales')}
               </Link>
             </div>
           </div>
@@ -109,12 +112,12 @@ export default function Enterprise() {
       <section className="py-12 sm:py-24 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-3 sm:mb-4">
-            Solución completa para tu empresa
+            {t('enterprisePage.featuresSection.title')}
           </h2>
           <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-6 sm:mb-12 text-sm sm:text-base">
-            Todo lo que necesitas para implementar un programa de salud digital exitoso.
+            {t('enterprisePage.featuresSection.subtitle')}
           </p>
-          
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, index) => (
               <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
@@ -133,10 +136,10 @@ export default function Enterprise() {
       <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-lg sm:text-2xl font-bold text-center text-white mb-2 sm:mb-3">
-            Industrias que confían en Medical Masters
+            {t('enterprisePage.trustedBySection.title')}
           </h2>
           <p className="text-xs sm:text-sm text-white/80 text-center max-w-xl mx-auto mb-6 sm:mb-10">
-            Empresas de distintos sectores eligen nuestra plataforma para cuidar a sus colaboradores.
+            {t('enterprisePage.trustedBySection.subtitle')}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
             {trustedBy.map((item, index) => (
@@ -161,57 +164,57 @@ export default function Enterprise() {
       <section className="py-12 sm:py-24 bg-background">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-6 sm:mb-12">
-            Planes Enterprise
+            {t('enterprisePage.plansSection.title')}
           </h2>
-          
+
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {/* Starter */}
             <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
-              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">Starter</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Para equipos pequeños</p>
-              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Desde $5,000<span className="text-xs sm:text-sm font-normal text-muted-foreground">/mes</span></p>
+              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">{t('enterprisePage.plansSection.starter.name')}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{t('enterprisePage.plansSection.starter.description')}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">{t('enterprisePage.plansSection.starter.priceFrom')}<span className="text-xs sm:text-sm font-normal text-muted-foreground">{t('enterprisePage.plansSection.starter.priceSuffix')}</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Hasta 50 empleados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Consultas ilimitadas</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Soporte por email</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.starter.feature1')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.starter.feature2')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.starter.feature3')}</li>
               </ul>
               <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
-                Contactar
+                {t('enterprisePage.plansSection.starter.cta')}
               </Link>
             </div>
-            
+
             {/* Pro */}
             <div className="bg-[#00768b] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-secondary text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
-                POPULAR
+                {t('enterprisePage.plansSection.pro.badge')}
               </div>
-              <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 mt-2 sm:mt-0">Pro</h3>
-              <p className="text-xs sm:text-sm text-white/85 mb-3 sm:mb-4">Para empresas en crecimiento</p>
-              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Desde $15,000<span className="text-xs sm:text-sm font-normal text-white/85">/mes</span></p>
+              <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 mt-2 sm:mt-0">{t('enterprisePage.plansSection.pro.name')}</h3>
+              <p className="text-xs sm:text-sm text-white/85 mb-3 sm:mb-4">{t('enterprisePage.plansSection.pro.description')}</p>
+              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{t('enterprisePage.plansSection.pro.priceFrom')}<span className="text-xs sm:text-sm font-normal text-white/85">{t('enterprisePage.plansSection.pro.priceSuffix')}</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Hasta 250 empleados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Analytics avanzados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Account manager</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />Integración API</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature1')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature2')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature3')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature4')}</li>
               </ul>
               <Link to="/contact" className="block text-center py-2.5 sm:py-3 bg-white text-secondary rounded-xl font-bold hover:bg-slate-100 transition-colors text-sm">
-                Contactar
+                {t('enterprisePage.plansSection.pro.cta')}
               </Link>
             </div>
-            
+
             {/* Enterprise */}
             <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
-              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">Enterprise</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Para grandes organizaciones</p>
-              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">Personalizado</p>
+              <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">{t('enterprisePage.plansSection.enterprise.name')}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{t('enterprisePage.plansSection.enterprise.description')}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">{t('enterprisePage.plansSection.enterprise.price')}</p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Empleados ilimitados</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />SLA garantizado</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Despliegue on-premise</li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />Soporte 24/7</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature1')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature2')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature3')}</li>
+                <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature4')}</li>
               </ul>
               <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
-                Contactar
+                {t('enterprisePage.plansSection.enterprise.cta')}
               </Link>
             </div>
           </div>
@@ -221,15 +224,15 @@ export default function Enterprise() {
       {/* CTA */}
       <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para transformar la salud de tu empresa?</h2>
+          <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('enterprisePage.cta.title')}</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
-            Agenda una demo personalizada y descubre cómo podemos ayudar a tu organización.
+            {t('enterprisePage.cta.subtitle')}
           </p>
-          <Link 
-            to="/contact" 
+          <Link
+            to="/contact"
             className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
           >
-            Solicitar Demo Gratuita
+            {t('enterprisePage.cta.button')}
           </Link>
         </div>
       </section>

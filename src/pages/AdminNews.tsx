@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { NewsEditor } from '@/components/admin/NewsEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,7 @@ interface DoctorPermission {
 
 export default function AdminNews() {
   const { role, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -218,16 +220,16 @@ export default function AdminNews() {
         published_at: !item.is_published ? new Date().toISOString() : null,
       })
       .eq('id', item.id);
-    if (error) { toast.error('Error'); return; }
-    toast.success(item.is_published ? 'Despublicada' : 'Publicada');
+    if (error) { toast.error(t('adminNews.toast.error')); return; }
+    toast.success(item.is_published ? t('adminNews.toast.unpublished') : t('adminNews.toast.published'));
     fetchNews();
   };
 
   const deleteItem = async (id: string) => {
-    if (!confirm('¿Eliminar esta noticia?')) return;
+    if (!confirm(t('adminNews.toast.deleteConfirm'))) return;
     const { error } = await supabase.from('medical_news').delete().eq('id', id);
-    if (error) { toast.error('Error al eliminar'); return; }
-    toast.success('Noticia eliminada');
+    if (error) { toast.error(t('adminNews.toast.deleteError')); return; }
+    toast.success(t('adminNews.toast.newsDeleted'));
     fetchNews();
   };
 
@@ -246,17 +248,17 @@ export default function AdminNews() {
         await supabase.from('notifications').insert({
           user_id: doctor.user_id,
           type: 'system' as any,
-          title: '📰 Permiso de publicación otorgado',
-          message: 'Se te ha otorgado permiso para crear y publicar artículos en el blog médico. ¡Ve a la sección de noticias para empezar!',
+          title: t('adminNews.notification.title'),
+          message: t('adminNews.notification.message'),
           data: { action_url: '/news' },
         });
       }
 
-      toast.success(newValue ? 'Permiso otorgado' : 'Permiso revocado');
+      toast.success(newValue ? t('adminNews.toast.permissionGranted') : t('adminNews.toast.permissionRevoked'));
       fetchDoctors();
     } catch (error) {
       console.error('Error toggling news permission:', error);
-      toast.error('Error al cambiar permiso');
+      toast.error(t('adminNews.toast.permissionToggleError'));
     } finally {
       setTogglingId(null);
     }
@@ -274,11 +276,11 @@ export default function AdminNews() {
       <MainLayout>
         <div className="container mx-auto px-4 py-6 max-w-4xl">
           <Button variant="ghost" className="mb-4 gap-2 hidden sm:inline-flex" onClick={() => { setIsCreating(false); setEditingItem(null); }}>
-            <ArrowLeft className="w-4 h-4" /> Volver
+            <ArrowLeft className="w-4 h-4" /> {t('adminNews.back')}
           </Button>
           <Card>
             <CardHeader>
-              <CardTitle>{editingItem ? 'Editar noticia' : 'Nueva noticia'}</CardTitle>
+              <CardTitle>{editingItem ? t('adminNews.editNews') : t('adminNews.newNews')}</CardTitle>
             </CardHeader>
             <CardContent>
               <NewsEditor
@@ -312,20 +314,20 @@ export default function AdminNews() {
       <div className="container mx-auto px-4 py-6 max-w-5xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(role === 'admin' ? '/admin' : '/news')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground hidden sm:inline-flex">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          {role === 'admin' ? 'Volver al panel' : 'Volver a noticias'}
+          {role === 'admin' ? t('adminNews.backToAdmin') : t('adminNews.backToNews')}
         </Button>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
               <Newspaper className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              Gestión de Noticias
+              {t('adminNews.title')}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">{news.length} noticias</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('adminNews.count').replace('{count}', String(news.length))}</p>
           </div>
           {mainTab === 'articles' && (
             <Button onClick={() => setIsCreating(true)} className="gap-2 w-full sm:w-auto">
-              <Plus className="w-4 h-4" /> Nueva noticia
+              <Plus className="w-4 h-4" /> {t('adminNews.newNews')}
             </Button>
           )}
         </div>
@@ -333,11 +335,11 @@ export default function AdminNews() {
         <Tabs value={mainTab} onValueChange={setMainTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="articles" className="gap-2">
-              <Newspaper className="w-4 h-4" /> Artículos
+              <Newspaper className="w-4 h-4" /> {t('adminNews.tabs.articles')}
             </TabsTrigger>
             {role === 'admin' && (
               <TabsTrigger value="permissions" className="gap-2">
-                <Users className="w-4 h-4" /> Permisos de publicación
+                <Users className="w-4 h-4" /> {t('adminNews.tabs.permissions')}
               </TabsTrigger>
             )}
           </TabsList>
@@ -348,9 +350,9 @@ export default function AdminNews() {
             ) : news.length === 0 ? (
               <Card className="p-12 text-center">
                 <Newspaper className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No hay noticias</h3>
-                <p className="text-muted-foreground mb-4">Crea tu primera noticia</p>
-                <Button onClick={() => setIsCreating(true)}><Plus className="w-4 h-4 mr-2" /> Crear noticia</Button>
+                <h3 className="text-lg font-semibold mb-2">{t('adminNews.empty.heading')}</h3>
+                <p className="text-muted-foreground mb-4">{t('adminNews.empty.description')}</p>
+                <Button onClick={() => setIsCreating(true)}><Plus className="w-4 h-4 mr-2" /> {t('adminNews.empty.create')}</Button>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -366,7 +368,7 @@ export default function AdminNews() {
                         <h3 className="font-semibold text-sm sm:text-base text-foreground line-clamp-2 sm:truncate">{item.title}</h3>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge variant={item.is_published ? 'default' : 'secondary'} className="text-[10px]">
-                            {item.is_published ? 'Publicada' : 'Borrador'}
+                            {item.is_published ? t('adminNews.status.published') : t('adminNews.status.draft')}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
                           <span className="text-xs text-muted-foreground">
@@ -376,15 +378,15 @@ export default function AdminNews() {
                         {item.last_edited_at && (
                           <div className="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
                             <Pencil className="w-2.5 h-2.5" />
-                            Editado {format(new Date(item.last_edited_at), "d MMM yyyy, HH:mm", { locale: es })}
+                            {t('adminNews.edited')} {format(new Date(item.last_edited_at), "d MMM yyyy, HH:mm", { locale: es })}
                             {item.last_edited_by && editorNames[item.last_edited_by] && (
-                              <> por {editorNames[item.last_edited_by]}</>
+                              <> {t('adminNews.editedBy')} {editorNames[item.last_edited_by]}</>
                             )}
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-1 border-t sm:border-t-0 pt-2 sm:pt-0">
-                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => togglePublish(item)} title={item.is_published ? 'Despublicar' : 'Publicar'}>
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => togglePublish(item)} title={item.is_published ? t('adminNews.actions.unpublish') : t('adminNews.actions.publish')}>
                           {item.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </Button>
                         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setEditingItem(item)}>
@@ -407,17 +409,17 @@ export default function AdminNews() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Stethoscope className="w-5 h-5 text-primary" />
-                    Doctores aprobados
+                    {t('adminNews.permissions.cardTitle')}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Activa o desactiva el permiso de publicación para cada doctor
+                    {t('adminNews.permissions.cardDescription')}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por nombre o email para agregar doctores..."
+                      placeholder={t('adminNews.permissions.searchPlaceholder')}
                       value={doctorSearch}
                       onChange={(e) => {
                         setDoctorSearch(e.target.value);
@@ -431,13 +433,13 @@ export default function AdminNews() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Se muestran doctores con permiso. Busca por nombre o email para agregar más.
+                    {t('adminNews.permissions.searchHint')}
                   </p>
 
                   {doctorsLoading ? (
                     <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                   ) : filteredDoctors.length === 0 ? (
-                    <p className="text-center py-8 text-muted-foreground">No se encontraron doctores</p>
+                    <p className="text-center py-8 text-muted-foreground">{t('adminNews.permissions.noDoctors')}</p>
                   ) : (
                     <div className="space-y-2">
                       {filteredDoctors.map((doctor) => (
@@ -447,12 +449,12 @@ export default function AdminNews() {
                             <AvatarFallback>{doctor.profile?.name?.[0] || 'D'}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{doctor.profile?.name || 'Sin nombre'}</p>
+                            <p className="font-medium text-sm truncate">{doctor.profile?.name || t('adminNews.permissions.noName')}</p>
                             <p className="text-xs text-muted-foreground truncate">{doctor.profile?.email} · {doctor.specialty}</p>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {doctor.can_publish_news && (
-                              <Badge variant="default" className="text-[10px]">Puede publicar</Badge>
+                              <Badge variant="default" className="text-[10px]">{t('adminNews.permissions.canPublish')}</Badge>
                             )}
                             {togglingId === doctor.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />

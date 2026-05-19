@@ -415,17 +415,16 @@ export default function DoctorProfile() {
                   <Clock className="w-5 h-5 text-warning" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Verificación pendiente</p>
+                  <p className="font-semibold text-sm">{t('doctorProfilePage.pendingVerificationTitle')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Tu perfil está siendo revisado por nuestro equipo. Mientras tanto, puedes completar tu información.
-                    Te notificaremos por email cuando tu cuenta sea aprobada.
+                    {t('doctorProfilePage.pendingVerificationDesc')}
                   </p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant="outline" className="text-xs gap-1">
                       <Shield className="w-3 h-3" />
-                      En revisión
+                      {t('doctorProfilePage.underReview')}
                     </Badge>
-                    <span className="text-[10px] text-muted-foreground">Tiempo estimado: 24-48 horas</span>
+                    <span className="text-[10px] text-muted-foreground">{t('doctorProfilePage.estimatedTime')}</span>
                   </div>
                 </div>
               </div>
@@ -687,7 +686,7 @@ export default function DoctorProfile() {
                   onClick={() => navigate(`/book/${doctor.id}`)}
                 >
                   <CalendarIcon className="w-4 h-4 text-primary" />
-                  Reservar cita
+                  {t('doctorProfilePage.bookAppointment')}
                 </Button>
               )}
 

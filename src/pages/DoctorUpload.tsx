@@ -194,10 +194,10 @@ export default function DoctorUpload() {
       setUploadedContent(prev => prev.filter(c => !ids.includes(c.id)));
       setSelectedIds(new Set());
       setManageMode(false);
-      toast({ title: `${ids.length} contenido${ids.length > 1 ? 's' : ''} eliminado${ids.length > 1 ? 's' : ''}` });
+      toast({ title: ids.length > 1 ? t('doctorUploadPage.toastDeletedPlural').replace('{count}', String(ids.length)) : t('doctorUploadPage.toastDeletedSingular') });
     } catch (err: any) {
       console.error('Delete error:', err);
-      toast({ title: 'Error al eliminar', description: err.message, variant: 'destructive' });
+      toast({ title: t('doctorUploadPage.toastDeleteError'), description: err.message, variant: 'destructive' });
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -263,16 +263,16 @@ export default function DoctorUpload() {
       // Subscriber notification + email now fires from AdminContentModeration when approved.
 
       toast({
-        title: 'Contenido enviado a revisión',
+        title: t('doctorUploadPage.toastSubmittedTitle'),
         description: isPublic
-          ? 'Tu contenido será publicado tras la aprobación del equipo de Medical Masters (normalmente 24h).'
-          : 'Guardado como privado. Solo tú puedes verlo.',
+          ? t('doctorUploadPage.toastSubmittedPublicDescription')
+          : t('doctorUploadPage.toastSubmittedPrivateDescription'),
       });
       setSelectedFile(null); setTitle(''); setDescription(''); setCategory(''); setIsPublic(true); setAudienceType('all');
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({ title: 'Error al subir', description: error.message, variant: 'destructive' });
+      toast({ title: t('doctorUploadPage.toastUploadError'), description: error.message, variant: 'destructive' });
     } finally {
       setIsUploading(false); setUploadProgress(0);
       setTimeout(() => setShowSuccess(false), 3000);
@@ -291,11 +291,11 @@ export default function DoctorUpload() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 hidden sm:inline-flex">
-          <ArrowLeft className="w-4 h-4 mr-2" />Volver al Panel
+          <ArrowLeft className="w-4 h-4 mr-2" />{t('doctorUploadPage.backToPanel')}
         </Button>
 
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
-          <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />Subir Contenido
+          <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />{t('doctorUploadPage.pageTitle')}
         </h1>
 
         {/* Verification Warning */}
@@ -307,15 +307,15 @@ export default function DoctorUpload() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-base">Verificación requerida</h3>
+                  <h3 className="font-semibold text-foreground text-base">{t('doctorUploadPage.verificationRequiredTitle')}</h3>
                   <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                    No puedes subir contenido hasta que tu cuenta esté verificada. Estamos revisando tu documentación.
+                    {t('doctorUploadPage.verificationRequiredDescription')}
                   </p>
                   <div className="mt-3 flex items-center gap-3">
                     <div className="h-2 flex-1 bg-primary/10 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-primary to-secondary w-1/2 animate-pulse rounded-full" />
                     </div>
-                    <span className="text-xs font-medium text-primary whitespace-nowrap">En revisión</span>
+                    <span className="text-xs font-medium text-primary whitespace-nowrap">{t('doctorUploadPage.verificationInReview')}</span>
                   </div>
                 </div>
               </div>
@@ -325,11 +325,11 @@ export default function DoctorUpload() {
 
         {/* Upload Form */}
         <Card className={!isApproved ? 'opacity-50 pointer-events-none' : ''}>
-          <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-4"><CardTitle className="text-base sm:text-lg">Nuevo Contenido</CardTitle></CardHeader>
+          <CardHeader className="px-4 sm:px-6 pb-3 sm:pb-4"><CardTitle className="text-base sm:text-lg">{t('doctorUploadPage.newContentTitle')}</CardTitle></CardHeader>
           <CardContent className="space-y-5 sm:space-y-6 px-4 sm:px-6">
             {/* Content Target Selector */}
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">¿Para quién es este contenido? *</Label>
+              <Label className="text-sm font-semibold">{t('doctorUploadPage.audienceQuestion')}</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -341,8 +341,8 @@ export default function DoctorUpload() {
                       <Stethoscope className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`font-semibold text-sm ${contentTarget === 'medical' ? 'text-primary' : 'text-foreground'}`}>Contenido médico</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Para profesionales de la salud</p>
+                      <p className={`font-semibold text-sm ${contentTarget === 'medical' ? 'text-primary' : 'text-foreground'}`}>{t('doctorUploadPage.medicalContentLabel')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.medicalContentSubtitle')}</p>
                     </div>
                   </div>
                 </button>
@@ -356,8 +356,8 @@ export default function DoctorUpload() {
                       <Users className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`font-semibold text-sm ${contentTarget === 'patients' ? 'text-primary' : 'text-foreground'}`}>Contenido para pacientes</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Para pacientes y público general</p>
+                      <p className={`font-semibold text-sm ${contentTarget === 'patients' ? 'text-primary' : 'text-foreground'}`}>{t('doctorUploadPage.patientsContentLabel')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.patientsContentSubtitle')}</p>
                     </div>
                   </div>
                 </button>
@@ -365,7 +365,7 @@ export default function DoctorUpload() {
             </div>
             {/* File Selection */}
             <div className="space-y-2">
-              <Label>Archivo</Label>
+              <Label>{t('doctorUploadPage.fileLabel')}</Label>
               <input ref={fileInputRef} type="file" accept="video/*,.pdf,image/*,.pptx,.ppt,.key,.odp" className="hidden" onChange={handleFileSelect} disabled={!isApproved} />
               {selectedFile ? (
                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
@@ -387,18 +387,18 @@ export default function DoctorUpload() {
                   onDrop={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); const file = e.dataTransfer.files?.[0]; if (file) setSelectedFile(file); }}
                 >
                   <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">Arrastra tu archivo aquí o haz clic para seleccionar</p>
-                  <p className="text-xs text-muted-foreground mt-1">Video, PDF, imagen o presentación (máx. 100MB)</p>
+                  <p className="text-sm text-muted-foreground">{t('doctorUploadPage.dragDropText')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('doctorUploadPage.dragDropHint')}</p>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2"><Label htmlFor="title">Título *</Label><Input id="title" placeholder="Ej: Interpretación de ECG - Clase 1" value={title} onChange={(e) => setTitle(e.target.value)} disabled={!isApproved} /></div>
-            <div className="space-y-2"><Label htmlFor="description">Descripción</Label><Textarea id="description" placeholder="Describe el contenido..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} disabled={!isApproved} /></div>
+            <div className="space-y-2"><Label htmlFor="title">{t('doctorUploadPage.titleLabel')}</Label><Input id="title" placeholder={t('doctorUploadPage.titlePlaceholder')} value={title} onChange={(e) => setTitle(e.target.value)} disabled={!isApproved} /></div>
+            <div className="space-y-2"><Label htmlFor="description">{t('doctorUploadPage.descriptionLabel')}</Label><Textarea id="description" placeholder={t('doctorUploadPage.descriptionPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} rows={3} disabled={!isApproved} /></div>
             <div className="space-y-2">
-              <Label>Categoría *</Label>
+              <Label>{t('doctorUploadPage.categoryLabel')}</Label>
               <Select value={category} onValueChange={setCategory} disabled={!isApproved}>
-                <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('doctorUploadPage.categoryPlaceholder')} /></SelectTrigger>
                 <SelectContent>{CONTENT_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{t(`medical.category.${cat}`)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
@@ -406,22 +406,22 @@ export default function DoctorUpload() {
 
             {/* Masterclass toggle */}
             <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
-              <div className="min-w-0 flex-1"><Label>Masterclass</Label><p className="text-xs text-muted-foreground mt-0.5">Contenido de múltiples sesiones programadas</p></div>
+              <div className="min-w-0 flex-1"><Label>{t('doctorUploadPage.masterclassLabel')}</Label><p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.masterclassDescription')}</p></div>
               <Switch checked={isMasterclass} onCheckedChange={v => { setIsMasterclass(v); if (v && masterclassSessions.length === 0) setMasterclassSessions([{ session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 }]); }} disabled={!isApproved} className="flex-shrink-0" />
             </div>
 
             {isMasterclass && (
               <div className="space-y-3 border border-border rounded-lg p-3 sm:p-4 bg-muted/30">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <Label className="text-sm font-medium">Sesiones ({masterclassSessions.length})</Label>
+                  <Label className="text-sm font-medium">{t('doctorUploadPage.sessionsCount').replace('{count}', String(masterclassSessions.length))}</Label>
                   <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => setMasterclassSessions(prev => [...prev, { session_number: prev.length + 1, title: '', scheduled_at: '', duration_minutes: 60 }])}>
-                    + Agregar sesión
+                    {t('doctorUploadPage.addSession')}
                   </Button>
                 </div>
                 {masterclassSessions.map((session, i) => (
                   <div key={i} className="rounded-lg border border-border bg-card p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-primary">Sesión {i + 1}</span>
+                      <span className="text-xs font-semibold text-primary">{t('doctorUploadPage.sessionNumber').replace('{n}', String(i + 1))}</span>
                       {masterclassSessions.length > 1 && (
                         <Button type="button" variant="ghost" size="sm" className="text-destructive h-7 px-2 -mr-2" onClick={() => {
                           setMasterclassSessions(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, session_number: idx + 1 })));
@@ -431,20 +431,20 @@ export default function DoctorUpload() {
                       )}
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Título</Label>
-                      <Input placeholder={`Sesión ${i + 1}`} value={session.title} onChange={e => {
+                      <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionTitleLabel')}</Label>
+                      <Input placeholder={t('doctorUploadPage.sessionNumber').replace('{n}', String(i + 1))} value={session.title} onChange={e => {
                         setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, title: e.target.value } : s));
                       }} className="text-sm" />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Fecha/Hora</Label>
+                        <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionDateTimeLabel')}</Label>
                         <Input type="datetime-local" value={session.scheduled_at} onChange={e => {
                           setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, scheduled_at: e.target.value } : s));
                         }} className="text-sm w-full sm:w-48" />
                       </div>
                       <div>
-                        <Label className="text-[10px] text-muted-foreground">Minutos</Label>
+                        <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionMinutesLabel')}</Label>
                         <Input type="number" value={session.duration_minutes} onChange={e => {
                           setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, duration_minutes: parseInt(e.target.value) || 60 } : s));
                         }} className="text-sm w-full sm:w-20" />
@@ -456,13 +456,13 @@ export default function DoctorUpload() {
             )}
 
             <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
-              <div className="min-w-0 flex-1"><Label>Contenido Público</Label><p className="text-xs text-muted-foreground mt-0.5">El contenido público aparece en tu perfil y notifica a suscriptores</p></div>
+              <div className="min-w-0 flex-1"><Label>{t('doctorUploadPage.publicContentLabel')}</Label><p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.publicContentDescription')}</p></div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} disabled={!isApproved} className="flex-shrink-0" />
             </div>
-            {isUploading && (<div className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Subiendo...</span><span className="font-medium">{uploadProgress}%</span></div><Progress value={uploadProgress} className="h-2" /></div>)}
-            {showSuccess && (<div className="flex items-center gap-2 text-success text-sm bg-success/10 p-3 rounded-lg"><CheckCircle className="w-4 h-4" />Contenido subido exitosamente</div>)}
+            {isUploading && (<div className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">{t('doctorUploadPage.uploadingLabel')}</span><span className="font-medium">{uploadProgress}%</span></div><Progress value={uploadProgress} className="h-2" /></div>)}
+            {showSuccess && (<div className="flex items-center gap-2 text-success text-sm bg-success/10 p-3 rounded-lg"><CheckCircle className="w-4 h-4" />{t('doctorUploadPage.uploadSuccessMessage')}</div>)}
             <Button className="w-full" onClick={handleUpload} disabled={!isApproved || !selectedFile || !title || !category || isUploading}>
-              {isUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Subiendo...</> : <><Upload className="w-4 h-4 mr-2" />Subir Contenido</>}
+              {isUploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorUploadPage.uploadingButton')}</> : <><Upload className="w-4 h-4 mr-2" />{t('doctorUploadPage.uploadButton')}</>}
             </Button>
           </CardContent>
         </Card>
@@ -472,12 +472,12 @@ export default function DoctorUpload() {
           <Card className="mt-6">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Mi Contenido ({uploadedContent.length})</CardTitle>
+                <CardTitle className="text-lg">{t('doctorUploadPage.myContentTitle').replace('{count}', String(uploadedContent.length))}</CardTitle>
                 <div className="flex items-center gap-2">
                   {manageMode && (
                     <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="text-xs gap-1.5">
                       <CheckSquare className="w-3.5 h-3.5" />
-                      {selectedIds.size === uploadedContent.length ? 'Deseleccionar' : 'Seleccionar todo'}
+                      {selectedIds.size === uploadedContent.length ? t('doctorUploadPage.deselectAll') : t('doctorUploadPage.selectAll')}
                     </Button>
                   )}
                   <Button
@@ -487,7 +487,7 @@ export default function DoctorUpload() {
                     className="text-xs gap-1.5"
                   >
                     <Settings2 className="w-3.5 h-3.5" />
-                    {manageMode ? 'Cancelar' : 'Gestionar'}
+                    {manageMode ? t('doctorUploadPage.cancelButton') : t('doctorUploadPage.manageButton')}
                   </Button>
                 </div>
               </div>
@@ -513,9 +513,9 @@ export default function DoctorUpload() {
                         {/* Badges row - wraps on mobile */}
                         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                           <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5">{content.category}</Badge>
-                          {content.audienceType === 'professionals' && <Badge variant="warning" className="text-[10px] sm:text-xs gap-1 px-1.5"><Users className="w-3 h-3" /><span className="hidden sm:inline">Solo </span>Prof.</Badge>}
-                          {content.audienceType === 'patients' && <Badge variant="info" className="text-[10px] sm:text-xs px-1.5">Pacientes</Badge>}
-                          {content.isPublic ? <Badge variant="success" className="text-[10px] sm:text-xs px-1.5">Público</Badge> : <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5">Privado</Badge>}
+                          {content.audienceType === 'professionals' && <Badge variant="warning" className="text-[10px] sm:text-xs gap-1 px-1.5"><Users className="w-3 h-3" /><span className="hidden sm:inline">{t('doctorUploadPage.audienceOnly')} </span>{t('doctorUploadPage.audienceProfShort')}</Badge>}
+                          {content.audienceType === 'patients' && <Badge variant="info" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.audiencePatients')}</Badge>}
+                          {content.isPublic ? <Badge variant="success" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.badgePublic')}</Badge> : <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.badgePrivate')}</Badge>}
                         </div>
                         {/* Date on its own line on mobile */}
                         <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{content.uploadedAt.toLocaleDateString('es-MX')}</span>
@@ -542,14 +542,14 @@ export default function DoctorUpload() {
         {/* Bulk action floating bar */}
         {manageMode && selectedIds.size > 0 && (
           <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-xl border border-border rounded-2xl shadow-xl px-5 py-3 flex items-center gap-4">
-            <span className="text-sm font-medium">{selectedIds.size} seleccionado{selectedIds.size > 1 ? 's' : ''}</span>
+            <span className="text-sm font-medium">{selectedIds.size > 1 ? t('doctorUploadPage.selectedCountPlural').replace('{count}', String(selectedIds.size)) : t('doctorUploadPage.selectedCountSingular').replace('{count}', String(selectedIds.size))}</span>
             <Button
               variant="destructive"
               size="sm"
               onClick={() => { setDeleteTarget(null); setDeleteDialogOpen(true); }}
               className="gap-1.5"
             >
-              <Trash2 className="w-4 h-4" />Eliminar
+              <Trash2 className="w-4 h-4" />{t('doctorUploadPage.deleteButton')}
             </Button>
           </div>
         )}
@@ -558,16 +558,16 @@ export default function DoctorUpload() {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar {deleteCount} contenido{deleteCount > 1 ? 's' : ''}?</AlertDialogTitle>
+              <AlertDialogTitle>{deleteCount > 1 ? t('doctorUploadPage.deleteConfirmTitlePlural').replace('{count}', String(deleteCount)) : t('doctorUploadPage.deleteConfirmTitleSingular')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta acción no se puede deshacer. Se eliminarán los archivos y registros permanentemente.
+                {t('doctorUploadPage.deleteConfirmDescription')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={isDeleting}>{t('doctorUploadPage.cancelButton')}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                Eliminar
+                {t('doctorUploadPage.deleteButton')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

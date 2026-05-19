@@ -10,6 +10,7 @@ import {
   Clock,
   UserCircle,
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LiveEndedOverlayProps {
   doctorId: string;
@@ -31,6 +32,7 @@ export function LiveEndedOverlay({
   duration,
 }: LiveEndedOverlayProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [countdown, setCountdown] = useState(6);
 
   useEffect(() => {
@@ -52,13 +54,13 @@ export function LiveEndedOverlay({
 
           <div>
             <h3 className="font-heading text-lg font-bold text-foreground">
-              Transmisión finalizada
+              {t('liveEndedOverlay.title')}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              El doctor ha terminado la transmisión en vivo.
+              {t('liveEndedOverlay.description')}
             </p>
             <p className="text-sm text-primary font-medium mt-1">
-              Si te interesa, en breve podrás comprar la grabación de este live.
+              {t('liveEndedOverlay.recordingNotice')}
             </p>
           </div>
 
@@ -83,36 +85,36 @@ export function LiveEndedOverlay({
                 <Heart className="w-3.5 h-3.5 text-destructive" />
                 {likesCount}
               </div>
-              <p className="text-[10px] text-muted-foreground">Likes</p>
+              <p className="text-[10px] text-muted-foreground">{t('liveEndedOverlay.likes')}</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-foreground font-bold">
                 <Eye className="w-3.5 h-3.5 text-info" />
                 {peakViewers}
               </div>
-              <p className="text-[10px] text-muted-foreground">Pico</p>
+              <p className="text-[10px] text-muted-foreground">{t('liveEndedOverlay.peak')}</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 text-foreground font-bold">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
                 {duration}
               </div>
-              <p className="text-[10px] text-muted-foreground">Duración</p>
+              <p className="text-[10px] text-muted-foreground">{t('liveEndedOverlay.duration')}</p>
             </div>
           </div>
 
           {/* Countdown */}
           <p className="text-sm text-muted-foreground">
-            En <span className="font-bold text-foreground">{countdown}</span> segundo{countdown !== 1 ? 's' : ''} te vamos a redirigir al inicio
+            {t('liveEndedOverlay.redirectPrefix')} <span className="font-bold text-foreground">{countdown}</span> {countdown !== 1 ? t('liveEndedOverlay.secondsPlural') : t('liveEndedOverlay.secondsSingular')} {t('liveEndedOverlay.redirectSuffix')}
           </p>
 
           <div className="flex flex-col gap-2">
             <Button onClick={() => navigate(`/doctor/${doctorId}`)} className="w-full gap-2">
               <UserCircle className="w-4 h-4" />
-              Ver Perfil del Doctor
+              {t('liveEndedOverlay.viewDoctorProfile')}
             </Button>
             <Button variant="outline" onClick={() => navigate('/lives')} className="w-full">
-              Ir al inicio ahora
+              {t('liveEndedOverlay.goHomeNow')}
             </Button>
           </div>
         </CardContent>

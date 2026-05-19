@@ -28,6 +28,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type AuditAction =
   | 'accessed'
@@ -56,16 +57,27 @@ interface VaultAuditPanelProps {
 
 const PAGE_SIZE = 100;
 
-const ACTION_OPTIONS: { value: AuditAction | 'all'; label: string }[] = [
-  { value: 'all', label: 'Todas las acciones' },
-  { value: 'accessed', label: 'Acceso al archivo' },
-  { value: 'access_granted', label: 'Permiso otorgado' },
-  { value: 'access_revoked', label: 'Permiso revocado' },
-  { value: 'access_denied', label: 'Acceso denegado' },
-  { value: 'otp_required', label: 'OTP requerido' },
-  { value: 'otp_verified', label: 'OTP verificado' },
-  { value: 'otp_failed', label: 'OTP fallido' },
+const ACTION_OPTION_VALUES: (AuditAction | 'all')[] = [
+  'all',
+  'accessed',
+  'access_granted',
+  'access_revoked',
+  'access_denied',
+  'otp_required',
+  'otp_verified',
+  'otp_failed',
 ];
+
+const ACTION_LABEL_KEY: Record<AuditAction | 'all', string> = {
+  all: 'vaultAuditPanel.actions.all',
+  accessed: 'vaultAuditPanel.actions.accessed',
+  access_granted: 'vaultAuditPanel.actions.accessGranted',
+  access_revoked: 'vaultAuditPanel.actions.accessRevoked',
+  access_denied: 'vaultAuditPanel.actions.accessDenied',
+  otp_required: 'vaultAuditPanel.actions.otpRequired',
+  otp_verified: 'vaultAuditPanel.actions.otpVerified',
+  otp_failed: 'vaultAuditPanel.actions.otpFailed',
+};
 
 function defaultFromDate(): string {
   const d = new Date();
@@ -78,6 +90,7 @@ function todayStr(): string {
 }
 
 export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
+  const { t, language } = useLanguage();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -276,25 +289,37 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
     const fMap = Object.fromEntries((files || []).map((f: any) => [f.id, f.name]));
 
     const labels: Record<AuditAction, string> = {
-      accessed: 'Acceso al archivo',
-      access_denied: 'Acceso denegado',
-      access_granted: 'Permiso otorgado',
-      access_revoked: 'Permiso revocado',
-      otp_required: 'OTP requerido',
-      otp_failed: 'OTP fallido',
-      otp_verified: 'OTP verificado',
+      accessed: t('vaultAuditPanel.actions.accessed'),
+      access_denied: t('vaultAuditPanel.actions.accessDenied'),
+      access_granted: t('vaultAuditPanel.actions.accessGranted'),
+      access_revoked: t('vaultAuditPanel.actions.accessRevoked'),
+      otp_required: t('vaultAuditPanel.actions.otpRequired'),
+      otp_failed: t('vaultAuditPanel.actions.otpFailed'),
+      otp_verified: t('vaultAuditPanel.actions.otpVerified'),
     };
 
     // Doctor mode: omit/truncate sensitive patient_id and metadata
     const isDoctorMode = mode === 'doctor';
     const headers = isDoctorMode
-      ? ['Fecha', 'Acción', 'Archivo', 'Actor']
-      : ['Fecha', 'Acción', 'Archivo', 'Actor', 'Patient ID', 'Metadata'];
+      ? [
+          t('vaultAuditPanel.csv.headers.date'),
+          t('vaultAuditPanel.csv.headers.action'),
+          t('vaultAuditPanel.csv.headers.file'),
+          t('vaultAuditPanel.csv.headers.actor'),
+        ]
+      : [
+          t('vaultAuditPanel.csv.headers.date'),
+          t('vaultAuditPanel.csv.headers.action'),
+          t('vaultAuditPanel.csv.headers.file'),
+          t('vaultAuditPanel.csv.headers.actor'),
+          t('vaultAuditPanel.csv.headers.patientId'),
+          t('vaultAuditPanel.csv.headers.metadata'),
+        ];
     const rows = list.map((e) => {
       const base = [
         format(new Date(e.created_at), 'yyyy-MM-dd HH:mm:ss'),
         labels[e.action] || e.action,
-        e.file_id ? fMap[e.file_id] || '(eliminado)' : '',
+        e.file_id ? fMap[e.file_id] || t('vaultAuditPanel.csv.deleted') : '',
         e.actor_id ? aMap[e.actor_id] || e.actor_id : '',
       ];
       if (isDoctorMode) return base;
@@ -311,7 +336,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
     const bytes = new TextEncoder().encode(csv);
     if (!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)) {
-      throw new Error('Encoding inválido: falta BOM UTF-8');
+      throw new Error(t('vaultAuditPanel.csv.errorEncodingMissingBom'));
     }
 
     return { headers, rows, csv };
@@ -325,7 +350,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       setPreviewOpen(true);
     } catch (err: any) {
       console.error('[VaultAuditPanel] preview error', err);
-      toast.error(err?.message || 'Error generando vista previa');
+      toast.error(err?.message || t('vaultAuditPanel.csv.errorPreview'));
     } finally {
       setIsExporting(false);
     }
@@ -339,19 +364,21 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       const dateStr = format(new Date(), 'yyyy-MM-dd');
-      const filterTag = actionFilter !== 'all' ? actionFilter : 'todos';
+      const filterTag = actionFilter !== 'all' ? actionFilter : t('vaultAuditPanel.csv.filterAll');
       link.href = url;
-      link.download = `auditoria_${dateStr}_${filterTag}.csv`;
+      link.download = `${t('vaultAuditPanel.csv.downloadFilename')}_${dateStr}_${filterTag}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       setPreviewOpen(false);
 
-      toast.success(`Exportadas ${rows.length} filas a CSV`);
+      toast.success(
+        t('vaultAuditPanel.csv.exportSuccess').replace('{count}', String(rows.length))
+      );
     } catch (err: any) {
       console.error('[VaultAuditPanel] export error', err);
-      toast.error(err?.message || 'Error de encoding al exportar');
+      toast.error(err?.message || t('vaultAuditPanel.csv.errorEncoding'));
     } finally {
       setIsExporting(false);
     }
@@ -359,13 +386,13 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
   const renderAction = (action: AuditAction) => {
     const cfg: Record<AuditAction, { label: string; icon: React.ElementType; variant: any }> = {
-      accessed: { label: 'Acceso al archivo', icon: Eye, variant: 'info' },
-      access_denied: { label: 'Acceso denegado', icon: ShieldOff, variant: 'destructive' },
-      access_granted: { label: 'Permiso otorgado', icon: ShieldCheck, variant: 'success' },
-      access_revoked: { label: 'Permiso revocado', icon: XCircle, variant: 'warning' },
-      otp_required: { label: 'OTP requerido', icon: KeyRound, variant: 'secondary' },
-      otp_failed: { label: 'OTP fallido', icon: XCircle, variant: 'destructive' },
-      otp_verified: { label: 'OTP verificado', icon: CheckCircle2, variant: 'success' },
+      accessed: { label: t('vaultAuditPanel.actions.accessed'), icon: Eye, variant: 'info' },
+      access_denied: { label: t('vaultAuditPanel.actions.accessDenied'), icon: ShieldOff, variant: 'destructive' },
+      access_granted: { label: t('vaultAuditPanel.actions.accessGranted'), icon: ShieldCheck, variant: 'success' },
+      access_revoked: { label: t('vaultAuditPanel.actions.accessRevoked'), icon: XCircle, variant: 'warning' },
+      otp_required: { label: t('vaultAuditPanel.actions.otpRequired'), icon: KeyRound, variant: 'secondary' },
+      otp_failed: { label: t('vaultAuditPanel.actions.otpFailed'), icon: XCircle, variant: 'destructive' },
+      otp_verified: { label: t('vaultAuditPanel.actions.otpVerified'), icon: CheckCircle2, variant: 'success' },
     };
     const c = cfg[action] || cfg.accessed;
     const Icon = c.icon;
@@ -389,7 +416,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
       <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-base flex items-center gap-2">
           <History className="w-4 h-4 text-primary" />
-          Auditoría de Vault
+          {t('vaultAuditPanel.title')}
         </CardTitle>
         <div className="flex items-center gap-1">
           <Button
@@ -401,7 +428,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             data-testid="csv-preview-btn"
           >
             <Eye className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Vista previa</span>
+            <span className="hidden sm:inline">{t('vaultAuditPanel.buttons.preview')}</span>
           </Button>
           <Button
             variant="ghost"
@@ -413,7 +440,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             aria-disabled={isExporting || isLoading || totalCount === 0}
           >
             <Download className={`w-3.5 h-3.5 ${isExporting ? 'animate-pulse' : ''}`} />
-            <span className="hidden sm:inline">Exportar CSV</span>
+            <span className="hidden sm:inline">{t('vaultAuditPanel.buttons.exportCsv')}</span>
           </Button>
           <Button
             variant="ghost"
@@ -423,7 +450,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             className="h-8 gap-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Actualizar</span>
+            <span className="hidden sm:inline">{t('vaultAuditPanel.buttons.refresh')}</span>
           </Button>
         </div>
       </CardHeader>
@@ -431,13 +458,13 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         {/* Filtros */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 p-3 rounded-lg bg-muted/40 border border-border/50">
           <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Archivo</Label>
+            <Label className="text-[11px] text-muted-foreground">{t('vaultAuditPanel.filters.file')}</Label>
             <Select value={fileFilter} onValueChange={setFileFilter}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-72">
-                <SelectItem value="all">Todos los archivos</SelectItem>
+                <SelectItem value="all">{t('vaultAuditPanel.filters.allFiles')}</SelectItem>
                 {availableFiles.map((f) => (
                   <SelectItem key={f.id} value={f.id} className="text-xs">
                     {f.name.length > 40 ? f.name.slice(0, 40) + '…' : f.name}
@@ -447,22 +474,22 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Acción</Label>
+            <Label className="text-[11px] text-muted-foreground">{t('vaultAuditPanel.filters.action')}</Label>
             <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as any)}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ACTION_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value} className="text-xs">
-                    {o.label}
+                {ACTION_OPTION_VALUES.map((value) => (
+                  <SelectItem key={value} value={value} className="text-xs">
+                    {t(ACTION_LABEL_KEY[value])}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Desde</Label>
+            <Label className="text-[11px] text-muted-foreground">{t('vaultAuditPanel.filters.from')}</Label>
             <Input
               type="date"
               value={fromDate}
@@ -472,7 +499,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Hasta</Label>
+            <Label className="text-[11px] text-muted-foreground">{t('vaultAuditPanel.filters.to')}</Label>
             <Input
               type="date"
               value={toDate}
@@ -486,7 +513,9 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
         <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
           <span>
-            Mostrando {grouped.length} de {totalCount} eventos
+            {t('vaultAuditPanel.showingEvents')
+              .replace('{shown}', String(grouped.length))
+              .replace('{total}', String(totalCount))}
           </span>
           {hasActiveFilters && (
             <Button
@@ -496,7 +525,7 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
               className="h-7 gap-1 text-[11px]"
             >
               <FilterX className="w-3 h-3" />
-              Limpiar filtros
+              {t('vaultAuditPanel.buttons.clearFilters')}
             </Button>
           )}
         </div>
@@ -510,10 +539,10 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
         ) : grouped.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             {hasActiveFilters
-              ? 'No hay eventos que coincidan con los filtros seleccionados.'
+              ? t('vaultAuditPanel.empty.noMatches')
               : mode === 'patient'
-              ? 'Aún no hay actividad registrada en tu expediente.'
-              : 'Aún no has realizado acciones sobre expedientes de pacientes.'}
+              ? t('vaultAuditPanel.empty.patient')
+              : t('vaultAuditPanel.empty.doctor')}
           </p>
         ) : (
           <>
@@ -527,26 +556,28 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       {renderAction(e.action)}
                       <span className="text-[11px] text-muted-foreground">
-                        {format(new Date(e.created_at), "d MMM yyyy 'a las' HH:mm", {
-                          locale: es,
-                        })}
+                        {format(
+                          new Date(e.created_at),
+                          t('vaultAuditPanel.entry.dateFormat'),
+                          language === 'es' ? { locale: es } : undefined
+                        )}
                       </span>
                     </div>
                     <p className="text-xs text-foreground truncate">
                       {e.file_id && fileMap[e.file_id] ? (
                         <>
-                          Archivo:{' '}
+                          {t('vaultAuditPanel.entry.fileLabel')}{' '}
                           <span className="font-medium">{fileMap[e.file_id]}</span>
                         </>
                       ) : (
                         <span className="text-muted-foreground">
-                          Archivo eliminado o no disponible
+                          {t('vaultAuditPanel.entry.fileUnavailable')}
                         </span>
                       )}
                     </p>
                     {mode === 'patient' && e.actor_id && actorMap[e.actor_id] && (
                       <p className="text-[11px] text-muted-foreground truncate">
-                        Por: {actorMap[e.actor_id]}
+                        {t('vaultAuditPanel.entry.by')} {actorMap[e.actor_id]}
                       </p>
                     )}
                     {e.metadata && Object.keys(e.metadata).length > 0 && (
@@ -571,7 +602,10 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
                   onClick={() => setLimit((l) => l + PAGE_SIZE)}
                   disabled={isLoading}
                 >
-                  Cargar más ({totalCount - grouped.length} restantes)
+                  {t('vaultAuditPanel.loadMore').replace(
+                    '{remaining}',
+                    String(totalCount - grouped.length)
+                  )}
                 </Button>
               </div>
             )}
@@ -593,10 +627,12 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
                 <h3 className="font-heading text-base font-bold text-foreground">
-                  Vista previa del CSV
+                  {t('vaultAuditPanel.preview.title')}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {previewData.totalRows} filas · {previewData.headers.length} columnas
+                  {t('vaultAuditPanel.preview.rowsColumns')
+                    .replace('{rows}', String(previewData.totalRows))
+                    .replace('{cols}', String(previewData.headers.length))}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setPreviewOpen(false)}>
@@ -606,17 +642,27 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
             {previewData.totalRows > 5 && (
               <div className="px-4 py-2 bg-warning/10 border-b border-warning/20">
-                <p className="text-xs text-warning-foreground">
-                  Mostrando primeras 5 filas. El archivo descargado contendrá <strong>{previewData.totalRows}</strong> filas.
-                </p>
+                <p
+                  className="text-xs text-warning-foreground"
+                  dangerouslySetInnerHTML={{
+                    __html: t('vaultAuditPanel.preview.truncatedWarning').replace(
+                      '{total}',
+                      String(previewData.totalRows)
+                    ),
+                  }}
+                />
               </div>
             )}
 
             <div className="px-4 py-2 border-b border-border bg-muted/30 text-xs text-muted-foreground">
-              <strong>Filtros activos:</strong>{' '}
-              {actionFilter !== 'all' ? `Acción: ${actionFilter}` : 'Todas las acciones'}
+              <strong>{t('vaultAuditPanel.preview.activeFilters')}</strong>{' '}
+              {actionFilter !== 'all'
+                ? t('vaultAuditPanel.preview.actionPrefix').replace('{action}', t(ACTION_LABEL_KEY[actionFilter]))
+                : t('vaultAuditPanel.actions.all')}
               {' • '}
-              {fileFilter !== 'all' ? `Archivo filtrado` : 'Todos los archivos'}
+              {fileFilter !== 'all'
+                ? t('vaultAuditPanel.preview.fileFiltered')
+                : t('vaultAuditPanel.filters.allFiles')}
               {' • '}
               {fromDate} → {toDate}
             </div>
@@ -648,11 +694,11 @@ export function VaultAuditPanel({ mode, userId }: VaultAuditPanelProps) {
 
             <div className="p-4 border-t border-border flex items-center justify-end gap-2">
               <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-                Cancelar
+                {t('vaultAuditPanel.buttons.cancel')}
               </Button>
               <Button onClick={exportCsv} disabled={isExporting} className="gap-2" data-testid="csv-confirm-download">
                 <Download className="w-4 h-4" />
-                Descargar CSV
+                {t('vaultAuditPanel.buttons.downloadCsv')}
               </Button>
             </div>
           </div>

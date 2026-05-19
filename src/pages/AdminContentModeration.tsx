@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,6 +52,7 @@ const typeIcon = (type: string) => {
 export default function AdminContentModeration() {
   const navigate = useNavigate();
   const { role } = useAuth();
+  const { t, language } = useLanguage();
   const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [items, setItems] = useState<ContentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,14 +132,14 @@ export default function AdminContentModeration() {
         await supabase.rpc('notify_subscribers', {
           p_doctor_id: selected.creator_id,
           p_notification_type: 'new_content',
-          p_title: `Nuevo contenido: ${selected.title}`,
-          p_message: `${selected.creator_name || 'Un doctor'} ha publicado nuevo contenido${selected.category ? ` en ${selected.category}` : ''}`,
+          p_title: `${t('adminContentModeration.notifyTitlePrefix')}: ${selected.title}`,
+          p_message: `${selected.creator_name || t('adminContentModeration.notifyDefaultDoctor')} ${t('adminContentModeration.notifyMessageBody')}${selected.category ? ` ${t('adminContentModeration.notifyInCategory')} ${selected.category}` : ''}`,
           p_data: { content_id: selected.id, type: selected.type },
         });
         supabase.functions.invoke('send-content-notification-email', {
           body: {
             doctorId: selected.creator_id,
-            doctorName: selected.creator_name || 'Doctor',
+            doctorName: selected.creator_name || t('adminContentModeration.defaultDoctor'),
             contentId: selected.id,
             contentTitle: selected.title,
             contentType: selected.type,
@@ -149,7 +151,7 @@ export default function AdminContentModeration() {
       }
     }
 
-    toast.success(decision === 'approved' ? 'Contenido aprobado y notificado a suscriptores' : 'Contenido rechazado');
+    toast.success(decision === 'approved' ? t('adminContentModeration.toastApproved') : t('adminContentModeration.toastRejected'));
     setSelected(null);
     setNote('');
     setActing(false);
@@ -166,22 +168,22 @@ export default function AdminContentModeration() {
             <ShieldCheck className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Moderación de contenido</h1>
-            <p className="text-sm text-muted-foreground">Aprueba o rechaza los videos, PDFs y materiales que los doctores publican.</p>
+            <h1 className="text-xl sm:text-2xl font-bold">{t('adminContentModeration.heading')}</h1>
+            <p className="text-sm text-muted-foreground">{t('adminContentModeration.subheading')}</p>
           </div>
         </div>
 
         <Tabs value={tab} onValueChange={(v: any) => setTab(v)} className="mb-4">
           <TabsList className="grid grid-cols-3 w-full sm:w-fit">
-            <TabsTrigger value="pending">Pendientes</TabsTrigger>
-            <TabsTrigger value="approved">Aprobados</TabsTrigger>
-            <TabsTrigger value="rejected">Rechazados</TabsTrigger>
+            <TabsTrigger value="pending">{t('adminContentModeration.tabPending')}</TabsTrigger>
+            <TabsTrigger value="approved">{t('adminContentModeration.tabApproved')}</TabsTrigger>
+            <TabsTrigger value="rejected">{t('adminContentModeration.tabRejected')}</TabsTrigger>
           </TabsList>
           <TabsContent value={tab} className="mt-4">
             {loading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
             ) : items.length === 0 ? (
-              <Card><CardContent className="p-8 text-center text-muted-foreground">No hay contenido en este estado.</CardContent></Card>
+              <Card><CardContent className="p-8 text-center text-muted-foreground">{t('adminContentModeration.emptyState')}</CardContent></Card>
             ) : (
               <div className="space-y-3">
                 {items.map((it) => (
@@ -196,7 +198,7 @@ export default function AdminContentModeration() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <h3 className="font-semibold text-sm truncate">{it.title}</h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2">{it.description || '(sin descripción)'}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{it.description || t('adminContentModeration.noDescription')}</p>
                           </div>
                           <Badge variant="secondary" className="text-[10px] flex items-center gap-1">{typeIcon(it.type)} {it.type}</Badge>
                         </div>
@@ -206,26 +208,26 @@ export default function AdminContentModeration() {
                               {(it.creator_name || 'Dr').split(' ').map((n) => n[0]).join('').slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>
-                          <span>{it.creator_name || 'Doctor'} · {it.creator_email}</span>
-                          <span>· {new Date(it.created_at).toLocaleDateString('es-MX')}</span>
+                          <span>{it.creator_name || t('adminContentModeration.defaultDoctor')} · {it.creator_email}</span>
+                          <span>· {new Date(it.created_at).toLocaleDateString(language === 'es' ? 'es-MX' : language)}</span>
                           {Number(it.price) > 0 && <Badge variant="outline" className="text-[10px]">${Number(it.price).toFixed(2)}</Badge>}
-                          {it.is_public ? <Badge variant="outline" className="text-[10px]">público</Badge> : <Badge variant="secondary" className="text-[10px]">privado</Badge>}
+                          {it.is_public ? <Badge variant="outline" className="text-[10px]">{t('adminContentModeration.public')}</Badge> : <Badge variant="secondary" className="text-[10px]">{t('adminContentModeration.private')}</Badge>}
                         </div>
                         {it.moderation_note && (
-                          <p className="mt-2 text-[11px] text-muted-foreground italic border-l-2 border-muted pl-2">Nota: {it.moderation_note}</p>
+                          <p className="mt-2 text-[11px] text-muted-foreground italic border-l-2 border-muted pl-2">{t('adminContentModeration.noteLabel')}: {it.moderation_note}</p>
                         )}
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open(it.file_url, '_blank')}>
-                          <Eye className="w-3.5 h-3.5" /> Ver
+                          <Eye className="w-3.5 h-3.5" /> {t('adminContentModeration.view')}
                         </Button>
                         {tab === 'pending' && (
                           <>
                             <Button size="sm" className="gap-1.5 bg-success hover:bg-success" onClick={() => { setSelected(it); setNote(''); }}>
-                              <Check className="w-3.5 h-3.5" /> Aprobar
+                              <Check className="w-3.5 h-3.5" /> {t('adminContentModeration.approve')}
                             </Button>
                             <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => { setSelected({ ...it, type: '__reject__' + it.type } as any); setNote(''); }}>
-                              <X className="w-3.5 h-3.5" /> Rechazar
+                              <X className="w-3.5 h-3.5" /> {t('adminContentModeration.reject')}
                             </Button>
                           </>
                         )}
@@ -242,23 +244,23 @@ export default function AdminContentModeration() {
           <Card className="fixed inset-0 z-50 m-auto max-w-md h-fit p-6 shadow-2xl bg-card border" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}>
             <div className="space-y-3">
               <h3 className="font-semibold">
-                {String(selected.type).startsWith('__reject__') ? 'Rechazar contenido' : 'Aprobar contenido'}
+                {String(selected.type).startsWith('__reject__') ? t('adminContentModeration.rejectContent') : t('adminContentModeration.approveContent')}
               </h3>
               <p className="text-sm text-muted-foreground">"{selected.title}"</p>
               <Textarea
-                placeholder={String(selected.type).startsWith('__reject__') ? 'Motivo del rechazo (visible al creador)' : 'Nota opcional para el creador'}
+                placeholder={String(selected.type).startsWith('__reject__') ? t('adminContentModeration.rejectPlaceholder') : t('adminContentModeration.approvePlaceholder')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
               />
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" onClick={() => setSelected(null)} disabled={acting}>Cancelar</Button>
+                <Button variant="ghost" onClick={() => setSelected(null)} disabled={acting}>{t('adminContentModeration.cancel')}</Button>
                 <Button
                   onClick={() => decide(String(selected.type).startsWith('__reject__') ? 'rejected' : 'approved')}
                   disabled={acting}
                   className={String(selected.type).startsWith('__reject__') ? 'bg-destructive hover:bg-destructive/90' : 'bg-success hover:bg-success'}
                 >
-                  {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : (String(selected.type).startsWith('__reject__') ? 'Confirmar rechazo' : 'Aprobar')}
+                  {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : (String(selected.type).startsWith('__reject__') ? t('adminContentModeration.confirmReject') : t('adminContentModeration.approve'))}
                 </Button>
               </div>
             </div>

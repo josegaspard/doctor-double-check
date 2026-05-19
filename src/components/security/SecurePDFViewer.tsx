@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { logFileAccess } from '@/lib/fileAccessLog';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -20,6 +21,7 @@ interface SecurePDFViewerProps {
 
 export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className }: SecurePDFViewerProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
@@ -57,7 +59,7 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
       } catch (err) {
         if (cancelled) return;
         console.error('[SecurePDFViewer] load failed', err);
-        setError('No se pudo cargar el documento');
+        setError(t('securePdfViewer.loadError'));
         logFileAccess({
           fileId: fileId || fileName || 'pdf',
           bucket: bucket || 'unknown',
@@ -73,7 +75,7 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
     return () => {
       cancelled = true;
     };
-  }, [signedUrl, fileId, bucket, fileName]);
+  }, [signedUrl, fileId, bucket, fileName, t]);
 
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current || !containerRef.current) return;
@@ -118,7 +120,7 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
     return (
       <div className={`flex flex-col items-center justify-center min-h-[300px] gap-2 ${className || ''}`}>
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground">Cargando documento…</p>
+        <p className="text-xs text-muted-foreground">{t('securePdfViewer.loading')}</p>
       </div>
     );
   }
@@ -157,10 +159,10 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
             onClick={() => setPageNum((p) => Math.max(1, p - 1))}
             disabled={pageNum <= 1}
             className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-muted hover:bg-muted-foreground/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Página anterior"
+            aria-label={t('securePdfViewer.previousPage')}
           >
             <ChevronLeft className="w-4 h-4" />
-            Anterior
+            {t('securePdfViewer.previous')}
           </button>
           <span className="font-mono text-muted-foreground" data-testid="pdf-page-indicator">
             {pageNum} / {numPages}
@@ -170,9 +172,9 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
             onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
             disabled={pageNum >= numPages}
             className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-muted hover:bg-muted-foreground/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Página siguiente"
+            aria-label={t('securePdfViewer.nextPage')}
           >
-            Siguiente
+            {t('securePdfViewer.next')}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

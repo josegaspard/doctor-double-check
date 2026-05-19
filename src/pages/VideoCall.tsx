@@ -34,7 +34,7 @@ interface InCallMessage {
  * Renders Daily.co video tracks into a container without recreating
  * elements unnecessarily (prevents audio interruption on re-render).
  */
-function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
+function renderVideoTracks(container: HTMLDivElement, co: DailyCall, t: (key: string) => string) {
   const participants = co.participants();
   const remotes = Object.values(participants).filter(p => !p.local);
   const local = participants.local;
@@ -91,9 +91,13 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
       screenBadge.style.cssText = 'position:absolute;top:12px;left:12px;z-index:20;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,0.7);color:white;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;';
       container.appendChild(screenBadge);
     }
-    screenBadge.innerHTML = screenIsLocal
-      ? '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Compartiendo tu pantalla'
-      : '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Pantalla compartida';
+    // SECURITY: build DOM with textContent so the translated label cannot inject HTML.
+    const screenDot = '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> ';
+    screenBadge.textContent = '';
+    screenBadge.insertAdjacentHTML('beforeend', screenDot);
+    screenBadge.appendChild(document.createTextNode(
+      screenIsLocal ? t('videoCallPage.sharingYourScreen') : t('videoCallPage.screenShared')
+    ));
   } else {
     screenVideo?.remove();
     screenBadge?.remove();
@@ -146,7 +150,7 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
         // by the other Daily.co participant) cannot inject HTML/script.
         const p = document.createElement('p');
         p.style.cssText = 'color:rgba(255,255,255,0.7);font-size:14px;';
-        p.textContent = `${remote.user_name || 'Participante'} conectado (sin video)`;
+        p.textContent = t('videoCallPage.participantConnectedNoVideo').replace('{name}', remote.user_name || t('videoCall.participant'));
         waitingEl.appendChild(p);
         container.prepend(waitingEl);
       }
@@ -157,11 +161,17 @@ function renderVideoTracks(container: HTMLDivElement, co: DailyCall) {
       waitingEl = document.createElement('div');
       waitingEl.setAttribute('data-role', 'waiting');
       waitingEl.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;';
-      waitingEl.innerHTML = `
-        <div style="width:48px;height:48px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;"></div>
-        <p style="color:rgba(255,255,255,0.7);font-size:14px;">Esperando al otro participante...</p>
-        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-      `;
+      // SECURITY: build via textContent for the translated label to avoid HTML injection.
+      const spinnerDiv = document.createElement('div');
+      spinnerDiv.style.cssText = 'width:48px;height:48px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;';
+      const waitMsg = document.createElement('p');
+      waitMsg.style.cssText = 'color:rgba(255,255,255,0.7);font-size:14px;';
+      waitMsg.textContent = t('videoCallPage.waitingForOtherParticipant');
+      const styleEl = document.createElement('style');
+      styleEl.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+      waitingEl.appendChild(spinnerDiv);
+      waitingEl.appendChild(waitMsg);
+      waitingEl.appendChild(styleEl);
       container.prepend(waitingEl);
     }
   }
@@ -243,11 +253,11 @@ export default function VideoCall() {
     if (!container) return;
 
     // Initial render
-    renderVideoTracks(container, callObject);
+    renderVideoTracks(container, callObject, t);
 
     const handleUpdate = () => {
       if (dailyContainerRef.current) {
-        renderVideoTracks(dailyContainerRef.current, callObject);
+        renderVideoTracks(dailyContainerRef.current, callObject, t);
       }
     };
 
@@ -264,7 +274,7 @@ export default function VideoCall() {
       callObject.off('track-started', handleUpdate);
       callObject.off('track-stopped', handleUpdate);
     };
-  }, [callObject, callState]);
+  }, [callObject, callState, t]);
 
   // Fetch other participant name + doctor credentials + patient id (for record panel)
   useEffect(() => {
@@ -481,7 +491,7 @@ export default function VideoCall() {
     chatChannelRef.current?.send({
       type: 'broadcast',
       event: 'chat-msg',
-      payload: { text, senderId: user?.id, senderName: user?.name || 'Usuario' },
+      payload: { text, senderId: user?.id, senderName: user?.name || t('videoCallPage.userFallback') },
     });
     setChatMessages(prev => [...prev, {
       id: Date.now().toString(),
@@ -513,18 +523,18 @@ export default function VideoCall() {
         try { endCall(); } catch (_) {}
         timer.stop();
         if (data.reason === 'no_answer') {
-          toast.warning('El paciente no contestó la videollamada. Le enviamos un correo para que vea tu intento de llamada.');
+          toast.warning(t('videoCallPage.patientNoAnswerToast'));
           // Fire-and-forget email + push notification to the patient
           supabase.functions.invoke('send-missed-call-email', {
             body: { consultationId },
           }).catch((e) => console.warn('missed-call email failed', e));
         } else {
-          toast.info('El paciente rechazó la videollamada.');
+          toast.info(t('videoCallPage.patientRejectedToast'));
         }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [isDoctor, user?.id, consultationId, endCall, timer]);
+  }, [isDoctor, user?.id, consultationId, endCall, timer, t]);
 
   if (!consultationId) {
     return (
@@ -548,7 +558,7 @@ export default function VideoCall() {
         <div className="absolute inset-0 flex items-center justify-center z-20">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-white mx-auto mb-3" />
-            <p className="text-white/80 text-sm">Conectando...</p>
+            <p className="text-white/80 text-sm">{t('videoCallPage.connecting')}</p>
           </div>
         </div>
       )}
@@ -567,7 +577,7 @@ export default function VideoCall() {
             <button
               onClick={() => navigate(-1)}
               className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/15 backdrop-blur flex items-center justify-center text-white hover:bg-white/25"
-              aria-label="Volver"
+              aria-label={t('videoCallPage.backAriaLabel')}
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -577,10 +587,10 @@ export default function VideoCall() {
             </div>
 
             <p className="text-xs uppercase tracking-widest text-white/70 mb-1">
-              {isDoctor ? 'Llamando a' : 'Llamada entrante'}
+              {isDoctor ? t('videoCallPage.callingTo') : t('videoCallPage.incomingCall')}
             </p>
             <h2 className="text-2xl font-bold text-white mb-1">
-              {otherParticipantName || (isDoctor ? 'Paciente' : 'Doctor')}
+              {otherParticipantName || (isDoctor ? t('videoCallPage.patient') : t('videoCallPage.doctor'))}
             </h2>
             {doctorCreds?.specialty && !isDoctor && (
               <p className="text-sm text-white/80">{doctorCreds.specialty}</p>
@@ -589,7 +599,7 @@ export default function VideoCall() {
             <p className="text-sm text-white/75 mt-6 max-w-xs">
               {isDoctor
                 ? t('videoCall.doctorStartInfo')
-                : (autoJoin ? t('videoCall.patientJoinInfo') : 'Esperando al médico…')}
+                : (autoJoin ? t('videoCall.patientJoinInfo') : t('videoCallPage.waitingForDoctor'))}
             </p>
 
             <div className="mt-10 w-full max-w-sm">
@@ -605,7 +615,7 @@ export default function VideoCall() {
               ) : (
                 <div className="flex items-center justify-center gap-3 text-white/85">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span className="text-sm">Esperando al médico…</span>
+                  <span className="text-sm">{t('videoCallPage.waitingForDoctor')}</span>
                 </div>
               )}
             </div>
@@ -626,7 +636,7 @@ export default function VideoCall() {
                     transition={{ type: 'spring', stiffness: 280, damping: 22 }}
                     onClick={() => setShowChat(true)}
                     className="absolute top-4 left-1/2 -translate-x-1/2 z-30 max-w-[90%] sm:max-w-md flex items-start gap-2.5 px-3.5 py-2.5 rounded-2xl bg-white/95 dark:bg-card/95 backdrop-blur-md shadow-2xl ring-1 ring-black/10 text-left active:scale-[0.98] transition-transform"
-                    aria-label="Abrir chat de la llamada"
+                    aria-label={t('videoCallPage.openChatAriaLabel')}
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
                       <MessageSquare className="w-4 h-4 text-primary" />
@@ -723,13 +733,13 @@ export default function VideoCall() {
                 {doctorCreds && (
                   <div className="mt-3 mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20 max-w-md w-full text-left">
                     <p className="text-xs uppercase tracking-wide text-primary mb-1 flex items-center gap-1">
-                      <BadgeCheck className="w-3 h-3" /> Médico tratante
+                      <BadgeCheck className="w-3 h-3" /> {t('videoCallPage.treatingDoctor')}
                     </p>
                     <p className="text-sm font-semibold">{doctorCreds.name}</p>
                     {doctorCreds.specialty && <p className="text-xs text-muted-foreground">{doctorCreds.specialty}</p>}
                     <div className="flex flex-wrap gap-3 mt-1 text-[11px] text-muted-foreground">
-                      {doctorCreds.cedula && <span>Cédula: <strong>{doctorCreds.cedula}</strong></span>}
-                      {doctorCreds.cofepris && <span>COFEPRIS: <strong>{doctorCreds.cofepris}</strong></span>}
+                      {doctorCreds.cedula && <span>{t('videoCallPage.cedulaLabel')}: <strong>{doctorCreds.cedula}</strong></span>}
+                      {doctorCreds.cofepris && <span>{t('videoCallPage.cofeprisLabel')}: <strong>{doctorCreds.cofepris}</strong></span>}
                     </div>
                   </div>
                 )}
@@ -739,7 +749,7 @@ export default function VideoCall() {
                     ? t('videoCall.doctorStartInfo')
                     : (autoJoin
                         ? t('videoCall.patientJoinInfo')
-                        : 'Espera a que tu médico inicie la videollamada. Recibirás una notificación.')}
+                        : t('videoCallPage.patientWaitInfo'))}
                 </p>
 
                 {/* Patient can only JOIN (autoJoin), never start. Doctor can always start. */}
@@ -751,7 +761,7 @@ export default function VideoCall() {
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground italic">Esperando que el médico inicie…</p>
+                    <p className="text-xs text-muted-foreground italic">{t('videoCallPage.waitingDoctorStart')}</p>
                   </div>
                 )}
               </div>
@@ -808,7 +818,7 @@ export default function VideoCall() {
                   {isDoctor && (
                     <Button variant="outline" onClick={() => setShowPostConsult(true)}>
                       <FileText className="w-4 h-4 mr-2" />
-                      Informe post-consulta
+                      {t('videoCallPage.postConsultReport')}
                     </Button>
                   )}
                   <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
@@ -821,11 +831,11 @@ export default function VideoCall() {
                 <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mb-6">
                   <AlertTriangle className="w-10 h-10 text-destructive" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-2">Error de conexión</h2>
+                <h2 className="text-xl font-bold text-foreground mb-2">{t('videoCallPage.connectionError')}</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  No se pudo establecer la conexión. Verifica tu cámara/micrófono e intenta de nuevo.
+                  {t('videoCallPage.connectionErrorDetail')}
                 </p>
-                <Button onClick={() => resetCall()}>Reintentar</Button>
+                <Button onClick={() => resetCall()}>{t('videoCallPage.retry')}</Button>
               </div>
             )}
 
@@ -835,23 +845,22 @@ export default function VideoCall() {
                   <AlertTriangle className="w-10 h-10 text-warning" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground mb-2">
-                  {permissionError === 'denied' ? 'Necesitamos acceso a tu cámara y micrófono' : 'No detectamos cámara o micrófono'}
+                  {permissionError === 'denied' ? t('videoCallPage.permissionDeniedTitle') : t('videoCallPage.noDevicesTitle')}
                 </h2>
                 <p className="text-sm text-muted-foreground mb-4 max-w-md">
                   {permissionError === 'denied' ? (
                     <>
-                      Tu navegador está bloqueando el acceso. Habilita los permisos desde el ícono <strong>candado</strong> en la barra
-                      de direcciones (Chrome/Edge/Brave) o ajustes del sitio (Safari) y vuelve a intentar.
+                      {t('videoCallPage.permissionDeniedDetailPrefix')}<strong>{t('videoCallPage.permissionDeniedLock')}</strong>{t('videoCallPage.permissionDeniedDetailSuffix')}
                     </>
                   ) : (
                     <>
-                      Conecta una cámara y micrófono o, si estás en móvil, asegúrate de haber concedido los permisos del sistema operativo a esta app/navegador.
+                      {t('videoCallPage.noDevicesDetail')}
                     </>
                   )}
                 </p>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => { setPermissionError(null); navigate(-1); }}>Volver al chat</Button>
-                  <Button onClick={async () => { setPermissionError(null); await handleStart(); }}>Reintentar</Button>
+                  <Button variant="outline" onClick={() => { setPermissionError(null); navigate(-1); }}>{t('videoCallPage.backToChatShort')}</Button>
+                  <Button onClick={async () => { setPermissionError(null); await handleStart(); }}>{t('videoCallPage.retry')}</Button>
                 </div>
               </div>
             )}
@@ -887,6 +896,7 @@ function OtherPartyHangupDialog({
   isDoctor: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   if (!endedBy) return null;
   // Mensaje según quién terminó y quién está viendo el modal
   const otherEnded = (isDoctor && endedBy === 'patient') || (!isDoctor && endedBy === 'doctor');
@@ -898,17 +908,17 @@ function OtherPartyHangupDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <PhoneOff className="w-5 h-5 text-destructive" />
-            {endedBy === 'doctor' ? 'El médico terminó la llamada' : 'El paciente terminó la llamada'}
+            {endedBy === 'doctor' ? t('videoCallPage.doctorEndedCall') : t('videoCallPage.patientEndedCall')}
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground pt-2">
             {isDoctor
-              ? 'El paciente colgó la videollamada. No olvides dejar la receta, el resumen de la consulta y cualquier indicación pendiente antes de salir.'
-              : 'El médico cerró la videollamada. En unos momentos recibirás el resumen de la consulta y la receta médica si corresponde. Revisa tu chat y tu expediente.'}
+              ? t('videoCallPage.doctorHangupMessage')
+              : t('videoCallPage.patientHangupMessage')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button onClick={onClose} className="w-full sm:w-auto">
-            {isDoctor ? 'Entendido, dejar receta/resumen' : 'Entendido'}
+            {isDoctor ? t('videoCallPage.doctorHangupAck') : t('videoCallPage.patientHangupAck')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +55,7 @@ interface CredentialItem {
 export default function AdminCredentials() {
   const navigate = useNavigate();
   const { role, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const [education, setEducation] = useState<CredentialItem[]>([]);
   const [certifications, setCertifications] = useState<CredentialItem[]>([]);
   const [experience, setExperience] = useState<CredentialItem[]>([]);
@@ -90,7 +92,7 @@ export default function AdminCredentials() {
 
       const nameMap = new Map(profiles?.map(p => [p.id, p.name]) || []);
 
-      const mapNames = (items: any[]) => items?.map(i => ({ ...i, doctor_name: nameMap.get(i.doctor_id) || 'Doctor' })) || [];
+      const mapNames = (items: any[]) => items?.map(i => ({ ...i, doctor_name: nameMap.get(i.doctor_id) || t('adminCredentials.defaultDoctor') })) || [];
 
       setEducation(mapNames(eduRes.data as any));
       setCertifications(mapNames(certRes.data as any));
@@ -116,10 +118,10 @@ export default function AdminCredentials() {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success(status === 'approved' ? 'Aprobado' : 'Rechazado');
+      toast.success(status === 'approved' ? t('adminCredentials.toastApproved') : t('adminCredentials.toastRejected'));
       fetchAll();
     } catch (error: any) {
-      toast.error(error.message || 'Error');
+      toast.error(error.message || t('adminCredentials.toastError'));
     } finally {
       setProcessingId(null);
     }
@@ -132,7 +134,7 @@ export default function AdminCredentials() {
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <p className="text-xs text-muted-foreground mb-1">Doctor: <strong>{item.doctor_name}</strong></p>
+            <p className="text-xs text-muted-foreground mb-1">{t('adminCredentials.doctorLabel')}: <strong>{item.doctor_name}</strong></p>
             {item.degree && <p className="font-semibold text-sm">{item.degree} — {item.institution}</p>}
             {item.name && <p className="font-semibold text-sm">{item.name} — {item.issuing_organization}</p>}
             {item.title && <p className="font-semibold text-sm">{item.title} — {item.organization}</p>}
@@ -143,10 +145,10 @@ export default function AdminCredentials() {
               {new Date(item.created_at).toLocaleDateString('es-MX')}
             </p>
           </div>
-          <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pendiente</Badge>
+          <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />{t('adminCredentials.pendingBadge')}</Badge>
         </div>
         <Textarea
-          placeholder="Notas del admin (opcional)..."
+          placeholder={t('adminCredentials.notesPlaceholder')}
           className="mt-3 text-xs"
           rows={2}
           value={adminNotes[item.id] || ''}
@@ -155,10 +157,10 @@ export default function AdminCredentials() {
         <div className="flex gap-2 mt-2">
           <Button size="sm" className="gap-1 flex-1" onClick={() => handleAction(table, item.id, 'approved')} disabled={processingId === item.id}>
             {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-            Aprobar
+            {t('adminCredentials.approveButton')}
           </Button>
           <Button size="sm" variant="destructive" className="gap-1 flex-1" onClick={() => handleAction(table, item.id, 'rejected')} disabled={processingId === item.id}>
-            <XCircle className="w-3 h-3" /> Rechazar
+            <XCircle className="w-3 h-3" /> {t('adminCredentials.rejectButton')}
           </Button>
         </div>
       </CardContent>
@@ -177,9 +179,9 @@ export default function AdminCredentials() {
           <div>
             <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
               <ShieldCheck className="w-6 h-6 text-primary" />
-              Credenciales Médicas
+              {t('adminCredentials.pageTitle')}
             </h1>
-            <p className="text-sm text-muted-foreground">{totalPending} pendientes de revisión</p>
+            <p className="text-sm text-muted-foreground">{totalPending} {t('adminCredentials.pendingReviewSuffix')}</p>
           </div>
         </div>
 
@@ -188,19 +190,19 @@ export default function AdminCredentials() {
         ) : totalPending === 0 ? (
           <Card><CardContent className="p-12 text-center">
             <CheckCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="font-semibold">No hay credenciales pendientes</p>
+            <p className="font-semibold">{t('adminCredentials.emptyState')}</p>
           </CardContent></Card>
         ) : (
           <Tabs defaultValue="education" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="education" className="gap-1 text-xs">
-                <GraduationCap className="w-4 h-4" /> Educación ({education.length})
+                <GraduationCap className="w-4 h-4" /> {t('adminCredentials.tabEducation')} ({education.length})
               </TabsTrigger>
               <TabsTrigger value="certifications" className="gap-1 text-xs">
-                <Award className="w-4 h-4" /> Certificaciones ({certifications.length})
+                <Award className="w-4 h-4" /> {t('adminCredentials.tabCertifications')} ({certifications.length})
               </TabsTrigger>
               <TabsTrigger value="experience" className="gap-1 text-xs">
-                <Briefcase className="w-4 h-4" /> Experiencia ({experience.length})
+                <Briefcase className="w-4 h-4" /> {t('adminCredentials.tabExperience')} ({experience.length})
               </TabsTrigger>
             </TabsList>
             <TabsContent value="education">{education.map(e => renderItem(e, 'doctor_education'))}</TabsContent>

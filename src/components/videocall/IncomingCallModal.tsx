@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Phone, PhoneOff, Stethoscope } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface IncomingCallModalProps {
   open: boolean;
@@ -70,6 +71,7 @@ export function IncomingCallModal({
   doctorId,
 }: IncomingCallModalProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [ringCount, setRingCount] = useState(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -166,7 +168,7 @@ export function IncomingCallModal({
 
           {/* Info */}
           <p className="text-sm text-white/50 font-medium mb-1.5 tracking-wide uppercase text-[11px]">
-            Videollamada entrante
+            {t('incomingCallModal.incomingVideoCall')}
           </p>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{doctorName}</h2>
           {doctorSpecialty && (
@@ -186,7 +188,7 @@ export function IncomingCallModal({
               >
                 <PhoneOff className="w-7 h-7 text-white" />
               </Button>
-              <span className="text-xs text-white/60 font-medium">Rechazar</span>
+              <span className="text-xs text-white/60 font-medium">{t('incomingCallModal.reject')}</span>
             </div>
 
             <div className="flex flex-col items-center gap-2.5">
@@ -202,7 +204,7 @@ export function IncomingCallModal({
                   <Phone className="w-7 h-7 text-white" />
                 </Button>
               </motion.div>
-              <span className="text-xs text-white/60 font-medium">Aceptar</span>
+              <span className="text-xs text-white/60 font-medium">{t('incomingCallModal.accept')}</span>
             </div>
           </div>
         </div>

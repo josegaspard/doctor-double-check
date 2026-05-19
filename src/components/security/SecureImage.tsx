@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { logFileAccess } from '@/lib/fileAccessLog';
 
 interface SecureImageProps {
@@ -13,12 +14,15 @@ interface SecureImageProps {
   className?: string;
 }
 
-export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHeight = '60vh', className }: SecureImageProps) {
+export function SecureImage({ signedUrl, alt, fileId, bucket, maxHeight = '60vh', className }: SecureImageProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+
+  const resolvedAlt = alt ?? t('secureImage.defaultAlt');
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +61,7 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.drawImage(bitmap, 0, 0, w, h);
 
-        const stamp = `${user?.email || 'visitante'} · ${new Date().toLocaleString('es-MX')}`;
+        const stamp = `${user?.email || t('secureImage.guest')} · ${new Date().toLocaleString(t('secureImage.locale'))}`;
         ctx.save();
         ctx.font = `${Math.max(12, w / 80)}px sans-serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
@@ -73,7 +77,7 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
         bitmap.close();
         setDims({ w, h });
         logFileAccess({
-          fileId: fileId || alt,
+          fileId: fileId || resolvedAlt,
           bucket: bucket || 'unknown',
           fileType: 'image',
           action: 'viewed',
@@ -81,9 +85,9 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
       } catch (err) {
         if (cancelled) return;
         console.error('[SecureImage] load failed', err);
-        setError('No se pudo cargar la imagen');
+        setError(t('secureImage.loadError'));
         logFileAccess({
-          fileId: fileId || alt,
+          fileId: fileId || resolvedAlt,
           bucket: bucket || 'unknown',
           fileType: 'image',
           action: 'access_denied',
@@ -97,7 +101,7 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
     return () => {
       cancelled = true;
     };
-  }, [signedUrl, fileId, bucket, alt, user?.email]);
+  }, [signedUrl, fileId, bucket, resolvedAlt, user?.email, t]);
 
   return (
     <div
@@ -110,7 +114,7 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
       {isLoading && (
         <div className="flex flex-col items-center gap-2 py-10">
           <Loader2 className="w-5 h-5 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground">Cargando imagen…</p>
+          <p className="text-xs text-muted-foreground">{t('secureImage.loading')}</p>
         </div>
       )}
       {error && (
@@ -124,7 +128,7 @@ export function SecureImage({ signedUrl, alt = 'Archivo', fileId, bucket, maxHei
           ref={canvasRef}
           className="block max-w-full pointer-events-none rounded-lg"
           style={{ touchAction: 'none', maxHeight }}
-          aria-label={alt}
+          aria-label={resolvedAlt}
         />
         {dims && <DynamicWatermark email={user?.email} userId={user?.id} />}
       </div>

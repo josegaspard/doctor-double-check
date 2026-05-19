@@ -15,6 +15,7 @@ import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, Filter, X,
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -36,21 +37,6 @@ interface EmailItem {
 type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder';
 type DateRangeFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
-const EMAIL_TYPES: { value: EmailTypeFilter; label: string }[] = [
-  { value: 'all', label: 'Todos los tipos' },
-  { value: 'new_content', label: 'Nuevo contenido' },
-  { value: 'live_started', label: 'Live iniciado' },
-  { value: 'availability_reminder', label: 'Recordatorios' },
-];
-
-const DATE_RANGES: { value: DateRangeFilter; label: string }[] = [
-  { value: 'all', label: 'Todo el tiempo' },
-  { value: 'today', label: 'Hoy' },
-  { value: 'week', label: 'Última semana' },
-  { value: 'month', label: 'Último mes' },
-  { value: 'custom', label: 'Rango personalizado' },
-];
-
 const getEmailTypeIcon = (type: string) => {
   switch (type) {
     case 'new_content': return <Video className="w-4 h-4" />;
@@ -60,18 +46,10 @@ const getEmailTypeIcon = (type: string) => {
   }
 };
 
-const getEmailTypeLabel = (type: string) => {
-  switch (type) {
-    case 'new_content': return 'Nuevo contenido';
-    case 'live_started': return 'Live iniciado';
-    case 'availability_reminder': return 'Recordatorio';
-    default: return type;
-  }
-};
-
 export default function DoctorEmailHistory() {
   const navigate = useNavigate();
   const { supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const [emails, setEmails] = useState<EmailItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -85,6 +63,30 @@ export default function DoctorEmailHistory() {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
+
+  const EMAIL_TYPES: { value: EmailTypeFilter; label: string }[] = [
+    { value: 'all', label: t('doctorEmailHistoryPage.filters.types.all') },
+    { value: 'new_content', label: t('doctorEmailHistoryPage.filters.types.newContent') },
+    { value: 'live_started', label: t('doctorEmailHistoryPage.filters.types.liveStarted') },
+    { value: 'availability_reminder', label: t('doctorEmailHistoryPage.filters.types.reminders') },
+  ];
+
+  const DATE_RANGES: { value: DateRangeFilter; label: string }[] = [
+    { value: 'all', label: t('doctorEmailHistoryPage.filters.dateRanges.all') },
+    { value: 'today', label: t('doctorEmailHistoryPage.filters.dateRanges.today') },
+    { value: 'week', label: t('doctorEmailHistoryPage.filters.dateRanges.week') },
+    { value: 'month', label: t('doctorEmailHistoryPage.filters.dateRanges.month') },
+    { value: 'custom', label: t('doctorEmailHistoryPage.filters.dateRanges.custom') },
+  ];
+
+  const getEmailTypeLabel = (type: string) => {
+    switch (type) {
+      case 'new_content': return t('doctorEmailHistoryPage.emailTypeLabels.newContent');
+      case 'live_started': return t('doctorEmailHistoryPage.emailTypeLabels.liveStarted');
+      case 'availability_reminder': return t('doctorEmailHistoryPage.emailTypeLabels.reminder');
+      default: return type;
+    }
+  };
 
   useEffect(() => {
     if (!supabaseUser?.id) return;
@@ -144,9 +146,9 @@ export default function DoctorEmailHistory() {
       if (error) throw error;
       setEmails(prev => prev.filter(e => !ids.includes(e.id)));
       setSelectedIds(new Set());
-      toast({ title: `${ids.length} email(s) eliminado(s)` });
+      toast({ title: `${ids.length} ${t('doctorEmailHistoryPage.toast.deletedSuffix')}` });
     } catch {
-      toast({ title: 'Error al eliminar', variant: 'destructive' });
+      toast({ title: t('doctorEmailHistoryPage.toast.deleteError'), variant: 'destructive' });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -155,18 +157,27 @@ export default function DoctorEmailHistory() {
   };
 
   const exportToCSV = () => {
-    const headers = ['Fecha', 'Destinatario', 'Email', 'Tipo', 'Contenido', 'Estado', 'Error'];
+    const headers = [
+      t('doctorEmailHistoryPage.csv.date'),
+      t('doctorEmailHistoryPage.csv.recipient'),
+      t('doctorEmailHistoryPage.csv.email'),
+      t('doctorEmailHistoryPage.csv.type'),
+      t('doctorEmailHistoryPage.csv.content'),
+      t('doctorEmailHistoryPage.csv.status'),
+      t('doctorEmailHistoryPage.csv.error'),
+    ];
     const rows = filteredEmails.map(e => [
       format(e.createdAt, "yyyy-MM-dd HH:mm:ss"),
       e.recipientName || '', e.recipientEmail,
       getEmailTypeLabel(e.emailType), e.contentTitle || '',
-      e.status === 'sent' ? 'Enviado' : 'Fallido', e.errorMessage || ''
+      e.status === 'sent' ? t('doctorEmailHistoryPage.status.sent') : t('doctorEmailHistoryPage.status.failed'),
+      e.errorMessage || ''
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url;
-    a.download = `historial-emails-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `${t('doctorEmailHistoryPage.csv.filenamePrefix')}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -178,7 +189,7 @@ export default function DoctorEmailHistory() {
     <MainLayout>
       <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="hidden sm:inline-flex -ml-2 text-white hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorEmailHistoryPage.actions.back')}
         </Button>
         <MobileBackHeader />
 
@@ -186,15 +197,15 @@ export default function DoctorEmailHistory() {
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-3 text-center">
             <p className="text-2xl font-bold">{filteredEmails.length}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-xs text-muted-foreground">{t('doctorEmailHistoryPage.stats.total')}</p>
           </Card>
           <Card className="p-3 text-center">
             <p className="text-2xl font-bold text-success">{sentCount}</p>
-            <p className="text-xs text-muted-foreground">Enviados</p>
+            <p className="text-xs text-muted-foreground">{t('doctorEmailHistoryPage.stats.sent')}</p>
           </Card>
           <Card className="p-3 text-center">
             <p className="text-2xl font-bold text-destructive">{failedCount}</p>
-            <p className="text-xs text-muted-foreground">Fallidos</p>
+            <p className="text-xs text-muted-foreground">{t('doctorEmailHistoryPage.stats.failed')}</p>
           </Card>
         </div>
 
@@ -202,23 +213,23 @@ export default function DoctorEmailHistory() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant={selectionMode ? "secondary" : "outline"} size="sm" onClick={() => { setSelectionMode(!selectionMode); setSelectedIds(new Set()); }} className="gap-1.5">
             {selectionMode ? <SquareCheck className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-            {selectionMode ? 'Cancelar' : 'Seleccionar'}
+            {selectionMode ? t('doctorEmailHistoryPage.actions.cancel') : t('doctorEmailHistoryPage.actions.select')}
           </Button>
           {selectionMode && (
             <>
               <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs">
-                {selectedIds.size === filteredEmails.length ? 'Deseleccionar' : 'Todos'}
+                {selectedIds.size === filteredEmails.length ? t('doctorEmailHistoryPage.actions.deselect') : t('doctorEmailHistoryPage.actions.all')}
               </Button>
               {selectedIds.size > 0 && (
                 <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)} disabled={isDeleting} className="gap-1">
                   <Trash2 className="w-3.5 h-3.5" />
-                  Eliminar ({selectedIds.size})
+                  {t('doctorEmailHistoryPage.actions.delete')} ({selectedIds.size})
                 </Button>
               )}
             </>
           )}
           <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-1 ml-auto">
-            <Download className="w-3.5 h-3.5" /> CSV
+            <Download className="w-3.5 h-3.5" /> {t('doctorEmailHistoryPage.actions.csv')}
           </Button>
           <Button variant={showFilters ? "secondary" : "ghost"} size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1">
             <Filter className="w-3.5 h-3.5" />
@@ -231,14 +242,14 @@ export default function DoctorEmailHistory() {
           <Card className="p-4 space-y-3">
             <div className="flex flex-wrap gap-3">
               <div className="flex-1 min-w-[140px]">
-                <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('doctorEmailHistoryPage.filters.type')}</label>
                 <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as EmailTypeFilter)}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>{EMAIL_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{EMAIL_TYPES.map(tt => <SelectItem key={tt.value} value={tt.value}>{tt.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="flex-1 min-w-[140px]">
-                <label className="text-xs text-muted-foreground mb-1 block">Período</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('doctorEmailHistoryPage.filters.period')}</label>
                 <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateRangeFilter)}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>{DATE_RANGES.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}</SelectContent>
@@ -248,12 +259,12 @@ export default function DoctorEmailHistory() {
             {dateFilter === 'custom' && (
               <div className="flex flex-wrap gap-3">
                 <div className="flex-1 min-w-[140px]">
-                  <label className="text-xs text-muted-foreground mb-1 block">Desde</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t('doctorEmailHistoryPage.filters.from')}</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn("w-full h-9 justify-start text-left font-normal", !customDateFrom && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Seleccionar"}
+                        {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : t('doctorEmailHistoryPage.filters.select')}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -262,12 +273,12 @@ export default function DoctorEmailHistory() {
                   </Popover>
                 </div>
                 <div className="flex-1 min-w-[140px]">
-                  <label className="text-xs text-muted-foreground mb-1 block">Hasta</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t('doctorEmailHistoryPage.filters.to')}</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn("w-full h-9 justify-start text-left font-normal", !customDateTo && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Seleccionar"}
+                        {customDateTo ? format(customDateTo, "dd/MM/yyyy") : t('doctorEmailHistoryPage.filters.select')}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -279,7 +290,7 @@ export default function DoctorEmailHistory() {
             )}
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                <X className="w-4 h-4 mr-1" /> Limpiar filtros
+                <X className="w-4 h-4 mr-1" /> {t('doctorEmailHistoryPage.filters.clear')}
               </Button>
             )}
           </Card>
@@ -291,8 +302,8 @@ export default function DoctorEmailHistory() {
         ) : filteredEmails.length === 0 ? (
           <Card className="p-8 text-center">
             <Mail className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-            <p className="text-muted-foreground">No hay emails que mostrar</p>
-            {hasActiveFilters && <Button variant="link" size="sm" onClick={clearFilters}>Limpiar filtros</Button>}
+            <p className="text-muted-foreground">{t('doctorEmailHistoryPage.empty')}</p>
+            {hasActiveFilters && <Button variant="link" size="sm" onClick={clearFilters}>{t('doctorEmailHistoryPage.filters.clear')}</Button>}
           </Card>
         ) : (
           <div className="space-y-2">
@@ -341,22 +352,22 @@ export default function DoctorEmailHistory() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar emails?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorEmailHistoryPage.deleteDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTargetId
-                ? 'Este email se eliminará permanentemente.'
-                : `Se eliminarán ${selectedIds.size} email(s) permanentemente.`}
-              {' '}Esta acción no se puede deshacer.
+                ? t('doctorEmailHistoryPage.deleteDialog.singleDescription')
+                : `${t('doctorEmailHistoryPage.deleteDialog.multipleDescriptionPrefix')} ${selectedIds.size} ${t('doctorEmailHistoryPage.deleteDialog.multipleDescriptionSuffix')}`}
+              {' '}{t('doctorEmailHistoryPage.deleteDialog.irreversible')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteTargetId(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteTargetId(null)}>{t('doctorEmailHistoryPage.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
               onClick={() => handleDelete(deleteTargetId ? [deleteTargetId] : Array.from(selectedIds))}
             >
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              {isDeleting ? t('doctorEmailHistoryPage.actions.deleting') : t('doctorEmailHistoryPage.actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

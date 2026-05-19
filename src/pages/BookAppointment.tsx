@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, Stethoscope, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Slot {
   id: string;
@@ -31,16 +32,26 @@ interface DoctorInfo {
   total_consultations: number;
 }
 
-const formatDate = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+const LOCALE_MAP: Record<string, string> = {
+  es: 'es-MX',
+  en: 'en-US',
+  pt: 'pt-BR',
+  fr: 'fr-FR',
+  it: 'it-IT',
+  de: 'de-DE',
 };
-const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string, lang: string = 'es') => {
+  const d = new Date(iso);
+  return d.toLocaleDateString(LOCALE_MAP[lang] || 'es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+const formatTime = (iso: string, lang: string = 'es') =>
+  new Date(iso).toLocaleTimeString(LOCALE_MAP[lang] || 'es-MX', { hour: '2-digit', minute: '2-digit' });
 
 export default function BookAppointment() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t, language } = useLanguage();
 
   const [doctor, setDoctor] = useState<DoctorInfo | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -101,7 +112,7 @@ export default function BookAppointment() {
   const book = async () => {
     if (!selected || !user || !doctorId) return;
     if (role !== 'patient' && role !== 'resident') {
-      toast.error('Solo pacientes pueden reservar citas.');
+      toast.error(t('bookAppointment.toast.onlyPatients'));
       return;
     }
     setSubmitting(true);
@@ -141,8 +152,8 @@ export default function BookAppointment() {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-8 max-w-lg text-center">
-          <p className="text-muted-foreground mb-4">Médico no encontrado o no aprobado.</p>
-          <Button variant="outline" onClick={() => navigate('/doctors')}>Ver directorio</Button>
+          <p className="text-muted-foreground mb-4">{t('bookAppointment.notFound')}</p>
+          <Button variant="outline" onClick={() => navigate('/doctors')}>{t('bookAppointment.viewDirectory')}</Button>
         </div>
       </MainLayout>
     );
@@ -157,19 +168,19 @@ export default function BookAppointment() {
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Cita solicitada</h2>
+              <h2 className="text-xl font-bold mb-2">{t('bookAppointment.confirmation.title')}</h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Tu solicitud fue enviada al Dr. {doctor.name}. Recibirás un correo cuando confirme.
+                {t('bookAppointment.confirmation.sentToPrefix')} Dr. {doctor.name}. {t('bookAppointment.confirmation.sentToSuffix')}
               </p>
               <div className="text-sm bg-muted/40 rounded-lg p-4 mb-6 text-left">
-                <p><strong>Médico:</strong> Dr. {doctor.name}</p>
-                <p><strong>Especialidad:</strong> {doctor.specialty}</p>
-                <p><strong>Fecha:</strong> {formatDate(confirmation.scheduled_at)} · {formatTime(confirmation.scheduled_at)}</p>
-                <p className="text-xs text-muted-foreground mt-2">ID: <code>{confirmation.appointmentId}</code></p>
+                <p><strong>{t('bookAppointment.confirmation.doctorLabel')}</strong> Dr. {doctor.name}</p>
+                <p><strong>{t('bookAppointment.confirmation.specialtyLabel')}</strong> {doctor.specialty}</p>
+                <p><strong>{t('bookAppointment.confirmation.dateLabel')}</strong> {formatDate(confirmation.scheduled_at, language)} · {formatTime(confirmation.scheduled_at, language)}</p>
+                <p className="text-xs text-muted-foreground mt-2">{t('bookAppointment.confirmation.idLabel')} <code>{confirmation.appointmentId}</code></p>
               </div>
               <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={() => navigate('/my-appointments')}>Mis citas</Button>
-                <Button onClick={() => navigate('/doctors')}>Buscar más médicos</Button>
+                <Button variant="outline" onClick={() => navigate('/my-appointments')}>{t('bookAppointment.confirmation.myAppointments')}</Button>
+                <Button onClick={() => navigate('/doctors')}>{t('bookAppointment.confirmation.findMoreDoctors')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -182,7 +193,7 @@ export default function BookAppointment() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <Button variant="ghost" size="sm" className="gap-1.5 mb-3" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-4 h-4" /> Volver
+          <ArrowLeft className="w-4 h-4" /> {t('bookAppointment.back')}
         </Button>
 
         <Card className="mb-4">
@@ -191,15 +202,15 @@ export default function BookAppointment() {
               <Avatar className="w-14 h-14 border">
                 <AvatarImage src={doctor.avatar_url || undefined} alt={doctor.name || ''} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {(doctor.name || 'Dr').split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                  {(doctor.name || t('bookAppointment.avatarFallback')).split(' ').map((n) => n[0]).join('').slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-lg">Reservar cita con Dr. {doctor.name}</CardTitle>
+                <CardTitle className="text-lg">{t('bookAppointment.header.titlePrefix')} Dr. {doctor.name}</CardTitle>
                 <CardDescription className="flex items-center gap-3 flex-wrap mt-1">
                   <span className="inline-flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5" />{doctor.specialty}</span>
-                  {doctor.rating > 0 && <Badge variant="secondary" className="text-[10px]">★ {doctor.rating.toFixed(1)} · {doctor.total_consultations} consultas</Badge>}
-                  {doctor.consultation_fee > 0 && <Badge variant="outline" className="text-[10px]">${doctor.consultation_fee.toFixed(0)} MXN / consulta</Badge>}
+                  {doctor.rating > 0 && <Badge variant="secondary" className="text-[10px]">★ {doctor.rating.toFixed(1)} · {doctor.total_consultations} {t('bookAppointment.header.consultationsSuffix')}</Badge>}
+                  {doctor.consultation_fee > 0 && <Badge variant="outline" className="text-[10px]">${doctor.consultation_fee.toFixed(0)} {t('bookAppointment.header.feeSuffix')}</Badge>}
                 </CardDescription>
               </div>
             </div>
@@ -210,9 +221,9 @@ export default function BookAppointment() {
           <Card>
             <CardContent className="py-12 text-center">
               <CalendarIcon className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground mb-2">Este médico aún no tiene horarios disponibles próximos.</p>
-              <p className="text-xs text-muted-foreground">Puedes iniciar una consulta directa por chat desde su perfil.</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate(`/doctor/${doctorId}`)}>Ver perfil del médico</Button>
+              <p className="text-sm text-muted-foreground mb-2">{t('bookAppointment.empty.noSlots')}</p>
+              <p className="text-xs text-muted-foreground">{t('bookAppointment.empty.chatHint')}</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate(`/doctor/${doctorId}`)}>{t('bookAppointment.empty.viewProfile')}</Button>
             </CardContent>
           </Card>
         ) : (
@@ -222,7 +233,7 @@ export default function BookAppointment() {
                 <div key={dateKey}>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <CalendarIcon className="w-3.5 h-3.5" />
-                    {new Date(dateKey).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {new Date(dateKey).toLocaleDateString(LOCALE_MAP[language] || 'es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {daySlots.map((s) => {
@@ -239,7 +250,7 @@ export default function BookAppointment() {
                             <Clock className="w-3.5 h-3.5 text-primary" />
                             {formatTime(s.scheduled_at)}
                           </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{s.duration_minutes} min</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{s.duration_minutes} {t('bookAppointment.minutes')}</p>
                           {s.title && <p className="text-[10px] text-muted-foreground/80 truncate mt-1">{s.title}</p>}
                         </button>
                       );
@@ -252,17 +263,17 @@ export default function BookAppointment() {
             {selected && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Confirma tu cita</CardTitle>
+                  <CardTitle className="text-base">{t('bookAppointment.confirm.title')}</CardTitle>
                   <CardDescription>
-                    {formatDate(selected.scheduled_at)} · {formatTime(selected.scheduled_at)} ({selected.duration_minutes} min)
+                    {formatDate(selected.scheduled_at, language)} · {formatTime(selected.scheduled_at, language)} ({selected.duration_minutes} {t('bookAppointment.minutes')})
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <Label htmlFor="reason">Motivo de la consulta (opcional)</Label>
+                    <Label htmlFor="reason">{t('bookAppointment.confirm.reasonLabel')}</Label>
                     <Textarea
                       id="reason"
-                      placeholder="Describe brevemente tu motivo (ej. seguimiento, primera consulta, síntomas...)"
+                      placeholder={t('bookAppointment.confirm.reasonPlaceholder')}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       rows={3}
@@ -270,14 +281,13 @@ export default function BookAppointment() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Al solicitar, el médico recibirá una notificación y deberá confirmar la cita.
-                    El pago se procesará al confirmarse según las tarifas del médico.
+                    {t('bookAppointment.confirm.disclaimer')}
                   </p>
                   <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" onClick={() => setSelected(null)} disabled={submitting}>Cancelar</Button>
+                    <Button variant="ghost" onClick={() => setSelected(null)} disabled={submitting}>{t('bookAppointment.confirm.cancel')}</Button>
                     <Button onClick={book} disabled={submitting} className="gap-1.5">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                      Solicitar cita
+                      {t('bookAppointment.confirm.submit')}
                     </Button>
                   </div>
                 </CardContent>

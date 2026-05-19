@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -46,6 +47,7 @@ interface InviteeDoc {
 
 export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: Props) {
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
@@ -208,7 +210,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           await supabase.from('clinical_session_invitations').insert(newInvitations as any);
         }
 
-        toast.success('Reunión actualizada');
+        toast.success(t('meetingCreateDialog.toastUpdated'));
       } else {
         // INSERT new session
         const { data: session, error } = await supabase
@@ -242,7 +244,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           if (invError) console.error('Error creating invitations:', invError);
         }
 
-        toast.success('Reunión creada exitosamente');
+        toast.success(t('meetingCreateDialog.toastCreated'));
       }
 
       onOpenChange(false);
@@ -251,7 +253,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
-      toast.error(error.message || 'Error al guardar la reunión');
+      toast.error(error.message || t('meetingCreateDialog.toastErrorSave'));
     } finally {
       setIsCreating(false);
     }
@@ -261,44 +263,44 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar reunión' : 'Nueva reunión'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('meetingCreateDialog.editTitle') : t('meetingCreateDialog.newTitle')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div>
-            <Label className="text-xs font-medium">Título *</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.titleLabel')}</Label>
             <Input
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              placeholder="Ej: Revisión de caso clínico de cardiopatía"
+              placeholder={t('meetingCreateDialog.titlePlaceholder')}
             />
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Tipo de reunión *</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.meetingTypeLabel')}</Label>
             <Select value={form.meetingType} onValueChange={(v: 'case_discussion' | 'resident_class') => setForm({ ...form, meetingType: v })}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder={t('meetingCreateDialog.meetingTypePlaceholder')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="case_discussion">Discusión de caso clínico</SelectItem>
-                <SelectItem value="resident_class">Clase con residentes</SelectItem>
+                <SelectItem value="case_discussion">{t('meetingCreateDialog.meetingTypeCaseDiscussion')}</SelectItem>
+                <SelectItem value="resident_class">{t('meetingCreateDialog.meetingTypeResidentClass')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Especialidad *</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.specialtyLabel')}</Label>
             <SearchableFilter
               options={SPECIALTIES}
               value={form.specialty}
               onChange={v => setForm({ ...form, specialty: v })}
-              placeholder="Especialidad"
-              searchPlaceholder="Buscar especialidad..."
+              placeholder={t('meetingCreateDialog.specialtyPlaceholder')}
+              searchPlaceholder={t('meetingCreateDialog.specialtySearchPlaceholder')}
               icon={Stethoscope}
               allLabel=""
             />
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Fecha y hora</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.scheduledAtLabel')}</Label>
             <Input
               type="datetime-local"
               value={form.scheduledAt}
@@ -307,21 +309,21 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Resumen del caso</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.caseSummaryLabel')}</Label>
             <Textarea
               value={form.caseSummary}
               onChange={e => setForm({ ...form, caseSummary: e.target.value })}
-              placeholder="Describe brevemente el caso a discutir..."
+              placeholder={t('meetingCreateDialog.caseSummaryPlaceholder')}
               rows={3}
             />
           </div>
 
           <div>
-            <Label className="text-xs font-medium">Descripción</Label>
+            <Label className="text-xs font-medium">{t('meetingCreateDialog.descriptionLabel')}</Label>
             <Textarea
               value={form.description}
               onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Notas adicionales, agenda, materiales a revisar..."
+              placeholder={t('meetingCreateDialog.descriptionPlaceholder')}
               rows={2}
             />
           </div>
@@ -332,18 +334,18 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
               <div className="flex items-start gap-2">
                 {form.isPublic ? <Globe className="w-4 h-4 mt-0.5 text-emerald-600" /> : <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />}
                 <div>
-                  <p className="text-sm font-medium">{form.isPublic ? 'Reunión abierta al público' : 'Reunión cerrada (solo invitados)'}</p>
+                  <p className="text-sm font-medium">{form.isPublic ? t('meetingCreateDialog.visibilityPublicTitle') : t('meetingCreateDialog.visibilityPrivateTitle')}</p>
                   <p className="text-xs text-muted-foreground">
                     {form.isPublic
-                      ? 'Cualquier usuario verificado podrá unirse desde la lista pública.'
-                      : 'Solo las personas invitadas explícitamente recibirán la invitación.'}
+                      ? t('meetingCreateDialog.visibilityPublicDescription')
+                      : t('meetingCreateDialog.visibilityPrivateDescription')}
                   </p>
                 </div>
               </div>
               <Switch
                 checked={form.isPublic}
                 onCheckedChange={(v) => setForm({ ...form, isPublic: v })}
-                aria-label="Reunión pública"
+                aria-label={t('meetingCreateDialog.visibilityToggleAria')}
               />
             </div>
 
@@ -351,32 +353,32 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
               <div className="flex items-start gap-2">
                 <Languages className="w-4 h-4 mt-0.5 text-sky-600" />
                 <div>
-                  <p className="text-sm font-medium">Traductor en vivo</p>
-                  <p className="text-xs text-muted-foreground">Subtítulos automáticos traducidos al idioma del asistente.</p>
+                  <p className="text-sm font-medium">{t('meetingCreateDialog.liveTranslatorTitle')}</p>
+                  <p className="text-xs text-muted-foreground">{t('meetingCreateDialog.liveTranslatorDescription')}</p>
                 </div>
               </div>
               <Switch
                 checked={form.translateEnabled}
                 onCheckedChange={(v) => setForm({ ...form, translateEnabled: v })}
-                aria-label="Traductor en vivo"
+                aria-label={t('meetingCreateDialog.liveTranslatorToggleAria')}
               />
             </div>
 
             {form.translateEnabled && (
               <div>
-                <Label className="text-xs font-medium">Idioma destino preferido</Label>
+                <Label className="text-xs font-medium">{t('meetingCreateDialog.targetLangLabel')}</Label>
                 <Select
                   value={form.translateTargetLang}
                   onValueChange={(v) => setForm({ ...form, translateTargetLang: v })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="es">🇪🇸 Español</SelectItem>
-                    <SelectItem value="en">🇺🇸 English</SelectItem>
-                    <SelectItem value="pt">🇵🇹 Português</SelectItem>
-                    <SelectItem value="fr">🇫🇷 Français</SelectItem>
-                    <SelectItem value="it">🇮🇹 Italiano</SelectItem>
-                    <SelectItem value="de">🇩🇪 Deutsch</SelectItem>
+                    <SelectItem value="es">{t('meetingCreateDialog.langSpanish')}</SelectItem>
+                    <SelectItem value="en">{t('meetingCreateDialog.langEnglish')}</SelectItem>
+                    <SelectItem value="pt">{t('meetingCreateDialog.langPortuguese')}</SelectItem>
+                    <SelectItem value="fr">{t('meetingCreateDialog.langFrench')}</SelectItem>
+                    <SelectItem value="it">{t('meetingCreateDialog.langItalian')}</SelectItem>
+                    <SelectItem value="de">{t('meetingCreateDialog.langGerman')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -387,7 +389,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           <div>
             <Label className="text-xs font-medium flex items-center gap-1.5 mb-2">
               <UserPlus className="w-3.5 h-3.5" />
-              Invitar participantes {form.isPublic && <span className="text-muted-foreground font-normal">(opcional cuando es pública)</span>}
+              {t('meetingCreateDialog.inviteParticipantsLabel')} {form.isPublic && <span className="text-muted-foreground font-normal">{t('meetingCreateDialog.inviteOptionalPublic')}</span>}
             </Label>
 
             {selectedInvitees.length > 0 && (
@@ -409,7 +411,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
               <Input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder={role === 'doctor' ? 'Buscar doctor, residente o paciente por nombre...' : 'Buscar doctor o residente por nombre...'}
+                placeholder={role === 'doctor' ? t('meetingCreateDialog.searchPlaceholderDoctor') : t('meetingCreateDialog.searchPlaceholderResident')}
                 className="pl-8 text-sm"
               />
               {isSearching && (
@@ -428,7 +430,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
                     <span className="flex items-center gap-1.5">
                       {doc.name}
                       {doc.inviteeType === 'patient' && (
-                        <Badge variant="info" className="text-[10px]">Paciente</Badge>
+                        <Badge variant="info" className="text-[10px]">{t('meetingCreateDialog.patientBadge')}</Badge>
                       )}
                     </span>
                     {doc.specialty && (
@@ -446,7 +448,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             disabled={isCreating || !form.title.trim() || !form.specialty}
           >
             {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {isEditing ? 'Guardar cambios' : 'Crear reunión'}
+            {isEditing ? t('meetingCreateDialog.saveChanges') : t('meetingCreateDialog.create')}
           </Button>
         </div>
       </DialogContent>

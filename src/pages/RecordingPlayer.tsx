@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ export default function RecordingPlayer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, role, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   
   const [recording, setRecording] = useState<Recording | null>(null);
   const [hasPurchased, setHasPurchased] = useState(false);
@@ -256,7 +258,7 @@ export default function RecordingPlayer() {
         title: recResult.data.title,
         description: recResult.data.description || undefined,
         doctorId: recResult.data.doctor_id,
-        doctorName: profile?.name || 'Doctor',
+        doctorName: profile?.name || t('recordingPlayerPage.doctorFallback'),
         specialty: recResult.data.specialty,
         duration: recResult.data.duration,
         price: Number(recResult.data.price),
@@ -324,7 +326,7 @@ export default function RecordingPlayer() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <Loader2 className="w-16 h-16 mx-auto animate-spin text-primary mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Cargando...</h2>
+          <h2 className="text-xl font-semibold mb-2">{t('recordingPlayerPage.loading')}</h2>
         </div>
       </MainLayout>
     );
@@ -335,9 +337,9 @@ export default function RecordingPlayer() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <PlayCircle className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Grabación no encontrada</h2>
-          <p className="text-muted-foreground mb-4">Es posible que la grabación no exista o no tengas acceso.</p>
-          <Button onClick={() => navigate('/recordings')}>Volver a Grabaciones</Button>
+          <h2 className="text-xl font-semibold mb-2">{t('recordingPlayerPage.notFoundTitle')}</h2>
+          <p className="text-muted-foreground mb-4">{t('recordingPlayerPage.notFoundDescription')}</p>
+          <Button onClick={() => navigate('/recordings')}>{t('recordingPlayerPage.backToRecordings')}</Button>
         </div>
       </MainLayout>
     );
@@ -366,7 +368,7 @@ export default function RecordingPlayer() {
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/recordings')} className="hidden sm:inline-flex mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          Volver a Grabaciones
+          {t('recordingPlayerPage.backToRecordings')}
         </Button>
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
@@ -398,9 +400,9 @@ export default function RecordingPlayer() {
                 <div className="w-full h-full flex items-center justify-center bg-muted">
                   <div className="text-center p-6">
                     <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Video no disponible</h3>
+                    <h3 className="text-lg font-semibold mb-2">{t('recordingPlayerPage.videoUnavailableTitle')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      La grabación aún no está disponible.
+                      {t('recordingPlayerPage.videoUnavailableDescription')}
                     </p>
                   </div>
                 </div>
@@ -415,7 +417,7 @@ export default function RecordingPlayer() {
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <Badge variant="outline" className="gap-1 text-xs">
                   <Clock className="w-3 h-3" />
-                  {recording.duration > 0 ? `${Math.floor(recording.duration / 60)} min` : 'Procesando...'}
+                  {recording.duration > 0 ? `${Math.floor(recording.duration / 60)} ${t('recordingPlayerPage.minutesAbbr')}` : t('recordingPlayerPage.processing')}
                 </Badge>
                 {recording.tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
@@ -445,7 +447,7 @@ export default function RecordingPlayer() {
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">{recording.specialty}</p>
                     <Badge variant="secondary" className="mt-2 gap-1 text-xs">
                       <Award className="w-3 h-3" />
-                      Verificado
+                      {t('recordingPlayerPage.verified')}
                     </Badge>
                   </div>
                 </div>
@@ -453,7 +455,7 @@ export default function RecordingPlayer() {
                 <Separator className="my-3 sm:my-4" />
                 
                 <Button className="w-full h-9 text-sm" onClick={() => navigate(`/doctor/${recording.doctorId}`)}>
-                  Ver Perfil
+                  {t('recordingPlayerPage.viewProfile')}
                 </Button>
               </CardContent>
             </Card>
@@ -466,9 +468,9 @@ export default function RecordingPlayer() {
                     <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-white text-xs sm:text-sm">Acceso Ilimitado</h4>
+                    <h4 className="font-semibold text-white text-xs sm:text-sm">{t('recordingPlayerPage.unlimitedAccessTitle')}</h4>
                     <p className="text-xs text-white/85 mt-1 leading-relaxed">
-                      Puedes ver esta grabación las veces que quieras.
+                      {t('recordingPlayerPage.unlimitedAccessDescription')}
                     </p>
                   </div>
                 </div>
@@ -480,7 +482,7 @@ export default function RecordingPlayer() {
                 <div className="flex items-start gap-3">
                   <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    Este contenido está protegido. No se permite la descarga.
+                    {t('recordingPlayerPage.protectedContent')}
                   </p>
                 </div>
               </CardContent>

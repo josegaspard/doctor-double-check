@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Clock, CheckCircle, ArrowRight, Home, Eye } from 'lucide-react';
@@ -9,6 +10,7 @@ import { AppBackground } from '@/components/layout/AppBackground';
 export default function VerificationPending() {
   const navigate = useNavigate();
   const { user, role, logout } = useAuth();
+  const { t } = useLanguage();
 
   const isPending = (role === 'doctor' && user?.doctorProfile?.status === 'pending') ||
                    (role === 'resident' && user?.residentProfile?.status === 'pending');
@@ -24,14 +26,14 @@ export default function VerificationPending() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-success" />
             </div>
-            <CardTitle className="text-2xl">¡Cuenta Aprobada!</CardTitle>
+            <CardTitle className="text-2xl">{t('verificationPendingPage.approvedTitle')}</CardTitle>
             <CardDescription>
-              Tu cuenta ha sido verificada. Ya puedes acceder a todas las funciones.
+              {t('verificationPendingPage.approvedDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button className="w-full" onClick={() => navigate('/doctor/dashboard')}>
-              Ir a mi Dashboard
+              {t('verificationPendingPage.goToDashboard')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -47,9 +49,11 @@ export default function VerificationPending() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
             <Clock className="w-8 h-8 text-warning" />
           </div>
-          <CardTitle className="text-2xl">Verificación Pendiente</CardTitle>
+          <CardTitle className="text-2xl">{t('verificationPendingPage.pendingTitle')}</CardTitle>
           <CardDescription>
-            Tu solicitud de registro como {role === 'doctor' ? 'médico' : 'residente'} está siendo revisada por nuestro equipo.
+            {role === 'doctor'
+              ? t('verificationPendingPage.pendingDescriptionDoctor')
+              : t('verificationPendingPage.pendingDescriptionResident')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -58,18 +62,18 @@ export default function VerificationPending() {
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-primary mt-0.5" />
               <div>
-                <p className="font-medium text-sm">Revisión de credenciales</p>
+                <p className="font-medium text-sm">{t('verificationPendingPage.credentialsReviewTitle')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Verificamos tu cédula profesional y documentación
+                  {t('verificationPendingPage.credentialsReviewDescription')}
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Clock className="w-5 h-5 text-warning mt-0.5" />
               <div>
-                <p className="font-medium text-sm">Tiempo estimado: 24-48 horas</p>
+                <p className="font-medium text-sm">{t('verificationPendingPage.estimatedTimeTitle')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Te notificaremos por email cuando tu cuenta sea aprobada
+                  {t('verificationPendingPage.estimatedTimeDescription')}
                 </p>
               </div>
             </div>
@@ -77,23 +81,23 @@ export default function VerificationPending() {
 
           {/* While you wait */}
           <div>
-            <p className="text-sm font-medium mb-3">Mientras tanto puedes:</p>
+            <p className="text-sm font-medium mb-3">{t('verificationPendingPage.meanwhileLabel')}</p>
             <div className="space-y-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start gap-2"
                 onClick={() => navigate('/lives')}
               >
                 <Eye className="w-4 h-4" />
-                Explorar lives como visitante
+                {t('verificationPendingPage.exploreLives')}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full justify-start gap-2"
                 onClick={() => navigate('/recordings')}
               >
                 <Home className="w-4 h-4" />
-                Ver grabaciones disponibles
+                {t('verificationPendingPage.viewRecordings')}
               </Button>
             </div>
           </div>
@@ -101,10 +105,10 @@ export default function VerificationPending() {
           {/* Actions */}
           <div className="flex gap-2 pt-4 border-t border-border/70">
             <Button variant="ghost" className="flex-1 text-foreground hover:text-foreground" onClick={() => navigate('/')}>
-              Volver al inicio
+              {t('verificationPendingPage.backToHome')}
             </Button>
             <Button variant="outline" className="flex-1" onClick={logout}>
-              Cerrar sesión
+              {t('verificationPendingPage.logout')}
             </Button>
           </div>
         </CardContent>

@@ -301,16 +301,16 @@ export default function Onboarding() {
       // Basic validation for clinical history - can be optional or required depending on rules
       // For now, let's just require emergency contact
       if (!clinicalHistory.emergencyContactName.trim()) {
-        errors.institution = 'El nombre de contacto de emergencia es recomendado'; 
+        errors.institution = t('onboardingPage.validationEmergencyContact');
       }
     }
 
     // Step 2 validation for signatures (all roles)
     if (step === 2) {
-      if (!signerName.trim()) errors.signerName = 'Firma requerida';
-      if (!termsAccepted) errors.termsAccepted = 'Acepta los términos de servicio';
-      if (!privacyAccepted) errors.privacyAccepted = 'Acepta la política de privacidad';
-      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.doctorContract = 'Acepta el contrato de prestación de servicios';
+      if (!signerName.trim()) errors.signerName = t('onboardingPage.validationSignatureRequired');
+      if (!termsAccepted) errors.termsAccepted = t('onboardingPage.validationAcceptTerms');
+      if (!privacyAccepted) errors.privacyAccepted = t('onboardingPage.validationAcceptPrivacy');
+      if (selectedRole === 'doctor' && !doctorContractAccepted) errors.doctorContract = t('onboardingPage.validationAcceptDoctorContract');
     }
 
     return errors;
@@ -757,7 +757,7 @@ export default function Onboarding() {
               <Link to="/" className="flex items-center">
                 <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
               </Link>
-              <span className="app-shell-header-meta text-xs font-medium">Configuración de cuenta</span>
+              <span className="app-shell-header-meta text-xs font-medium">{t('onboardingPage.headerAccountSetup')}</span>
             </div>
           </div>
         </header>
@@ -819,10 +819,9 @@ export default function Onboarding() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.4 }}
               >
-                <p className="text-sm font-semibold text-primary mb-1">💰 Tip: Recarga tu wallet</p>
+                <p className="text-sm font-semibold text-primary mb-1">{t('onboardingPage.welcomeWalletTipTitle')}</p>
                 <p className="text-xs text-secondary">
-                  Para acceder a contenido premium, suscripciones y consultas médicas necesitarás saldo en tu wallet.
-                  Ve a <strong className="text-primary">Wallet</strong> para agregar fondos con tarjeta de crédito o débito.
+                  {t('onboardingPage.welcomeWalletTipBodyPrefix')}<strong className="text-primary">{t('onboardingPage.welcomeWalletTipWalletWord')}</strong>{t('onboardingPage.welcomeWalletTipBodySuffix')}
                 </p>
               </motion.div>
             )}
@@ -858,7 +857,7 @@ export default function Onboarding() {
         {/* Footer */}
         <footer className="app-shell-footer py-4">
           <div className="container mx-auto px-4 text-center">
-            <p className="app-shell-footer-copy text-xs">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
+            <p className="app-shell-footer-copy text-xs">{t('onboardingPage.footerCopyright')}</p>
           </div>
         </footer>
       </AppBackground>
@@ -875,7 +874,7 @@ export default function Onboarding() {
             <Link to="/" className="flex items-center">
               <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
             </Link>
-            <span className="app-shell-header-meta text-xs font-medium">Configuración de cuenta</span>
+            <span className="app-shell-header-meta text-xs font-medium">{t('onboardingPage.headerAccountSetup')}</span>
           </div>
         </div>
       </header>
@@ -1025,18 +1024,18 @@ export default function Onboarding() {
                       {/* Username Field */}
                       <motion.div className="space-y-2" variants={itemVariants}>
                         <Label htmlFor="username" className="text-sm font-medium">
-                          Nombre de usuario
+                          {t('onboardingPage.usernameLabel')}
                         </Label>
                         <Input
                           id="username"
-                          placeholder="ej: dr.martinez"
+                          placeholder={t('onboardingPage.usernamePlaceholder')}
                           value={username}
                           onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
                           maxLength={30}
                           className="lowercase"
                         />
                         <p className="text-[11px] text-muted-foreground">
-                          Este será tu identificador único en la plataforma. Solo letras, números, puntos, guiones.
+                          {t('onboardingPage.usernameHelp')}
                         </p>
                       </motion.div>
 
@@ -1044,11 +1043,11 @@ export default function Onboarding() {
                       <motion.div className="space-y-2" variants={itemVariants}>
                         <Label htmlFor="country" className="text-sm font-medium flex items-center gap-1.5">
                           <Globe className="w-4 h-4" />
-                          País
+                          {t('onboardingPage.countryLabel')}
                         </Label>
                         <Select value={selectedCountry} onValueChange={setSelectedCountry}>
                           <SelectTrigger id="country">
-                            <SelectValue placeholder="Selecciona tu país" />
+                            <SelectValue placeholder={t('onboardingPage.countryPlaceholder')} />
                           </SelectTrigger>
                           <SelectContent className="max-h-60">
                             {Object.entries(COUNTRY_CURRENCIES).map(([code, info]) => (
@@ -1063,7 +1062,7 @@ export default function Onboarding() {
                           </SelectContent>
                         </Select>
                         <p className="text-[11px] text-muted-foreground">
-                          Los precios se mostrarán en tu moneda local como referencia. Los pagos se procesan en MXN.
+                          {t('onboardingPage.countryHelp')}
                         </p>
                       </motion.div>
 
@@ -1071,7 +1070,7 @@ export default function Onboarding() {
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-sm font-medium flex items-center gap-1.5">
                           <Phone className="w-4 h-4" />
-                          Teléfono celular <span className="text-muted-foreground font-normal text-xs">(opcional)</span>
+                          {t('onboardingPage.phoneLabel')} <span className="text-muted-foreground font-normal text-xs">{t('onboardingPage.phoneOptional')}</span>
                         </Label>
                         <div className="flex gap-2">
                           <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
@@ -1090,7 +1089,7 @@ export default function Onboarding() {
                             </SelectContent>
                           </Select>
                           <Input
-                            placeholder="Ej: 5512345678"
+                            placeholder={t('onboardingPage.phonePlaceholder')}
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 15))}
                             disabled={phoneVerified}
@@ -1101,7 +1100,7 @@ export default function Onboarding() {
                           {phoneVerified ? (
                             <Badge className="bg-success/10 text-success border-success flex items-center gap-1 whitespace-nowrap self-center">
                               <CheckCircle className="w-3.5 h-3.5" />
-                              Verificado
+                              {t('onboardingPage.phoneVerifiedBadge')}
                             </Badge>
                           ) : (
                             <Button
@@ -1120,24 +1119,24 @@ export default function Onboarding() {
                                   if (error) throw new Error(error.message);
                                   if (data?.rateLimited) {
                                     setPhoneRateLimited(true);
-                                    toast.error('Solo puedes verificar tu teléfono 1 vez al día.');
+                                    toast.error(t('onboardingPage.phoneRateLimited'));
                                     return;
                                   }
                                   if (data?.alreadyVerified) {
                                     setPhoneVerified(true);
-                                    toast.success('¡Teléfono ya verificado!');
+                                    toast.success(t('onboardingPage.phoneAlreadyVerified'));
                                     return;
                                   }
                                   setPhoneOtpSent(true);
-                                  toast.success(data?.smsSent ? 'Código enviado por SMS' : 'Código enviado a notificaciones');
+                                  toast.success(data?.smsSent ? t('onboardingPage.phoneCodeSentSms') : t('onboardingPage.phoneCodeSentNotif'));
                                 } catch (err: any) {
-                                  toast.error(err.message || 'Error al enviar código');
+                                  toast.error(err.message || t('onboardingPage.phoneSendError'));
                                 } finally {
                                   setPhoneSendingOtp(false);
                                 }
                               }}
                             >
-                              {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar código'}
+                              {phoneSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboardingPage.phoneSendCode')}
                             </Button>
                           )}
                         </div>
@@ -1150,7 +1149,7 @@ export default function Onboarding() {
                             className="space-y-3 p-3 rounded-lg border border-border bg-muted/30"
                           >
                             <p className="text-sm text-muted-foreground">
-                              Ingresa el código de 6 dígitos:
+                              {t('onboardingPage.phoneOtpPrompt')}
                             </p>
                             <div className="flex items-center gap-3">
                               <InputOTP
@@ -1179,18 +1178,18 @@ export default function Onboarding() {
                                     if (data?.verified) {
                                       setPhoneVerified(true);
                                       setPhoneOtpSent(false);
-                                      toast.success('✅ Teléfono verificado correctamente');
+                                      toast.success(t('onboardingPage.phoneVerifySuccess'));
                                     } else {
-                                      toast.error(data?.error || 'Código inválido o expirado');
+                                      toast.error(data?.error || t('onboardingPage.phoneVerifyInvalid'));
                                     }
                                   } catch (err: any) {
-                                    toast.error(err.message || 'Error al verificar');
+                                    toast.error(err.message || t('onboardingPage.phoneVerifyError'));
                                   } finally {
                                     setIsVerifyingPhone(false);
                                   }
                                 }}
                               >
-                                {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verificar'}
+                                {isVerifyingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : t('onboardingPage.phoneVerifyButton')}
                               </Button>
                             </div>
                           </motion.div>
@@ -1198,7 +1197,7 @@ export default function Onboarding() {
 
                         <p className="text-[11px] text-muted-foreground flex items-start gap-1">
                           <MessageSquare className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          Tu número se usa para confirmar códigos de seguridad (OTP) cuando los doctores necesiten acceder a tu expediente. También puedes usar correo electrónico.
+                          {t('onboardingPage.phoneHelp')}
                         </p>
                       </motion.div>
 
@@ -1411,11 +1410,10 @@ export default function Onboarding() {
                             <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
                               <p className="text-sm font-medium text-foreground flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-primary" />
-                                ¿Quieres acelerar tu proceso?
+                                {t('onboardingPage.sepAccelerateTitle')}
                               </p>
                               <p className="text-xs text-muted-foreground leading-relaxed">
-                                Si no quieres esperar la verificación manual, puedes utilizar nuestro verificador automático de cédula profesional
-                                a través de la SEP. Este proceso es opcional, pero te permite avanzar más rápido con tu cuenta.
+                                {t('onboardingPage.sepAccelerateBody')}
                               </p>
                               <CedulaAutoVerify
                                 cedula={license.trim()}
@@ -1434,12 +1432,10 @@ export default function Onboarding() {
                         <motion.div variants={itemVariants} className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
                           <p className="text-sm font-medium text-foreground flex items-center gap-2">
                             <Shield className="w-4 h-4 text-primary" />
-                            {language === 'es' ? 'Verificación de identidad (recomendado)' : 'Identity verification (recommended)'}
+                            {t('onboardingPage.identityVerificationTitle')}
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">
-                            {language === 'es'
-                              ? 'Verifica tu identidad con reconocimiento biométrico para obtener un badge de verificado en tu perfil. Esto aumenta la confianza de tus pacientes.'
-                              : 'Verify your identity with biometric recognition to get a verified badge on your profile. This increases patient trust.'}
+                            {t('onboardingPage.identityVerificationBody')}
                           </p>
                           <Button
                             type="button"
@@ -1449,10 +1445,10 @@ export default function Onboarding() {
                             onClick={() => window.open('/verify-identity', '_blank')}
                           >
                             <Shield className="w-3.5 h-3.5" />
-                            {language === 'es' ? 'Verificar identidad' : 'Verify identity'}
+                            {t('onboardingPage.identityVerificationButton')}
                           </Button>
                           <p className="text-[10px] text-muted-foreground">
-                            {language === 'es' ? 'Puedes completar esto después si lo prefieres.' : 'You can complete this later if you prefer.'}
+                            {t('onboardingPage.identityVerificationLater')}
                           </p>
                         </motion.div>
                       )}
@@ -1480,7 +1476,7 @@ export default function Onboarding() {
                               disabled={isDetectingLocation}
                               onClick={() => {
                                 if (!('geolocation' in navigator)) {
-                                  toast.error('Tu navegador no soporta geolocalización');
+                                  toast.error(t('onboardingPage.geoNotSupported'));
                                   return;
                                 }
                                 setIsDetectingLocation(true);
@@ -1489,11 +1485,11 @@ export default function Onboarding() {
                                     const city = reverseGeocode(pos.coords.latitude, pos.coords.longitude);
                                     setDoctorLocation(city);
                                     setIsDetectingLocation(false);
-                                    toast.success(`Ubicación detectada: ${city}`);
+                                    toast.success(t('onboardingPage.geoDetected').replace('{city}', city));
                                   },
                                   () => {
                                     setIsDetectingLocation(false);
-                                    toast.error('No se pudo obtener tu ubicación');
+                                    toast.error(t('onboardingPage.geoError'));
                                   }
                                 );
                               }}

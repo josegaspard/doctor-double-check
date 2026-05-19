@@ -12,6 +12,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { KeyRound, Loader2, ShieldCheck, Timer, Mail, Smartphone } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type OtpDeliveryMethod = 'email' | 'sms' | 'both';
 
@@ -46,16 +47,17 @@ export function OtpVerificationDialog({
   onDeliveryMethodChange,
   smsAvailable,
 }: OtpVerificationDialogProps) {
+  const { t } = useLanguage();
   const hasActiveTimer = secondsLeft !== null && secondsLeft > 0;
   const minutes = hasActiveTimer ? Math.floor(secondsLeft! / 60) : 0;
   const secs = hasActiveTimer ? secondsLeft! % 60 : 0;
   const timeStr = `${minutes}:${secs.toString().padStart(2, '0')}`;
 
   const deliveryText = deliveryMethod === 'email'
-    ? 'notificación in-app y correo electrónico'
+    ? t('otpVerificationDialog.deliveryEmail')
     : deliveryMethod === 'sms'
-      ? 'notificación in-app y SMS'
-      : 'notificación in-app, correo y SMS';
+      ? t('otpVerificationDialog.deliverySms')
+      : t('otpVerificationDialog.deliveryBoth');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -63,10 +65,10 @@ export function OtpVerificationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <KeyRound className="w-5 h-5 text-primary" />
-            Verificación de Acceso
+            {t('otpVerificationDialog.title')}
           </DialogTitle>
           <DialogDescription className="text-sm">
-            Para acceder al expediente de <strong>{patientName}</strong>, ingresa el código OTP que el paciente te proporcionará.
+            {t('otpVerificationDialog.descriptionPrefix')} <strong>{patientName}</strong>{t('otpVerificationDialog.descriptionSuffix')}
           </DialogDescription>
         </DialogHeader>
 
@@ -74,7 +76,7 @@ export function OtpVerificationDialog({
           {/* Delivery method selector */}
           {!hasActiveTimer && (
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-muted-foreground">Método de entrega del código:</Label>
+              <Label className="text-xs font-medium text-muted-foreground">{t('otpVerificationDialog.deliveryMethodLabel')}</Label>
               <RadioGroup
                 value={deliveryMethod}
                 onValueChange={(v) => onDeliveryMethodChange(v as OtpDeliveryMethod)}
@@ -87,8 +89,8 @@ export function OtpVerificationDialog({
                   <RadioGroupItem value="email" id="method-email" />
                   <Mail className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Email + Notificación</p>
-                    <p className="text-[11px] text-muted-foreground">Siempre disponible</p>
+                    <p className="text-sm font-medium">{t('otpVerificationDialog.emailOption')}</p>
+                    <p className="text-[11px] text-muted-foreground">{t('otpVerificationDialog.emailOptionDescription')}</p>
                   </div>
                 </Label>
                 <Label
@@ -102,9 +104,9 @@ export function OtpVerificationDialog({
                   <RadioGroupItem value="sms" id="method-sms" disabled={!smsAvailable} />
                   <Smartphone className="w-4 h-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">SMS + Notificación</p>
+                    <p className="text-sm font-medium">{t('otpVerificationDialog.smsOption')}</p>
                     <p className="text-[11px] text-muted-foreground">
-                      {smsAvailable ? 'Envío por mensaje de texto' : 'El paciente no tiene teléfono verificado'}
+                      {smsAvailable ? t('otpVerificationDialog.smsOptionAvailable') : t('otpVerificationDialog.smsOptionUnavailable')}
                     </p>
                   </div>
                 </Label>
@@ -119,8 +121,8 @@ export function OtpVerificationDialog({
                       <Smartphone className="w-4 h-4 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium">Email + SMS + Notificación</p>
-                      <p className="text-[11px] text-muted-foreground">Máxima cobertura</p>
+                      <p className="text-sm font-medium">{t('otpVerificationDialog.bothOption')}</p>
+                      <p className="text-[11px] text-muted-foreground">{t('otpVerificationDialog.bothOptionDescription')}</p>
                     </div>
                   </Label>
                 )}
@@ -133,14 +135,14 @@ export function OtpVerificationDialog({
               secondsLeft! <= 30 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10'
             }`}>
               <Timer className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Tiempo restante:</span>
+              <span className="text-sm font-medium text-foreground">{t('otpVerificationDialog.timeRemaining')}</span>
               <span className={`font-mono font-bold text-lg ${secondsLeft! <= 30 ? 'text-destructive' : 'text-primary'}`}>{timeStr}</span>
             </div>
           )}
 
           <div className="space-y-2">
             <Input
-              placeholder="Código de 6 dígitos"
+              placeholder={t('otpVerificationDialog.otpPlaceholder')}
               value={otpCode}
               onChange={(e) => onOtpChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
               className="text-center text-2xl tracking-[0.5em] font-mono h-14"
@@ -148,7 +150,7 @@ export function OtpVerificationDialog({
               inputMode="numeric"
             />
             <p className="text-xs text-muted-foreground text-center">
-              El paciente recibirá el código por {deliveryText}.
+              {t('otpVerificationDialog.deliveryInfoPrefix')} {deliveryText}{t('otpVerificationDialog.deliveryInfoSuffix')}
             </p>
           </div>
 
@@ -163,13 +165,13 @@ export function OtpVerificationDialog({
             ) : (
               <KeyRound className="w-4 h-4" />
             )}
-            {hasActiveTimer ? 'Código ya enviado' : 'Solicitar código al paciente'}
+            {hasActiveTimer ? t('otpVerificationDialog.codeAlreadySent') : t('otpVerificationDialog.requestCode')}
           </Button>
         </div>
 
         <DialogFooter className="flex-row gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1 h-11">
-            Minimizar
+            {t('otpVerificationDialog.minimize')}
           </Button>
           <Button
             onClick={onVerifyOtp}
@@ -181,7 +183,7 @@ export function OtpVerificationDialog({
             ) : (
               <ShieldCheck className="w-4 h-4" />
             )}
-            Verificar
+            {t('otpVerificationDialog.verify')}
           </Button>
         </DialogFooter>
       </DialogContent>

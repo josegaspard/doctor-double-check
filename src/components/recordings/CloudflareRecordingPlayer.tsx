@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import Hls from 'hls.js';
 import {
@@ -33,6 +34,7 @@ export function CloudflareRecordingPlayer({
   autoPlay,
 }: CloudflareRecordingPlayerProps) {
   const { user, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -83,7 +85,7 @@ export function CloudflareRecordingPlayer({
        if (!data.success) {
          if (data.status && data.status !== 'error') {
           setIsProcessing(true);
-          setError('La grabación aún se está procesando. Esto puede tomar unos minutos.');
+          setError(t('cloudflareRecordingPlayer.errorStillProcessing'));
           return null;
         }
         throw new Error(data.error);
@@ -98,12 +100,12 @@ export function CloudflareRecordingPlayer({
       return data.playbackUrl;
     } catch (err: any) {
       console.error('Error fetching playback URL:', err);
-      setError(err.message || 'Error al cargar el video');
+      setError(err.message || t('cloudflareRecordingPlayer.errorLoadingVideo'));
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [videoUrl, recordingId, onDurationUpdate, isPending]);
+  }, [videoUrl, recordingId, onDurationUpdate, isPending, t]);
 
   const initPlayer = useCallback(async () => {
     const playbackUrl = await fetchPlaybackUrl();
@@ -124,7 +126,7 @@ export function CloudflareRecordingPlayer({
         setIsLoading(false);
       });
       video.addEventListener('error', () => {
-        setError('Error al cargar el video');
+        setError(t('cloudflareRecordingPlayer.errorLoadingVideo'));
         setIsLoading(false);
       });
     } else if (Hls.isSupported()) {
@@ -162,17 +164,17 @@ export function CloudflareRecordingPlayer({
               hls.recoverMediaError();
               break;
             default:
-              setError('Error de reproducción');
+              setError(t('cloudflareRecordingPlayer.errorPlayback'));
               setIsLoading(false);
               break;
           }
         }
       });
     } else {
-      setError('Tu navegador no soporta reproducción de video');
+      setError(t('cloudflareRecordingPlayer.errorBrowserUnsupported'));
       setIsLoading(false);
     }
-  }, [fetchPlaybackUrl]);
+  }, [fetchPlaybackUrl, t]);
 
   useEffect(() => {
     initPlayer();
@@ -307,7 +309,7 @@ export function CloudflareRecordingPlayer({
           <p className="text-muted-foreground mb-4">{error}</p>
           <Button onClick={handleRetry} variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Reintentar
+            {t('cloudflareRecordingPlayer.retry')}
           </Button>
         </div>
       </div>
@@ -319,16 +321,16 @@ export function CloudflareRecordingPlayer({
       <div className="aspect-video bg-muted rounded-xl flex items-center justify-center">
         <div className="text-center p-6">
           <Loader2 className="w-12 h-12 mx-auto text-primary animate-spin mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Procesando grabación...</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('cloudflareRecordingPlayer.processingTitle')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            La grabación está siendo procesada. Esto puede tomar unos minutos.
+            {t('cloudflareRecordingPlayer.processingDescription')}
           </p>
           <p className="text-xs text-muted-foreground">
-            Reintentando automáticamente... ({retryCount}/10)
+            {t('cloudflareRecordingPlayer.retryingAutomatically')} ({retryCount}/10)
           </p>
           <Button onClick={handleRetry} variant="outline" className="mt-4">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Verificar ahora
+            {t('cloudflareRecordingPlayer.checkNow')}
           </Button>
         </div>
       </div>

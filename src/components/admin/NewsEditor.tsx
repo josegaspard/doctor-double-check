@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -57,6 +58,7 @@ function generateSlug(title: string): string {
 }
 
 export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState(initialData?.title || '');
   const [summary, setSummary] = useState(initialData?.summary || '');
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
@@ -105,7 +107,7 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       }),
       Youtube.configure({ width: 640, height: 360, nocookie: true }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-primary underline cursor-pointer' } }),
-      Placeholder.configure({ placeholder: 'Escribe el contenido de la noticia aquí...' }),
+      Placeholder.configure({ placeholder: t('newsEditor.contentPlaceholder') }),
     ],
     content: initialData?.content || '',
     editorProps: {
@@ -125,7 +127,7 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       const { data: { publicUrl } } = supabase.storage.from('thumbnails').getPublicUrl(path);
       return publicUrl;
     } catch (err) {
-      toast.error('Error al subir imagen');
+      toast.error(t('newsEditor.toast.uploadError'));
       return null;
     } finally {
       setIsUploading(false);
@@ -227,7 +229,7 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
   }, [handleImageUpload]);
 
   const handleSave = async (publish: boolean) => {
-    if (!title.trim()) { toast.error('El título es obligatorio'); return; }
+    if (!title.trim()) { toast.error(t('newsEditor.toast.titleRequired')); return; }
     if (!editor) return;
 
     setIsSaving(true);
@@ -254,16 +256,16 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
         payload.last_edited_by = user.id;
         const { error } = await supabase.from('medical_news').update(payload).eq('id', initialData.id);
         if (error) throw error;
-        toast.success(publish ? 'Noticia actualizada y publicada' : 'Borrador actualizado');
+        toast.success(publish ? t('newsEditor.toast.updatedPublished') : t('newsEditor.toast.draftUpdated'));
       } else {
         payload.created_by = user.id;
         const { error } = await supabase.from('medical_news').insert(payload);
         if (error) throw error;
-        toast.success(publish ? 'Noticia publicada' : 'Borrador creado');
+        toast.success(publish ? t('newsEditor.toast.published') : t('newsEditor.toast.draftCreated'));
       }
       onSaved?.();
     } catch (err: any) {
-      toast.error(err.message || 'Error al guardar');
+      toast.error(err.message || t('newsEditor.toast.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -288,19 +290,19 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
     <div className="space-y-6">
       {/* Title */}
       <div className="space-y-2">
-        <Label>Título</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título de la noticia" className="text-lg font-semibold" />
+        <Label>{t('newsEditor.title')}</Label>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('newsEditor.titlePlaceholder')} className="text-lg font-semibold" />
       </div>
 
       {/* Summary */}
       <div className="space-y-2">
-        <Label>Resumen (opcional)</Label>
-        <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Breve resumen de la noticia" />
+        <Label>{t('newsEditor.summary')}</Label>
+        <Input value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={t('newsEditor.summaryPlaceholder')} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Categoría</Label>
+          <Label>{t('newsEditor.category')}</Label>
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -309,9 +311,9 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Imagen de portada</Label>
+          <Label>{t('newsEditor.coverImage')}</Label>
           <div className="flex gap-2">
-            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="URL o sube una imagen" className="flex-1" />
+            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder={t('newsEditor.coverImagePlaceholder')} className="flex-1" />
             <Button variant="outline" size="icon" onClick={handleCoverUpload} disabled={isUploading}>
               {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             </Button>
@@ -321,34 +323,34 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
 
       {imageUrl && (
         <div className="relative aspect-video max-h-48 rounded-lg overflow-hidden border">
-          <img src={imageUrl} alt="Portada" className="w-full h-full object-cover" />
+          <img src={imageUrl} alt={t('newsEditor.coverAlt')} className="w-full h-full object-cover" />
         </div>
       )}
 
       {/* Author Info Section */}
       <Separator />
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Información del autor</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t('newsEditor.authorInfo')}</h3>
         <div className="space-y-2">
-          <Label>Bio del autor (aparece al final del artículo)</Label>
-          <Textarea value={authorBio} onChange={(e) => setAuthorBio(e.target.value)} placeholder="Ej: Cardiólogo con 15 años de experiencia..." rows={2} maxLength={500} />
+          <Label>{t('newsEditor.authorBio')}</Label>
+          <Textarea value={authorBio} onChange={(e) => setAuthorBio(e.target.value)} placeholder={t('newsEditor.authorBioPlaceholder')} rows={2} maxLength={500} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Sitio web</Label>
+            <Label className="text-xs">{t('newsEditor.website')}</Label>
             <Input value={authorSocial.website || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, website: e.target.value }))} placeholder="https://..." />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Twitter / X</Label>
-            <Input value={authorSocial.twitter || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, twitter: e.target.value }))} placeholder="@usuario" />
+            <Label className="text-xs">{t('newsEditor.twitter')}</Label>
+            <Input value={authorSocial.twitter || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, twitter: e.target.value }))} placeholder={t('newsEditor.userPlaceholder')} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">LinkedIn</Label>
-            <Input value={authorSocial.linkedin || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, linkedin: e.target.value }))} placeholder="URL de LinkedIn" />
+            <Label className="text-xs">{t('newsEditor.linkedin')}</Label>
+            <Input value={authorSocial.linkedin || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, linkedin: e.target.value }))} placeholder={t('newsEditor.linkedinPlaceholder')} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Instagram</Label>
-            <Input value={authorSocial.instagram || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, instagram: e.target.value }))} placeholder="@usuario" />
+            <Label className="text-xs">{t('newsEditor.instagram')}</Label>
+            <Input value={authorSocial.instagram || ''} onChange={(e) => setAuthorSocial(prev => ({ ...prev, instagram: e.target.value }))} placeholder={t('newsEditor.userPlaceholder')} />
           </div>
         </div>
       </div>
@@ -378,70 +380,70 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
           <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* Text formatting */}
-          <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title="Negrita">
+          <ToolbarButton active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()} title={t('newsEditor.toolbar.bold')}>
             <Bold className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title="Cursiva">
+          <ToolbarButton active={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()} title={t('newsEditor.toolbar.italic')}>
             <Italic className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Subrayado">
+          <ToolbarButton active={editor.isActive('underline')} onClick={() => editor.chain().focus().toggleUnderline().run()} title={t('newsEditor.toolbar.underline')}>
             <UnderlineIcon className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title="Tachado">
+          <ToolbarButton active={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()} title={t('newsEditor.toolbar.strike')}>
             <Strikethrough className="w-4 h-4" />
           </ToolbarButton>
           <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* Alignment */}
-          <ToolbarButton active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title="Alinear izquierda">
+          <ToolbarButton active={editor.isActive({ textAlign: 'left' })} onClick={() => editor.chain().focus().setTextAlign('left').run()} title={t('newsEditor.toolbar.alignLeft')}>
             <AlignLeft className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title="Centrar">
+          <ToolbarButton active={editor.isActive({ textAlign: 'center' })} onClick={() => editor.chain().focus().setTextAlign('center').run()} title={t('newsEditor.toolbar.alignCenter')}>
             <AlignCenter className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title="Alinear derecha">
+          <ToolbarButton active={editor.isActive({ textAlign: 'right' })} onClick={() => editor.chain().focus().setTextAlign('right').run()} title={t('newsEditor.toolbar.alignRight')}>
             <AlignRight className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title="Justificar">
+          <ToolbarButton active={editor.isActive({ textAlign: 'justify' })} onClick={() => editor.chain().focus().setTextAlign('justify').run()} title={t('newsEditor.toolbar.alignJustify')}>
             <AlignJustify className="w-4 h-4" />
           </ToolbarButton>
           <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* Lists and blocks */}
-          <ToolbarButton active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Lista">
+          <ToolbarButton active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()} title={t('newsEditor.toolbar.bulletList')}>
             <List className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Lista numerada">
+          <ToolbarButton active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()} title={t('newsEditor.toolbar.orderedList')}>
             <ListOrdered className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Cita">
+          <ToolbarButton active={editor.isActive('blockquote')} onClick={() => editor.chain().focus().toggleBlockquote().run()} title={t('newsEditor.toolbar.quote')}>
             <Quote className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Código">
+          <ToolbarButton active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title={t('newsEditor.toolbar.code')}>
             <Code className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Línea separadora">
+          <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title={t('newsEditor.toolbar.horizontalRule')}>
             <Minus className="w-4 h-4" />
           </ToolbarButton>
           <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* Media */}
-          <ToolbarButton onClick={openImageDialog} disabled={isUploading} title="Insertar imagen">
+          <ToolbarButton onClick={openImageDialog} disabled={isUploading} title={t('newsEditor.toolbar.insertImage')}>
             <ImageIcon className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton onClick={openVideoDialog} title="Insertar video de YouTube">
+          <ToolbarButton onClick={openVideoDialog} title={t('newsEditor.toolbar.insertVideo')}>
             <YoutubeIcon className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton onClick={openLinkDialog} active={editor.isActive('link')} title="Insertar enlace">
+          <ToolbarButton onClick={openLinkDialog} active={editor.isActive('link')} title={t('newsEditor.toolbar.insertLink')}>
             <LinkIcon className="w-4 h-4" />
           </ToolbarButton>
           <Separator orientation="vertical" className="h-8 mx-1" />
 
           {/* History */}
-          <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Deshacer">
+          <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title={t('newsEditor.toolbar.undo')}>
             <Undo className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Rehacer">
+          <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title={t('newsEditor.toolbar.redo')}>
             <Redo className="w-4 h-4" />
           </ToolbarButton>
         </div>
@@ -453,11 +455,11 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => handleSave(false)} disabled={isSaving}>
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Guardar borrador
+          {t('newsEditor.saveDraft')}
         </Button>
         <Button onClick={() => handleSave(true)} disabled={isSaving}>
           {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-          Publicar
+          {t('newsEditor.publish')}
         </Button>
       </div>
 
@@ -465,21 +467,21 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       <Dialog open={imageDialog} onOpenChange={setImageDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configurar imagen</DialogTitle>
+            <DialogTitle>{t('newsEditor.imageDialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {editingImageSrc && (
               <div className="border rounded-lg overflow-hidden max-h-48">
-                <img src={editingImageSrc} alt="Preview" className="w-full h-full object-contain" />
+                <img src={editingImageSrc} alt={t('newsEditor.imageDialog.previewAlt')} className="w-full h-full object-contain" />
               </div>
             )}
             <div className="space-y-2">
-              <Label>Descripción (alt text)</Label>
-              <Input value={editingImageAlt} onChange={(e) => setEditingImageAlt(e.target.value)} placeholder="Descripción de la imagen..." />
+              <Label>{t('newsEditor.imageDialog.altLabel')}</Label>
+              <Input value={editingImageAlt} onChange={(e) => setEditingImageAlt(e.target.value)} placeholder={t('newsEditor.imageDialog.altPlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Ancho (%)</Label>
+                <Label>{t('newsEditor.imageDialog.width')}</Label>
                 <Select value={editingImageWidth} onValueChange={setEditingImageWidth}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -492,21 +494,21 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Alineación</Label>
+                <Label>{t('newsEditor.imageDialog.align')}</Label>
                 <Select value={editingImageAlign} onValueChange={(v) => setEditingImageAlign(v as any)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="left">Izquierda</SelectItem>
-                    <SelectItem value="center">Centro</SelectItem>
-                    <SelectItem value="right">Derecha</SelectItem>
+                    <SelectItem value="left">{t('newsEditor.imageDialog.alignLeft')}</SelectItem>
+                    <SelectItem value="center">{t('newsEditor.imageDialog.alignCenter')}</SelectItem>
+                    <SelectItem value="right">{t('newsEditor.imageDialog.alignRight')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImageDialog(false)}>Cancelar</Button>
-            <Button onClick={insertImage}>Insertar imagen</Button>
+            <Button variant="outline" onClick={() => setImageDialog(false)}>{t('newsEditor.cancel')}</Button>
+            <Button onClick={insertImage}>{t('newsEditor.imageDialog.insert')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -515,32 +517,32 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       <Dialog open={videoDialog} onOpenChange={setVideoDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Insertar video de YouTube</DialogTitle>
+            <DialogTitle>{t('newsEditor.videoDialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>URL de YouTube</Label>
+              <Label>{t('newsEditor.videoDialog.urlLabel')}</Label>
               <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Ancho (px)</Label>
+                <Label>{t('newsEditor.videoDialog.widthPx')}</Label>
                 <Input type="number" value={videoWidth} onChange={(e) => setVideoWidth(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Alto (px)</Label>
+                <Label>{t('newsEditor.videoDialog.heightPx')}</Label>
                 <Input type="number" value={videoHeight} onChange={(e) => setVideoHeight(e.target.value)} />
               </div>
             </div>
             {videoUrl && (
               <p className="text-xs text-muted-foreground">
-                El video se incrustará directamente en el artículo. Asegúrate de que la URL sea válida.
+                {t('newsEditor.videoDialog.hint')}
               </p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setVideoDialog(false)}>Cancelar</Button>
-            <Button onClick={insertVideo} disabled={!videoUrl}>Insertar video</Button>
+            <Button variant="outline" onClick={() => setVideoDialog(false)}>{t('newsEditor.cancel')}</Button>
+            <Button onClick={insertVideo} disabled={!videoUrl}>{t('newsEditor.videoDialog.insert')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -549,26 +551,26 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Insertar enlace</DialogTitle>
+            <DialogTitle>{t('newsEditor.linkDialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>URL</Label>
+              <Label>{t('newsEditor.linkDialog.urlLabel')}</Label>
               <Input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://..." />
             </div>
             {editor?.state.selection.empty && (
               <div className="space-y-2">
-                <Label>Texto del enlace</Label>
-                <Input value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder="Texto visible..." />
+                <Label>{t('newsEditor.linkDialog.textLabel')}</Label>
+                <Input value={linkText} onChange={(e) => setLinkText(e.target.value)} placeholder={t('newsEditor.linkDialog.textPlaceholder')} />
               </div>
             )}
           </div>
           <DialogFooter>
             {editor?.isActive('link') && (
-              <Button variant="destructive" onClick={removeLink}>Quitar enlace</Button>
+              <Button variant="destructive" onClick={removeLink}>{t('newsEditor.linkDialog.remove')}</Button>
             )}
-            <Button variant="outline" onClick={() => setLinkDialog(false)}>Cancelar</Button>
-            <Button onClick={insertLink} disabled={!linkUrl}>Aplicar enlace</Button>
+            <Button variant="outline" onClick={() => setLinkDialog(false)}>{t('newsEditor.cancel')}</Button>
+            <Button onClick={insertLink} disabled={!linkUrl}>{t('newsEditor.linkDialog.apply')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -118,12 +118,12 @@ export default function ResidentGroups() {
         .from('resident_group_members')
         .insert({ group_id: data.id, user_id: user.id });
 
-      toast.success('Grupo creado exitosamente');
+      toast.success(t('residentGroupsPage.toastCreateSuccess'));
       setShowCreateDialog(false);
       setNewGroup({ name: '', description: '', specialty: '' });
       await fetchGroups();
     } catch (error: any) {
-      toast.error(error.message || 'Error al crear grupo');
+      toast.error(error.message || t('residentGroupsPage.toastCreateError'));
     } finally {
       setIsCreating(false);
     }
@@ -139,10 +139,10 @@ export default function ResidentGroups() {
 
       if (error) throw error;
 
-      toast.success('Te has unido al grupo');
+      toast.success(t('residentGroupsPage.toastJoinSuccess'));
       await fetchGroups();
     } catch (error: any) {
-      toast.error(error.message || 'Error al unirse al grupo');
+      toast.error(error.message || t('residentGroupsPage.toastJoinError'));
     }
   };
 
@@ -158,10 +158,10 @@ export default function ResidentGroups() {
 
       if (error) throw error;
 
-      toast.success('Has salido del grupo');
+      toast.success(t('residentGroupsPage.toastLeaveSuccess'));
       await fetchGroups();
     } catch (error: any) {
-      toast.error(error.message || 'Error al salir del grupo');
+      toast.error(error.message || t('residentGroupsPage.toastLeaveError'));
     }
   };
 
@@ -178,59 +178,59 @@ export default function ResidentGroups() {
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Users className="w-6 h-6 text-primary" />
-              Grupos de Residentes
+              {t('residentGroupsPage.title')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Conecta y aprende con otros residentes
+              {t('residentGroupsPage.subtitle')}
             </p>
           </div>
-          
+
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
-                Crear Grupo
+                {t('residentGroupsPage.createGroupButton')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Crear Nuevo Grupo</DialogTitle>
+                <DialogTitle>{t('residentGroupsPage.dialogTitle')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <label className="text-sm font-medium">Nombre del Grupo</label>
+                  <label className="text-sm font-medium">{t('residentGroupsPage.fieldNameLabel')}</label>
                   <Input
                     value={newGroup.name}
                     onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-                    placeholder="Ej: Residentes de Cardiología CDMX"
+                    placeholder={t('residentGroupsPage.fieldNamePlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Especialidad</label>
+                  <label className="text-sm font-medium">{t('residentGroupsPage.fieldSpecialtyLabel')}</label>
                   <Input
                     value={newGroup.specialty}
                     onChange={(e) => setNewGroup({ ...newGroup, specialty: e.target.value })}
-                    placeholder="Ej: Cardiología"
+                    placeholder={t('residentGroupsPage.fieldSpecialtyPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Descripción</label>
+                  <label className="text-sm font-medium">{t('residentGroupsPage.fieldDescriptionLabel')}</label>
                   <Textarea
                     value={newGroup.description}
                     onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-                    placeholder="Describe el propósito del grupo..."
+                    placeholder={t('residentGroupsPage.fieldDescriptionPlaceholder')}
                     rows={3}
                   />
                 </div>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={handleCreateGroup}
                   disabled={isCreating || !newGroup.name.trim()}
                 >
                   {isCreating ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : null}
-                  Crear Grupo
+                  {t('residentGroupsPage.createGroupButton')}
                 </Button>
               </div>
             </DialogContent>
@@ -280,7 +280,7 @@ export default function ResidentGroups() {
                             className="gap-1 text-destructive hover:text-destructive"
                           >
                             <LogOut className="w-3 h-3" />
-                            Salir
+                            {t('residentGroupsPage.leaveButton')}
                           </Button>
                         ) : (
                           <Button
@@ -289,7 +289,7 @@ export default function ResidentGroups() {
                             className="gap-1"
                           >
                             <UserPlus className="w-3 h-3" />
-                            Unirse
+                            {t('residentGroupsPage.joinButton')}
                           </Button>
                         )}
                       </div>
@@ -301,12 +301,12 @@ export default function ResidentGroups() {
                       <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          {group.memberCount} miembros
+                          {group.memberCount} {t('residentGroupsPage.membersLabel')}
                         </span>
                         {group.isMember && (
                           <Button variant="ghost" size="sm" className="h-auto p-0 text-xs gap-1">
                             <MessageSquare className="w-3 h-3" />
-                            Ver actividad
+                            {t('residentGroupsPage.viewActivity')}
                           </Button>
                         )}
                       </div>
@@ -320,14 +320,14 @@ export default function ResidentGroups() {
           <Card className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              No hay grupos disponibles
+              {t('residentGroupsPage.emptyTitle')}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Sé el primero en crear un grupo para conectar con otros residentes
+              {t('residentGroupsPage.emptyDescription')}
             </p>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Crear Primer Grupo
+              {t('residentGroupsPage.createFirstGroup')}
             </Button>
           </Card>
         )}

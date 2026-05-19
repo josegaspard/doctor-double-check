@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, Loader2, Trash2, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Factor {
   id: string;
@@ -16,6 +17,7 @@ interface Factor {
 }
 
 export function MfaSettings() {
+  const { t } = useLanguage();
   const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -41,7 +43,7 @@ export function MfaSettings() {
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
     setEnrolling(false);
     if (error || !data) {
-      toast.error(error?.message || 'No se pudo iniciar el enrolamiento');
+      toast.error(error?.message || t('mfaSettings.errors.enrollStart'));
       return;
     }
     setEnrollData({
@@ -54,7 +56,7 @@ export function MfaSettings() {
   const verifyEnroll = async () => {
     if (!enrollData) return;
     if (code.length !== 6) {
-      toast.error('Ingresa un código de 6 dígitos');
+      toast.error(t('mfaSettings.errors.codeLength'));
       return;
     }
     setVerifying(true);
@@ -71,10 +73,10 @@ export function MfaSettings() {
     });
     setVerifying(false);
     if (error) {
-      toast.error('Código inválido. Verifica e intenta de nuevo.');
+      toast.error(t('mfaSettings.errors.invalidCode'));
       return;
     }
-    toast.success('2FA activado correctamente.');
+    toast.success(t('mfaSettings.success.activated'));
     setEnrollData(null);
     setCode('');
     refresh();
@@ -89,13 +91,13 @@ export function MfaSettings() {
   };
 
   const removeFactor = async (factorId: string) => {
-    if (!confirm('¿Desactivar autenticación de dos factores?')) return;
+    if (!confirm(t('mfaSettings.confirmDisable'))) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success('2FA desactivado.');
+    toast.success(t('mfaSettings.success.disabled'));
     refresh();
   };
 
@@ -107,11 +109,11 @@ export function MfaSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          Autenticación de dos factores (2FA)
-          {hasMFA && <Badge variant="success" className="ml-2">Activo</Badge>}
+          {t('mfaSettings.title')}
+          {hasMFA && <Badge variant="success" className="ml-2">{t('mfaSettings.activeBadge')}</Badge>}
         </CardTitle>
         <CardDescription>
-          Añade una capa extra de seguridad usando una app autenticadora (Google Authenticator, Authy, 1Password, etc).
+          {t('mfaSettings.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -126,8 +128,8 @@ export function MfaSettings() {
                     <div className="flex items-center gap-3">
                       <KeyRound className="w-4 h-4 text-primary" />
                       <div>
-                        <p className="text-sm font-medium">{f.friendly_name || 'TOTP'}</p>
-                        <p className="text-xs text-muted-foreground">App autenticadora</p>
+                        <p className="text-sm font-medium">{f.friendly_name || t('mfaSettings.totpLabel')}</p>
+                        <p className="text-xs text-muted-foreground">{t('mfaSettings.authenticatorApp')}</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => removeFactor(f.id)}>
@@ -140,17 +142,17 @@ export function MfaSettings() {
 
             {enrollData ? (
               <div className="space-y-3 border rounded-md p-4 bg-muted/30">
-                <p className="text-sm font-medium">1. Escanea este código QR con tu app autenticadora:</p>
+                <p className="text-sm font-medium">{t('mfaSettings.step1ScanQr')}</p>
                 {enrollData.qr && (
-                  <img src={enrollData.qr} alt="QR de 2FA" className="w-48 h-48 mx-auto bg-white p-2 rounded" />
+                  <img src={enrollData.qr} alt={t('mfaSettings.qrAlt')} className="w-48 h-48 mx-auto bg-white p-2 rounded" />
                 )}
                 <p className="text-xs text-muted-foreground text-center break-all">
-                  O ingresa este código manualmente:<br />
+                  {t('mfaSettings.orEnterManually')}<br />
                   <code className="font-mono text-xs">{enrollData.secret}</code>
                 </p>
 
                 <div>
-                  <Label htmlFor="totp-code">2. Ingresa el código de 6 dígitos:</Label>
+                  <Label htmlFor="totp-code">{t('mfaSettings.step2EnterCode')}</Label>
                   <Input
                     id="totp-code"
                     inputMode="numeric"
@@ -165,16 +167,16 @@ export function MfaSettings() {
                 <div className="flex gap-2">
                   <Button onClick={verifyEnroll} disabled={verifying || code.length !== 6} className="flex-1">
                     {verifying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    Verificar y activar
+                    {t('mfaSettings.verifyAndActivate')}
                   </Button>
-                  <Button variant="outline" onClick={cancelEnroll}>Cancelar</Button>
+                  <Button variant="outline" onClick={cancelEnroll}>{t('mfaSettings.cancel')}</Button>
                 </div>
               </div>
             ) : (
               !hasMFA && (
                 <Button onClick={startEnroll} disabled={enrolling}>
                   {enrolling ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
-                  Activar 2FA
+                  {t('mfaSettings.activate2fa')}
                 </Button>
               )
             )}

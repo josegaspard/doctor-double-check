@@ -11,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Mail, CheckCircle, XCircle, Video, Calendar as CalendarIcon, ChevronDown, ChevronUp, Filter, X, Clock, Download, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -31,49 +32,9 @@ interface EmailHistoryItem {
 type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder';
 type DateRangeFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
-const EMAIL_TYPES: { value: EmailTypeFilter; label: string }[] = [
-  { value: 'all', label: 'Todos los tipos' },
-  { value: 'new_content', label: 'Nuevo contenido' },
-  { value: 'live_started', label: 'Live iniciado' },
-  { value: 'availability_reminder', label: 'Recordatorios' },
-];
-
-const DATE_RANGES: { value: DateRangeFilter; label: string }[] = [
-  { value: 'all', label: 'Todo el tiempo' },
-  { value: 'today', label: 'Hoy' },
-  { value: 'week', label: 'Última semana' },
-  { value: 'month', label: 'Último mes' },
-  { value: 'custom', label: 'Rango personalizado' },
-];
-
-const getEmailTypeIcon = (type: string) => {
-  switch (type) {
-    case 'new_content':
-      return <Video className="w-4 h-4" />;
-    case 'live_started':
-      return <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />;
-    case 'availability_reminder':
-      return <CalendarIcon className="w-4 h-4" />;
-    default:
-      return <Mail className="w-4 h-4" />;
-  }
-};
-
-const getEmailTypeLabel = (type: string) => {
-  switch (type) {
-    case 'new_content':
-      return 'Nuevo contenido';
-    case 'live_started':
-      return 'Live iniciado';
-    case 'availability_reminder':
-      return 'Recordatorio';
-    default:
-      return type;
-  }
-};
-
 export function EmailHistoryCard() {
   const { supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [emails, setEmails] = useState<EmailHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -81,12 +42,53 @@ export function EmailHistoryCard() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Filter states
   const [typeFilter, setTypeFilter] = useState<EmailTypeFilter>('all');
   const [dateFilter, setDateFilter] = useState<DateRangeFilter>('all');
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+
+  const EMAIL_TYPES: { value: EmailTypeFilter; labelKey: string }[] = [
+    { value: 'all', labelKey: 'emailHistoryCard.typeFilter.all' },
+    { value: 'new_content', labelKey: 'emailHistoryCard.typeFilter.newContent' },
+    { value: 'live_started', labelKey: 'emailHistoryCard.typeFilter.liveStarted' },
+    { value: 'availability_reminder', labelKey: 'emailHistoryCard.typeFilter.reminders' },
+  ];
+
+  const DATE_RANGES: { value: DateRangeFilter; labelKey: string }[] = [
+    { value: 'all', labelKey: 'emailHistoryCard.dateFilter.all' },
+    { value: 'today', labelKey: 'emailHistoryCard.dateFilter.today' },
+    { value: 'week', labelKey: 'emailHistoryCard.dateFilter.week' },
+    { value: 'month', labelKey: 'emailHistoryCard.dateFilter.month' },
+    { value: 'custom', labelKey: 'emailHistoryCard.dateFilter.custom' },
+  ];
+
+  const getEmailTypeIcon = (type: string) => {
+    switch (type) {
+      case 'new_content':
+        return <Video className="w-4 h-4" />;
+      case 'live_started':
+        return <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />;
+      case 'availability_reminder':
+        return <CalendarIcon className="w-4 h-4" />;
+      default:
+        return <Mail className="w-4 h-4" />;
+    }
+  };
+
+  const getEmailTypeLabel = (type: string) => {
+    switch (type) {
+      case 'new_content':
+        return t('emailHistoryCard.emailType.newContent');
+      case 'live_started':
+        return t('emailHistoryCard.emailType.liveStarted');
+      case 'availability_reminder':
+        return t('emailHistoryCard.emailType.reminder');
+      default:
+        return type;
+    }
+  };
 
   useEffect(() => {
     if (!supabaseUser?.id) return;
@@ -201,14 +203,22 @@ export function EmailHistoryCard() {
   const failedCount = filteredEmails.filter(e => e.status === 'failed').length;
 
   const exportToCSV = () => {
-    const headers = ['Fecha', 'Destinatario', 'Email', 'Tipo', 'Contenido', 'Estado', 'Error'];
+    const headers = [
+      t('emailHistoryCard.csv.date'),
+      t('emailHistoryCard.csv.recipient'),
+      t('emailHistoryCard.csv.email'),
+      t('emailHistoryCard.csv.type'),
+      t('emailHistoryCard.csv.content'),
+      t('emailHistoryCard.csv.status'),
+      t('emailHistoryCard.csv.error'),
+    ];
     const rows = filteredEmails.map(email => [
       format(email.createdAt, "yyyy-MM-dd HH:mm:ss"),
       email.recipientName || '',
       email.recipientEmail,
       getEmailTypeLabel(email.emailType),
       email.contentTitle || '',
-      email.status === 'sent' ? 'Enviado' : 'Fallido',
+      email.status === 'sent' ? t('emailHistoryCard.status.sent') : t('emailHistoryCard.status.failed'),
       email.errorMessage || ''
     ]);
 
@@ -221,7 +231,7 @@ export function EmailHistoryCard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `historial-emails-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute('download', `${t('emailHistoryCard.csv.fileNamePrefix')}-${format(new Date(), 'yyyy-MM-dd')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -234,7 +244,7 @@ export function EmailHistoryCard() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Mail className="w-5 h-5 text-primary" />
-            Historial de Emails
+            {t('emailHistoryCard.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -254,14 +264,14 @@ export function EmailHistoryCard() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Mail className="w-5 h-5 text-primary" />
-            Historial de Emails
+            {t('emailHistoryCard.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6 text-muted-foreground">
             <Mail className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Aún no has enviado emails a tus suscriptores</p>
-            <p className="text-xs mt-1">Los emails aparecerán aquí cuando subas contenido o inicies un live</p>
+            <p className="text-sm">{t('emailHistoryCard.empty.title')}</p>
+            <p className="text-xs mt-1">{t('emailHistoryCard.empty.description')}</p>
           </div>
         </CardContent>
       </Card>
@@ -277,7 +287,7 @@ export function EmailHistoryCard() {
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2 min-w-0">
             <Mail className="w-5 h-5 text-primary shrink-0" />
-            <span className="truncate">Historial de Emails</span>
+            <span className="truncate">{t('emailHistoryCard.title')}</span>
           </CardTitle>
           <div className="flex items-center gap-1.5 shrink-0">
             <Badge variant="secondary" className="gap-1 text-[10px] sm:text-xs px-1.5 sm:px-2">
@@ -304,7 +314,7 @@ export function EmailHistoryCard() {
               className="gap-1 h-8 text-xs"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              {isDeleting ? '...' : `Eliminar (${selectedIds.size})`}
+              {isDeleting ? '...' : `${t('emailHistoryCard.actions.delete')} (${selectedIds.size})`}
             </Button>
           )}
           <Button
@@ -314,7 +324,7 @@ export function EmailHistoryCard() {
             className="gap-1 text-xs h-8"
           >
             <CheckCircle className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{selectedIds.size === filteredEmails.length ? 'Deseleccionar' : 'Seleccionar todo'}</span>
+            <span className="hidden sm:inline">{selectedIds.size === filteredEmails.length ? t('emailHistoryCard.actions.deselectAll') : t('emailHistoryCard.actions.selectAll')}</span>
           </Button>
           {filteredEmails.length > 0 && (
             <Button
@@ -322,10 +332,10 @@ export function EmailHistoryCard() {
               size="sm"
               onClick={exportToCSV}
               className="gap-1 h-8 text-xs"
-              title="Exportar a CSV"
+              title={t('emailHistoryCard.actions.exportCsvTitle')}
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">CSV</span>
+              <span className="hidden sm:inline">{t('emailHistoryCard.actions.csv')}</span>
             </Button>
           )}
           <Button
@@ -347,7 +357,7 @@ export function EmailHistoryCard() {
             <div className="flex flex-wrap gap-3">
               {/* Type Filter */}
               <div className="flex-1 min-w-[150px]">
-                <label className="text-xs text-muted-foreground mb-1 block">Tipo de email</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('emailHistoryCard.filters.emailTypeLabel')}</label>
                 <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as EmailTypeFilter)}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -355,7 +365,7 @@ export function EmailHistoryCard() {
                   <SelectContent>
                     {EMAIL_TYPES.map(type => (
                       <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                        {t(type.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -364,7 +374,7 @@ export function EmailHistoryCard() {
 
               {/* Date Filter */}
               <div className="flex-1 min-w-[150px]">
-                <label className="text-xs text-muted-foreground mb-1 block">Período</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('emailHistoryCard.filters.periodLabel')}</label>
                 <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateRangeFilter)}>
                   <SelectTrigger className="h-9">
                     <SelectValue />
@@ -372,7 +382,7 @@ export function EmailHistoryCard() {
                   <SelectContent>
                     {DATE_RANGES.map(range => (
                       <SelectItem key={range.value} value={range.value}>
-                        {range.label}
+                        {t(range.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -384,7 +394,7 @@ export function EmailHistoryCard() {
             {dateFilter === 'custom' && (
               <div className="flex flex-wrap gap-3">
                 <div className="flex-1 min-w-[150px]">
-                  <label className="text-xs text-muted-foreground mb-1 block">Desde</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t('emailHistoryCard.filters.fromLabel')}</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -395,7 +405,7 @@ export function EmailHistoryCard() {
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Seleccionar"}
+                        {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : t('emailHistoryCard.filters.selectPlaceholder')}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -410,7 +420,7 @@ export function EmailHistoryCard() {
                   </Popover>
                 </div>
                 <div className="flex-1 min-w-[150px]">
-                  <label className="text-xs text-muted-foreground mb-1 block">Hasta</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t('emailHistoryCard.filters.toLabel')}</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -421,7 +431,7 @@ export function EmailHistoryCard() {
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Seleccionar"}
+                        {customDateTo ? format(customDateTo, "dd/MM/yyyy") : t('emailHistoryCard.filters.selectPlaceholder')}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -447,14 +457,14 @@ export function EmailHistoryCard() {
                 className="text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4 mr-1" />
-                Limpiar filtros
+                {t('emailHistoryCard.filters.clear')}
               </Button>
             )}
 
             {/* Results count */}
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {filteredEmails.length} de {emails.length} emails
+              {`${filteredEmails.length} ${t('emailHistoryCard.filters.resultsCountConnector')} ${emails.length} ${t('emailHistoryCard.filters.resultsCountSuffix')}`}
             </div>
           </div>
         )}
@@ -463,9 +473,9 @@ export function EmailHistoryCard() {
         {filteredEmails.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Filter className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No hay emails que coincidan con los filtros</p>
+            <p className="text-sm">{t('emailHistoryCard.noResults.title')}</p>
             <Button variant="link" size="sm" onClick={clearFilters}>
-              Limpiar filtros
+              {t('emailHistoryCard.filters.clear')}
             </Button>
           </div>
         ) : (
@@ -533,12 +543,12 @@ export function EmailHistoryCard() {
                 {isExpanded ? (
                   <>
                     <ChevronUp className="w-4 h-4 mr-1" />
-                    Mostrar menos
+                    {t('emailHistoryCard.actions.showLess')}
                   </>
                 ) : (
                   <>
                     <ChevronDown className="w-4 h-4 mr-1" />
-                    Ver todos ({filteredEmails.length})
+                    {`${t('emailHistoryCard.actions.showAll')} (${filteredEmails.length})`}
                   </>
                 )}
               </Button>

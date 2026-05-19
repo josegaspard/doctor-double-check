@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useVault } from '@/contexts/VaultContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -49,7 +50,8 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
   const { files, grantAccess } = useVault();
   const { createSession } = useChat();
   const { balance, canAfford, getEffectivePrice, refreshWallet } = useWallet();
-  
+  const { t } = useLanguage();
+
   const [step, setStep] = useState<'files' | 'confirm' | 'processing'>('files');
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -66,7 +68,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
 
   const handleWalletPayment = async () => {
     if (!user) return;
-    
+
     setStep('processing');
     setIsProcessing(true);
 
@@ -79,7 +81,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .single();
 
       if (doctorError || doctorProfile?.status !== 'approved') {
-        throw new Error('El doctor no está disponible para Segunda Opinión');
+        throw new Error(t('doubleCheckFlow.errors.doctorNotAvailable'));
       }
 
       // SECURITY (2026-05-11): atomic patient debit + doctor credit in one RPC.
@@ -90,17 +92,21 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         {
           p_doctor_id: doctor.userId,
           p_amount: doctor.consultationFee,
-          p_description: `Segunda Opinión con ${doctor.name}`,
+          p_description: t('doubleCheckFlow.purchase.description').replace('{doctorName}', doctor.name),
         }
       );
 
       if (purchaseError) throw purchaseError;
       const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number; new_balance?: number } | null;
       if (!result?.success) {
-        throw new Error(result?.error || 'Error en el pago');
+        throw new Error(result?.error || t('doubleCheckFlow.errors.paymentError'));
       }
 
-      toast.success(`Se debitaron $${result.amount_charged} de tu wallet. Nuevo saldo: $${result.new_balance}`);
+      toast.success(
+        t('doubleCheckFlow.walletDebited')
+          .replace('{amount}', String(result.amount_charged))
+          .replace('{balance}', String(result.new_balance))
+      );
 
       // 2. Create consultation record
       const { data: consultation, error: consultationError } = await supabase
@@ -109,7 +115,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           patient_id: user.id,
           doctor_id: doctor.userId,
           status: 'active',
-          notes: 'Segunda Opinión médica',
+          notes: t('doubleCheckFlow.consultationNotes'),
         })
         .select()
         .single();
@@ -123,15 +129,15 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
 
       // 4. Create chat session
       const chatResult = await createSession(doctor.userId, 'doctor', true, consultation.id);
-      
+
       if (!chatResult.success) {
-        throw new Error(chatResult.error || 'Error al crear sesión de chat');
+        throw new Error(chatResult.error || t('doubleCheckFlow.errors.chatSessionError'));
       }
 
       // 5. Create entitlement
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 30);
-      
+
       await supabase
         .from('entitlements')
         .insert({
@@ -150,10 +156,12 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .insert({
           user_id: doctor.userId,
           type: 'chat_message',
-          title: '🔄 Nueva solicitud de Segunda Opinión',
-          message: `${user.name || 'Un paciente'} ha solicitado una segunda opinión`,
-          data: { 
-            patient_id: user.id, 
+          title: t('doubleCheckFlow.notification.title'),
+          message: user.name
+            ? t('doubleCheckFlow.notification.messageWithName').replace('{patientName}', user.name)
+            : t('doubleCheckFlow.notification.messageDefault'),
+          data: {
+            patient_id: user.id,
             session_id: chatResult.session?.id,
             consultation_id: consultation.id,
             url: '/chat',
@@ -164,13 +172,13 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       // 8. Refresh wallet
       await refreshWallet();
 
-      toast.success('Segunda Opinión iniciada correctamente');
+      toast.success(t('doubleCheckFlow.consultationStarted'));
       onClose();
       navigate('/chat', { state: { sessionId: chatResult.session?.id } });
 
     } catch (error: any) {
       console.error('Segunda Opinión error:', error);
-      toast.error(error.message || 'Error al iniciar Segunda Opinión');
+      toast.error(error.message || t('doubleCheckFlow.errors.consultationError'));
       setStep('confirm');
     } finally {
       setIsProcessing(false);
@@ -181,9 +189,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
     setIsStripeProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
-        body: { 
-          doctorId: doctor.userId, 
-          consultationFee: doctor.consultationFee, 
+        body: {
+          doctorId: doctor.userId,
+          consultationFee: doctor.consultationFee,
           doctorName: doctor.name,
         },
       });
@@ -200,7 +208,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       }
     } catch (error: any) {
       console.error('Stripe checkout error:', error);
-      toast.error(error.message || 'Error al procesar el pago con tarjeta');
+      toast.error(error.message || t('doubleCheckFlow.errors.stripeError'));
     } finally {
       setIsStripeProcessing(false);
     }
@@ -215,9 +223,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
               <CheckCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <DialogTitle>Segunda Opinión</DialogTitle>
+              <DialogTitle>{t('doubleCheckFlow.title')}</DialogTitle>
               <DialogDescription>
-                Segunda opinión con {doctor.name}
+                {t('doubleCheckFlow.description').replace('{doctorName}', doctor.name)}
               </DialogDescription>
             </div>
           </div>
@@ -228,9 +236,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             <div className="py-4">
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Selecciona los estudios a compartir
+                {t('doubleCheckFlow.files.selectStudies')}
               </h4>
-              
+
               {patientFiles.length > 0 ? (
                 <ScrollArea className="h-[200px] border rounded-lg p-3">
                   <div className="space-y-2">
@@ -260,7 +268,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                 <div className="text-center py-8 bg-muted/50 rounded-lg">
                   <FileText className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    No tienes expedientes en tu Vault
+                    {t('doubleCheckFlow.files.noFiles')}
                   </p>
                   <Button
                     variant="link"
@@ -270,7 +278,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                       navigate('/vault');
                     }}
                   >
-                    Subir expedientes
+                    {t('doubleCheckFlow.files.uploadFiles')}
                   </Button>
                 </div>
               )}
@@ -279,16 +287,16 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             <div className="flex items-center gap-2 p-3 bg-info/5 rounded-lg text-sm">
               <Shield className="w-4 h-4 text-info" />
               <span className="text-muted-foreground">
-                El acceso a tus expedientes se revocará al finalizar la orientación médica
+                {t('doubleCheckFlow.files.accessRevokedNotice')}
               </span>
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>
-                Cancelar
+                {t('doubleCheckFlow.actions.cancel')}
               </Button>
               <Button onClick={() => setStep('confirm')}>
-                Continuar
+                {t('doubleCheckFlow.actions.continue')}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </DialogFooter>
@@ -299,19 +307,19 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           <>
             <div className="py-4 space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-medium mb-3">Resumen de tu Segunda Opinión</h4>
+                <h4 className="font-medium mb-3">{t('doubleCheckFlow.confirm.summaryTitle')}</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Especialista</span>
+                    <span className="text-muted-foreground">{t('doubleCheckFlow.confirm.specialist')}</span>
                     <span className="font-medium">{doctor.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Especialidad</span>
+                    <span className="text-muted-foreground">{t('doubleCheckFlow.confirm.specialty')}</span>
                     <span>{doctor.specialty}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Archivos compartidos</span>
-                    <span>{selectedFiles.length} archivos</span>
+                    <span className="text-muted-foreground">{t('doubleCheckFlow.confirm.sharedFiles')}</span>
+                    <span>{t('doubleCheckFlow.confirm.filesCount').replace('{count}', String(selectedFiles.length))}</span>
                   </div>
                 </div>
               </div>
@@ -320,7 +328,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-5 h-5 text-success" />
-                    <span className="font-medium">Total a pagar</span>
+                    <span className="font-medium">{t('doubleCheckFlow.confirm.totalToPay')}</span>
                   </div>
                   <div className="text-right">
                     {role === 'resident' && (
@@ -333,7 +341,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                     </p>
                     {role === 'resident' && (
                       <Badge variant="success" className="text-xs">
-                        50% descuento residente
+                        {t('doubleCheckFlow.confirm.residentDiscount')}
                       </Badge>
                     )}
                   </div>
@@ -345,7 +353,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
               {/* Payment Options */}
               <div className="space-y-3">
                 {/* Stripe */}
-                <Button 
+                <Button
                   onClick={handleStripePayment}
                   disabled={isStripeProcessing || isProcessing}
                   className="w-full h-12 gap-2"
@@ -355,7 +363,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      Pagar con tarjeta
+                      {t('doubleCheckFlow.confirm.payWithCard')}
                       <ExternalLink className="w-3 h-3 ml-1" />
                     </>
                   )}
@@ -367,13 +375,13 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                     <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">o usa tu saldo</span>
+                    <span className="bg-background px-2 text-muted-foreground">{t('doubleCheckFlow.confirm.orUseBalance')}</span>
                   </div>
                 </div>
 
                 {/* Wallet */}
                 {canAfford(doctor.consultationFee) ? (
-                  <Button 
+                  <Button
                     onClick={handleWalletPayment}
                     disabled={isProcessing || isStripeProcessing}
                     variant="outline"
@@ -384,7 +392,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                     ) : (
                       <>
                         <Wallet className="w-4 h-4" />
-                        Pagar con saldo (${balance.toLocaleString()})
+                        {t('doubleCheckFlow.confirm.payWithBalance').replace('{balance}', balance.toLocaleString())}
                       </>
                     )}
                   </Button>
@@ -393,19 +401,21 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                     <div className="flex items-start gap-2 p-3 bg-warning/10 rounded-lg border border-warning/30">
                       <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                       <div className="text-sm">
-                        <p className="font-medium text-warning">Saldo insuficiente</p>
+                        <p className="font-medium text-warning">{t('doubleCheckFlow.confirm.insufficientBalance')}</p>
                         <p className="text-warning/80 text-xs">
-                          Tienes ${balance.toLocaleString()} — necesitas ${(discountedFee - balance).toLocaleString()} más
+                          {t('doubleCheckFlow.confirm.insufficientBalanceDetail')
+                            .replace('{balance}', balance.toLocaleString())
+                            .replace('{missing}', (discountedFee - balance).toLocaleString())}
                         </p>
                       </div>
                     </div>
-                    <Button 
-                      onClick={() => { onClose(); navigate('/wallet'); }} 
+                    <Button
+                      onClick={() => { onClose(); navigate('/wallet'); }}
                       variant="outline"
                       className="w-full gap-2"
                     >
                       <Wallet className="w-4 h-4" />
-                      Recargar wallet
+                      {t('doubleCheckFlow.confirm.topUpWallet')}
                     </Button>
                   </div>
                 )}
@@ -413,7 +423,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
             </div>
 
             <Button variant="ghost" onClick={() => setStep('files')} className="w-full">
-              ← Atrás
+              {t('doubleCheckFlow.actions.back')}
             </Button>
           </>
         )}
@@ -421,9 +431,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         {step === 'processing' && (
           <div className="py-12 text-center">
             <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
-            <p className="font-medium">Procesando tu Segunda Opinión...</p>
+            <p className="font-medium">{t('doubleCheckFlow.processing.title')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              No cierres esta ventana
+              {t('doubleCheckFlow.processing.doNotClose')}
             </p>
           </div>
         )}

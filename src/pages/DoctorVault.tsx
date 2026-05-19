@@ -73,7 +73,7 @@ export default function DoctorVault() {
 
   const handleViewFile = (file: VaultFile) => {
     if (!isPatientVerified(file.patientId)) {
-      openOtpForPatient(file.patientId, file.patientName || 'Paciente');
+      openOtpForPatient(file.patientId, file.patientName || t('doctorVaultPage.patientFallback'));
       setSelectedFile(file);
       return;
     }
@@ -86,7 +86,7 @@ export default function DoctorVault() {
   accessibleFiles.forEach(file => {
     if (!filesByPatient[file.patientId]) {
       filesByPatient[file.patientId] = {
-        patientName: file.patientName || `Paciente ${file.patientId.slice(-3)}`,
+        patientName: file.patientName || `${t('doctorVaultPage.patientFallbackPrefix')} ${file.patientId.slice(-3)}`,
         files: [],
       };
     }
@@ -132,7 +132,7 @@ export default function DoctorVault() {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="hidden sm:inline-flex mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver al Panel
+          {t('doctorVaultPage.backToPanel')}
         </Button>
 
         <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
@@ -142,12 +142,12 @@ export default function DoctorVault() {
               {t('nav.doctorVault')}
             </h1>
             <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-              Expedientes médicos a los que tienes acceso por autorización del paciente. Aquí también verás el contacto de cobros y los totales pagados por cada paciente.
+              {t('doctorVaultPage.description')}
             </p>
           </div>
           <Button size="sm" onClick={() => setShowAddPatient(true)} className="gap-2 flex-shrink-0">
             <UserPlus className="w-4 h-4" />
-            Agregar paciente
+            {t('doctorVaultPage.addPatient')}
           </Button>
         </div>
 
@@ -157,10 +157,9 @@ export default function DoctorVault() {
             <div className="flex items-start gap-3">
               <Lock className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-foreground text-sm">Acceso Controlado por el Paciente + OTP</h3>
+                <h3 className="font-semibold text-foreground text-sm">{t('doctorVaultPage.infoBannerTitle')}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Para ver el expediente, necesitas un código de verificación (OTP) que el paciente recibirá por notificación, correo electrónico o SMS.
-                  El código expira en 2 minutos y solo puede usarse una vez.
+                  {t('doctorVaultPage.infoBannerText')}
                 </p>
               </div>
             </div>
@@ -176,11 +175,11 @@ export default function DoctorVault() {
                   <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
                     <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">{patientName}</span>
-                    <Badge variant="outline" className="ml-auto text-[10px]">{files.length} exp.</Badge>
+                    <Badge variant="outline" className="ml-auto text-[10px]">{files.length} {t('doctorVaultPage.filesCountSuffix')}</Badge>
                     {isPatientVerified(patientId) && (
                       <Badge variant="info" className="gap-1 text-[10px]">
                         <ShieldCheck className="w-3 h-3" />
-                        Verificado
+                        {t('doctorVaultPage.verifiedBadge')}
                       </Badge>
                     )}
                   </CardTitle>
@@ -192,13 +191,13 @@ export default function DoctorVault() {
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
                         <Mail className="w-3.5 h-3.5 flex-shrink-0" />
                         <span className="truncate" title={paymentsByPatient[patientId].patientEmail || ''}>
-                          {paymentsByPatient[patientId].patientEmail || 'Sin correo registrado'}
+                          {paymentsByPatient[patientId].patientEmail || t('doctorVaultPage.noEmailRegistered')}
                         </span>
                       </div>
 
                       {/* Total destacado */}
                       <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-primary/10">
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Total pagado</span>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">{t('doctorVaultPage.totalPaid')}</span>
                         <span className="flex items-center gap-1 text-base sm:text-lg font-bold text-primary">
                           <DollarSign className="w-4 h-4" />
                           <PriceDisplay amount={paymentsByPatient[patientId].totalPaid} />
@@ -208,13 +207,13 @@ export default function DoctorVault() {
                       {/* Desglose orientaciones vs compras */}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="bg-background/60 rounded-md p-2">
-                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">Orientaciones</p>
+                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">{t('doctorVaultPage.consultations')}</p>
                           <p className="text-sm font-semibold text-foreground mt-0.5">
                             {paymentsByPatient[patientId].consultationsCount}
                           </p>
                         </div>
                         <div className="bg-background/60 rounded-md p-2">
-                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">Compras</p>
+                          <p className="text-[10px] uppercase text-muted-foreground font-medium leading-tight">{t('doctorVaultPage.purchases')}</p>
                           <p className="text-sm font-semibold text-foreground mt-0.5">
                             {paymentsByPatient[patientId].purchasesCount}
                           </p>
@@ -224,7 +223,7 @@ export default function DoctorVault() {
                       {paymentsByPatient[patientId].lastPaymentAt && (
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1 pt-1">
                           <Calendar className="w-3 h-3" />
-                          Último pago: {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {t('doctorVaultPage.lastPayment')} {new Date(paymentsByPatient[patientId].lastPaymentAt!).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       )}
                     </div>
@@ -233,7 +232,7 @@ export default function DoctorVault() {
                     <div className="bg-secondary/10 border border-secondary/40 rounded-lg p-3 mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <KeyRound className="w-4 h-4 text-secondary flex-shrink-0" />
-                        <span className="text-xs text-foreground font-medium truncate">Requiere verificación OTP</span>
+                        <span className="text-xs text-foreground font-medium truncate">{t('doctorVaultPage.requiresOtpVerification')}</span>
                       </div>
                       <Button
                         size="sm"
@@ -242,7 +241,7 @@ export default function DoctorVault() {
                         className="h-8 text-xs gap-1 flex-shrink-0 border-secondary/40 text-secondary hover:bg-secondary/10"
                       >
                         <KeyRound className="w-3 h-3" />
-                        Verificar
+                        {t('doctorVaultPage.verify')}
                       </Button>
                     </div>
                   )}
@@ -299,10 +298,10 @@ export default function DoctorVault() {
           <Card className="p-8 sm:p-12 text-center">
             <Lock className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              Sin acceso a expedientes
+              {t('doctorVaultPage.emptyTitle')}
             </h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Ningún paciente te ha concedido acceso a su vault médico todavía.
+              {t('doctorVaultPage.emptyText')}
             </p>
           </Card>
         )}

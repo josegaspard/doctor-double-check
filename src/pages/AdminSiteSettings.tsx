@@ -79,7 +79,7 @@ interface FooterLinksData {
 export default function AdminSiteSettings() {
   const navigate = useNavigate();
   const { role, supabaseUser } = useAuth();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -103,30 +103,30 @@ export default function AdminSiteSettings() {
     price_per_gb: 49,
     plans: [
       { gb: 1, label: '+1 GB' },
-      { gb: 5, label: '+5 GB', badge: 'Popular' },
-      { gb: 10, label: '+10 GB', badge: 'Mejor valor' },
+      { gb: 5, label: '+5 GB', badge: t('adminSiteSettingsPage.storage.defaultPopular') },
+      { gb: 10, label: '+10 GB', badge: t('adminSiteSettingsPage.storage.defaultBestValue') },
     ],
   });
   const [footerLinks, setFooterLinks] = useState<FooterLinksData>({
     platform: [
-      { label: 'Para Doctores', href: '/for-doctors' },
-      { label: 'Para Residentes', href: '/for-residents' },
-      { label: 'Para Pacientes', href: '/for-patients' },
-      { label: 'Empresas', href: '/enterprise' },
+      { label: t('adminSiteSettingsPage.footer.defaults.platform.doctors'), href: '/for-doctors' },
+      { label: t('adminSiteSettingsPage.footer.defaults.platform.residents'), href: '/for-residents' },
+      { label: t('adminSiteSettingsPage.footer.defaults.platform.patients'), href: '/for-patients' },
+      { label: t('adminSiteSettingsPage.footer.defaults.platform.enterprise'), href: '/enterprise' },
     ],
     resources: [
-      { label: 'Casos de Éxito', href: '/success-stories' },
-      { label: 'Ayuda', href: '/help' },
-      { label: 'Contacto', href: '/contact' },
+      { label: t('adminSiteSettingsPage.footer.defaults.resources.successStories'), href: '/success-stories' },
+      { label: t('adminSiteSettingsPage.footer.defaults.resources.help'), href: '/help' },
+      { label: t('adminSiteSettingsPage.footer.defaults.resources.contact'), href: '/contact' },
     ],
     legal: [
-      { label: 'Privacidad', href: '/privacy' },
-      { label: 'Términos', href: '/terms' },
-      { label: 'Seguridad', href: '/security' },
-      { label: 'Cumplimiento', href: '/compliance' },
-      { label: 'Reportar', href: '/report-issue' },
+      { label: t('adminSiteSettingsPage.footer.defaults.legal.privacy'), href: '/privacy' },
+      { label: t('adminSiteSettingsPage.footer.defaults.legal.terms'), href: '/terms' },
+      { label: t('adminSiteSettingsPage.footer.defaults.legal.security'), href: '/security' },
+      { label: t('adminSiteSettingsPage.footer.defaults.legal.compliance'), href: '/compliance' },
+      { label: t('adminSiteSettingsPage.footer.defaults.legal.report'), href: '/report-issue' },
     ],
-    copyright: '2025 Medical Masters. Todos los derechos reservados.',
+    copyright: t('adminSiteSettingsPage.footer.defaults.copyright'),
     show_status_badge: true,
   });
 
@@ -142,9 +142,9 @@ export default function AdminSiteSettings() {
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
-      toast.error(language === 'es' ? 'Acceso denegado' : 'Access denied');
+      toast.error(t('adminSiteSettingsPage.accessDenied'));
     }
-  }, [role, navigate, language]);
+  }, [role, navigate, t]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -251,10 +251,10 @@ export default function AdminSiteSettings() {
         .eq('id', 'social_links');
 
       if (error) throw error;
-      toast.success(language === 'es' ? 'Redes sociales actualizadas' : 'Social links updated');
+      toast.success(t('adminSiteSettingsPage.social.updated'));
     } catch (error) {
       console.error('Error saving social links:', error);
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('adminSiteSettingsPage.social.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -275,10 +275,10 @@ export default function AdminSiteSettings() {
         .eq('id', 'terms_of_service');
 
       if (error) throw error;
-      toast.success(language === 'es' ? 'Términos de servicio actualizados' : 'Terms of service updated');
+      toast.success(t('adminSiteSettingsPage.terms.updated'));
     } catch (error) {
       console.error('Error saving terms:', error);
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('adminSiteSettingsPage.terms.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -299,10 +299,10 @@ export default function AdminSiteSettings() {
         .eq('id', 'privacy_policy');
 
       if (error) throw error;
-      toast.success(language === 'es' ? 'Política de privacidad actualizada' : 'Privacy policy updated');
+      toast.success(t('adminSiteSettingsPage.privacy.updated'));
     } catch (error) {
       console.error('Error saving privacy:', error);
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('adminSiteSettingsPage.privacy.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -321,10 +321,10 @@ export default function AdminSiteSettings() {
         });
 
       if (updateError) throw updateError;
-      toast.success(language === 'es' ? 'Información de contacto actualizada' : 'Contact info updated');
+      toast.success(t('adminSiteSettingsPage.contact.updated'));
     } catch (error) {
       console.error('Error saving contact:', error);
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('adminSiteSettingsPage.contact.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -342,10 +342,10 @@ export default function AdminSiteSettings() {
         });
 
       if (error) throw error;
-      toast.success('Precios de almacenamiento actualizados');
+      toast.success(t('adminSiteSettingsPage.storage.updated'));
     } catch (error) {
       console.error('Error saving storage pricing:', error);
-      toast.error('Error al guardar');
+      toast.error(t('adminSiteSettingsPage.storage.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -363,10 +363,10 @@ export default function AdminSiteSettings() {
         });
 
       if (error) throw error;
-      toast.success('Footer actualizado');
+      toast.success(t('adminSiteSettingsPage.footer.updated'));
     } catch (error) {
       console.error('Error saving footer links:', error);
-      toast.error('Error al guardar');
+      toast.error(t('adminSiteSettingsPage.footer.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -405,10 +405,10 @@ export default function AdminSiteSettings() {
           <div className="flex-1">
             <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
               <Settings className="w-6 h-6 text-primary" />
-              {t('admin.siteSettings')}
+              {t('adminSiteSettingsPage.header.title')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              {t('admin.socialDescription')}
+              {t('adminSiteSettingsPage.header.description')}
             </p>
           </div>
         </div>
@@ -422,31 +422,31 @@ export default function AdminSiteSettings() {
             <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('admin.socialLinks')}</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.social')}</span>
               </TabsTrigger>
               <TabsTrigger value="terms" className="gap-2 text-xs">
                 <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('admin.terms')}</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.terms')}</span>
               </TabsTrigger>
               <TabsTrigger value="privacy" className="gap-2 text-xs">
                 <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('admin.privacy')}</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.privacy')}</span>
               </TabsTrigger>
               <TabsTrigger value="contact" className="gap-2 text-xs">
                 <Mail className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('admin.contact')}</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.contact')}</span>
               </TabsTrigger>
               <TabsTrigger value="storage" className="gap-2 text-xs">
                 <HardDrive className="w-4 h-4" />
-                <span className="hidden sm:inline">{t('admin.storage')}</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.storage')}</span>
               </TabsTrigger>
               <TabsTrigger value="footer" className="gap-2 text-xs">
                 <Link2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Footer</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.footer')}</span>
               </TabsTrigger>
               <TabsTrigger value="toggles" className="gap-2 text-xs">
                 <ToggleLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Toggles</span>
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.toggles')}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -456,10 +456,10 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Globe className="w-5 h-5" />
-                    {t('admin.socialLinks')}
+                    {t('adminSiteSettingsPage.social.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {t('admin.socialDescription')}
+                    {t('adminSiteSettingsPage.social.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -551,7 +551,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {t('admin.saveSocial')}
+                    {t('adminSiteSettingsPage.social.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -563,17 +563,17 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText className="w-5 h-5" />
-                    {t('admin.terms')}
+                    {t('adminSiteSettingsPage.terms.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {t('admin.termsDescription')}
+                    {t('adminSiteSettingsPage.terms.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <RichTextLegalEditor
                     content={termsContent}
                     onChange={setTermsContent}
-                    placeholder={t('admin.termsDescription')}
+                    placeholder={t('adminSiteSettingsPage.terms.description')}
                   />
                   <Button onClick={handleSaveTerms} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -581,7 +581,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {t('admin.saveTerms')}
+                    {t('adminSiteSettingsPage.terms.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -593,19 +593,17 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Shield className="w-5 h-5" />
-                    {language === 'es' ? 'Política de Privacidad' : 'Privacy Policy'}
+                    {t('adminSiteSettingsPage.privacy.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {language === 'es' 
-                      ? 'Edita el contenido de la página de política de privacidad' 
-                      : 'Edit the privacy policy page content'}
+                    {t('adminSiteSettingsPage.privacy.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <RichTextLegalEditor
                     content={privacyContent}
                     onChange={setPrivacyContent}
-                    placeholder={t('admin.privacyDescription')}
+                    placeholder={t('adminSiteSettingsPage.privacy.placeholder')}
                   />
                   <Button onClick={handleSavePrivacy} disabled={isSaving} className="w-full">
                     {isSaving ? (
@@ -613,7 +611,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {language === 'es' ? 'Guardar Privacidad' : 'Save Privacy'}
+                    {t('adminSiteSettingsPage.privacy.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -625,18 +623,16 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Mail className="w-5 h-5" />
-                    {language === 'es' ? 'Información de Contacto' : 'Contact Information'}
+                    {t('adminSiteSettingsPage.contact.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {language === 'es' 
-                      ? 'Configura la información que aparece en la página de contacto' 
-                      : 'Configure information shown on the contact page'}
+                    {t('adminSiteSettingsPage.contact.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="contact-email" className="text-xs">Email</Label>
+                      <Label htmlFor="contact-email" className="text-xs">{t('adminSiteSettingsPage.contact.email')}</Label>
                       <Input
                         id="contact-email"
                         type="email"
@@ -648,7 +644,7 @@ export default function AdminSiteSettings() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="contact-phone" className="text-xs">
-                        {language === 'es' ? 'Teléfono' : 'Phone'}
+                        {t('adminSiteSettingsPage.contact.phone')}
                       </Label>
                       <Input
                         id="contact-phone"
@@ -660,7 +656,7 @@ export default function AdminSiteSettings() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="contact-address" className="text-xs">
-                        {language === 'es' ? 'Dirección' : 'Address'}
+                        {t('adminSiteSettingsPage.contact.address')}
                       </Label>
                       <Input
                         id="contact-address"
@@ -672,13 +668,11 @@ export default function AdminSiteSettings() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="contact-content" className="text-xs">
-                        {language === 'es' ? 'Contenido adicional' : 'Additional content'}
+                        {t('adminSiteSettingsPage.contact.additionalContent')}
                       </Label>
                       <Textarea
                         id="contact-content"
-                        placeholder={language === 'es' 
-                          ? 'Horario de atención, información adicional...' 
-                          : 'Business hours, additional information...'}
+                        placeholder={t('adminSiteSettingsPage.contact.additionalContentPlaceholder')}
                         value={contactInfo.content}
                         onChange={(e) => setContactInfo({ ...contactInfo, content: e.target.value })}
                         className="min-h-[100px] text-sm"
@@ -692,7 +686,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {language === 'es' ? 'Guardar Contacto' : 'Save Contact'}
+                    {t('adminSiteSettingsPage.contact.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -704,15 +698,15 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <HardDrive className="w-5 h-5" />
-                    Precios de Almacenamiento
+                    {t('adminSiteSettingsPage.storage.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Configura el precio por GB y los planes disponibles para los usuarios
+                    {t('adminSiteSettingsPage.storage.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="price-per-gb" className="text-xs">Precio por GB (MXN)</Label>
+                    <Label htmlFor="price-per-gb" className="text-xs">{t('adminSiteSettingsPage.storage.pricePerGb')}</Label>
                     <Input
                       id="price-per-gb"
                       type="number"
@@ -726,11 +720,11 @@ export default function AdminSiteSettings() {
                   <Separator />
 
                   <div className="space-y-3">
-                    <Label className="text-xs font-semibold">Planes disponibles</Label>
+                    <Label className="text-xs font-semibold">{t('adminSiteSettingsPage.storage.availablePlans')}</Label>
                     {storagePricing.plans.map((plan, idx) => (
                       <div key={idx} className="grid grid-cols-4 gap-2 items-end">
                         <div>
-                          <Label className="text-xs">GB</Label>
+                          <Label className="text-xs">{t('adminSiteSettingsPage.storage.gb')}</Label>
                           <Input
                             type="number"
                             min="1"
@@ -744,7 +738,7 @@ export default function AdminSiteSettings() {
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Etiqueta</Label>
+                          <Label className="text-xs">{t('adminSiteSettingsPage.storage.label')}</Label>
                           <Input
                             value={plan.label}
                             onChange={(e) => {
@@ -756,7 +750,7 @@ export default function AdminSiteSettings() {
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Badge</Label>
+                          <Label className="text-xs">{t('adminSiteSettingsPage.storage.badge')}</Label>
                           <Input
                             value={plan.badge || ''}
                             onChange={(e) => {
@@ -764,7 +758,7 @@ export default function AdminSiteSettings() {
                               plans[idx] = { ...plans[idx], badge: e.target.value || undefined };
                               setStoragePricing({ ...storagePricing, plans });
                             }}
-                            placeholder="Opcional"
+                            placeholder={t('adminSiteSettingsPage.storage.badgePlaceholder')}
                             className="text-sm"
                           />
                         </div>
@@ -780,7 +774,7 @@ export default function AdminSiteSettings() {
                             }}
                             disabled={storagePricing.plans.length <= 1}
                           >
-                            Eliminar
+                            {t('adminSiteSettingsPage.storage.remove')}
                           </Button>
                         </div>
                       </div>
@@ -794,10 +788,10 @@ export default function AdminSiteSettings() {
                       }}
                       className="w-full"
                     >
-                      <Plus className="w-4 h-4 mr-1" /> Agregar plan
+                      <Plus className="w-4 h-4 mr-1" /> {t('adminSiteSettingsPage.storage.addPlan')}
                     </Button>
                     <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                      <p className="text-xs font-semibold text-foreground">Vista previa de precios:</p>
+                      <p className="text-xs font-semibold text-foreground">{t('adminSiteSettingsPage.storage.pricePreview')}</p>
                       {storagePricing.plans.map((plan, idx) => (
                         <p key={idx} className="text-xs text-muted-foreground">
                           {plan.label || `+${plan.gb} GB`}: <span className="font-semibold text-foreground">${plan.gb * storagePricing.price_per_gb} MXN</span>
@@ -813,7 +807,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    Guardar Precios
+                    {t('adminSiteSettingsPage.storage.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -825,16 +819,16 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Link2 className="w-5 h-5" />
-                    Footer del Sitio
+                    {t('adminSiteSettingsPage.footer.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Configura los links y contenido que aparecen en el footer de la landing y la aplicación
+                    {t('adminSiteSettingsPage.footer.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Copyright */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Texto de Copyright</Label>
+                    <Label className="text-xs font-semibold">{t('adminSiteSettingsPage.footer.copyrightLabel')}</Label>
                     <Input
                       value={footerLinks.copyright}
                       onChange={(e) => setFooterLinks({ ...footerLinks, copyright: e.target.value })}
@@ -845,8 +839,8 @@ export default function AdminSiteSettings() {
                   {/* Status badge toggle */}
                   <div className="flex items-center justify-between py-2">
                     <div>
-                      <Label className="text-xs font-semibold">Badge "Sistemas operativos"</Label>
-                      <p className="text-[11px] text-muted-foreground">Muestra el indicador verde de estado</p>
+                      <Label className="text-xs font-semibold">{t('adminSiteSettingsPage.footer.statusBadgeLabel')}</Label>
+                      <p className="text-[11px] text-muted-foreground">{t('adminSiteSettingsPage.footer.statusBadgeDescription')}</p>
                     </div>
                     <Switch
                       checked={footerLinks.show_status_badge}
@@ -861,7 +855,11 @@ export default function AdminSiteSettings() {
                     <div key={section} className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs font-semibold capitalize">
-                          {section === 'platform' ? 'Plataforma' : section === 'resources' ? 'Recursos' : 'Legal'}
+                          {section === 'platform'
+                            ? t('adminSiteSettingsPage.footer.sectionPlatform')
+                            : section === 'resources'
+                              ? t('adminSiteSettingsPage.footer.sectionResources')
+                              : t('adminSiteSettingsPage.footer.sectionLegal')}
                         </Label>
                         <Button
                           variant="ghost"
@@ -869,27 +867,27 @@ export default function AdminSiteSettings() {
                           onClick={() => addFooterLink(section)}
                           className="h-7 gap-1 text-xs"
                         >
-                          <Plus className="w-3 h-3" /> Agregar
+                          <Plus className="w-3 h-3" /> {t('adminSiteSettingsPage.footer.add')}
                         </Button>
                       </div>
                       {footerLinks[section].map((link, idx) => (
                         <div key={idx} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Texto</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('adminSiteSettingsPage.footer.linkLabel')}</Label>
                             <Input
                               value={link.label}
                               onChange={(e) => updateFooterSection(section, idx, 'label', e.target.value)}
                               className="text-sm h-9"
-                              placeholder="Mi link"
+                              placeholder={t('adminSiteSettingsPage.footer.linkLabelPlaceholder')}
                             />
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Ruta</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('adminSiteSettingsPage.footer.linkHref')}</Label>
                             <Input
                               value={link.href}
                               onChange={(e) => updateFooterSection(section, idx, 'href', e.target.value)}
                               className="text-sm h-9"
-                              placeholder="/ruta"
+                              placeholder={t('adminSiteSettingsPage.footer.linkHrefPlaceholder')}
                             />
                           </div>
                           <Button
@@ -911,7 +909,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    Guardar Footer
+                    {t('adminSiteSettingsPage.footer.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -923,25 +921,25 @@ export default function AdminSiteSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <ToggleLeft className="w-5 h-5" />
-                    Feature Toggles
+                    {t('adminSiteSettingsPage.toggles.title')}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Activa o desactiva secciones de la plataforma sin modificar código
+                    {t('adminSiteSettingsPage.toggles.description')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Background mode — special control */}
                   <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
                     <div>
-                      <p className="font-medium text-sm">🎨 Fondo de la aplicación</p>
+                      <p className="font-medium text-sm">{t('adminSiteSettingsPage.toggles.backgroundTitle')}</p>
                       <p className="text-xs text-muted-foreground">
-                        Alterna entre el fondo con imagen (azul Medical Masters) y el fondo blanco clásico con círculos decorativos.
+                        {t('adminSiteSettingsPage.toggles.backgroundDescription')}
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3 p-3 rounded-md bg-card">
                       <div className="flex items-center gap-3">
                         <span className={`text-xs font-medium ${featureToggles.app_background === 'white' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          Blanco (clásico)
+                          {t('adminSiteSettingsPage.toggles.backgroundWhite')}
                         </span>
                         <Switch
                           checked={featureToggles.app_background === 'image'}
@@ -950,21 +948,21 @@ export default function AdminSiteSettings() {
                           }
                         />
                         <span className={`text-xs font-medium ${featureToggles.app_background === 'image' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          Imagen (azul)
+                          {t('adminSiteSettingsPage.toggles.backgroundImage')}
                         </span>
                       </div>
                       <Badge variant={featureToggles.app_background === 'image' ? 'default' : 'secondary'} className="text-[10px]">
-                        {featureToggles.app_background === 'image' ? 'IMAGEN ACTIVA' : 'BLANCO ACTIVO'}
+                        {featureToggles.app_background === 'image' ? t('adminSiteSettingsPage.toggles.backgroundImageActive') : t('adminSiteSettingsPage.toggles.backgroundWhiteActive')}
                       </Badge>
                     </div>
                   </div>
 
                   {[
-                    { key: 'show_news_section' as const, label: 'Sección de Noticias', desc: 'Mostrar la pestaña de Noticias en la navegación' },
-                    { key: 'show_content_medical' as const, label: 'Contenido Médico', desc: 'Mostrar la pestaña de Contenido Médico en la navegación' },
-                    { key: 'show_prescriptions' as const, label: 'Recetas / Reuniones', desc: 'Mostrar la pestaña de Recetas (Reuniones) en la navegación' },
-                    { key: 'live_chat_free' as const, label: 'Chat en Lives Gratis', desc: 'Permitir chat gratuito durante transmisiones en vivo' },
-                    { key: 'show_transaction_history' as const, label: 'Historial de Transacciones', desc: 'Mostrar historial de transacciones para pacientes' },
+                    { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
+                    { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
+                    { key: 'show_prescriptions' as const, label: t('adminSiteSettingsPage.toggles.items.prescriptions.label'), desc: t('adminSiteSettingsPage.toggles.items.prescriptions.desc') },
+                    { key: 'live_chat_free' as const, label: t('adminSiteSettingsPage.toggles.items.liveChatFree.label'), desc: t('adminSiteSettingsPage.toggles.items.liveChatFree.desc') },
+                    { key: 'show_transaction_history' as const, label: t('adminSiteSettingsPage.toggles.items.transactionHistory.label'), desc: t('adminSiteSettingsPage.toggles.items.transactionHistory.desc') },
                   ].map((toggle) => (
                     <div key={toggle.key} className="flex items-center justify-between p-4 rounded-lg border border-border">
                       <div>
@@ -986,9 +984,9 @@ export default function AdminSiteSettings() {
                       const { error } = await saveSiteToggles(featureToggles, supabaseUser?.id);
                       setIsSaving(false);
                       if (error) {
-                        toast.error('Error al guardar toggles');
+                        toast.error(t('adminSiteSettingsPage.toggles.saveError'));
                       } else {
-                        toast.success('Toggles actualizados');
+                        toast.success(t('adminSiteSettingsPage.toggles.updated'));
                       }
                     }}
                     disabled={isSaving}
@@ -999,7 +997,7 @@ export default function AdminSiteSettings() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    Guardar Toggles
+                    {t('adminSiteSettingsPage.toggles.save')}
                   </Button>
                 </CardContent>
               </Card>

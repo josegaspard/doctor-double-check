@@ -23,7 +23,7 @@ import { useWallet } from '@/contexts/WalletContext';
 type SortMode = 'featured' | 'price_asc' | 'price_desc' | 'name' | 'newest';
 
 export default function MedicalSupplies() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const es = language === 'es';
@@ -90,7 +90,7 @@ export default function MedicalSupplies() {
   };
 
   const startPurchase = (product) => {
-    if (!user) { toast.error(es ? 'Inicia sesión para comprar' : 'Log in to purchase'); return; }
+    if (!user) { toast.error(t('medicalSuppliesPage.toast.loginToBuy')); return; }
     setPendingProduct(product);
     setQuantity(1);
     setSelectedProduct(null);
@@ -99,7 +99,7 @@ export default function MedicalSupplies() {
 
   const handlePurchase = async () => {
     if (!pendingProduct || !shippingForm.name || !shippingForm.city) {
-      toast.error(es ? 'Nombre y ciudad son obligatorios' : 'Name and city are required');
+      toast.error(t('medicalSuppliesPage.toast.nameCityRequired'));
       return;
     }
     setPurchasing(true);
@@ -114,7 +114,7 @@ export default function MedicalSupplies() {
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, '_blank');
-        toast.success(es ? 'Redirigiendo al pago...' : 'Redirecting to payment...');
+        toast.success(t('medicalSuppliesPage.toast.redirectingPayment'));
         setShippingDialog(false);
         setPendingProduct(null);
         setShippingForm({ name: '', phone: '', city: '', state: '', zip: '', notes: '' });
@@ -127,12 +127,12 @@ export default function MedicalSupplies() {
 
   const handleWalletPurchase = async () => {
     if (!pendingProduct || !shippingForm.name || !shippingForm.city) {
-      toast.error(es ? 'Nombre y ciudad son obligatorios' : 'Name and city are required');
+      toast.error(t('medicalSuppliesPage.toast.nameCityRequired'));
       return;
     }
     const total = pendingProduct.price * quantity;
     if (!canAfford(total)) {
-      toast.error(es ? 'Saldo insuficiente en tu wallet' : 'Insufficient wallet balance');
+      toast.error(t('medicalSuppliesPage.toast.insufficientWallet'));
       return;
     }
     setPurchasing(true);
@@ -146,7 +146,7 @@ export default function MedicalSupplies() {
       });
       if (error) throw error;
       if (data?.success) {
-        toast.success(es ? '¡Compra realizada con wallet!' : 'Purchase paid with wallet!');
+        toast.success(t('medicalSuppliesPage.toast.walletPurchaseSuccess'));
         await refreshWallet();
         setShippingDialog(false);
         setPendingProduct(null);
@@ -193,11 +193,11 @@ export default function MedicalSupplies() {
     <div className="space-y-6">
       {/* Category */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Categoría' : 'Category'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.category')}</p>
         <Select value={filterCat} onValueChange={setFilterCat}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={es ? 'Todas' : 'All'} /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalSuppliesPage.filters.allFem')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{es ? 'Todas' : 'All'}</SelectItem>
+            <SelectItem value="all">{t('medicalSuppliesPage.filters.allFem')}</SelectItem>
             {categories.map(c => <SelectItem key={c.id} value={es ? c.name_es : c.name_en}>{es ? c.name_es : c.name_en}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -207,11 +207,11 @@ export default function MedicalSupplies() {
 
       {/* Vendor */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Proveedor' : 'Vendor'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.vendor')}</p>
         <Select value={filterVendor} onValueChange={setFilterVendor}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={es ? 'Todos' : 'All'} /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalSuppliesPage.filters.allMasc')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{es ? 'Todos' : 'All'}</SelectItem>
+            <SelectItem value="all">{t('medicalSuppliesPage.filters.allMasc')}</SelectItem>
             {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -221,7 +221,7 @@ export default function MedicalSupplies() {
 
       {/* Price range */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Rango de precio' : 'Price Range'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.priceRange')}</p>
         <div className="flex gap-2 mb-2">
           <Input type="number" placeholder="Min" value={priceRange[0] || ''} onChange={e => setPriceRange([Number(e.target.value) || 0, priceRange[1]])} className="h-8 text-xs" />
           <Input type="number" placeholder="Max" value={priceRange[1] || ''} onChange={e => setPriceRange([priceRange[0], Number(e.target.value) || maxPrice])} className="h-8 text-xs" />
@@ -237,7 +237,7 @@ export default function MedicalSupplies() {
 
       {/* In stock */}
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{es ? 'Solo en stock' : 'In stock only'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('medicalSuppliesPage.filters.inStockOnly')}</p>
         <Switch checked={filterInStock} onCheckedChange={setFilterInStock} />
       </div>
 
@@ -245,14 +245,14 @@ export default function MedicalSupplies() {
 
       {/* Sort */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Ordenar por' : 'Sort by'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.sortBy')}</p>
         <div className="grid grid-cols-2 gap-1.5">
           {([
-            { value: 'featured', label: es ? 'Destacados' : 'Featured' },
-            { value: 'price_asc', label: es ? 'Precio ↑' : 'Price ↑' },
-            { value: 'price_desc', label: es ? 'Precio ↓' : 'Price ↓' },
-            { value: 'name', label: es ? 'Nombre' : 'Name' },
-            { value: 'newest', label: es ? 'Recientes' : 'Newest' },
+            { value: 'featured', label: t('medicalSuppliesPage.filters.sortFeatured') },
+            { value: 'price_asc', label: t('medicalSuppliesPage.filters.sortPriceAsc') },
+            { value: 'price_desc', label: t('medicalSuppliesPage.filters.sortPriceDesc') },
+            { value: 'name', label: t('medicalSuppliesPage.filters.sortName') },
+            { value: 'newest', label: t('medicalSuppliesPage.filters.sortNewest') },
           ] as { value: SortMode; label: string }[]).map(s => (
             <button key={s.value} onClick={() => setSortMode(s.value)} className={`py-2 rounded-lg text-xs font-medium transition-all text-center ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
               {s.label}
@@ -265,7 +265,7 @@ export default function MedicalSupplies() {
         <>
           <hr className="border-border/50" />
           <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10">
-            <X className="w-3.5 h-3.5" /> {es ? 'Limpiar filtros' : 'Clear filters'} ({activeFilterCount})
+            <X className="w-3.5 h-3.5" /> {t('medicalSuppliesPage.filters.clearFilters')} ({activeFilterCount})
           </Button>
         </>
       )}
@@ -280,23 +280,23 @@ export default function MedicalSupplies() {
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0"><Package className="w-6 h-6 text-primary" /></div>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">{es ? 'Material Médico' : 'Medical Supplies'}</h1>
-              <p className="text-sm text-muted-foreground">{es ? 'Marketplace de insumos y equipos médicos' : 'Medical equipment & supplies marketplace'}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('medicalSuppliesPage.hero.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('medicalSuppliesPage.hero.subtitle')}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" />{products.length} {es ? 'productos' : 'products'}</span>
-            <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5" />{vendors.length} {es ? 'proveedores' : 'vendors'}</span>
+            <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" />{products.length} {t('medicalSuppliesPage.hero.productsCount')}</span>
+            <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5" />{vendors.length} {t('medicalSuppliesPage.hero.vendorsCount')}</span>
           </div>
           <div className="mt-4 flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{es ? '¿Eres proveedor? Vende aquí' : 'Are you a vendor? Sell here'}</Button>
-            {user && <Button variant="default" size="sm" onClick={() => navigate('/my-orders')} className="text-xs gap-1"><ClipboardList className="w-3.5 h-3.5" />{es ? 'Mis Compras' : 'My Orders'}</Button>}
+            <Button variant="outline" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{t('medicalSuppliesPage.hero.sellHereCta')}</Button>
+            {user && <Button variant="default" size="sm" onClick={() => navigate('/my-orders')} className="text-xs gap-1"><ClipboardList className="w-3.5 h-3.5" />{t('medicalSuppliesPage.hero.myOrders')}</Button>}
           </div>
         </div>
 
         <div className="flex gap-2 mb-4">
-          <Button variant={tab === 'products' ? 'default' : 'outline'} size="sm" onClick={() => setTab('products')} className="gap-1.5"><Package className="w-4 h-4" />{es ? 'Productos' : 'Products'}</Button>
-          <Button variant={tab === 'vendors' ? 'default' : 'outline'} size="sm" onClick={() => setTab('vendors')} className="gap-1.5"><Store className="w-4 h-4" />{es ? 'Proveedores' : 'Vendors'}</Button>
+          <Button variant={tab === 'products' ? 'default' : 'outline'} size="sm" onClick={() => setTab('products')} className="gap-1.5"><Package className="w-4 h-4" />{t('medicalSuppliesPage.tabs.products')}</Button>
+          <Button variant={tab === 'vendors' ? 'default' : 'outline'} size="sm" onClick={() => setTab('vendors')} className="gap-1.5"><Store className="w-4 h-4" />{t('medicalSuppliesPage.tabs.vendors')}</Button>
         </div>
 
         {tab === 'products' && (
@@ -305,7 +305,7 @@ export default function MedicalSupplies() {
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder={es ? 'Buscar productos...' : 'Search products...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground" />
+                <Input placeholder={t('medicalSuppliesPage.search.placeholder')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground" />
                 {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>}
               </div>
               <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
@@ -316,10 +316,10 @@ export default function MedicalSupplies() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-                  <SheetHeader><SheetTitle>{es ? 'Filtros y Ordenar' : 'Filters & Sort'}</SheetTitle></SheetHeader>
+                  <SheetHeader><SheetTitle>{t('medicalSuppliesPage.filters.filtersAndSort')}</SheetTitle></SheetHeader>
                   <div className="mt-4 overflow-y-auto max-h-[calc(85vh-100px)] pb-6"><FilterPanel /></div>
                   <div className="pt-3 border-t">
-                    <Button onClick={() => setFiltersOpen(false)} className="w-full">{es ? `Ver ${filteredProducts.length} resultados` : `Show ${filteredProducts.length} results`}</Button>
+                    <Button onClick={() => setFiltersOpen(false)} className="w-full">{t('medicalSuppliesPage.filters.showResults').replace('{count}', String(filteredProducts.length))}</Button>
                   </div>
                 </SheetContent>
               </Sheet>
@@ -330,7 +330,7 @@ export default function MedicalSupplies() {
               <div className="flex gap-2 mb-3 overflow-x-auto pb-1 sm:hidden">
                 {filterCat !== 'all' && <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterCat('all')}>{filterCat} <X className="w-2.5 h-2.5" /></Badge>}
                 {filterVendor !== 'all' && <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterVendor('all')}>{vendors.find(v => v.id === filterVendor)?.name} <X className="w-2.5 h-2.5" /></Badge>}
-                {filterInStock && <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterInStock(false)}>En stock <X className="w-2.5 h-2.5" /></Badge>}
+                {filterInStock && <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterInStock(false)}>{t('medicalSuppliesPage.filters.inStockChip')} <X className="w-2.5 h-2.5" /></Badge>}
               </div>
             )}
 
@@ -340,7 +340,7 @@ export default function MedicalSupplies() {
                 <div className="rounded-xl border bg-card p-4 shadow-sm">
                   <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5">
                     <SlidersHorizontal className="w-4 h-4 text-primary" />
-                    {es ? 'Filtros' : 'Filters'}
+                    {t('medicalSuppliesPage.filters.filtersTitle')}
                   </h3>
                   <FilterPanel />
                 </div>
@@ -349,7 +349,7 @@ export default function MedicalSupplies() {
               {/* Main content */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-muted-foreground mb-3">
-                  {es ? `${filteredProducts.length} producto${filteredProducts.length !== 1 ? 's' : ''}` : `${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''}`}
+                  {t(filteredProducts.length === 1 ? 'medicalSuppliesPage.product.countOne' : 'medicalSuppliesPage.product.countOther').replace('{count}', String(filteredProducts.length))}
                 </p>
 
                 {loading ? (
@@ -364,15 +364,15 @@ export default function MedicalSupplies() {
                           <div className="relative aspect-square overflow-hidden bg-muted">
                             {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Package className="w-12 h-12 text-muted-foreground/30" /></div>}
                             {isFeatured && <Badge className="absolute top-2 left-2 bg-warning text-warning text-[9px] gap-1 shadow-lg"><Sparkles className="w-3 h-3" /> {featuredLabel}</Badge>}
-                            {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{es ? 'Últimas unidades' : 'Low stock'}</Badge>}
-                            {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{es ? 'Agotado' : 'Sold out'}</Badge></div>}
+                            {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{t('medicalSuppliesPage.product.lowStock')}</Badge>}
+                            {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{t('medicalSuppliesPage.product.soldOut')}</Badge></div>}
                           </div>
                           <CardContent className="p-3">
                             <p className="font-medium text-xs sm:text-sm line-clamp-2 mb-1 min-h-[2rem]">{p.name}</p>
                             <p className="text-[10px] text-muted-foreground mb-2 truncate">{p.marketplace_vendors?.name}</p>
                             <div className="flex items-end justify-between">
                               <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[9px] text-muted-foreground">{p.currency}</p></div>
-                              <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{es ? 'Comprar' : 'Buy'}</Button>
+                              <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{t('medicalSuppliesPage.product.buy')}</Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -380,7 +380,7 @@ export default function MedicalSupplies() {
                     })}
                   </div>
                 )}
-                {!loading && filteredProducts.length === 0 && <p className="text-center text-muted-foreground py-12">{es ? 'No se encontraron productos' : 'No products found'}</p>}
+                {!loading && filteredProducts.length === 0 && <p className="text-center text-muted-foreground py-12">{t('medicalSuppliesPage.product.noResults')}</p>}
               </div>
             </div>
           </>
@@ -397,8 +397,8 @@ export default function MedicalSupplies() {
                   </div>
                   {v.description && <p className="text-xs text-muted-foreground line-clamp-3 mb-3">{v.description}</p>}
                   <div className="flex gap-2">
-                    {v.website && <Button size="sm" variant="outline" className="flex-1 text-xs gap-1" asChild><a href={v.website} target="_blank" rel="noopener noreferrer"><Globe className="w-3.5 h-3.5" />{es ? 'Sitio web' : 'Website'}</a></Button>}
-                    {v.phone && <Button size="sm" variant="outline" className="flex-1 text-xs gap-1" asChild><a href={`tel:${v.phone}`}><Phone className="w-3.5 h-3.5" />{es ? 'Llamar' : 'Call'}</a></Button>}
+                    {v.website && <Button size="sm" variant="outline" className="flex-1 text-xs gap-1" asChild><a href={v.website} target="_blank" rel="noopener noreferrer"><Globe className="w-3.5 h-3.5" />{t('medicalSuppliesPage.vendor.website')}</a></Button>}
+                    {v.phone && <Button size="sm" variant="outline" className="flex-1 text-xs gap-1" asChild><a href={`tel:${v.phone}`}><Phone className="w-3.5 h-3.5" />{t('medicalSuppliesPage.vendor.call')}</a></Button>}
                   </div>
                 </CardContent>
               </Card>
@@ -425,7 +425,7 @@ export default function MedicalSupplies() {
               </div>
               {/* Quantity selector */}
               <div className="flex items-center gap-3 mb-4 bg-muted/50 rounded-lg p-3">
-                <span className="text-xs font-medium">{es ? 'Cantidad' : 'Quantity'}:</span>
+                <span className="text-xs font-medium">{t('medicalSuppliesPage.product.quantity')}:</span>
                 <div className="flex items-center gap-2">
                   <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>-</Button>
                   <span className="w-8 text-center font-semibold">{quantity}</span>
@@ -435,7 +435,7 @@ export default function MedicalSupplies() {
               </div>
               <Button onClick={() => startPurchase(selectedProduct)} disabled={purchasing || selectedProduct.stock === 0} className="w-full gap-2">
                 {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}
-                {selectedProduct.stock === 0 ? (es ? 'Agotado' : 'Sold out') : (es ? 'Comprar Ahora' : 'Buy Now')}
+                {selectedProduct.stock === 0 ? t('medicalSuppliesPage.product.soldOut') : t('medicalSuppliesPage.product.buyNow')}
               </Button>
             </>)}
           </DialogContent>
@@ -444,16 +444,16 @@ export default function MedicalSupplies() {
         {/* Shipping Address Dialog */}
         <Dialog open={shippingDialog} onOpenChange={setShippingDialog}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>{es ? 'Dirección de Envío' : 'Shipping Address'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('medicalSuppliesPage.shipping.title')}</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <div><Label>{es ? 'Nombre completo' : 'Full name'} *</Label><Input value={shippingForm.name} onChange={e => setShippingForm(f => ({ ...f, name: e.target.value }))} placeholder="Juan Pérez" /></div>
-              <div><Label>{es ? 'Teléfono' : 'Phone'}</Label><Input value={shippingForm.phone} onChange={e => setShippingForm(f => ({ ...f, phone: e.target.value }))} placeholder="+52 55 1234 5678" /></div>
+              <div><Label>{t('medicalSuppliesPage.shipping.fullName')} *</Label><Input value={shippingForm.name} onChange={e => setShippingForm(f => ({ ...f, name: e.target.value }))} placeholder="Juan Pérez" /></div>
+              <div><Label>{t('medicalSuppliesPage.shipping.phone')}</Label><Input value={shippingForm.phone} onChange={e => setShippingForm(f => ({ ...f, phone: e.target.value }))} placeholder="+52 55 1234 5678" /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>{es ? 'Ciudad' : 'City'} *</Label><Input value={shippingForm.city} onChange={e => setShippingForm(f => ({ ...f, city: e.target.value }))} placeholder="CDMX" /></div>
-                <div><Label>{es ? 'Estado' : 'State'}</Label><Input value={shippingForm.state} onChange={e => setShippingForm(f => ({ ...f, state: e.target.value }))} placeholder="CDMX" /></div>
+                <div><Label>{t('medicalSuppliesPage.shipping.city')} *</Label><Input value={shippingForm.city} onChange={e => setShippingForm(f => ({ ...f, city: e.target.value }))} placeholder="CDMX" /></div>
+                <div><Label>{t('medicalSuppliesPage.shipping.state')}</Label><Input value={shippingForm.state} onChange={e => setShippingForm(f => ({ ...f, state: e.target.value }))} placeholder="CDMX" /></div>
               </div>
-              <div><Label>{es ? 'Código postal' : 'ZIP'}</Label><Input value={shippingForm.zip} onChange={e => setShippingForm(f => ({ ...f, zip: e.target.value }))} placeholder="06600" /></div>
-              <div><Label>{es ? 'Notas de entrega' : 'Delivery notes'}</Label><Textarea value={shippingForm.notes} onChange={e => setShippingForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder={es ? 'Instrucciones adicionales...' : 'Additional instructions...'} /></div>
+              <div><Label>{t('medicalSuppliesPage.shipping.zip')}</Label><Input value={shippingForm.zip} onChange={e => setShippingForm(f => ({ ...f, zip: e.target.value }))} placeholder="06600" /></div>
+              <div><Label>{t('medicalSuppliesPage.shipping.deliveryNotes')}</Label><Textarea value={shippingForm.notes} onChange={e => setShippingForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder={t('medicalSuppliesPage.shipping.notesPlaceholder')} /></div>
               
               {pendingProduct && (
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1">
@@ -473,7 +473,7 @@ export default function MedicalSupplies() {
                 return (
                   <div className="space-y-2 pt-1">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {es ? 'Método de pago' : 'Payment method'}
+                      {t('medicalSuppliesPage.payment.method')}
                     </p>
                     <Button
                       onClick={handleWalletPurchase}
@@ -483,10 +483,8 @@ export default function MedicalSupplies() {
                     >
                       {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wallet className="w-4 h-4" />}
                       {affordable
-                        ? (es ? `Pagar con Wallet — $${total.toLocaleString()}` : `Pay with Wallet — $${total.toLocaleString()}`)
-                        : (es
-                            ? `Saldo insuficiente ($${walletBalance.toLocaleString()})`
-                            : `Insufficient balance ($${walletBalance.toLocaleString()})`)}
+                        ? t('medicalSuppliesPage.payment.payWithWallet').replace('{total}', total.toLocaleString())
+                        : t('medicalSuppliesPage.payment.insufficientBalance').replace('{balance}', walletBalance.toLocaleString())}
                     </Button>
                     {!affordable && (
                       <Button
@@ -495,7 +493,7 @@ export default function MedicalSupplies() {
                         onClick={() => navigate('/wallet')}
                         type="button"
                       >
-                        {es ? 'Recargar Wallet' : 'Top up Wallet'}
+                        {t('medicalSuppliesPage.payment.topUpWallet')}
                       </Button>
                     )}
                     <Button
@@ -505,10 +503,10 @@ export default function MedicalSupplies() {
                       className="w-full h-11 gap-2"
                     >
                       {purchasing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                      {es ? 'Pagar con Tarjeta (Stripe)' : 'Pay with Card (Stripe)'}
+                      {t('medicalSuppliesPage.payment.payWithCard')}
                     </Button>
                     <p className="text-[10px] text-center text-muted-foreground pt-1">
-                      {es ? 'Saldo Wallet:' : 'Wallet balance:'} ${walletBalance.toLocaleString()} MXN
+                      {t('medicalSuppliesPage.payment.walletBalance')} ${walletBalance.toLocaleString()} MXN
                     </p>
                   </div>
                 );

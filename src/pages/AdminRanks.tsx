@@ -92,7 +92,7 @@ export default function AdminRanks() {
 
   const handleSave = async () => {
     if (!form.name || !form.display_name) {
-      toast.error('Nombre requerido');
+      toast.error(t('adminRanks.nameRequired'));
       return;
     }
     setIsSaving(true);
@@ -103,30 +103,30 @@ export default function AdminRanks() {
           .update(form as any)
           .eq('id', editDialog.rank.id);
         if (error) throw error;
-        toast.success('Rango actualizado');
+        toast.success(t('adminRanks.rankUpdated'));
       } else {
         const { error } = await supabase
           .from('doctor_ranks')
           .insert(form as any);
         if (error) throw error;
-        toast.success('Rango creado');
+        toast.success(t('adminRanks.rankCreated'));
       }
       queryClient.invalidateQueries({ queryKey: ['doctor-ranks'] });
       setEditDialog({ open: false, rank: null });
     } catch (err: any) {
-      toast.error(err.message || 'Error');
+      toast.error(err.message || t('adminRanks.error'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (rank: DoctorRank) => {
-    if (!confirm(`¿Eliminar el rango "${rank.display_name}"?`)) return;
+    if (!confirm(t('adminRanks.confirmDelete').replace('{name}', rank.display_name))) return;
     const { error } = await supabase.from('doctor_ranks').delete().eq('id', rank.id);
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Rango eliminado');
+      toast.success(t('adminRanks.rankDeleted'));
       queryClient.invalidateQueries({ queryKey: ['doctor-ranks'] });
     }
   };
@@ -141,14 +141,14 @@ export default function AdminRanks() {
           <div className="flex-1 min-w-0">
             <h1 className="text-base sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
               <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <span className="truncate">Rangos de Doctores</span>
+              <span className="truncate">{t('adminRanks.title')}</span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Administra los rangos y sus requisitos</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{t('adminRanks.subtitle')}</p>
           </div>
           <Button onClick={openCreate} className="gap-1.5 h-9 text-xs sm:text-sm">
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Nuevo Rango</span>
-            <span className="sm:hidden">Nuevo</span>
+            <span className="hidden sm:inline">{t('adminRanks.newRank')}</span>
+            <span className="sm:hidden">{t('adminRanks.newShort')}</span>
           </Button>
         </div>
 
@@ -167,10 +167,10 @@ export default function AdminRanks() {
                     {/* Details */}
                     <div className="flex-1 min-w-0">
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
-                        <span>Consultas ≥ {rank.min_consultations}</span>
-                        <span>Ganancias ≥ ${rank.min_earnings}</span>
-                        <span>Meses ≥ {rank.min_months_active}</span>
-                        <span>Rating ≥ {rank.min_rating}</span>
+                        <span>{t('adminRanks.consultationsLabel')} ≥ {rank.min_consultations}</span>
+                        <span>{t('adminRanks.earningsLabel')} ≥ ${rank.min_earnings}</span>
+                        <span>{t('adminRanks.monthsLabel')} ≥ {rank.min_months_active}</span>
+                        <span>{t('adminRanks.ratingLabel')} ≥ {rank.min_rating}</span>
                       </div>
                     </div>
                     {/* Actions */}
@@ -193,7 +193,7 @@ export default function AdminRanks() {
         <Dialog open={editDialog.open} onOpenChange={open => setEditDialog({ ...editDialog, open })}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editDialog.rank ? 'Editar Rango' : 'Nuevo Rango'}</DialogTitle>
+              <DialogTitle>{editDialog.rank ? t('adminRanks.editRank') : t('adminRanks.newRank')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex justify-center">
@@ -201,17 +201,17 @@ export default function AdminRanks() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">Nombre interno</Label>
-                  <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="nuevo" className="h-10" />
+                  <Label className="text-xs">{t('adminRanks.internalName')}</Label>
+                  <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={t('adminRanks.internalNamePlaceholder')} className="h-10" />
                 </div>
                 <div>
-                  <Label className="text-xs">Nombre visible</Label>
-                  <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Nuevo" className="h-10" />
+                  <Label className="text-xs">{t('adminRanks.displayName')}</Label>
+                  <Input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder={t('adminRanks.displayNamePlaceholder')} className="h-10" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">Icono</Label>
+                  <Label className="text-xs">{t('adminRanks.icon')}</Label>
                   <Select value={form.icon} onValueChange={v => setForm(f => ({ ...f, icon: v }))}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -220,7 +220,7 @@ export default function AdminRanks() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs">Color</Label>
+                  <Label className="text-xs">{t('adminRanks.color')}</Label>
                   <Select value={form.color} onValueChange={v => setForm(f => ({ ...f, color: v }))}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -231,34 +231,34 @@ export default function AdminRanks() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">Mín. Consultas</Label>
+                  <Label className="text-xs">{t('adminRanks.minConsultations')}</Label>
                   <Input type="number" value={form.min_consultations} onChange={e => setForm(f => ({ ...f, min_consultations: +e.target.value }))} className="h-10" />
                 </div>
                 <div>
-                  <Label className="text-xs">Mín. Ganancias ($)</Label>
+                  <Label className="text-xs">{t('adminRanks.minEarnings')}</Label>
                   <Input type="number" value={form.min_earnings} onChange={e => setForm(f => ({ ...f, min_earnings: +e.target.value }))} className="h-10" />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <Label className="text-xs">Mín. Meses</Label>
+                  <Label className="text-xs">{t('adminRanks.minMonths')}</Label>
                   <Input type="number" value={form.min_months_active} onChange={e => setForm(f => ({ ...f, min_months_active: +e.target.value }))} className="h-10" />
                 </div>
                 <div>
-                  <Label className="text-xs">Mín. Rating</Label>
+                  <Label className="text-xs">{t('adminRanks.minRating')}</Label>
                   <Input type="number" step="0.1" value={form.min_rating} onChange={e => setForm(f => ({ ...f, min_rating: +e.target.value }))} className="h-10" />
                 </div>
                 <div>
-                  <Label className="text-xs">Orden</Label>
+                  <Label className="text-xs">{t('adminRanks.sortOrder')}</Label>
                   <Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: +e.target.value }))} className="h-10" />
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialog({ open: false, rank: null })}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setEditDialog({ open: false, rank: null })}>{t('adminRanks.cancel')}</Button>
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editDialog.rank ? 'Guardar' : 'Crear'}
+                {editDialog.rank ? t('adminRanks.save') : t('adminRanks.create')}
               </Button>
             </DialogFooter>
           </DialogContent>

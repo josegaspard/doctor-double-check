@@ -47,7 +47,7 @@ export default function RecordingsGrid() {
   const doctorFilter = searchParams.get('doctor');
   const { recordings, refreshRecordings } = useLives();
   const { user, role, isAuthenticated } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { balance } = useWallet();
   const { hasPurchased, purchaseWithWallet, isPurchasing } = usePurchases();
@@ -160,11 +160,11 @@ export default function RecordingsGrid() {
     // bunny_status='failed' → bloquear; 'uploading' → bloquear; 'processing' →
     // permitir click (player usa /original mientras encoding sucede).
     if (recording.bunnyStatus === 'failed') {
-      toast.error('Esta grabación tuvo un error de procesado. Contacta a soporte.');
+      toast.error(t('recordingsGridPage.errorProcessingToast'));
       return;
     }
     if (recording.bunnyStatus === 'uploading') {
-      toast.info('Esta grabación aún se está subiendo. Inténtalo en unos segundos.');
+      toast.info(t('recordingsGridPage.stillUploadingToast'));
       return;
     }
     // 'processing': sin toast — el player reproduce /original transparente
@@ -188,7 +188,7 @@ export default function RecordingsGrid() {
   };
 
   const formatDuration = (seconds: number) => {
-    if (seconds <= 0) return 'Procesando...';
+    if (seconds <= 0) return t('recordingsGridPage.processing');
     const totalMinutes = Math.floor(seconds / 60);
     if (totalMinutes < 60) return `${totalMinutes} min`;
     const hours = Math.floor(totalMinutes / 60);
@@ -235,7 +235,7 @@ export default function RecordingsGrid() {
                   <Link to="/doctor/upload">
                     <Button variant="live" className="gap-2">
                       <Upload className="w-4 h-4" />
-                      {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                      {t('recordingsGridPage.uploadContent')}
                     </Button>
                   </Link>
                 )}
@@ -258,7 +258,7 @@ export default function RecordingsGrid() {
               {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Acceso' : 'Access'}
+                  {t('recordingsGridPage.accessLabel')}
                 </h4>
                 <div className="space-y-0.5">
                   {filterOptions.map(opt => (
@@ -283,17 +283,17 @@ export default function RecordingsGrid() {
               {/* Specialties */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Especialidad' : 'Specialty'}
+                  {t('recordingsGridPage.specialtyLabel')}
                 </h4>
                 <SearchableFilter
                   options={specialtyOptions}
                   value={selectedSpecialty}
                   onChange={setSelectedSpecialty}
-                  placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
-                  searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
-                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  placeholder={t('recordingsGridPage.specialtyPlaceholder')}
+                  searchPlaceholder={t('recordingsGridPage.specialtySearchPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
                   icon={Stethoscope}
-                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                  allLabel={t('recordingsGridPage.filterAll')}
                 />
               </div>
 
@@ -303,17 +303,17 @@ export default function RecordingsGrid() {
               {allDoctorNames.length > 0 && (
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    Doctor
+                    {t('recordingsGridPage.doctorLabel')}
                   </h4>
                   <SearchableFilter
                     options={allDoctorNames}
                     value={selectedDoctor}
                     onChange={setSelectedDoctor}
-                    placeholder="Doctor"
-                    searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
-                    emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                    placeholder={t('recordingsGridPage.doctorPlaceholder')}
+                    searchPlaceholder={t('recordingsGridPage.doctorSearchPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
                     icon={User}
-                    allLabel={language === 'es' ? 'Todos' : 'All'}
+                    allLabel={t('recordingsGridPage.filterAllMasc')}
                   />
                 </div>
               )}
@@ -324,17 +324,17 @@ export default function RecordingsGrid() {
                   <div className="border-t border-border my-3" />
                   <div>
                     <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                      {language === 'es' ? 'Categorías' : 'Categories'}
+                      {t('recordingsGridPage.categoriesLabel')}
                     </h4>
                     <SearchableFilter
                       options={allTags}
                       value={selectedTag}
                       onChange={setSelectedTag}
-                      placeholder={language === 'es' ? 'Categoría' : 'Category'}
-                      searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
-                      emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                      placeholder={t('recordingsGridPage.categoryPlaceholder')}
+                      searchPlaceholder={t('recordingsGridPage.categorySearchPlaceholder')}
+                      emptyLabel={t('recordingsGridPage.filterNoResults')}
                       icon={Tag}
-                      allLabel={language === 'es' ? 'Todas' : 'All'}
+                      allLabel={t('recordingsGridPage.filterAll')}
                     />
                   </div>
                 </>
@@ -379,22 +379,22 @@ export default function RecordingsGrid() {
                 options={specialtyOptions}
                 value={selectedSpecialty}
                 onChange={setSelectedSpecialty}
-                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
-                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
-                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                placeholder={t('recordingsGridPage.specialtyPlaceholder')}
+                searchPlaceholder={t('recordingsGridPage.specialtySearchPlaceholder')}
+                emptyLabel={t('recordingsGridPage.filterNoResults')}
                 icon={Stethoscope}
-                allLabel={language === 'es' ? 'Todas' : 'All'}
+                allLabel={t('recordingsGridPage.filterAll')}
               />
               {allDoctorNames.length > 0 && (
                 <SearchableFilter
                   options={allDoctorNames}
                   value={selectedDoctor}
                   onChange={setSelectedDoctor}
-                  placeholder="Doctor"
-                  searchPlaceholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
-                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  placeholder={t('recordingsGridPage.doctorPlaceholder')}
+                  searchPlaceholder={t('recordingsGridPage.doctorSearchPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
                   icon={User}
-                  allLabel={language === 'es' ? 'Todos' : 'All'}
+                  allLabel={t('recordingsGridPage.filterAllMasc')}
                 />
               )}
               {allTags.length > 0 && (
@@ -402,11 +402,11 @@ export default function RecordingsGrid() {
                   options={allTags}
                   value={selectedTag}
                   onChange={setSelectedTag}
-                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
-                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
-                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  placeholder={t('recordingsGridPage.categoryPlaceholder')}
+                  searchPlaceholder={t('recordingsGridPage.categorySearchPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
                   icon={Tag}
-                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                  allLabel={t('recordingsGridPage.filterAll')}
                 />
               )}
             </div>
@@ -421,14 +421,14 @@ export default function RecordingsGrid() {
                     <Wallet className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">Para comprar contenido premium necesitas saldo en tu billetera</p>
-                    <p className="text-xs text-white/85 mt-0.5 leading-relaxed">Recarga tu billetera y compra al instante sin ingresar tu tarjeta cada vez.</p>
+                    <p className="text-sm font-semibold text-white">{t('recordingsGridPage.walletNeededTitle')}</p>
+                    <p className="text-xs text-white/85 mt-0.5 leading-relaxed">{t('recordingsGridPage.walletNeededDescription')}</p>
                   </div>
                 </div>
                 <Link to="/wallet" className="relative block mt-3">
                   <Button className="w-full sm:w-auto gap-2 bg-white text-secondary font-semibold hover:bg-white/90 shadow-md">
                     <Wallet className="w-4 h-4" />
-                    Recargar ahora
+                    {t('recordingsGridPage.topUpNow')}
                   </Button>
                 </Link>
               </div>
@@ -504,8 +504,8 @@ export default function RecordingsGrid() {
                               <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 flex items-center justify-center">
                                 <span className="block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                               </div>
-                              <p className="text-xs font-semibold">Subiendo grabación…</p>
-                              <p className="text-[10px] text-white/75 mt-0.5">Estará lista en unos minutos</p>
+                              <p className="text-xs font-semibold">{t('recordingsGridPage.uploadingRecording')}</p>
+                              <p className="text-[10px] text-white/75 mt-0.5">{t('recordingsGridPage.readyInMinutes')}</p>
                             </div>
                           </div>
                         )}
@@ -515,8 +515,8 @@ export default function RecordingsGrid() {
                         {recording.bunnyStatus === 'failed' && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm pointer-events-none">
                             <div className="text-center text-white px-4">
-                              <p className="text-xs font-semibold text-destructive-foreground bg-destructive/90 inline-block px-2 py-0.5 rounded">Error en el procesado</p>
-                              <p className="text-[10px] text-white/85 mt-1">Contacta a soporte</p>
+                              <p className="text-xs font-semibold text-destructive-foreground bg-destructive/90 inline-block px-2 py-0.5 rounded">{t('recordingsGridPage.processingError')}</p>
+                              <p className="text-[10px] text-white/85 mt-1">{t('recordingsGridPage.contactSupport')}</p>
                             </div>
                           </div>
                         )}

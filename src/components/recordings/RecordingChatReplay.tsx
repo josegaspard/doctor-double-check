@@ -4,6 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 
 interface ChatMessage {
@@ -27,6 +28,7 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
   const [isLoading, setIsLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { t } = useLanguage();
   // Stable per-replay watermark sessionId for the optional video preview
   const previewSessionId = useMemo(
     () => (typeof crypto !== 'undefined' && (crypto as any).randomUUID
@@ -77,7 +79,7 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
   if (isLoading) {
     return (
       <div className="bg-card rounded-lg border p-4 text-center text-muted-foreground text-sm">
-        Cargando chat...
+        {t('recordingChatReplay.loading')}
       </div>
     );
   }
@@ -91,7 +93,7 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
       <div className="p-2 sm:p-3 border-b flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
-          <span className="font-medium text-xs sm:text-sm">Chat de la transmisión</span>
+          <span className="font-medium text-xs sm:text-sm">{t('recordingChatReplay.chatTitle')}</span>
         </div>
         <Badge variant="secondary" className="text-[10px] sm:text-xs">
           {visibleMessages.length}/{allMessages.length}
@@ -123,7 +125,7 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
                   </span>
                   {msg.isPaid && (
                     <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-warning/30 text-warning dark:text-warning bg-warning/5">
-                      ⭐ Destacado
+                      {t('recordingChatReplay.featuredBadge')}
                     </Badge>
                   )}
                   <span className="text-[9px] text-muted-foreground font-mono">

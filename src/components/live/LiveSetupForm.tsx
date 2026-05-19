@@ -28,6 +28,7 @@ import {
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LiveSetupFormProps {
   onStartLive: (config: LiveConfig) => Promise<void>;
@@ -102,6 +103,7 @@ function ChatModeCard({ icon: Icon, title, description, selected, onClick }: Cha
 }
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
+  const { t } = useLanguage();
   const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -173,27 +175,27 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
           <Radio className="w-5 h-5 text-destructive" />
         </div>
         <div>
-          <h1 className="font-heading text-xl sm:text-2xl font-bold">Iniciar Transmisión</h1>
-          <p className="text-xs text-muted-foreground">Completa los campos y comienza tu live</p>
+          <h1 className="font-heading text-xl sm:text-2xl font-bold">{t('liveSetupForm.headerTitle')}</h1>
+          <p className="text-xs text-muted-foreground">{t('liveSetupForm.headerSubtitle')}</p>
         </div>
       </div>
 
       <div className="space-y-6">
         {/* ── Section 0: Content Target ── */}
         <section className="space-y-4">
-          <SectionHeader number={1} icon={Users} title="¿Para quién es tu contenido?" subtitle="Selecciona el tipo de audiencia" />
+          <SectionHeader number={1} icon={Users} title={t('liveSetupForm.sectionAudienceTitle')} subtitle={t('liveSetupForm.sectionAudienceSubtitle')} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ChatModeCard
               icon={Stethoscope}
-              title="Contenido médico"
-              description="Para profesionales de la salud (médicos y residentes)"
+              title={t('liveSetupForm.audienceMedicalTitle')}
+              description={t('liveSetupForm.audienceMedicalDescription')}
               selected={contentTarget === 'medical'}
               onClick={() => setContentTarget('medical')}
             />
             <ChatModeCard
               icon={Users}
-              title="Contenido para pacientes"
-              description="Para pacientes y público general"
+              title={t('liveSetupForm.audiencePatientsTitle')}
+              description={t('liveSetupForm.audiencePatientsDescription')}
               selected={contentTarget === 'patients'}
               onClick={() => setContentTarget('patients')}
             />
@@ -205,16 +207,16 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 1: About your live + Thumbnail ── */}
         <section className="space-y-4">
-          <SectionHeader number={2} icon={Mic} title="¿De qué trata tu live?" subtitle="Estos datos se muestran a los espectadores" />
-          
+          <SectionHeader number={2} icon={Mic} title={t('liveSetupForm.sectionAboutTitle')} subtitle={t('liveSetupForm.sectionAboutSubtitle')} />
+
           {/* ★ THUMBNAIL — now prominent and always visible */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-semibold">
               <Camera className="w-4 h-4" />
-              Imagen de portada
+              {t('liveSetupForm.thumbnailLabel')}
             </Label>
             <p className="text-xs text-muted-foreground -mt-1">
-              Esta imagen aparecerá cuando los espectadores vean tu live
+              {t('liveSetupForm.thumbnailHelp')}
             </p>
             <input
               ref={thumbnailInputRef}
@@ -225,7 +227,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             />
             {thumbnailPreview ? (
               <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-primary/30">
-                <img src={thumbnailPreview} alt="Portada" className="w-full h-full object-cover" />
+                <img src={thumbnailPreview} alt={t('liveSetupForm.thumbnailAlt')} className="w-full h-full object-cover" />
                 <button
                   onClick={() => { setThumbnailFile(null); setThumbnailPreview(null); if (thumbnailInputRef.current) thumbnailInputRef.current.value = ''; }}
                   className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80"
@@ -245,14 +247,14 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   <Camera className="w-8 h-8 text-primary" />
                 </div>
                 <p className="text-sm font-semibold text-foreground mb-1">
-                  Toca aquí para subir tu imagen de portada
+                  {t('liveSetupForm.thumbnailUploadTitle')}
                 </p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Arrastra una imagen o haz clic para seleccionar
+                  {t('liveSetupForm.thumbnailUploadHint')}
                 </p>
                 <Button type="button" variant="outline" size="sm" className="gap-2" onClick={(e) => { e.stopPropagation(); thumbnailInputRef.current?.click(); }}>
                   <Upload className="w-4 h-4" />
-                  Seleccionar imagen
+                  {t('liveSetupForm.thumbnailSelectButton')}
                 </Button>
               </div>
             )}
@@ -260,11 +262,11 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="title" className="flex items-center gap-1 text-sm font-semibold">
-              Título <span className="text-destructive">*</span>
+              {t('liveSetupForm.titleLabel')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="title"
-              placeholder="Ej: Consulta abierta sobre hipertensión"
+              placeholder={t('liveSetupForm.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={100}
@@ -274,10 +276,10 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-sm font-semibold">Descripción</Label>
+            <Label htmlFor="description" className="text-sm font-semibold">{t('liveSetupForm.descriptionLabel')}</Label>
             <Textarea
               id="description"
-              placeholder="Describe brevemente tu transmisión..."
+              placeholder={t('liveSetupForm.descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
@@ -288,19 +290,19 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="specialty" className="flex items-center gap-1 text-sm font-semibold">
-              Especialidad <span className="text-destructive">*</span>
+              {t('liveSetupForm.specialtyLabel')} <span className="text-destructive">*</span>
             </Label>
             <SearchableFilter
               options={SPECIALTIES}
               value={specialty}
               onChange={setSpecialty}
-              placeholder="Selecciona la especialidad"
-              searchPlaceholder="Buscar especialidad..."
+              placeholder={t('liveSetupForm.specialtyPlaceholder')}
+              searchPlaceholder={t('liveSetupForm.specialtySearchPlaceholder')}
               icon={Stethoscope}
               allLabel=""
             />
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Elige la especialidad principal de tu transmisión para que los pacientes te encuentren.
+              {t('liveSetupForm.specialtyHelp')}
             </p>
           </div>
         </section>
@@ -309,12 +311,12 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 2: Recording & Monetization ── */}
         <section className="space-y-4">
-          <SectionHeader number={3} icon={FilmIcon} title="Grabación y monetización" subtitle="Decide si grabas y cuánto cobrarás" />
+          <SectionHeader number={3} icon={FilmIcon} title={t('liveSetupForm.sectionRecordingTitle')} subtitle={t('liveSetupForm.sectionRecordingSubtitle')} />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
-              <Label className="text-sm font-semibold">Grabar transmisión</Label>
-              <p className="text-xs text-muted-foreground">Podrás vender la grabación después</p>
+              <Label className="text-sm font-semibold">{t('liveSetupForm.recordingToggleLabel')}</Label>
+              <p className="text-xs text-muted-foreground">{t('liveSetupForm.recordingToggleHelp')}</p>
             </div>
             <Switch checked={enableRecording} onCheckedChange={setEnableRecording} />
           </div>
@@ -323,7 +325,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
               <Label htmlFor="price" className="flex items-center gap-2 text-sm font-semibold text-primary">
                 <DollarSign className="w-4 h-4" />
-                Precio de la grabación (MXN)
+                {t('liveSetupForm.recordingPriceLabel')}
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-base">$</span>
@@ -342,7 +344,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               <div className="flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  Escribe <strong>0</strong> si será gratuita. Los suscriptores premium la obtienen gratis.
+                  {t('liveSetupForm.recordingPriceHelpPrefix')} <strong>0</strong> {t('liveSetupForm.recordingPriceHelpSuffix')}
                 </p>
               </div>
             </div>
@@ -353,12 +355,12 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 3: Chat ── */}
         <section className="space-y-4">
-          <SectionHeader number={4} icon={MessageSquare} title="Chat en vivo" subtitle="Configura cómo interactúan los espectadores" />
+          <SectionHeader number={4} icon={MessageSquare} title={t('liveSetupForm.sectionChatTitle')} subtitle={t('liveSetupForm.sectionChatSubtitle')} />
 
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
-              <Label className="text-sm font-semibold">Permitir preguntas</Label>
-              <p className="text-xs text-muted-foreground">Los espectadores pueden escribir en el chat</p>
+              <Label className="text-sm font-semibold">{t('liveSetupForm.chatToggleLabel')}</Label>
+              <p className="text-xs text-muted-foreground">{t('liveSetupForm.chatToggleHelp')}</p>
             </div>
             <Switch checked={chatEnabled} onCheckedChange={setChatEnabled} />
           </div>
@@ -368,7 +370,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               <div className="rounded-xl border border-success/30 bg-success/5 p-3 flex items-start gap-2">
                 <MessageSquare className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  El chat es <strong>gratuito para todos</strong>. Cualquier espectador podrá enviar mensajes durante tu transmisión.
+                  {t('liveSetupForm.chatFreeNoticePrefix')} <strong>{t('liveSetupForm.chatFreeNoticeBold')}</strong>{t('liveSetupForm.chatFreeNoticeSuffix')}
                 </p>
               </div>
 
@@ -376,17 +378,17 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                 <CollapsibleTrigger asChild>
                   <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
                     <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvancedChat ? 'rotate-180' : ''}`} />
-                    Opciones avanzadas
+                    {t('liveSetupForm.chatAdvancedOptions')}
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="maxQuestions" className="text-xs">Límite de preguntas</Label>
+                    <Label htmlFor="maxQuestions" className="text-xs">{t('liveSetupForm.chatMaxQuestionsLabel')}</Label>
                     <Input
                       id="maxQuestions"
                       type="number"
                       min={1}
-                      placeholder="Sin límite"
+                      placeholder={t('liveSetupForm.chatMaxQuestionsPlaceholder')}
                       value={maxQuestions}
                       onChange={(e) => setMaxQuestions(e.target.value === '' ? '' : Number(e.target.value))}
                       className="min-h-12"
@@ -402,10 +404,10 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
         {/* ── Section 4: Tags (compact) ── */}
         <section className="space-y-3">
-          <SectionHeader number={5} icon={Tag} title="Etiquetas" subtitle="Opcional · Ayudan a encontrar tu live" />
+          <SectionHeader number={5} icon={Tag} title={t('liveSetupForm.sectionTagsTitle')} subtitle={t('liveSetupForm.sectionTagsSubtitle')} />
           <div className="flex gap-2">
             <Input
-              placeholder="Añade una etiqueta"
+              placeholder={t('liveSetupForm.tagsPlaceholder')}
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
@@ -436,28 +438,28 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
         <section className="space-y-3">
           <div className="flex items-center justify-between min-h-12">
             <div className="space-y-0.5">
-              <Label className="text-sm font-semibold">Traductor en vivo</Label>
-              <p className="text-xs text-muted-foreground">Subtítulos automáticos para asistentes en otro idioma</p>
+              <Label className="text-sm font-semibold">{t('liveSetupForm.sectionTranslatorTitle')}</Label>
+              <p className="text-xs text-muted-foreground">{t('liveSetupForm.sectionTranslatorHelp')}</p>
             </div>
             <Switch checked={translateEnabled} onCheckedChange={setTranslateEnabled} />
           </div>
           {translateEnabled && (
             <div>
-              <Label className="text-xs font-medium">Idioma destino por defecto</Label>
+              <Label className="text-xs font-medium">{t('liveSetupForm.translatorDefaultLangLabel')}</Label>
               <select
                 value={translateTargetLang}
                 onChange={(e) => setTranslateTargetLang(e.target.value)}
                 className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
-                <option value="es">🇪🇸 Español</option>
-                <option value="en">🇺🇸 English</option>
-                <option value="pt">🇵🇹 Português</option>
-                <option value="fr">🇫🇷 Français</option>
-                <option value="it">🇮🇹 Italiano</option>
-                <option value="de">🇩🇪 Deutsch</option>
+                <option value="es">🇪🇸 {t('liveSetupForm.translatorLangEs')}</option>
+                <option value="en">🇺🇸 {t('liveSetupForm.translatorLangEn')}</option>
+                <option value="pt">🇵🇹 {t('liveSetupForm.translatorLangPt')}</option>
+                <option value="fr">🇫🇷 {t('liveSetupForm.translatorLangFr')}</option>
+                <option value="it">🇮🇹 {t('liveSetupForm.translatorLangIt')}</option>
+                <option value="de">🇩🇪 {t('liveSetupForm.translatorLangDe')}</option>
               </select>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Cada espectador puede sobrescribir su idioma desde el reproductor.
+                {t('liveSetupForm.translatorOverrideHelp')}
               </p>
             </div>
           )}
@@ -472,13 +474,13 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
             disabled={isCreating || !isValid}
           >
             {isCreating ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Iniciando, no cierres esta ventana...</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> {t('liveSetupForm.submitCreating')}</>
             ) : (
-              <><Video className="w-5 h-5" /> Iniciar Transmisión en Vivo</>
+              <><Video className="w-5 h-5" /> {t('liveSetupForm.submitStart')}</>
             )}
           </Button>
           <p className="text-[11px] text-center text-muted-foreground mt-2">
-            Se notificará automáticamente a tus suscriptores
+            {t('liveSetupForm.submitNotice')}
           </p>
         </div>
         </>)}
@@ -493,9 +495,9 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
           disabled={isCreating || !isValid}
         >
           {isCreating ? (
-            <><Loader2 className="w-5 h-5 animate-spin" /> Preparando...</>
+            <><Loader2 className="w-5 h-5 animate-spin" /> {t('liveSetupForm.submitMobileCreating')}</>
           ) : (
-            <><Video className="w-5 h-5" /> Iniciar Transmisión</>
+            <><Video className="w-5 h-5" /> {t('liveSetupForm.submitMobileStart')}</>
           )}
         </Button>
       </div>

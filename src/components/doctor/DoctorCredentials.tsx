@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,14 +67,14 @@ interface Experience {
   status: string;
 }
 
-const statusBadge = (status: string) => {
+const statusBadge = (status: string, t: (key: string) => string) => {
   switch (status) {
     case 'approved':
-      return <Badge variant="default" className="gap-1 bg-success"><CheckCircle className="w-3 h-3" />Aprobado</Badge>;
+      return <Badge variant="default" className="gap-1 bg-success"><CheckCircle className="w-3 h-3" />{t('doctorCredentialsComponent.statusApproved')}</Badge>;
     case 'rejected':
-      return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rechazado</Badge>;
+      return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />{t('doctorCredentialsComponent.statusRejected')}</Badge>;
     default:
-      return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pendiente</Badge>;
+      return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />{t('doctorCredentialsComponent.statusPending')}</Badge>;
   }
 };
 
@@ -84,6 +85,7 @@ interface DoctorCredentialsProps {
 
 export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentialsProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [education, setEducation] = useState<Education[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [experience, setExperience] = useState<Experience[]>([]);
@@ -160,13 +162,13 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
 
       toast.success(
         target === 'cedula'
-          ? 'Cédula reenviada — pendiente de nueva revisión'
-          : 'Permiso COFEPRIS reenviado — pendiente de nueva revisión'
+          ? t('doctorCredentialsComponent.toastCedulaResubmitted')
+          : t('doctorCredentialsComponent.toastCofeprisResubmitted')
       );
       await fetchOfficialCredentials();
     } catch (err: any) {
       console.error('[DoctorCredentials] resubmit error', err);
-      toast.error(err?.message || 'No se pudo reenviar el documento');
+      toast.error(err?.message || t('doctorCredentialsComponent.toastResubmitError'));
     } finally {
       setResubmitting(null);
       setResubmitTarget(null);
@@ -201,14 +203,14 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     const filePath = `${doctorId}/${type}_${itemId}_${Date.now()}.${file.name.split('.').pop()}`;
     const { error } = await supabase.storage.from('doctor-credentials').upload(filePath, file);
     if (error) {
-      toast.error('Error al subir documento');
+      toast.error(t('doctorCredentialsComponent.toastUploadError'));
       return null;
     }
     return filePath;
   };
 
   const handleAddEducation = async () => {
-    if (!eduForm.institution || !eduForm.degree) { toast.error('Completa los campos requeridos'); return; }
+    if (!eduForm.institution || !eduForm.degree) { toast.error(t('doctorCredentialsComponent.toastFillRequired')); return; }
     setIsSaving(true);
     try {
       const { error } = await supabase.from('doctor_education' as any).insert({
@@ -221,19 +223,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         description: eduForm.description || null,
       });
       if (error) throw error;
-      toast.success('Educación agregada — pendiente de aprobación');
+      toast.success(t('doctorCredentialsComponent.toastEducationAdded'));
       setShowEduDialog(false);
       setEduForm({ institution: '', degree: '', field_of_study: '', start_year: '', end_year: '', description: '' });
       fetchCredentials();
     } catch (error: any) {
-      toast.error(error.message || 'Error al agregar');
+      toast.error(error.message || t('doctorCredentialsComponent.toastAddError'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleAddCertification = async () => {
-    if (!certForm.name || !certForm.issuing_organization) { toast.error('Completa los campos requeridos'); return; }
+    if (!certForm.name || !certForm.issuing_organization) { toast.error(t('doctorCredentialsComponent.toastFillRequired')); return; }
     setIsSaving(true);
     try {
       const { error } = await supabase.from('doctor_certifications' as any).insert({
@@ -245,19 +247,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         credential_id: certForm.credential_id || null,
       });
       if (error) throw error;
-      toast.success('Certificación agregada — pendiente de aprobación');
+      toast.success(t('doctorCredentialsComponent.toastCertificationAdded'));
       setShowCertDialog(false);
       setCertForm({ name: '', issuing_organization: '', issue_date: '', expiry_date: '', credential_id: '' });
       fetchCredentials();
     } catch (error: any) {
-      toast.error(error.message || 'Error al agregar');
+      toast.error(error.message || t('doctorCredentialsComponent.toastAddError'));
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleAddExperience = async () => {
-    if (!expForm.title || !expForm.organization) { toast.error('Completa los campos requeridos'); return; }
+    if (!expForm.title || !expForm.organization) { toast.error(t('doctorCredentialsComponent.toastFillRequired')); return; }
     setIsSaving(true);
     try {
       const { error } = await supabase.from('doctor_experience' as any).insert({
@@ -271,12 +273,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         description: expForm.description || null,
       });
       if (error) throw error;
-      toast.success('Experiencia agregada — pendiente de aprobación');
+      toast.success(t('doctorCredentialsComponent.toastExperienceAdded'));
       setShowExpDialog(false);
       setExpForm({ title: '', organization: '', location: '', start_date: '', end_date: '', is_current: false, description: '' });
       fetchCredentials();
     } catch (error: any) {
-      toast.error(error.message || 'Error al agregar');
+      toast.error(error.message || t('doctorCredentialsComponent.toastAddError'));
     } finally {
       setIsSaving(false);
     }
@@ -284,8 +286,8 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
 
   const handleDelete = async (table: string, id: string) => {
     const { error } = await supabase.from(table as any).delete().eq('id', id).eq('doctor_id', doctorId);
-    if (error) { toast.error('Error al eliminar'); return; }
-    toast.success('Eliminado');
+    if (error) { toast.error(t('doctorCredentialsComponent.toastDeleteError')); return; }
+    toast.success(t('doctorCredentialsComponent.toastDeleted'));
     fetchCredentials();
   };
 
@@ -307,11 +309,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-primary" />
-          Perfil Académico y Profesional
+          {t('doctorCredentialsComponent.cardTitle')}
         </CardTitle>
         {isOwner && (
           <p className="text-xs text-muted-foreground mt-1">
-            💡 Agrega tu educación, certificaciones y experiencia para que los pacientes conozcan tu trayectoria profesional. Cada entrada será revisada y aprobada por un administrador antes de ser visible públicamente.
+            {t('doctorCredentialsComponent.ownerHint')}
           </p>
         )}
       </CardHeader>
@@ -323,11 +325,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
                 <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm font-semibold text-destructive">Cédula Profesional rechazada</p>
+                  <p className="text-sm font-semibold text-destructive">{t('doctorCredentialsComponent.cedulaRejectedTitle')}</p>
                   <p className="text-xs text-muted-foreground break-words">
                     {credCedulaReason?.trim()
-                      ? `Motivo: ${credCedulaReason}`
-                      : 'El equipo no pudo aprobar tu cédula. Sube un documento legible y vigente.'}
+                      ? `${t('doctorCredentialsComponent.reasonLabel')}: ${credCedulaReason}`
+                      : t('doctorCredentialsComponent.cedulaRejectedDefault')}
                   </p>
                   <Button
                     type="button"
@@ -342,7 +344,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                     ) : (
                       <Upload className="w-3.5 h-3.5" />
                     )}
-                    Subir nuevo documento
+                    {t('doctorCredentialsComponent.uploadNewDocument')}
                   </Button>
                 </div>
               </div>
@@ -351,11 +353,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
                 <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm font-semibold text-destructive">Permiso COFEPRIS rechazado</p>
+                  <p className="text-sm font-semibold text-destructive">{t('doctorCredentialsComponent.cofeprisRejectedTitle')}</p>
                   <p className="text-xs text-muted-foreground break-words">
                     {credCofeprisReason?.trim()
-                      ? `Motivo: ${credCofeprisReason}`
-                      : 'El equipo no pudo aprobar tu permiso COFEPRIS. Sube un documento legible y vigente.'}
+                      ? `${t('doctorCredentialsComponent.reasonLabel')}: ${credCofeprisReason}`
+                      : t('doctorCredentialsComponent.cofeprisRejectedDefault')}
                   </p>
                   <Button
                     type="button"
@@ -370,7 +372,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                     ) : (
                       <Upload className="w-3.5 h-3.5" />
                     )}
-                    Subir nuevo documento
+                    {t('doctorCredentialsComponent.uploadNewDocument')}
                   </Button>
                 </div>
               </div>
@@ -389,15 +391,15 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="education" className="gap-1 text-xs">
               <GraduationCap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Educación</span>
+              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabEducation')}</span>
             </TabsTrigger>
             <TabsTrigger value="certifications" className="gap-1 text-xs">
               <Award className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Certificaciones</span>
+              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabCertifications')}</span>
             </TabsTrigger>
             <TabsTrigger value="experience" className="gap-1 text-xs">
               <Briefcase className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Experiencia</span>
+              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabExperience')}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -406,19 +408,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowEduDialog(true)}>
-                  <Plus className="w-4 h-4" /> Agregar Educación
+                  <Plus className="w-4 h-4" /> {t('doctorCredentialsComponent.addEducation')}
                 </Button>
                 {visibleEdu.length === 0 && (
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <GraduationCap className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Agrega tu formación académica</p>
-                    <p className="text-xs text-muted-foreground/70">Universidades, posgrados, maestrías, doctorados...</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.educationEmptyTitle')}</p>
+                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.educationEmptyHint')}</p>
                   </div>
                 )}
               </div>
             )}
             {!isOwner && visibleEdu.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sin educación registrada</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('doctorCredentialsComponent.noEducation')}</p>
             )}
             {visibleEdu.map(edu => (
                 <div key={edu.id} className="border rounded-lg p-3 space-y-1">
@@ -428,12 +430,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                       <p className="text-sm text-muted-foreground">{edu.institution}</p>
                       {edu.field_of_study && <p className="text-xs text-muted-foreground">{edu.field_of_study}</p>}
                       {(edu.start_year || edu.end_year) && (
-                        <p className="text-xs text-muted-foreground">{edu.start_year || '?'} — {edu.end_year || 'Presente'}</p>
+                        <p className="text-xs text-muted-foreground">{edu.start_year || '?'} — {edu.end_year || t('doctorCredentialsComponent.present')}</p>
                       )}
                       {edu.description && <p className="text-xs mt-1">{edu.description}</p>}
                     </div>
                     <div className="flex items-center gap-2">
-                      {isOwner && statusBadge(edu.status)}
+                      {isOwner && statusBadge(edu.status, t)}
                       {isOwner && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_education', edu.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
@@ -450,19 +452,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowCertDialog(true)}>
-                  <Plus className="w-4 h-4" /> Agregar Certificación
+                  <Plus className="w-4 h-4" /> {t('doctorCredentialsComponent.addCertification')}
                 </Button>
                 {visibleCert.length === 0 && (
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <Award className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Agrega tus certificaciones</p>
-                    <p className="text-xs text-muted-foreground/70">Especialidades, diplomados, cursos acreditados...</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.certificationsEmptyTitle')}</p>
+                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.certificationsEmptyHint')}</p>
                   </div>
                 )}
               </div>
             )}
             {!isOwner && visibleCert.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sin certificaciones registradas</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('doctorCredentialsComponent.noCertifications')}</p>
             )}
             {visibleCert.length > 0 && (
               visibleCert.map(cert => (
@@ -471,12 +473,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                     <div>
                       <p className="font-semibold text-sm">{cert.name}</p>
                       <p className="text-sm text-muted-foreground">{cert.issuing_organization}</p>
-                      {cert.issue_date && <p className="text-xs text-muted-foreground">Emitido: {cert.issue_date}</p>}
-                      {cert.expiry_date && <p className="text-xs text-muted-foreground">Expira: {cert.expiry_date}</p>}
-                      {cert.credential_id && <p className="text-xs text-muted-foreground">ID: {cert.credential_id}</p>}
+                      {cert.issue_date && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.issuedLabel')}: {cert.issue_date}</p>}
+                      {cert.expiry_date && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.expiresLabel')}: {cert.expiry_date}</p>}
+                      {cert.credential_id && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.idLabel')}: {cert.credential_id}</p>}
                     </div>
                     <div className="flex items-center gap-2">
-                      {isOwner && statusBadge(cert.status)}
+                      {isOwner && statusBadge(cert.status, t)}
                       {isOwner && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_certifications', cert.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
@@ -494,19 +496,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowExpDialog(true)}>
-                  <Plus className="w-4 h-4" /> Agregar Experiencia
+                  <Plus className="w-4 h-4" /> {t('doctorCredentialsComponent.addExperience')}
                 </Button>
                 {visibleExp.length === 0 && (
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Agrega tu experiencia profesional</p>
-                    <p className="text-xs text-muted-foreground/70">Hospitales, clínicas, consultorios privados...</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.experienceEmptyTitle')}</p>
+                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.experienceEmptyHint')}</p>
                   </div>
                 )}
               </div>
             )}
             {!isOwner && visibleExp.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">Sin experiencia registrada</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('doctorCredentialsComponent.noExperience')}</p>
             )}
             {visibleExp.length > 0 && (
               visibleExp.map(exp => (
@@ -517,12 +519,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                       <p className="text-sm text-muted-foreground">{exp.organization}</p>
                       {exp.location && <p className="text-xs text-muted-foreground">{exp.location}</p>}
                       <p className="text-xs text-muted-foreground">
-                        {exp.start_date || '?'} — {exp.is_current ? 'Presente' : (exp.end_date || '?')}
+                        {exp.start_date || '?'} — {exp.is_current ? t('doctorCredentialsComponent.present') : (exp.end_date || '?')}
                       </p>
                       {exp.description && <p className="text-xs mt-1">{exp.description}</p>}
                     </div>
                     <div className="flex items-center gap-2">
-                      {isOwner && statusBadge(exp.status)}
+                      {isOwner && statusBadge(exp.status, t)}
                       {isOwner && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_experience', exp.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
@@ -540,20 +542,20 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
       {/* Education Dialog */}
       <Dialog open={showEduDialog} onOpenChange={setShowEduDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Agregar Educación</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('doctorCredentialsComponent.addEducation')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Institución *</Label><Input value={eduForm.institution} onChange={e => setEduForm({...eduForm, institution: e.target.value})} placeholder="Universidad Nacional" /></div>
-            <div><Label className="text-xs">Título / Grado *</Label><Input value={eduForm.degree} onChange={e => setEduForm({...eduForm, degree: e.target.value})} placeholder="Médico Cirujano" /></div>
-            <div><Label className="text-xs">Campo de estudio</Label><Input value={eduForm.field_of_study} onChange={e => setEduForm({...eduForm, field_of_study: e.target.value})} placeholder="Medicina General" /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.institutionLabel')}</Label><Input value={eduForm.institution} onChange={e => setEduForm({...eduForm, institution: e.target.value})} placeholder={t('doctorCredentialsComponent.institutionPlaceholder')} /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.degreeLabel')}</Label><Input value={eduForm.degree} onChange={e => setEduForm({...eduForm, degree: e.target.value})} placeholder={t('doctorCredentialsComponent.degreePlaceholder')} /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.fieldOfStudyLabel')}</Label><Input value={eduForm.field_of_study} onChange={e => setEduForm({...eduForm, field_of_study: e.target.value})} placeholder={t('doctorCredentialsComponent.fieldOfStudyPlaceholder')} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Año inicio</Label><Input type="number" value={eduForm.start_year} onChange={e => setEduForm({...eduForm, start_year: e.target.value})} placeholder="2010" /></div>
-              <div><Label className="text-xs">Año fin</Label><Input type="number" value={eduForm.end_year} onChange={e => setEduForm({...eduForm, end_year: e.target.value})} placeholder="2016" /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.startYearLabel')}</Label><Input type="number" value={eduForm.start_year} onChange={e => setEduForm({...eduForm, start_year: e.target.value})} placeholder="2010" /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.endYearLabel')}</Label><Input type="number" value={eduForm.end_year} onChange={e => setEduForm({...eduForm, end_year: e.target.value})} placeholder="2016" /></div>
             </div>
-            <div><Label className="text-xs">Descripción</Label><Textarea value={eduForm.description} onChange={e => setEduForm({...eduForm, description: e.target.value})} placeholder="Detalles adicionales..." /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.descriptionLabel')}</Label><Textarea value={eduForm.description} onChange={e => setEduForm({...eduForm, description: e.target.value})} placeholder={t('doctorCredentialsComponent.descriptionPlaceholder')} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEduDialog(false)}>Cancelar</Button>
-            <Button onClick={handleAddEducation} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar'}</Button>
+            <Button variant="outline" onClick={() => setShowEduDialog(false)}>{t('doctorCredentialsComponent.cancel')}</Button>
+            <Button onClick={handleAddEducation} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('doctorCredentialsComponent.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -561,19 +563,19 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
       {/* Certification Dialog */}
       <Dialog open={showCertDialog} onOpenChange={setShowCertDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Agregar Certificación</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('doctorCredentialsComponent.addCertification')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Nombre del certificado *</Label><Input value={certForm.name} onChange={e => setCertForm({...certForm, name: e.target.value})} placeholder="Certificación en Cardiología" /></div>
-            <div><Label className="text-xs">Organización emisora *</Label><Input value={certForm.issuing_organization} onChange={e => setCertForm({...certForm, issuing_organization: e.target.value})} placeholder="Consejo Mexicano de Cardiología" /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.certificateNameLabel')}</Label><Input value={certForm.name} onChange={e => setCertForm({...certForm, name: e.target.value})} placeholder={t('doctorCredentialsComponent.certificateNamePlaceholder')} /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.issuingOrgLabel')}</Label><Input value={certForm.issuing_organization} onChange={e => setCertForm({...certForm, issuing_organization: e.target.value})} placeholder={t('doctorCredentialsComponent.issuingOrgPlaceholder')} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Fecha emisión</Label><Input type="date" value={certForm.issue_date} onChange={e => setCertForm({...certForm, issue_date: e.target.value})} /></div>
-              <div><Label className="text-xs">Fecha expiración</Label><Input type="date" value={certForm.expiry_date} onChange={e => setCertForm({...certForm, expiry_date: e.target.value})} /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.issueDateLabel')}</Label><Input type="date" value={certForm.issue_date} onChange={e => setCertForm({...certForm, issue_date: e.target.value})} /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.expiryDateLabel')}</Label><Input type="date" value={certForm.expiry_date} onChange={e => setCertForm({...certForm, expiry_date: e.target.value})} /></div>
             </div>
-            <div><Label className="text-xs">ID de credencial</Label><Input value={certForm.credential_id} onChange={e => setCertForm({...certForm, credential_id: e.target.value})} placeholder="ABC-12345" /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.credentialIdLabel')}</Label><Input value={certForm.credential_id} onChange={e => setCertForm({...certForm, credential_id: e.target.value})} placeholder="ABC-12345" /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCertDialog(false)}>Cancelar</Button>
-            <Button onClick={handleAddCertification} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar'}</Button>
+            <Button variant="outline" onClick={() => setShowCertDialog(false)}>{t('doctorCredentialsComponent.cancel')}</Button>
+            <Button onClick={handleAddCertification} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('doctorCredentialsComponent.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -581,24 +583,24 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
       {/* Experience Dialog */}
       <Dialog open={showExpDialog} onOpenChange={setShowExpDialog}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Agregar Experiencia</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('doctorCredentialsComponent.addExperience')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label className="text-xs">Puesto / Título *</Label><Input value={expForm.title} onChange={e => setExpForm({...expForm, title: e.target.value})} placeholder="Médico Especialista" /></div>
-            <div><Label className="text-xs">Organización *</Label><Input value={expForm.organization} onChange={e => setExpForm({...expForm, organization: e.target.value})} placeholder="Hospital General" /></div>
-            <div><Label className="text-xs">Ubicación</Label><Input value={expForm.location} onChange={e => setExpForm({...expForm, location: e.target.value})} placeholder="CDMX, México" /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.positionLabel')}</Label><Input value={expForm.title} onChange={e => setExpForm({...expForm, title: e.target.value})} placeholder={t('doctorCredentialsComponent.positionPlaceholder')} /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.organizationLabel')}</Label><Input value={expForm.organization} onChange={e => setExpForm({...expForm, organization: e.target.value})} placeholder={t('doctorCredentialsComponent.organizationPlaceholder')} /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.locationLabel')}</Label><Input value={expForm.location} onChange={e => setExpForm({...expForm, location: e.target.value})} placeholder={t('doctorCredentialsComponent.locationPlaceholder')} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs">Fecha inicio</Label><Input type="date" value={expForm.start_date} onChange={e => setExpForm({...expForm, start_date: e.target.value})} /></div>
-              <div><Label className="text-xs">Fecha fin</Label><Input type="date" value={expForm.end_date} onChange={e => setExpForm({...expForm, end_date: e.target.value})} disabled={expForm.is_current} /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.startDateLabel')}</Label><Input type="date" value={expForm.start_date} onChange={e => setExpForm({...expForm, start_date: e.target.value})} /></div>
+              <div><Label className="text-xs">{t('doctorCredentialsComponent.endDateLabel')}</Label><Input type="date" value={expForm.end_date} onChange={e => setExpForm({...expForm, end_date: e.target.value})} disabled={expForm.is_current} /></div>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={expForm.is_current} onChange={e => setExpForm({...expForm, is_current: e.target.checked})} className="rounded" />
-              Trabajo actual
+              {t('doctorCredentialsComponent.currentJob')}
             </label>
-            <div><Label className="text-xs">Descripción</Label><Textarea value={expForm.description} onChange={e => setExpForm({...expForm, description: e.target.value})} placeholder="Responsabilidades y logros..." /></div>
+            <div><Label className="text-xs">{t('doctorCredentialsComponent.descriptionLabel')}</Label><Textarea value={expForm.description} onChange={e => setExpForm({...expForm, description: e.target.value})} placeholder={t('doctorCredentialsComponent.experienceDescriptionPlaceholder')} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExpDialog(false)}>Cancelar</Button>
-            <Button onClick={handleAddExperience} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Guardar'}</Button>
+            <Button variant="outline" onClick={() => setShowExpDialog(false)}>{t('doctorCredentialsComponent.cancel')}</Button>
+            <Button onClick={handleAddExperience} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('doctorCredentialsComponent.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -172,7 +172,7 @@ export default function DoctorGoLive() {
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
     } catch (err) {
-      toast.error('No se pudo acceder a la cámara/micrófono');
+      toast.error(t('doctorGoLivePage.cameraMicAccessError'));
       setIsCreating(false);
       return;
     }
@@ -320,16 +320,21 @@ export default function DoctorGoLive() {
       });
 
       // Notify subscribers
+      const notifTitle = t('doctorGoLivePage.notificationLiveNowTitle');
+      const doctorName = user.name || t('doctorGoLivePage.notificationFallbackDoctorName');
+      const notifMessage = t('doctorGoLivePage.notificationLiveNowMessage')
+        .replace('{doctor}', doctorName)
+        .replace('{title}', config.title);
       Promise.allSettled([
         supabase.rpc('notify_subscribers', {
           p_doctor_id: user.id, p_notification_type: 'doctor_live',
-          p_title: '¡En vivo ahora!',
-          p_message: `${user.name || 'Un doctor que sigues'} está transmitiendo: ${config.title}`,
+          p_title: notifTitle,
+          p_message: notifMessage,
           p_data: { liveId: live.id },
         }),
         supabase.functions.invoke('send-push-notification', {
-          body: { doctorId: user.id, liveId: live.id, title: '¡En vivo ahora!',
-            message: `${user.name || 'Un doctor que sigues'} está transmitiendo: ${config.title}` },
+          body: { doctorId: user.id, liveId: live.id, title: notifTitle,
+            message: notifMessage },
         }),
         supabase.functions.invoke('send-live-notification-email', {
           body: { doctorId: user.id, liveId: live.id, title: config.title.trim(),
@@ -337,7 +342,7 @@ export default function DoctorGoLive() {
         }),
       ]).catch(() => {});
 
-      toast.success('¡Transmisión iniciada!');
+      toast.success(t('doctorGoLivePage.broadcastStartedToast'));
     } catch (error: any) {
       console.error('Error starting live:', error);
       stream.getTracks().forEach(t => t.stop());
@@ -402,7 +407,7 @@ export default function DoctorGoLive() {
       // arrives at /recordings, sees nothing, and can't tell what went wrong.
       if (saveAsPremium && (!localBlob || localBlob.size === 0)) {
         toast.error(
-          'La grabación local no capturó video. Esto puede ocurrir si el navegador bloqueó el MediaRecorder o si la conexión cayó. El live quedó registrado pero no hay archivo que subir.',
+          t('doctorGoLivePage.recordingCaptureFailedToast'),
           { duration: 15000 }
         );
       }
@@ -434,11 +439,11 @@ export default function DoctorGoLive() {
               await supabase.from('recordings')
                 .update({ peak_viewers: currentViewerCount || 0 })
                 .eq('live_id', liveId).eq('doctor_id', doctorId);
-              toast.success('Grabación guardada correctamente');
+              toast.success(t('doctorGoLivePage.recordingSavedToast'));
             }
           } catch (err) {
             console.error('Background upload error:', err);
-            toast.error('Error al guardar la grabación');
+            toast.error(t('doctorGoLivePage.recordingSaveErrorToast'));
           } finally {
             localRecording.cleanup();
           }
@@ -461,10 +466,10 @@ export default function DoctorGoLive() {
       // Navigate to recordings with appropriate tab
       if (saveAsPremium) {
         navigate('/doctor/recordings?tab=grabaciones');
-        toast.success('Tu grabación se está procesando en segundo plano');
+        toast.success(t('doctorGoLivePage.recordingProcessingToast'));
       } else {
         navigate('/doctor/recordings?tab=lives-pasados');
-        toast.info('Live finalizado. Métricas disponibles en Lives pasados');
+        toast.info(t('doctorGoLivePage.liveFinishedMetricsToast'));
       }
     } catch (error: any) {
       console.error('Error ending live:', error);
@@ -499,7 +504,7 @@ export default function DoctorGoLive() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center gap-3 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Cargando...</span>
+            <span>{t('doctorGoLivePage.loading')}</span>
           </div>
         </div>
       </MainLayout>
@@ -514,9 +519,9 @@ export default function DoctorGoLive() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
               <Video className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">Iniciar Transmisión</h2>
-            <p className="text-muted-foreground mb-6">Solo los médicos verificados pueden iniciar transmisiones en vivo.</p>
-            <Button onClick={() => navigate('/login')}>Iniciar Sesión como Médico</Button>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('doctorGoLivePage.startBroadcastTitle')}</h2>
+            <p className="text-muted-foreground mb-6">{t('doctorGoLivePage.onlyVerifiedDoctors')}</p>
+            <Button onClick={() => navigate('/login')}>{t('doctorGoLivePage.loginAsDoctor')}</Button>
           </Card>
         </div>
       </MainLayout>
@@ -582,24 +587,24 @@ export default function DoctorGoLive() {
       {isCreating && <StartingLiveOverlay stage={creatingStage} onCancel={handleCancelCreating} />}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorGoLivePage.back')}
         </Button>
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary text-primary-foreground border border-primary shadow-md mb-3">
             <Radio className="w-3.5 h-3.5" />
-            <span className="text-xs font-semibold tracking-wide">Estudio en vivo</span>
+            <span className="text-xs font-semibold tracking-wide">{t('doctorGoLivePage.liveStudioBadge')}</span>
           </div>
           <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
-            Comparte tu conocimiento
+            {t('doctorGoLivePage.shareYourKnowledge')}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Transmite ahora o programa una sesión para tu audiencia
+            {t('doctorGoLivePage.broadcastOrSchedule')}
           </p>
         </div>
         <Tabs defaultValue="now" className="w-full">
           <TabsList className="grid grid-cols-2 mb-4 max-w-md mx-auto">
-            <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> Transmitir ahora</TabsTrigger>
-            <TabsTrigger value="schedule" className="gap-2"><CalendarClock className="w-4 h-4" /> Programar curso</TabsTrigger>
+            <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> {t('doctorGoLivePage.broadcastNowTab')}</TabsTrigger>
+            <TabsTrigger value="schedule" className="gap-2"><CalendarClock className="w-4 h-4" /> {t('doctorGoLivePage.scheduleCourseTab')}</TabsTrigger>
           </TabsList>
           <TabsContent value="now">
             <div className="rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg p-4 sm:p-6">
@@ -618,10 +623,11 @@ export default function DoctorGoLive() {
 }
 
 function StartingLiveOverlay({ stage, onCancel }: { stage: 'camera' | 'room' | 'connecting'; onCancel: () => void }) {
+  const { t } = useLanguage();
   const steps: Array<{ id: 'camera' | 'room' | 'connecting'; label: string; hint: string }> = [
-    { id: 'camera', label: 'Verificando cámara y micrófono', hint: 'Permite el acceso si tu navegador lo solicita' },
-    { id: 'room', label: 'Creando tu sala de transmisión', hint: 'Reservando recursos en el servidor' },
-    { id: 'connecting', label: 'Conectando con la audiencia', hint: 'Listo en unos segundos…' },
+    { id: 'camera', label: t('doctorGoLivePage.stepCameraLabel'), hint: t('doctorGoLivePage.stepCameraHint') },
+    { id: 'room', label: t('doctorGoLivePage.stepRoomLabel'), hint: t('doctorGoLivePage.stepRoomHint') },
+    { id: 'connecting', label: t('doctorGoLivePage.stepConnectingLabel'), hint: t('doctorGoLivePage.stepConnectingHint') },
   ];
   const currentIdx = steps.findIndex(s => s.id === stage);
 
@@ -634,12 +640,12 @@ function StartingLiveOverlay({ stage, onCancel }: { stage: 'camera' | 'room' | '
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-primary/95 via-secondary/95 to-primary/95 backdrop-blur-sm px-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Iniciando transmisión"
+      aria-label={t('doctorGoLivePage.startingBroadcastAria')}
     >
       <button
         type="button"
         onClick={onCancel}
-        aria-label="Cancelar inicio de transmisión"
+        aria-label={t('doctorGoLivePage.cancelStartingAria')}
         className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur flex items-center justify-center text-white transition-colors"
       >
         <X className="w-5 h-5" />
@@ -649,10 +655,10 @@ function StartingLiveOverlay({ stage, onCancel }: { stage: 'camera' | 'room' | '
           <Loader2 className="w-10 h-10 animate-spin" />
         </div>
         <h2 className="font-heading text-2xl sm:text-3xl font-bold mb-2">
-          Iniciando tu transmisión en vivo
+          {t('doctorGoLivePage.startingYourBroadcast')}
         </h2>
         <p className="text-white/80 text-sm mb-8">
-          No cierres esta ventana ni toques otros botones. Esto puede tardar unos segundos.
+          {t('doctorGoLivePage.doNotCloseWindow')}
         </p>
 
         <ol className="space-y-3 text-left">
@@ -697,7 +703,7 @@ function StartingLiveOverlay({ stage, onCancel }: { stage: 'camera' | 'room' | '
         </ol>
 
         <p className="mt-6 text-[11px] text-white/60">
-          Si tarda más de 30 segundos, revisa tu conexión a internet.
+          {t('doctorGoLivePage.connectionHint30s')}
         </p>
       </div>
     </div>,

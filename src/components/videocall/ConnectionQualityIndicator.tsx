@@ -2,17 +2,18 @@ import React, { useState } from 'react';
 import { Wifi, WifiOff, ChevronUp, ChevronDown } from 'lucide-react';
 import type { NetworkStats, ConnectionQuality } from '@/hooks/useConnectionQuality';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ConnectionQualityIndicatorProps {
   stats: NetworkStats;
 }
 
-const qualityConfig: Record<ConnectionQuality, { label: string; color: string; bars: number }> = {
-  excellent: { label: 'Excelente', color: 'text-success', bars: 4 },
-  good:      { label: 'Buena',     color: 'text-success',   bars: 3 },
-  fair:      { label: 'Regular',   color: 'text-warning',   bars: 2 },
-  poor:      { label: 'Débil',     color: 'text-destructive',     bars: 1 },
-  unknown:   { label: '...',       color: 'text-white/50',    bars: 0 },
+const qualityConfig: Record<ConnectionQuality, { labelKey: string; color: string; bars: number }> = {
+  excellent: { labelKey: 'qualityExcellent', color: 'text-success', bars: 4 },
+  good:      { labelKey: 'qualityGood',      color: 'text-success',   bars: 3 },
+  fair:      { labelKey: 'qualityFair',      color: 'text-warning',   bars: 2 },
+  poor:      { labelKey: 'qualityPoor',      color: 'text-destructive',     bars: 1 },
+  unknown:   { labelKey: 'qualityUnknown',   color: 'text-white/50',    bars: 0 },
 };
 
 function SignalBars({ bars, colorClass }: { bars: number; colorClass: string }) {
@@ -32,6 +33,7 @@ function SignalBars({ bars, colorClass }: { bars: number; colorClass: string }) 
 }
 
 export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicatorProps) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const config = qualityConfig[stats.quality];
 
@@ -64,12 +66,12 @@ export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicator
             className="mt-1 bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-3 min-w-[180px] text-xs"
           >
             <div className={`font-semibold mb-2 ${config.color}`}>
-              {config.label}
+              {t(`connectionQualityIndicator.${config.labelKey}`)}
             </div>
             <div className="space-y-1.5 text-white/70">
               {stats.latency !== null && (
                 <div className="flex justify-between">
-                  <span>Latencia</span>
+                  <span>{t('connectionQualityIndicator.latency')}</span>
                   <span className={`font-mono ${stats.latency > 300 ? 'text-destructive' : stats.latency > 150 ? 'text-warning' : 'text-white'}`}>
                     {stats.latency}ms
                   </span>
@@ -77,7 +79,7 @@ export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicator
               )}
               {stats.packetLoss !== null && (
                 <div className="flex justify-between">
-                  <span>Pérdida paquetes</span>
+                  <span>{t('connectionQualityIndicator.packetLoss')}</span>
                   <span className={`font-mono ${stats.packetLoss > 5 ? 'text-destructive' : stats.packetLoss > 2 ? 'text-warning' : 'text-white'}`}>
                     {stats.packetLoss}%
                   </span>
@@ -85,18 +87,18 @@ export function ConnectionQualityIndicator({ stats }: ConnectionQualityIndicator
               )}
               {stats.sendBitrate !== null && (
                 <div className="flex justify-between">
-                  <span>Envío</span>
+                  <span>{t('connectionQualityIndicator.send')}</span>
                   <span className="font-mono text-white">{stats.sendBitrate} kbps</span>
                 </div>
               )}
               {stats.recvBitrate !== null && (
                 <div className="flex justify-between">
-                  <span>Recepción</span>
+                  <span>{t('connectionQualityIndicator.receive')}</span>
                   <span className="font-mono text-white">{stats.recvBitrate} kbps</span>
                 </div>
               )}
               {stats.latency === null && stats.packetLoss === null && (
-                <div className="text-white/40 italic">Recopilando datos...</div>
+                <div className="text-white/40 italic">{t('connectionQualityIndicator.collectingData')}</div>
               )}
             </div>
           </motion.div>

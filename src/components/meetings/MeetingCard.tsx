@@ -26,7 +26,7 @@ interface MeetingCardProps {
 
 export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, onEdit, onDelete, isPast }: MeetingCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(meeting.meetingNotes || '');
 
@@ -42,11 +42,11 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
 
   const getStatusBadge = (status: MeetingStatus) => {
     const map: Record<MeetingStatus, { variant: any; icon: any; label: string }> = {
-      pending: { variant: 'warning', icon: Clock, label: 'Pendiente' },
-      accepted: { variant: 'verified', icon: CheckCircle, label: 'Confirmada' },
-      rejected: { variant: 'destructive', icon: XCircle, label: 'Rechazada' },
-      completed: { variant: 'secondary', icon: CheckCircle, label: 'Completada' },
-      cancelled: { variant: 'outline', icon: XCircle, label: 'Cancelada' },
+      pending: { variant: 'warning', icon: Clock, label: t('meetingCard.status.pending') },
+      accepted: { variant: 'verified', icon: CheckCircle, label: t('meetingCard.status.accepted') },
+      rejected: { variant: 'destructive', icon: XCircle, label: t('meetingCard.status.rejected') },
+      completed: { variant: 'secondary', icon: CheckCircle, label: t('meetingCard.status.completed') },
+      cancelled: { variant: 'outline', icon: XCircle, label: t('meetingCard.status.cancelled') },
     };
     const { variant, icon: Icon, label } = map[status] || map.pending;
     return (
@@ -96,19 +96,19 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
             {isCallable && isOrganizer && (
               <Button size="sm" className="gap-1.5" onClick={() => onStartCall(meeting)}>
                 <Video className="w-3.5 h-3.5" />
-                Iniciar
+                {t('meetingCard.actions.start')}
               </Button>
             )}
             {isCallable && !isOrganizer && meeting.dailyRoomUrl && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onStartCall(meeting)}>
                 <Video className="w-3.5 h-3.5" />
-                Unirse
+                {t('meetingCard.actions.join')}
               </Button>
             )}
             {isOrganizer && !isPast && onEdit && (
               <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => onEdit(meeting)}>
                 <Pencil className="w-3.5 h-3.5" />
-                Editar
+                {t('meetingCard.actions.edit')}
               </Button>
             )}
             {isOrganizer && onDelete && (
@@ -119,7 +119,7 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
                 onClick={() => setConfirmDelete(true)}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Eliminar
+                {t('meetingCard.actions.delete')}
               </Button>
             )}
           </div>
@@ -128,20 +128,20 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
         <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar esta reunión?</AlertDialogTitle>
+              <AlertDialogTitle>{t('meetingCard.deleteDialog.title')}</AlertDialogTitle>
               <AlertDialogDescription>
                 <strong>{meeting.title}</strong><br />
-                Se borrará la reunión y todas sus invitaciones. Esta acción no se puede deshacer.
+                {t('meetingCard.deleteDialog.description')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel>{t('meetingCard.deleteDialog.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => { onDelete?.(meeting); setConfirmDelete(false); }}
                 className="bg-destructive hover:bg-destructive/90 text-white"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Eliminar definitivamente
+                {t('meetingCard.deleteDialog.confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -155,7 +155,7 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <FileText className="w-3 h-3" />
-              {meeting.meetingNotes ? 'Ver notas' : 'Agregar notas post-reunión'}
+              {meeting.meetingNotes ? t('meetingCard.notes.view') : t('meetingCard.notes.add')}
               {showNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
 
@@ -164,7 +164,7 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
                 {isOrganizer ? (
                   <>
                     <Textarea
-                      placeholder="Resumen de la reunión, acuerdos, diagnóstico..."
+                      placeholder={t('meetingCard.notes.placeholder')}
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
                       rows={3}
@@ -176,12 +176,12 @@ export function MeetingCard({ meeting, isOrganizer, onStartCall, onSaveNotes, on
                       onClick={() => onSaveNotes(meeting.id, notes)}
                       className="text-xs"
                     >
-                      Guardar notas
+                      {t('meetingCard.notes.save')}
                     </Button>
                   </>
                 ) : (
                   <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                    {meeting.meetingNotes || 'Sin notas aún'}
+                    {meeting.meetingNotes || t('meetingCard.notes.empty')}
                   </p>
                 )}
               </div>

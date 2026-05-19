@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ interface PatientResult {
 
 export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<'registered' | 'external'>('registered');
 
   // Search registered (LIVE)
@@ -98,16 +100,16 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
       const { error } = await supabase.from('notifications').insert({
         user_id: patient.user_id,
         type: 'system' as any,
-        title: '🩺 Un médico solicita acceso a tu expediente',
-        message: 'Para iniciar tu seguimiento, autoriza el acceso desde tu Vault.',
+        title: t('addPatientModal.notificationTitle'),
+        message: t('addPatientModal.notificationMessage'),
         data: { doctor_id: user.id, action: 'request_vault_access' },
       });
       if (error) throw error;
       setInvitedIds(prev => new Set(prev).add(patient.user_id));
-      toast.success(`Invitación enviada a ${patient.name || 'paciente'}`);
+      toast.success(`${t('addPatientModal.invitationSentTo')} ${patient.name || t('addPatientModal.patientFallback')}`);
       onAdded?.();
     } catch (e: any) {
-      toast.error(e.message || 'No se pudo enviar la invitación');
+      toast.error(e.message || t('addPatientModal.errorInviteFailed'));
     }
   };
 
@@ -120,7 +122,7 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
       notes: extNotes || undefined,
     });
     if (!parsed.success) {
-      toast.error('Revisa los datos: nombre obligatorio, email válido si se incluye.');
+      toast.error(t('addPatientModal.errorValidation'));
       return;
     }
     setSaving(true);
@@ -133,11 +135,11 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
         notes: parsed.data.notes || null,
       });
       if (error) throw error;
-      toast.success('Paciente externo agregado');
+      toast.success(t('addPatientModal.externalPatientAdded'));
       onAdded?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message || 'Error al guardar');
+      toast.error(e.message || t('addPatientModal.errorSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -147,16 +149,16 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5" /> Agregar paciente</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5" /> {t('addPatientModal.title')}</DialogTitle>
           <DialogDescription>
-            Busca un paciente registrado para invitarlo, o registra uno externo (offline).
+            {t('addPatientModal.description')}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
           <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="registered">Registrado</TabsTrigger>
-            <TabsTrigger value="external">Externo</TabsTrigger>
+            <TabsTrigger value="registered">{t('addPatientModal.tabRegistered')}</TabsTrigger>
+            <TabsTrigger value="external">{t('addPatientModal.tabExternal')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="registered" className="space-y-3 pt-3">
@@ -165,7 +167,7 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
               <Input
                 value={term}
                 onChange={e => setTerm(e.target.value)}
-                placeholder="Escribe nombre o correo del paciente…"
+                placeholder={t('addPatientModal.searchPlaceholder')}
                 className="pl-9 pr-9 h-11"
                 autoFocus
                 maxLength={100}
@@ -177,13 +179,13 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
               {term.trim().length === 0 && (
                 <div className="text-center py-6">
                   <Search className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                  <p className="text-xs text-muted-foreground">Empieza a escribir para buscar pacientes</p>
+                  <p className="text-xs text-muted-foreground">{t('addPatientModal.searchHint')}</p>
                 </div>
               )}
               {!searching && term.trim().length > 0 && results.length === 0 && (
                 <div className="text-center py-6">
-                  <p className="text-sm text-muted-foreground">Sin resultados para "<strong>{term}</strong>"</p>
-                  <p className="text-xs text-muted-foreground mt-1">Verifica el nombre, o agrégalo como paciente externo →</p>
+                  <p className="text-sm text-muted-foreground">{t('addPatientModal.noResultsFor')} "<strong>{term}</strong>"</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('addPatientModal.noResultsHint')}</p>
                 </div>
               )}
               {results.map((r) => {
@@ -197,7 +199,7 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{r.name || 'Sin nombre'}</p>
+                      <p className="text-sm font-medium truncate">{r.name || t('addPatientModal.noName')}</p>
                       <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                     </div>
                     <Button
@@ -207,7 +209,7 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
                       onClick={() => handleInvite(r)}
                       className="flex-shrink-0 gap-1"
                     >
-                      {alreadyInvited ? <><Check className="w-3.5 h-3.5" /> Enviada</> : <><Send className="w-3.5 h-3.5" /> Invitar</>}
+                      {alreadyInvited ? <><Check className="w-3.5 h-3.5" /> {t('addPatientModal.sent')}</> : <><Send className="w-3.5 h-3.5" /> {t('addPatientModal.invite')}</>}
                     </Button>
                   </div>
                 );
@@ -217,27 +219,27 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
 
           <TabsContent value="external" className="space-y-3 pt-3">
             <div className="space-y-1.5">
-              <Label>Nombre completo *</Label>
-              <Input value={extName} onChange={e => setExtName(e.target.value)} maxLength={120} placeholder="María González López" />
+              <Label>{t('addPatientModal.fullNameLabel')}</Label>
+              <Input value={extName} onChange={e => setExtName(e.target.value)} maxLength={120} placeholder={t('addPatientModal.fullNamePlaceholder')} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
-                <Label>Correo</Label>
-                <Input value={extEmail} onChange={e => setExtEmail(e.target.value)} maxLength={255} type="email" placeholder="opcional" />
+                <Label>{t('addPatientModal.emailLabel')}</Label>
+                <Input value={extEmail} onChange={e => setExtEmail(e.target.value)} maxLength={255} type="email" placeholder={t('addPatientModal.optional')} />
               </div>
               <div className="space-y-1.5">
-                <Label>Teléfono</Label>
-                <Input value={extPhone} onChange={e => setExtPhone(e.target.value)} maxLength={30} placeholder="opcional" />
+                <Label>{t('addPatientModal.phoneLabel')}</Label>
+                <Input value={extPhone} onChange={e => setExtPhone(e.target.value)} maxLength={30} placeholder={t('addPatientModal.optional')} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Notas (opcional)</Label>
-              <Input value={extNotes} onChange={e => setExtNotes(e.target.value)} maxLength={500} placeholder="Diagnóstico inicial, observaciones..." />
+              <Label>{t('addPatientModal.notesLabel')}</Label>
+              <Input value={extNotes} onChange={e => setExtNotes(e.target.value)} maxLength={500} placeholder={t('addPatientModal.notesPlaceholder')} />
             </div>
             <DialogFooter className="pt-2">
-              <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('addPatientModal.cancel')}</Button>
               <Button onClick={handleAddExternal} disabled={saving || !extName.trim()}>
-                {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />} Guardar paciente
+                {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />} {t('addPatientModal.savePatient')}
               </Button>
             </DialogFooter>
           </TabsContent>

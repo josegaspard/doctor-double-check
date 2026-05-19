@@ -50,7 +50,7 @@ export default function PrescriptionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [prescription, setPrescription] = useState<PrescriptionDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [fileSignedUrl, setFileSignedUrl] = useState<string | null>(null);
@@ -149,9 +149,9 @@ export default function PrescriptionDetail() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 max-w-3xl text-center">
           <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Receta no encontrada</h2>
-          <p className="text-muted-foreground mb-4">La receta que buscas no existe o no tienes acceso.</p>
-          <Button onClick={() => navigate('/prescriptions')}>Ver mis recetas</Button>
+          <h2 className="text-xl font-semibold mb-2">{t('prescriptionDetailPage.notFound.title')}</h2>
+          <p className="text-muted-foreground mb-4">{t('prescriptionDetailPage.notFound.description')}</p>
+          <Button onClick={() => navigate('/prescriptions')}>{t('prescriptionDetailPage.notFound.backButton')}</Button>
         </div>
       </MainLayout>
     );
@@ -170,7 +170,7 @@ export default function PrescriptionDetail() {
           <div className="flex-1">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              Receta Médica
+              {t('prescriptionDetailPage.header.title')}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {new Intl.DateTimeFormat('es-MX', {
@@ -181,7 +181,7 @@ export default function PrescriptionDetail() {
           {prescription.medications.length > 0 && (
             <Button variant="outline" onClick={handleDownloadPDF} className="gap-2">
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Descargar PDF</span>
+              <span className="hidden sm:inline">{t('prescriptionDetailPage.header.downloadPdf')}</span>
             </Button>
           )}
         </div>
@@ -197,8 +197,8 @@ export default function PrescriptionDetail() {
                 <p className="font-semibold text-secondary truncate">{prescription.doctorName}</p>
                 <p className="text-sm text-primary font-medium">{prescription.doctorSpecialty}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80">
-                  <span>Lic: {prescription.doctorLicense}</span>
-                  {prescription.doctorCedula && <span>Cédula: {prescription.doctorCedula}</span>}
+                  <span>{t('prescriptionDetailPage.doctor.licenseLabel')} {prescription.doctorLicense}</span>
+                  {prescription.doctorCedula && <span>{t('prescriptionDetailPage.doctor.cedulaLabel')} {prescription.doctorCedula}</span>}
                 </div>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function PrescriptionDetail() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-warning" />
-                Diagnóstico
+                {t('prescriptionDetailPage.diagnosis.title')}
               </h3>
               <p className="text-foreground">{prescription.diagnosis}</p>
             </CardContent>
@@ -241,7 +241,7 @@ export default function PrescriptionDetail() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 {isImage ? <Image className="w-4 h-4 text-info" /> : <File className="w-4 h-4 text-primary" />}
-                Archivo adjunto
+                {t('prescriptionDetailPage.attachedFile.title')}
               </h3>
               
               {isLoadingFile ? (
@@ -253,7 +253,7 @@ export default function PrescriptionDetail() {
                   {isImage ? (
                     <SecureImage
                       signedUrl={fileSignedUrl}
-                      alt="Receta adjunta"
+                      alt={t('prescriptionDetailPage.attachedFile.imageAlt')}
                       bucket="prescriptions"
                       fileId={prescription.id}
                       maxHeight="500px"
@@ -268,7 +268,7 @@ export default function PrescriptionDetail() {
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No se pudo cargar el archivo.</p>
+                <p className="text-sm text-muted-foreground">{t('prescriptionDetailPage.attachedFile.loadError')}</p>
               )}
             </CardContent>
           </Card>
@@ -280,7 +280,7 @@ export default function PrescriptionDetail() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Pill className="w-4 h-4 text-success" />
-                Medicamentos ({prescription.medications.length})
+                {t('prescriptionDetailPage.medications.title')} ({prescription.medications.length})
               </h3>
               <div className="space-y-3">
                 {prescription.medications.map((med: any, i: number) => (
@@ -292,19 +292,19 @@ export default function PrescriptionDetail() {
                     <div className="grid grid-cols-3 gap-2 text-sm mt-2">
                       {med.dosage && (
                         <div>
-                          <p className="text-xs text-muted-foreground">Dosis</p>
+                          <p className="text-xs text-muted-foreground">{t('prescriptionDetailPage.medications.dosageLabel')}</p>
                           <p className="font-medium">{med.dosage}</p>
                         </div>
                       )}
                       {med.frequency && (
                         <div>
-                          <p className="text-xs text-muted-foreground">Frecuencia</p>
+                          <p className="text-xs text-muted-foreground">{t('prescriptionDetailPage.medications.frequencyLabel')}</p>
                           <p className="font-medium">{med.frequency}</p>
                         </div>
                       )}
                       {med.duration && (
                         <div>
-                          <p className="text-xs text-muted-foreground">Duración</p>
+                          <p className="text-xs text-muted-foreground">{t('prescriptionDetailPage.medications.durationLabel')}</p>
                           <p className="font-medium">{med.duration}</p>
                         </div>
                       )}
@@ -325,7 +325,7 @@ export default function PrescriptionDetail() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-primary" />
-                Indicaciones generales
+                {t('prescriptionDetailPage.instructions.title')}
               </h3>
               <p className="text-foreground whitespace-pre-wrap">{prescription.instructions}</p>
             </CardContent>
@@ -338,7 +338,7 @@ export default function PrescriptionDetail() {
             <CardContent className="p-4">
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-muted-foreground" />
-                Notas adicionales
+                {t('prescriptionDetailPage.notes.title')}
               </h3>
               <p className="text-foreground whitespace-pre-wrap">{prescription.notes}</p>
             </CardContent>
@@ -351,7 +351,7 @@ export default function PrescriptionDetail() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
               <span>
-                Firmada el {new Intl.DateTimeFormat('es-MX', {
+                {t('prescriptionDetailPage.signature.signedOn')} {new Intl.DateTimeFormat('es-MX', {
                   day: 'numeric', month: 'long', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 }).format(prescription.signedAt)}

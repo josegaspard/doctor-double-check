@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ interface Props {
 
 export function VaccinationSchedule({ childId, childDob }: Props) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [rows, setRows] = useState<PatientVaccinationRow[]>([]);
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [activeChildId, setActiveChildId] = useState<string | 'self'>(childId || 'self');
@@ -122,7 +124,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
       }
     } catch (e: any) {
       console.error('[Vaccinations] upsert error', e);
-      toast.error('No se pudo guardar');
+      toast.error(t('vaccinationSchedule.saveError'));
     } finally {
       setSavingKey(null);
     }
@@ -135,8 +137,8 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
       .from('profiles')
       .update({ vaccine_reminders_enabled: val })
       .eq('id', user.id);
-    if (error) toast.error('No se pudo actualizar');
-    else toast.success(val ? 'Recordatorios activados' : 'Recordatorios desactivados');
+    if (error) toast.error(t('vaccinationSchedule.updateError'));
+    else toast.success(val ? t('vaccinationSchedule.remindersOn') : t('vaccinationSchedule.remindersOff'));
   };
 
   if (loading) {
@@ -157,9 +159,9 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Syringe className="w-5 h-5 text-primary" />
-                Esquema de vacunación (México)
+                {t('vaccinationSchedule.title')}
               </CardTitle>
-              <CardDescription>Cartilla oficial Secretaría de Salud</CardDescription>
+              <CardDescription>{t('vaccinationSchedule.description')}</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-sm">
               {remindersEnabled ? (
@@ -167,7 +169,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
               ) : (
                 <BellOff className="w-4 h-4 text-muted-foreground" />
               )}
-              <span className="text-xs text-muted-foreground">Recordatorios</span>
+              <span className="text-xs text-muted-foreground">{t('vaccinationSchedule.reminders')}</span>
               <Switch checked={remindersEnabled} onCheckedChange={toggleReminders} />
             </div>
           </div>
@@ -178,7 +180,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
           {(children.length > 0 && !childId) && (
             <Tabs value={activeChildId as string} onValueChange={(v) => setActiveChildId(v as any)}>
               <TabsList className="flex-wrap h-auto">
-                <TabsTrigger value="self">Yo</TabsTrigger>
+                <TabsTrigger value="self">{t('vaccinationSchedule.self')}</TabsTrigger>
                 {children.map(c => (
                   <TabsTrigger key={c.id} value={c.id}>{c.name}</TabsTrigger>
                 ))}
@@ -188,7 +190,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
 
           {ageMonths === null && (
             <div className="text-xs text-muted-foreground italic p-3 rounded-lg bg-muted/30">
-              Indica tu fecha de nacimiento en el historial clínico para personalizar las vacunas aplicables a tu edad.
+              {t('vaccinationSchedule.noDobHint')}
             </div>
           )}
 
@@ -196,14 +198,14 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
           <div className="rounded-lg border border-dashed border-border p-3 bg-muted/20">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <p className="text-sm font-medium flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" /> Otra vacuna</p>
-                <p className="text-[11px] text-muted-foreground">Agrega vacunas fuera del esquema oficial con su fecha y recordatorio.</p>
+                <p className="text-sm font-medium flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" /> {t('vaccinationSchedule.otherVaccine')}</p>
+                <p className="text-[11px] text-muted-foreground">{t('vaccinationSchedule.otherVaccineHint')}</p>
               </div>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  const name = prompt('Nombre de la vacuna:');
+                  const name = prompt(t('vaccinationSchedule.promptVaccineName'));
                   if (!name) return;
                   const slug = `custom:${Date.now().toString(36)}:${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 32)}`;
                   if (!user?.id) return;
@@ -221,18 +223,18 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
                     })
                     .select()
                     .single();
-                  if (error) { toast.error('No se pudo agregar'); return; }
+                  if (error) { toast.error(t('vaccinationSchedule.addError')); return; }
                   setRows(prev => [...prev, data as PatientVaccinationRow]);
                 }}
               >
-                <Plus className="w-3.5 h-3.5 mr-1" /> Agregar
+                <Plus className="w-3.5 h-3.5 mr-1" /> {t('vaccinationSchedule.add')}
               </Button>
             </div>
             <div className="space-y-2">
               {rows.filter(r => r.vaccine_key.startsWith('custom:') && (activeChildId === 'self' ? r.child_id === null : r.child_id === activeChildId)).map(r => (
                 <div key={r.id} className="grid grid-cols-12 gap-2 items-end bg-card rounded-md border border-border p-2">
                   <div className="col-span-12 sm:col-span-4">
-                    <Label className="text-xs">Nombre</Label>
+                    <Label className="text-xs">{t('vaccinationSchedule.name')}</Label>
                     <Input
                       className="h-8 text-xs"
                       value={r.notes || ''}
@@ -244,7 +246,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
                     />
                   </div>
                   <div className="col-span-6 sm:col-span-3">
-                    <Label className="text-xs">Fecha</Label>
+                    <Label className="text-xs">{t('vaccinationSchedule.date')}</Label>
                     <Input
                       type="date"
                       className="h-8 text-xs"
@@ -257,7 +259,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
                     />
                   </div>
                   <div className="col-span-6 sm:col-span-4">
-                    <Label className="text-xs">Lote</Label>
+                    <Label className="text-xs">{t('vaccinationSchedule.lot')}</Label>
                     <Input
                       className="h-8 text-xs"
                       value={r.lot || ''}
@@ -318,11 +320,11 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
                           />
                         </div>
                         <div className="col-span-12 sm:col-span-4">
-                          <Label className="text-xs">Dosis {d.doseNumber}</Label>
+                          <Label className="text-xs">{t('vaccinationSchedule.dose')} {d.doseNumber}</Label>
                           <p className="text-xs text-muted-foreground">{d.label}</p>
                         </div>
                         <div className="col-span-6 sm:col-span-3">
-                          <Label className="text-xs">Fecha</Label>
+                          <Label className="text-xs">{t('vaccinationSchedule.date')}</Label>
                           <Input
                             type="date"
                             disabled={saving}
@@ -337,11 +339,11 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
                           />
                         </div>
                         <div className="col-span-6 sm:col-span-4">
-                          <Label className="text-xs">Lote / notas</Label>
+                          <Label className="text-xs">{t('vaccinationSchedule.lotOrNotes')}</Label>
                           <Input
                             disabled={saving}
                             value={r?.lot || ''}
-                            placeholder="Lote"
+                            placeholder={t('vaccinationSchedule.lotPlaceholder')}
                             onChange={e => upsertRow(v, d.doseNumber, { lot: e.target.value })}
                             className="h-8 text-xs"
                           />

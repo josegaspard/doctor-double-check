@@ -4,6 +4,7 @@ import { Loader2, AlertCircle, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDevToolsDetector } from '@/hooks/useDevToolsDetector';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BunnyHLSPlayerProps {
   /** Master HLS manifest signed URL */
@@ -46,6 +47,7 @@ export function BunnyHLSPlayer({
   onRefreshSignedUrl,
 }: BunnyHLSPlayerProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [errorKind, setErrorKind] = useState<'not_found' | 'forbidden' | 'network' | null>(null);
   const [fellBackToMp4, setFellBackToMp4] = useState(false);
   const derivedCdnHost = cdnHost || (() => {
@@ -199,10 +201,9 @@ export function BunnyHLSPlayer({
       <div className="w-full max-h-[80vh] mx-auto bg-muted rounded-xl flex items-center justify-center aspect-video">
         <div className="text-center p-6 max-w-md">
           <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
-          <h3 className="font-semibold text-foreground mb-2">Grabación no disponible</h3>
+          <h3 className="font-semibold text-foreground mb-2">{t('bunnyHLSPlayer.notFoundTitle')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            El archivo de video no se encuentra en el servidor. La subida original puede haber fallado.
-            Si esta grabación era importante, por favor contacta a soporte.
+            {t('bunnyHLSPlayer.notFoundDescription')}
           </p>
         </div>
       </div>
@@ -215,16 +216,16 @@ export function BunnyHLSPlayer({
         <div className="text-center p-6 max-w-md">
           <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
           <h3 className="font-semibold text-foreground mb-2">
-            {errorKind === 'forbidden' ? 'Sesión expirada' : 'Error de conexión'}
+            {errorKind === 'forbidden' ? t('bunnyHLSPlayer.sessionExpiredTitle') : t('bunnyHLSPlayer.connectionErrorTitle')}
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
             {errorKind === 'forbidden'
-              ? 'El enlace de reproducción ha caducado. Recarga para continuar viendo.'
-              : 'No se pudo cargar el video. Verifica tu conexión.'}
+              ? t('bunnyHLSPlayer.sessionExpiredDescription')
+              : t('bunnyHLSPlayer.connectionErrorDescription')}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Recargar
+            {t('bunnyHLSPlayer.reload')}
           </Button>
         </div>
       </div>
@@ -294,15 +295,13 @@ export function BunnyHLSPlayer({
           <div className="text-center max-w-md px-6">
             <Eye className="w-12 h-12 mx-auto text-amber-400 mb-4" />
             <h3 className="font-semibold text-white text-lg mb-2">
-              Reproducción pausada
+              {t('bunnyHLSPlayer.playbackPausedTitle')}
             </h3>
             <p className="text-sm text-white/80">
-              Detectamos las herramientas de desarrollo abiertas. Por motivos de
-              seguridad de contenido médico, la reproducción está pausada.
-              Cierra las herramientas de desarrollo para continuar.
+              {t('bunnyHLSPlayer.playbackPausedDescription')}
             </p>
             <p className="text-[10px] text-white/40 mt-4 font-mono">
-              Este evento fue registrado.
+              {t('bunnyHLSPlayer.eventRecorded')}
             </p>
           </div>
         </div>

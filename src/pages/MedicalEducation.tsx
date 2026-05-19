@@ -87,7 +87,7 @@ export default function MedicalEducation() {
       .order('created_at', { ascending: false })
       .limit(100);
     if (error) {
-      toast.error('No se pudieron cargar los casos');
+      toast.error(t('medicalEducationPage.toastLoadError'));
       setLoading(false);
       return;
     }
@@ -101,7 +101,7 @@ export default function MedicalEducation() {
     setCases(
       (rows || []).map(r => ({
         ...r,
-        author_name: pmap.get(r.author_id)?.name || 'Médico',
+        author_name: pmap.get(r.author_id)?.name || t('medicalEducationPage.fallbackAuthorDoctor'),
         author_avatar: pmap.get(r.author_id)?.avatar_url || undefined,
         author_role: (rmap.get(r.author_id) as string) || 'doctor',
       }))
@@ -135,7 +135,7 @@ export default function MedicalEducation() {
     setComments(
       (data || []).map(r => ({
         ...r,
-        author_name: pmap.get(r.author_id)?.name || 'Usuario',
+        author_name: pmap.get(r.author_id)?.name || t('medicalEducationPage.fallbackAuthorUser'),
         author_role: (rmap.get(r.author_id) as string) || 'doctor',
       }))
     );
@@ -151,7 +151,7 @@ export default function MedicalEducation() {
     });
     setPosting(false);
     if (error) {
-      toast.error('No se pudo enviar el comentario');
+      toast.error(t('medicalEducationPage.toastCommentError'));
       return;
     }
     setNewComment('');
@@ -162,7 +162,7 @@ export default function MedicalEducation() {
   const submitCase = async () => {
     if (!user) return;
     if (!form.title.trim() || !form.specialty) {
-      toast.error('Completa título y especialidad');
+      toast.error(t('medicalEducationPage.toastValidationRequired'));
       return;
     }
     setSubmitting(true);
@@ -180,7 +180,7 @@ export default function MedicalEducation() {
         });
       if (upErr) {
         console.error('clinical_case upload error', upErr);
-        toast.error(`No se pudo subir el archivo: ${upErr.message}`);
+        toast.error(`${t('medicalEducationPage.toastUploadError')}: ${upErr.message}`);
         setSubmitting(false);
         return;
       }
@@ -200,10 +200,10 @@ export default function MedicalEducation() {
     setSubmitting(false);
     if (error) {
       console.error('clinical_cases insert error', error);
-      toast.error(`No se pudo publicar el caso: ${error.message}`);
+      toast.error(`${t('medicalEducationPage.toastPublishError')}: ${error.message}`);
       return;
     }
-    toast.success('Caso clínico publicado');
+    toast.success(t('medicalEducationPage.toastPublishSuccess'));
     setCreateOpen(false);
     setForm({ title: '', specialty: '', description: '', category: '', patient_age: '', patient_sex: '' });
     setFile(null);
@@ -230,13 +230,13 @@ export default function MedicalEducation() {
       }
       const { error } = await supabase.from('clinical_cases').delete().eq('id', deletingCase.id);
       if (error) {
-        toast.error(`No se pudo eliminar: ${error.message}`);
+        toast.error(`${t('medicalEducationPage.toastDeleteError')}: ${error.message}`);
         setDeleting(false);
         return;
       }
       setCases(cs => cs.filter(c => c.id !== deletingCase.id));
       if (activeCase?.id === deletingCase.id) setActiveCase(null);
-      toast.success('Caso eliminado');
+      toast.success(t('medicalEducationPage.toastDeleteSuccess'));
       setDeletingCase(null);
     } finally {
       setDeleting(false);
@@ -248,17 +248,17 @@ export default function MedicalEducation() {
       <div className="container mx-auto px-4 py-6 max-w-5xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="hidden sm:inline-flex mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Volver
+          {t('medicalEducationPage.back')}
         </Button>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
               <GraduationCap className="w-6 h-6 text-primary" />
-              Medical Master Education
+              {t('medicalEducationPage.pageTitle')}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Casos clínicos compartidos entre doctores y residentes
+              {t('medicalEducationPage.pageSubtitle')}
             </p>
           </div>
           {isDoctor && (
@@ -266,57 +266,57 @@ export default function MedicalEducation() {
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2 min-h-[48px]">
                   <Plus className="w-5 h-5" />
-                  Subir caso clínico
+                  {t('medicalEducationPage.uploadCase')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Nuevo caso clínico</DialogTitle>
+                  <DialogTitle>{t('medicalEducationPage.newCaseTitle')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div>
-                    <Label>Título *</Label>
-                    <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: Lesión hepática atípica" />
+                    <Label>{t('medicalEducationPage.fieldTitle')}</Label>
+                    <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={t('medicalEducationPage.titlePlaceholder')} />
                   </div>
                   <div>
-                    <Label>Especialidad *</Label>
+                    <Label>{t('medicalEducationPage.fieldSpecialty')}</Label>
                     <SearchableFilter
                       value={form.specialty}
                       onChange={v => setForm(f => ({ ...f, specialty: v }))}
                       options={SPECIALTIES_LIST}
-                      placeholder="Selecciona especialidad"
+                      placeholder={t('medicalEducationPage.specialtyPlaceholder')}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label>Edad</Label>
+                      <Label>{t('medicalEducationPage.fieldAge')}</Label>
                       <Input type="number" inputMode="numeric" value={form.patient_age} onChange={e => setForm(f => ({ ...f, patient_age: e.target.value }))} />
                     </div>
                     <div>
-                      <Label>Sexo</Label>
+                      <Label>{t('medicalEducationPage.fieldSex')}</Label>
                       <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.patient_sex} onChange={e => setForm(f => ({ ...f, patient_sex: e.target.value }))}>
                         <option value="">—</option>
-                        <option value="F">F</option>
-                        <option value="M">M</option>
-                        <option value="Otro">Otro</option>
+                        <option value="F">{t('medicalEducationPage.sexFemale')}</option>
+                        <option value="M">{t('medicalEducationPage.sexMale')}</option>
+                        <option value="Otro">{t('medicalEducationPage.sexOther')}</option>
                       </select>
                     </div>
                   </div>
                   <div>
-                    <Label>Descripción del caso</Label>
-                    <Textarea rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Antecedentes, síntomas, hallazgos, dudas para discusión..." />
+                    <Label>{t('medicalEducationPage.fieldDescription')}</Label>
+                    <Textarea rows={4} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t('medicalEducationPage.descriptionPlaceholder')} />
                   </div>
                   <div>
-                    <Label>Archivo adjunto (opcional)</Label>
+                    <Label>{t('medicalEducationPage.fieldAttachment')}</Label>
                     <Input type="file" accept="image/*,application/pdf,video/*" onChange={e => setFile(e.target.files?.[0] || null)} />
-                    <p className="text-xs text-muted-foreground mt-1">PDF, imagen o video. No incluyas datos identificativos del paciente.</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t('medicalEducationPage.attachmentHint')}</p>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+                  <Button variant="outline" onClick={() => setCreateOpen(false)}>{t('medicalEducationPage.cancel')}</Button>
                   <Button onClick={submitCase} disabled={submitting}>
                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Publicar caso
+                    {t('medicalEducationPage.publishCase')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -330,8 +330,8 @@ export default function MedicalEducation() {
           <CardContent className="p-3 text-xs text-foreground flex items-center gap-2">
             <span aria-hidden className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold flex-shrink-0">🔒</span>
             <span>
-              <strong className="text-secondary font-semibold">Espacio profesional.</strong>{' '}
-              <span className="text-muted-foreground">Anonimiza siempre los datos del paciente. El contenido es solo visible para doctores y residentes verificados.</span>
+              <strong className="text-secondary font-semibold">{t('medicalEducationPage.professionalSpaceTitle')}</strong>{' '}
+              <span className="text-muted-foreground">{t('medicalEducationPage.professionalSpaceBody')}</span>
             </span>
           </CardContent>
         </Card>
@@ -341,7 +341,7 @@ export default function MedicalEducation() {
             value={specialty}
             onChange={setSpecialty}
             options={SPECIALTIES_LIST}
-            placeholder="Filtrar por especialidad"
+            placeholder={t('medicalEducationPage.filterPlaceholder')}
           />
         </div>
 
@@ -352,8 +352,8 @@ export default function MedicalEducation() {
         ) : filtered.length === 0 ? (
           <Card className="p-10 text-center">
             <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-            <p className="font-medium">Aún no hay casos publicados</p>
-            <p className="text-sm text-muted-foreground mt-1">Sé el primero en compartir un caso clínico para discusión.</p>
+            <p className="font-medium">{t('medicalEducationPage.emptyTitle')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('medicalEducationPage.emptyBody')}</p>
           </Card>
         ) : (
           <div className="grid gap-3 sm:gap-4">
@@ -364,7 +364,7 @@ export default function MedicalEducation() {
                     <CardTitle className="text-base sm:text-lg">{c.title}</CardTitle>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Badge variant={c.author_role === 'resident' ? 'warning' : 'verified'} className="text-[10px]">
-                        {c.author_role === 'resident' ? 'Residente' : 'Doctor'}
+                        {c.author_role === 'resident' ? t('medicalEducationPage.roleResident') : t('medicalEducationPage.roleDoctor')}
                       </Badge>
                       {canDelete(c) && (
                         <Button
@@ -372,7 +372,7 @@ export default function MedicalEducation() {
                           size="icon"
                           className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                           onClick={(e) => { e.stopPropagation(); setDeletingCase(c); }}
-                          aria-label="Eliminar caso"
+                          aria-label={t('medicalEducationPage.deleteCaseAria')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -382,7 +382,7 @@ export default function MedicalEducation() {
                   <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                     <Stethoscope className="w-3 h-3" />
                     {c.specialty}
-                    {c.patient_age && <span>· {c.patient_age} años {c.patient_sex || ''}</span>}
+                    {c.patient_age && <span>· {c.patient_age} {t('medicalEducationPage.yearsOld')} {c.patient_sex || ''}</span>}
                   </p>
                 </CardHeader>
                 <CardContent className="pt-0">
@@ -417,7 +417,7 @@ export default function MedicalEducation() {
                         className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5 h-8"
                         onClick={() => setDeletingCase(activeCase)}
                       >
-                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                        <Trash2 className="w-3.5 h-3.5" /> {t('medicalEducationPage.delete')}
                       </Button>
                     )}
                   </div>
@@ -435,17 +435,17 @@ export default function MedicalEducation() {
                   )}
                   <div className="border-t pt-3">
                     <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4" /> Discusión ({comments.length})
+                      <MessageCircle className="w-4 h-4" /> {t('medicalEducationPage.discussion')} ({comments.length})
                     </h4>
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {comments.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-4">Aún no hay comentarios. Inicia la discusión.</p>
+                        <p className="text-xs text-muted-foreground text-center py-4">{t('medicalEducationPage.noComments')}</p>
                       ) : comments.map(cm => (
                         <div key={cm.id} className="bg-muted/50 rounded-lg p-2.5">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium">{cm.author_name}</span>
                             <Badge variant={cm.author_role === 'resident' ? 'warning' : 'verified'} className="text-[9px] h-4">
-                              {cm.author_role === 'resident' ? 'R' : 'Dr'}
+                              {cm.author_role === 'resident' ? t('medicalEducationPage.roleResidentShort') : t('medicalEducationPage.roleDoctorShort')}
                             </Badge>
                           </div>
                           <p className="text-sm">{cm.content}</p>
@@ -456,7 +456,7 @@ export default function MedicalEducation() {
                 </div>
                 <div className="flex gap-2 border-t pt-3">
                   <Input
-                    placeholder="Escribe un comentario..."
+                    placeholder={t('medicalEducationPage.commentPlaceholder')}
                     value={newComment}
                     onChange={e => setNewComment(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && sendComment()}
@@ -474,17 +474,17 @@ export default function MedicalEducation() {
         <AlertDialog open={!!deletingCase} onOpenChange={open => !open && setDeletingCase(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar este caso clínico?</AlertDialogTitle>
+              <AlertDialogTitle>{t('medicalEducationPage.deleteConfirmTitle')}</AlertDialogTitle>
               <AlertDialogDescription>
                 {deletingCase?.title && <><strong>{deletingCase.title}</strong><br /></>}
-                Se borrará el caso, todos sus comentarios y el archivo adjunto. Esta acción no se puede deshacer.
+                {t('medicalEducationPage.deleteConfirmBody')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={deleting}>{t('medicalEducationPage.cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive hover:bg-destructive/90 text-white">
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
-                Eliminar definitivamente
+                {t('medicalEducationPage.deleteFinal')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

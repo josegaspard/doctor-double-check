@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatMessage } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { SecureImage } from '@/components/security/SecureImage';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
@@ -19,6 +20,7 @@ interface ChatMessageBubbleProps {
 export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: ChatMessageBubbleProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   // Stable per-bubble watermark sessionId — one per video preview, persists across re-renders
   const previewSessionId = useMemo(
     () => (typeof crypto !== 'undefined' && (crypto as any).randomUUID
@@ -42,7 +44,7 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
           <p className="text-sm whitespace-pre-wrap leading-relaxed">{textPart}</p>
           <div className={`mt-2 flex items-center gap-2 p-2 rounded-lg ${isOwn ? 'bg-white/10' : 'bg-primary/5'}`}>
             <FileText className="w-4 h-4" />
-            <span className="text-xs font-medium underline">Ver receta médica</span>
+            <span className="text-xs font-medium underline">{t('chatMessageBubble.viewPrescription')}</span>
           </div>
         </div>
       );
@@ -137,7 +139,7 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{fileName}</p>
-            <p className="text-[11px] opacity-70">Vista previa no disponible</p>
+            <p className="text-[11px] opacity-70">{t('chatMessageBubble.previewNotAvailable')}</p>
           </div>
         </div>
       );
@@ -151,7 +153,7 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
       {!isOwn && onReply && !isSessionClosed && (
         <button
           onClick={() => onReply(message)}
-          aria-label="Responder a este mensaje"
+          aria-label={t('chatMessageBubble.replyToMessage')}
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <Reply className="w-3.5 h-3.5" />
@@ -176,7 +178,7 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
           <div className={`mb-2 pl-2 border-l-2 ${isOwn ? 'border-white/40' : 'border-primary/40'} text-xs opacity-80`}>
             <div className="flex items-center gap-1 font-medium">
               <CornerDownRight className="w-3 h-3" />
-              <span>{message.replyToSenderName || 'Mensaje'}</span>
+              <span>{message.replyToSenderName || t('chatMessageBubble.messageFallback')}</span>
             </div>
             <p className="line-clamp-2 mt-0.5 italic">{message.replyToContent.slice(0, 140)}</p>
           </div>
@@ -195,7 +197,7 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
       {isOwn && onReply && !isSessionClosed && (
         <button
           onClick={() => onReply(message)}
-          aria-label="Responder a este mensaje"
+          aria-label={t('chatMessageBubble.replyToMessage')}
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
         >
           <Reply className="w-3.5 h-3.5" />

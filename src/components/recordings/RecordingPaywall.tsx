@@ -63,18 +63,18 @@ export function RecordingPaywall({
   // Auto-hide success state after 2s and unlock player
   useEffect(() => {
     if (txStatus !== 'paid') return;
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       await onPaid();
     }, 1200);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [txStatus, onPaid]);
 
   const formatDuration = (seconds: number) => {
     if (seconds <= 0) return '—';
     const mins = Math.floor(seconds / 60);
-    if (mins < 60) return `${mins} min`;
+    if (mins < 60) return `${mins} ${t('recordingPaywall.minutesShort')}`;
     const h = Math.floor(mins / 60);
-    return `${h}h ${mins % 60}m`;
+    return `${h}${t('recordingPaywall.hoursShort')} ${mins % 60}${t('recordingPaywall.minutesShortLetter')}`;
   };
 
   const handleWallet = async () => {
@@ -86,11 +86,11 @@ export function RecordingPaywall({
         await refresh();
         setTxStatus('paid');
       } else {
-        setTxError(res.error || 'No se pudo procesar el pago');
+        setTxError(res.error || t('recordingPaywall.errors.paymentFailed'));
         setTxStatus('failed');
       }
     } catch (e: any) {
-      setTxError(e?.message || 'Error inesperado');
+      setTxError(e?.message || t('recordingPaywall.errors.unexpected'));
       setTxStatus('failed');
     }
   };
@@ -104,10 +104,10 @@ export function RecordingPaywall({
         window.location.href = res.url;
         return;
       }
-      setTxError(res.error || 'No se pudo iniciar el checkout');
+      setTxError(res.error || t('recordingPaywall.errors.checkoutFailed'));
       setTxStatus('failed');
     } catch (e: any) {
-      setTxError(e?.message || 'Error iniciando checkout');
+      setTxError(e?.message || t('recordingPaywall.errors.checkoutStartError'));
       setTxStatus('failed');
     }
   };
@@ -122,7 +122,7 @@ export function RecordingPaywall({
       return (
         <Badge variant="outline" className="gap-1.5">
           <Wallet className="w-3 h-3" />
-          Saldo: ${balance.toLocaleString()} MXN
+          {t('recordingPaywall.balance')}: ${balance.toLocaleString()} {t('recordingPaywall.currency')}
         </Badge>
       );
     }
@@ -130,7 +130,7 @@ export function RecordingPaywall({
       return (
         <Badge className="gap-1.5 bg-info text-info-foreground">
           <Loader2 className="w-3 h-3 animate-spin" />
-          Procesando pago…
+          {t('recordingPaywall.processingPayment')}
         </Badge>
       );
     }
@@ -138,14 +138,14 @@ export function RecordingPaywall({
       return (
         <Badge className="gap-1.5 bg-success text-success-foreground">
           <CheckCircle2 className="w-3 h-3" />
-          Pagado · Cargando reproductor…
+          {t('recordingPaywall.paidLoadingPlayer')}
         </Badge>
       );
     }
     return (
       <Badge variant="destructive" className="gap-1.5">
         <AlertCircle className="w-3 h-3" />
-        Pago rechazado
+        {t('recordingPaywall.paymentRejected')}
       </Badge>
     );
   };
@@ -157,7 +157,7 @@ export function RecordingPaywall({
       {onBack && (
         <Button variant="ghost" size="sm" onClick={onBack} className="mb-3 h-8 text-xs sm:text-sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          Volver
+          {t('recordingPaywall.back')}
         </Button>
       )}
 
@@ -176,7 +176,7 @@ export function RecordingPaywall({
           <div className="absolute top-3 left-3">
             <Badge variant="premium" className="gap-1">
               <Lock className="w-3 h-3" />
-              Premium
+              {t('recordingPaywall.premium')}
             </Badge>
           </div>
           <div className="absolute bottom-3 left-3 right-3 text-white">
@@ -199,9 +199,9 @@ export function RecordingPaywall({
           <Separator />
 
           <div className="text-center py-2">
-            <p className="text-xs text-muted-foreground">Precio único · acceso ilimitado</p>
+            <p className="text-xs text-muted-foreground">{t('recordingPaywall.priceTagline')}</p>
             <p className="text-3xl sm:text-4xl font-bold text-foreground mt-1">
-              ${price.toLocaleString()} <span className="text-base font-normal text-muted-foreground">MXN</span>
+              ${price.toLocaleString()} <span className="text-base font-normal text-muted-foreground">{t('recordingPaywall.currency')}</span>
             </p>
           </div>
 
@@ -209,11 +209,11 @@ export function RecordingPaywall({
             <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/30">
               <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-destructive">No se pudo completar el pago</p>
+                <p className="text-sm font-medium text-destructive">{t('recordingPaywall.paymentNotCompleted')}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{txError}</p>
               </div>
               <Button size="sm" variant="outline" onClick={handleRetry} className="h-8 text-xs">
-                Reintentar
+                {t('recordingPaywall.retry')}
               </Button>
             </div>
           )}
@@ -231,8 +231,8 @@ export function RecordingPaywall({
                 <Wallet className="w-4 h-4" />
               )}
               {affordable
-                ? `Pagar con Wallet — $${price.toLocaleString()} MXN`
-                : `Saldo insuficiente ($${balance.toLocaleString()} disponibles)`}
+                ? `${t('recordingPaywall.payWithWallet')} — $${price.toLocaleString()} ${t('recordingPaywall.currency')}`
+                : `${t('recordingPaywall.insufficientBalance')} ($${balance.toLocaleString()} ${t('recordingPaywall.available')})`}
             </Button>
 
             {!affordable && (
@@ -241,7 +241,7 @@ export function RecordingPaywall({
                 className="w-full h-9 text-xs"
                 onClick={() => navigate('/wallet')}
               >
-                Recargar Wallet
+                {t('recordingPaywall.topUpWallet')}
               </Button>
             )}
 
@@ -252,12 +252,12 @@ export function RecordingPaywall({
               disabled={isProcessing}
             >
               <CreditCard className="w-4 h-4" />
-              Pagar con Tarjeta (Stripe)
+              {t('recordingPaywall.payWithCard')}
             </Button>
           </div>
 
           <p className="text-[11px] text-center text-muted-foreground">
-            Pago seguro. Acceso de por vida una vez confirmado.
+            {t('recordingPaywall.securePaymentNote')}
           </p>
         </CardContent>
       </Card>

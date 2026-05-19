@@ -62,24 +62,24 @@ interface Report {
 }
 
 const STATUS_CONFIG = {
-  pending: { label: 'Pendiente', variant: 'warning' as const, icon: Clock },
-  reviewed: { label: 'Revisado', variant: 'info' as const, icon: Eye },
-  resolved: { label: 'Resuelto', variant: 'success' as const, icon: CheckCircle },
-  dismissed: { label: 'Descartado', variant: 'secondary' as const, icon: XCircle },
+  pending: { labelKey: 'adminReports.status.pending', variant: 'warning' as const, icon: Clock },
+  reviewed: { labelKey: 'adminReports.status.reviewed', variant: 'info' as const, icon: Eye },
+  resolved: { labelKey: 'adminReports.status.resolved', variant: 'success' as const, icon: CheckCircle },
+  dismissed: { labelKey: 'adminReports.status.dismissed', variant: 'secondary' as const, icon: XCircle },
 };
 
-const CONTENT_TYPE_LABELS: Record<string, string> = {
-  live: 'Transmisión en vivo',
-  recording: 'Grabación',
-  doctor: 'Doctor',
-  chat_message: 'Mensaje de chat',
-  platform_report: 'Reporte de plataforma',
+const CONTENT_TYPE_KEYS: Record<string, string> = {
+  live: 'adminReports.contentType.live',
+  recording: 'adminReports.contentType.recording',
+  doctor: 'adminReports.contentType.doctor',
+  chat_message: 'adminReports.contentType.chatMessage',
+  platform_report: 'adminReports.contentType.platformReport',
 };
 
-const REASON_LABELS: Record<string, string> = {
-  bug: '🐛 Falla técnica',
-  abuse: '⚠️ Abuso / Conducta inapropiada',
-  other: '📝 Otro',
+const REASON_KEYS: Record<string, string> = {
+  bug: 'adminReports.reason.bug',
+  abuse: 'adminReports.reason.abuse',
+  other: 'adminReports.reason.other',
 };
 
 export default function AdminReports() {
@@ -98,7 +98,7 @@ export default function AdminReports() {
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
-      toast.error('Acceso denegado');
+      toast.error(t('adminReports.toast.accessDenied'));
     }
   }, [role, navigate]);
 
@@ -137,7 +137,7 @@ export default function AdminReports() {
       setReports(reportsWithReporter as Report[]);
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Error al cargar reportes');
+      toast.error(t('adminReports.toast.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -163,18 +163,18 @@ export default function AdminReports() {
         await supabase.from('notifications').insert({
           user_id: selectedReport.reporter_id,
           type: 'system' as any,
-          title: '📋 Respuesta a tu reporte',
+          title: t('adminReports.notification.responseTitle'),
           message: adminResponse.trim(),
           data: { report_id: selectedReport.id },
         });
       }
 
-      toast.success('Reporte actualizado');
+      toast.success(t('adminReports.toast.updated'));
       setSelectedReport(null);
       setAdminResponse('');
       fetchReports();
     } catch (error) {
-      toast.error('Error al actualizar reporte');
+      toast.error(t('adminReports.toast.updateError'));
     } finally {
       setIsUpdating(false);
     }
@@ -194,7 +194,7 @@ export default function AdminReports() {
         <div className="mb-4 sm:mb-6">
           <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 hidden sm:inline-flex">
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Volver al Admin
+            {t('adminReports.backToAdmin')}
           </Button>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
@@ -202,10 +202,10 @@ export default function AdminReports() {
             </div>
             <div className="min-w-0">
               <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
-                Gestión de Reportes
+                {t('adminReports.title')}
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm">
-                Revisa y gestiona reportes
+                {t('adminReports.subtitle')}
               </p>
             </div>
           </div>
@@ -215,14 +215,14 @@ export default function AdminReports() {
         <div className="mb-6">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filtrar estado" />
+              <SelectValue placeholder={t('adminReports.filter.placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="pending">Pendientes</SelectItem>
-              <SelectItem value="reviewed">Revisados</SelectItem>
-              <SelectItem value="resolved">Resueltos</SelectItem>
-              <SelectItem value="dismissed">Descartados</SelectItem>
+              <SelectItem value="all">{t('adminReports.filter.all')}</SelectItem>
+              <SelectItem value="pending">{t('adminReports.filter.pending')}</SelectItem>
+              <SelectItem value="reviewed">{t('adminReports.filter.reviewed')}</SelectItem>
+              <SelectItem value="resolved">{t('adminReports.filter.resolved')}</SelectItem>
+              <SelectItem value="dismissed">{t('adminReports.filter.dismissed')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -236,9 +236,9 @@ export default function AdminReports() {
           <Card>
             <CardContent className="p-12 text-center">
               <Flag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold text-lg mb-2">No hay reportes</h3>
+              <h3 className="font-semibold text-lg mb-2">{t('adminReports.empty.title')}</h3>
               <p className="text-muted-foreground">
-                No se encontraron reportes con el filtro seleccionado
+                {t('adminReports.empty.description')}
               </p>
             </CardContent>
           </Card>
@@ -260,13 +260,13 @@ export default function AdminReports() {
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Badge variant={statusConfig?.variant || 'secondary'} className="text-[10px]">
                             <StatusIcon className="w-3 h-3 mr-1" />
-                            {statusConfig?.label || report.status}
+                            {statusConfig?.labelKey ? t(statusConfig.labelKey) : report.status}
                           </Badge>
                           <Badge variant="outline" className="text-[10px]">
-                            {CONTENT_TYPE_LABELS[report.content_type] || report.content_type}
+                            {CONTENT_TYPE_KEYS[report.content_type] ? t(CONTENT_TYPE_KEYS[report.content_type]) : report.content_type}
                           </Badge>
                           <span className="text-[10px] text-muted-foreground">
-                            {REASON_LABELS[report.reason] || report.reason}
+                            {REASON_KEYS[report.reason] ? t(REASON_KEYS[report.reason]) : report.reason}
                           </span>
                         </div>
 
@@ -281,13 +281,13 @@ export default function AdminReports() {
                           <div className="flex items-center gap-1 mb-2">
                             <Paperclip className="w-3 h-3 text-muted-foreground" />
                             <span className="text-[10px] text-muted-foreground">
-                              {report.attachment_urls.length} adjunto(s)
+                              {report.attachment_urls.length} {t('adminReports.attachments.suffix')}
                             </span>
                           </div>
                         )}
 
                         <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                          <span>{report.reporter?.name || 'Usuario'}</span>
+                          <span>{report.reporter?.name || t('adminReports.defaultUser')}</span>
                           {report.contact_email && (
                             <span className="flex items-center gap-0.5">
                               <Mail className="w-3 h-3" />
@@ -312,7 +312,7 @@ export default function AdminReports() {
                         }}
                       >
                         <Eye className="w-4 h-4 mr-1" />
-                        Revisar
+                        {t('adminReports.review')}
                       </Button>
                     </div>
                   </CardContent>
@@ -326,9 +326,9 @@ export default function AdminReports() {
         <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Revisar Reporte</DialogTitle>
+              <DialogTitle>{t('adminReports.dialog.title')}</DialogTitle>
               <DialogDescription>
-                Actualiza el estado, agrega notas y responde al usuario
+                {t('adminReports.dialog.subtitle')}
               </DialogDescription>
             </DialogHeader>
 
@@ -337,26 +337,26 @@ export default function AdminReports() {
                 {/* Report details */}
                 {selectedReport.subject && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Asunto</Label>
+                    <Label className="text-xs text-muted-foreground">{t('adminReports.dialog.subject')}</Label>
                     <p className="font-medium">{selectedReport.subject}</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Tipo</Label>
-                    <p className="text-sm">{REASON_LABELS[selectedReport.reason] || selectedReport.reason}</p>
+                    <Label className="text-xs text-muted-foreground">{t('adminReports.dialog.type')}</Label>
+                    <p className="text-sm">{REASON_KEYS[selectedReport.reason] ? t(REASON_KEYS[selectedReport.reason]) : selectedReport.reason}</p>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">Reportado por</Label>
-                    <p className="text-sm">{selectedReport.reporter?.name || 'Usuario'}</p>
+                    <Label className="text-xs text-muted-foreground">{t('adminReports.dialog.reportedBy')}</Label>
+                    <p className="text-sm">{selectedReport.reporter?.name || t('adminReports.defaultUser')}</p>
                     <p className="text-xs text-muted-foreground">{selectedReport.reporter?.email}</p>
                   </div>
                 </div>
 
                 {selectedReport.contact_email && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Email de contacto</Label>
+                    <Label className="text-xs text-muted-foreground">{t('adminReports.dialog.contactEmail')}</Label>
                     <p className="text-sm flex items-center gap-1">
                       <Mail className="w-3 h-3" />
                       {selectedReport.contact_email}
@@ -366,7 +366,7 @@ export default function AdminReports() {
 
                 {selectedReport.description && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Descripción</Label>
+                    <Label className="text-xs text-muted-foreground">{t('adminReports.dialog.descriptionLabel')}</Label>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">
                       {selectedReport.description}
                     </p>
@@ -377,7 +377,7 @@ export default function AdminReports() {
                 {selectedReport.attachment_urls && selectedReport.attachment_urls.length > 0 && (
                   <div>
                     <Label className="text-xs text-muted-foreground mb-2 block">
-                      Adjuntos ({selectedReport.attachment_urls.length})
+                      {t('adminReports.dialog.attachments')} ({selectedReport.attachment_urls.length})
                     </Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {selectedReport.attachment_urls.map((url, i) => (
@@ -389,7 +389,7 @@ export default function AdminReports() {
                           className="relative rounded-lg overflow-hidden border border-border hover:border-primary transition-colors group"
                         >
                           {isMediaFile(url) ? (
-                            <img src={url} alt={`Adjunto ${i + 1}`} className="w-full h-24 object-cover" />
+                            <img src={url} alt={`${t('adminReports.dialog.attachmentAlt')} ${i + 1}`} className="w-full h-24 object-cover" />
                           ) : (
                             <div className="w-full h-24 bg-muted flex items-center justify-center">
                               <Video className="w-6 h-6 text-muted-foreground" />
@@ -406,27 +406,27 @@ export default function AdminReports() {
 
                 {/* Status */}
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-2 block">Nuevo estado</Label>
+                  <Label className="text-xs text-muted-foreground mb-2 block">{t('adminReports.dialog.newStatus')}</Label>
                   <Select value={newStatus} onValueChange={setNewStatus}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="reviewed">Revisado</SelectItem>
-                      <SelectItem value="resolved">Resuelto</SelectItem>
-                      <SelectItem value="dismissed">Descartado</SelectItem>
+                      <SelectItem value="pending">{t('adminReports.status.pending')}</SelectItem>
+                      <SelectItem value="reviewed">{t('adminReports.status.reviewed')}</SelectItem>
+                      <SelectItem value="resolved">{t('adminReports.status.resolved')}</SelectItem>
+                      <SelectItem value="dismissed">{t('adminReports.status.dismissed')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Admin notes (internal) */}
                 <div>
-                  <Label className="text-xs text-muted-foreground mb-2 block">Notas internas</Label>
+                  <Label className="text-xs text-muted-foreground mb-2 block">{t('adminReports.dialog.internalNotes')}</Label>
                   <Textarea
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
-                    placeholder="Notas internas (no visibles para el usuario)..."
+                    placeholder={t('adminReports.dialog.internalNotesPlaceholder')}
                     rows={2}
                   />
                 </div>
@@ -435,12 +435,12 @@ export default function AdminReports() {
                 <div>
                   <Label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                     <MessageSquare className="w-3 h-3" />
-                    Responder al usuario (se enviará como notificación)
+                    {t('adminReports.dialog.respondLabel')}
                   </Label>
                   <Textarea
                     value={adminResponse}
                     onChange={(e) => setAdminResponse(e.target.value)}
-                    placeholder="Escribe una respuesta para el usuario..."
+                    placeholder={t('adminReports.dialog.respondPlaceholder')}
                     rows={3}
                   />
                 </div>
@@ -449,11 +449,11 @@ export default function AdminReports() {
 
             <DialogFooter className="flex-col sm:flex-row gap-2">
               <Button variant="outline" onClick={() => setSelectedReport(null)} className="w-full sm:w-auto">
-                Cancelar
+                {t('adminReports.dialog.cancel')}
               </Button>
               <Button onClick={handleUpdateReport} disabled={isUpdating} className="w-full sm:w-auto gap-1.5">
                 {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Guardar
+                {t('adminReports.dialog.save')}
               </Button>
             </DialogFooter>
           </DialogContent>

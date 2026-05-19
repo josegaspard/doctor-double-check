@@ -172,7 +172,7 @@ function PlacementUploadCard({
             </div>
             <div>
               <label className="text-[10px] font-medium text-muted-foreground mb-1 block">
-                {es ? 'URL de destino' : 'Destination URL'}
+                {t('advertiserDashboardPage.destinationUrl')}
               </label>
               <div className="flex gap-1.5">
                 <Input
@@ -186,7 +186,7 @@ function PlacementUploadCard({
                   disabled={isSavingUrl || editUrl === existingCreative.click_url || !editUrl.trim()}
                   onClick={handleSaveUrl}
                 >
-                  {isSavingUrl ? <Loader2 className="w-3 h-3 animate-spin" /> : (es ? 'Guardar' : 'Save')}
+                  {isSavingUrl ? <Loader2 className="w-3 h-3 animate-spin" /> : t('advertiserDashboardPage.save')}
                 </Button>
               </div>
             </div>
@@ -217,7 +217,7 @@ function PlacementUploadCard({
               )}
             </div>
             <Input
-              placeholder={es ? 'URL de destino (opcional)' : 'Destination URL (optional)'}
+              placeholder={t('advertiserDashboardPage.destinationUrlOptional')}
               value={clickUrl}
               onChange={e => onClickUrlChange(e.target.value)}
               className="text-xs h-8"
@@ -370,9 +370,9 @@ export default function AdvertiserDashboard() {
 
   const updateCreativeClickUrl = async (creativeId: string, newUrl: string) => {
     const { error } = await supabase.from('ad_creatives' as any).update({ click_url: newUrl } as any).eq('id', creativeId);
-    if (error) { toast.error(es ? 'Error al guardar URL' : 'Error saving URL'); return; }
+    if (error) { toast.error(t('advertiserDashboardPage.errorSavingUrl')); return; }
     setCreatives(prev => prev.map(c => c.id === creativeId ? { ...c, click_url: newUrl } : c));
-    toast.success(es ? 'URL actualizada' : 'URL updated');
+    toast.success(t('advertiserDashboardPage.urlUpdated'));
   };
 
   const payCampaign = async (campaignId: string, amount: number) => {
@@ -386,7 +386,14 @@ export default function AdvertiserDashboard() {
   const handleExportCSV = () => {
     const rows = campaigns.map(c => {
       const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
-      return { Campaña: c.name, Estado: statusLabels[c.status] || c.status, Budget: c.budget, Impresiones: s.impressions, Clics: s.clicks, CTR: s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(2) + '%' : '0%' };
+      return {
+        [t('advertiserDashboardPage.pdfCampaign')]: c.name,
+        [t('advertiserDashboardPage.pdfStatus')]: statusLabels[c.status] || c.status,
+        [t('advertiserDashboardPage.pdfBudget')]: c.budget,
+        [t('advertiserDashboardPage.pdfImpressions')]: s.impressions,
+        [t('advertiserDashboardPage.pdfClicks')]: s.clicks,
+        [t('advertiserDashboardPage.pdfCtr')]: s.impressions > 0 ? ((s.clicks / s.impressions) * 100).toFixed(2) + '%' : '0%',
+      };
     });
     exportToCSV(rows, `campanas_${format(new Date(), 'yyyyMMdd')}`);
   };
@@ -400,7 +407,7 @@ export default function AdvertiserDashboard() {
       const s = campaignStats[c.id] || { impressions: 0, clicks: 0 };
       return sum + (s.impressions / 1000 * config.cpm_rate) + (s.clicks * config.cpc_rate);
     }, 0);
-    exportToPDF('Reporte de Campañas Publicitarias', campaignsToTableHTML(rows, totalS));
+    exportToPDF(t('advertiserDashboardPage.reportTitle'), campaignsToTableHTML(rows, totalS));
   };
 
   const totalBudget = campaigns.reduce((s, c) => s + Number(c.budget), 0);
@@ -430,15 +437,15 @@ export default function AdvertiserDashboard() {
 
     const exportCampaignPDF = () => {
       const tableHTML = `
-        <div class="summary"><p>Campaña: <span>${campaign.name}</span></p>
-        <p>Estado: <span>${statusLabels[campaign.status] || campaign.status}</span></p>
-        <p>Presupuesto: <span>$${Number(campaign.budget).toLocaleString()} MXN</span></p>
-        <p>Gastado: <span>$${calculatedSpent.toFixed(2)} MXN</span></p></div>
-        <table><thead><tr><th>Métrica</th><th>Valor</th></tr></thead><tbody>
-        <tr><td>Impresiones</td><td>${stats.impressions.toLocaleString()}</td></tr>
-        <tr><td>Clics</td><td>${stats.clicks}</td></tr>
-        <tr><td>CTR</td><td>${ctr}%</td></tr></tbody></table>`;
-      exportToPDF(`Reporte - ${campaign.name}`, tableHTML);
+        <div class="summary"><p>${t('advertiserDashboardPage.pdfCampaign')}: <span>${campaign.name}</span></p>
+        <p>${t('advertiserDashboardPage.pdfStatus')}: <span>${statusLabels[campaign.status] || campaign.status}</span></p>
+        <p>${t('advertiserDashboardPage.pdfBudget')}: <span>$${Number(campaign.budget).toLocaleString()} MXN</span></p>
+        <p>${t('advertiserDashboardPage.pdfSpent')}: <span>$${calculatedSpent.toFixed(2)} MXN</span></p></div>
+        <table><thead><tr><th>${t('advertiserDashboardPage.pdfMetric')}</th><th>${t('advertiserDashboardPage.pdfValue')}</th></tr></thead><tbody>
+        <tr><td>${t('advertiserDashboardPage.pdfImpressions')}</td><td>${stats.impressions.toLocaleString()}</td></tr>
+        <tr><td>${t('advertiserDashboardPage.pdfClicks')}</td><td>${stats.clicks}</td></tr>
+        <tr><td>${t('advertiserDashboardPage.pdfCtr')}</td><td>${ctr}%</td></tr></tbody></table>`;
+      exportToPDF(`${t('advertiserDashboardPage.reportPrefix')} - ${campaign.name}`, tableHTML);
     };
 
     return (
@@ -491,7 +498,7 @@ export default function AdvertiserDashboard() {
                 </div>
               </div>
               <Progress value={budgetUsedPct} className="h-2" />
-              <p className="text-[10px] text-muted-foreground mt-1 text-right">{budgetUsedPct.toFixed(1)}% {es ? 'usado' : 'used'}</p>
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">{budgetUsedPct.toFixed(1)}% {t('advertiserDashboardPage.used')}</p>
             </CardContent>
           </Card>
 
@@ -544,7 +551,7 @@ export default function AdvertiserDashboard() {
               <ImageIcon className="w-4 h-4 text-primary" />
               {t('ads.creatives')}
               <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                {t('ads.formats')}: {es ? 'imagen, GIF, video' : 'image, GIF, video'} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
+                {t('ads.formats')}: {t('advertiserDashboardPage.imageGifVideo')} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
               </span>
             </h2>
 
@@ -584,21 +591,21 @@ export default function AdvertiserDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Lightbulb className="w-4 h-4 text-warning" />
-                {es ? 'Recomendaciones' : 'Recommendations'}
+                {t('advertiserDashboardPage.recommendations')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {stats.impressions > 0 && stats.clicks === 0 && (
-                <p className="text-xs text-muted-foreground">💡 {es ? 'Tu campaña tiene impresiones pero ningún clic. Mejora el diseño del creativo.' : 'Your campaign has impressions but no clicks. Improve your creative design.'}</p>
+                <p className="text-xs text-muted-foreground">💡 {t('advertiserDashboardPage.recImpressionsNoClicks')}</p>
               )}
               {stats.impressions > 0 && Number(ctr) < 1 && stats.clicks > 0 && (
-                <p className="text-xs text-muted-foreground">📊 {es ? 'CTR por debajo del 1%. Prueba diferentes ubicaciones.' : 'CTR below 1%. Try different placements.'}</p>
+                <p className="text-xs text-muted-foreground">📊 {t('advertiserDashboardPage.recLowCtr')}</p>
               )}
               {Number(ctr) >= 1 && (
-                <p className="text-xs text-muted-foreground">🎯 {es ? '¡Buen CTR! Considera aumentar el presupuesto.' : 'Good CTR! Consider increasing the budget.'}</p>
+                <p className="text-xs text-muted-foreground">🎯 {t('advertiserDashboardPage.recGoodCtr')}</p>
               )}
               {creatives.length === 0 && (
-                <p className="text-xs text-muted-foreground">🖼️ {es ? 'Sube creativos para que tu campaña muestre anuncios.' : 'Upload creatives to start showing ads.'}</p>
+                <p className="text-xs text-muted-foreground">🖼️ {t('advertiserDashboardPage.recNoCreatives')}</p>
               )}
             </CardContent>
           </Card>
@@ -607,14 +614,14 @@ export default function AdvertiserDashboard() {
             <Card className="border-success/20 bg-success/5">
               <CardContent className="p-4 text-center">
                 <Target className="w-8 h-8 text-success mx-auto mb-2" />
-                <h3 className="font-semibold mb-1">{es ? '¡Campaña Finalizada!' : 'Campaign Completed!'}</h3>
-                <p className="text-xs text-muted-foreground mb-3">{es ? 'Exporta los resultados y crea una nueva campaña.' : 'Export results and create a new campaign.'}</p>
+                <h3 className="font-semibold mb-1">{t('advertiserDashboardPage.campaignCompleted')}</h3>
+                <p className="text-xs text-muted-foreground mb-3">{t('advertiserDashboardPage.campaignCompletedDesc')}</p>
                 <div className="flex gap-2 justify-center">
                   <Button variant="outline" size="sm" onClick={exportCampaignPDF} className="gap-1.5">
                     <FileDown className="w-3.5 h-3.5" /> PDF
                   </Button>
                   <Button size="sm" onClick={() => { setSelectedCampaign(null); setShowCreate(true); }} className="gap-1.5">
-                    <Plus className="w-3.5 h-3.5" /> {es ? 'Nueva Campaña' : 'New Campaign'}
+                    <Plus className="w-3.5 h-3.5" /> {t('advertiserDashboardPage.newCampaignShort')}
                   </Button>
                 </div>
               </CardContent>
@@ -696,10 +703,10 @@ export default function AdvertiserDashboard() {
             <CardContent className="space-y-4">
               {/* Section 1: Info básica */}
               <div className="space-y-3">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">1. {es ? 'Información básica' : 'Basic info'}</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">1. {t('advertiserDashboardPage.basicInfo')}</p>
                 <div>
                   <Label className="text-xs">{t('ads.campaignName')}</Label>
-                  <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={es ? 'Mi campaña' : 'My campaign'} />
+                  <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={t('advertiserDashboardPage.myCampaignPlaceholder')} />
                 </div>
                 <div>
                   <Label className="text-xs">{t('ads.budget')}</Label>
@@ -762,7 +769,7 @@ export default function AdvertiserDashboard() {
                   {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
                   {t('ads.createCampaign')}
                 </Button>
-                <Button variant="outline" onClick={() => setShowCreate(false)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                <Button variant="outline" onClick={() => setShowCreate(false)}>{t('advertiserDashboardPage.cancel')}</Button>
               </div>
             </CardContent>
           </Card>

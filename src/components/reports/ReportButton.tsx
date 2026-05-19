@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,14 +42,25 @@ const REPORT_REASONS = [
   'Otro',
 ];
 
-export function ReportButton({ 
-  contentType, 
-  contentId, 
-  variant = 'ghost', 
+const REPORT_REASON_LABEL_KEYS: Record<string, string> = {
+  'Contenido inapropiado': 'reportButton.reasons.inappropriate',
+  'Información médica incorrecta': 'reportButton.reasons.medicalIncorrect',
+  'Spam o publicidad': 'reportButton.reasons.spam',
+  'Comportamiento abusivo': 'reportButton.reasons.abusive',
+  'Suplantación de identidad': 'reportButton.reasons.impersonation',
+  'Contenido ofensivo': 'reportButton.reasons.offensive',
+  'Otro': 'reportButton.reasons.other',
+};
+
+export function ReportButton({
+  contentType,
+  contentId,
+  variant = 'ghost',
   size = 'sm',
-  showText = false 
+  showText = false
 }: ReportButtonProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
@@ -56,12 +68,12 @@ export function ReportButton({
 
   const handleSubmit = async () => {
     if (!user?.id) {
-      toast.error('Debes iniciar sesión para reportar contenido');
+      toast.error(t('reportButton.errors.notLoggedIn'));
       return;
     }
 
     if (!reason) {
-      toast.error('Selecciona una razón para el reporte');
+      toast.error(t('reportButton.errors.noReason'));
       return;
     }
 
@@ -77,15 +89,15 @@ export function ReportButton({
 
       if (error) throw error;
 
-      toast.success('Reporte enviado correctamente');
+      toast.success(t('reportButton.success'));
       setIsOpen(false);
       setReason('');
       setDescription('');
     } catch (error: any) {
       if (error.message?.includes('duplicate')) {
-        toast.error('Ya has reportado este contenido');
+        toast.error(t('reportButton.errors.duplicate'));
       } else {
-        toast.error('Error al enviar el reporte');
+        toast.error(t('reportButton.errors.generic'));
       }
     } finally {
       setIsSubmitting(false);
@@ -97,38 +109,38 @@ export function ReportButton({
       <DialogTrigger asChild>
         <Button variant={variant} size={size}>
           <Flag className="w-4 h-4" />
-          {showText && <span className="ml-1">Reportar</span>}
+          {showText && <span className="ml-1">{t('reportButton.report')}</span>}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reportar Contenido</DialogTitle>
+          <DialogTitle>{t('reportButton.title')}</DialogTitle>
           <DialogDescription>
-            Ayúdanos a mantener la plataforma segura reportando contenido inapropiado
+            {t('reportButton.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Razón del reporte *</Label>
+            <Label>{t('reportButton.reasonLabel')}</Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona una razón" />
+                <SelectValue placeholder={t('reportButton.reasonPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {REPORT_REASONS.map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r} value={r}>{t(REPORT_REASON_LABEL_KEYS[r])}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Descripción adicional (opcional)</Label>
+            <Label>{t('reportButton.descriptionLabel')}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Proporciona más detalles sobre el problema..."
+              placeholder={t('reportButton.descriptionPlaceholder')}
               rows={3}
             />
           </div>
@@ -136,15 +148,15 @@ export function ReportButton({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
+            {t('reportButton.cancel')}
           </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleSubmit} 
+          <Button
+            variant="destructive"
+            onClick={handleSubmit}
             disabled={isSubmitting || !reason}
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            Enviar Reporte
+            {t('reportButton.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

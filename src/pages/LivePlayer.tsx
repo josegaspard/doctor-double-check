@@ -183,18 +183,18 @@ export default function LivePlayer() {
     window.scrollTo(0, 0);
     const params = new URLSearchParams(window.location.search);
     if (params.get('chat_paid') === 'success') {
-      toast.success('¡Pago completado! Tu mensaje destacado será publicado.');
+      toast.success(t('livePlayerPage.paymentCompleted'));
       // Clean URL without reload
       const url = new URL(window.location.href);
       url.searchParams.delete('chat_paid');
       window.history.replaceState({}, '', url.pathname);
     } else if (params.get('chat_paid') === 'cancel') {
-      toast.info('Pago cancelado');
+      toast.info(t('livePlayerPage.paymentCanceled'));
       const url = new URL(window.location.href);
       url.searchParams.delete('chat_paid');
       window.history.replaceState({}, '', url.pathname);
     }
-  }, [id]);
+  }, [id, t]);
 
   // Direct realtime subscription on this specific live to detect ending + recording lifecycle
   useEffect(() => {
@@ -299,7 +299,7 @@ export default function LivePlayer() {
       }
 
       if (!token) {
-        setPlaybackError('No se pudo conectar. Intenta de nuevo.');
+        setPlaybackError(t('livePlayerPage.connectionError'));
         setIsJoiningStream(false);
         return;
       }
@@ -538,7 +538,7 @@ export default function LivePlayer() {
                         className="mt-3"
                         onClick={() => setManualRetry(prev => prev + 1)}
                       >
-                        Reintentar
+                        {t('livePlayerPage.retry')}
                       </Button>
                     </div>
                   </div>
@@ -588,7 +588,7 @@ export default function LivePlayer() {
                     <Award className="w-3.5 h-3.5" />
                   </div>
                   <span className="text-xs sm:text-sm font-bold text-secondary">
-                    Profesional verificado por Medical Masters
+                    {t('livePlayerPage.verifiedProfessional')}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
@@ -601,7 +601,7 @@ export default function LivePlayer() {
                       size="xs"
                     />
                     <span className="text-[11px] sm:text-xs text-secondary/70 ml-auto">
-                      <span className="text-secondary/60 mr-1">Céd. Prof.</span>
+                      <span className="text-secondary/60 mr-1">{t('livePlayerPage.cedulaProfShort')}</span>
                       <span className="font-mono font-semibold text-secondary tracking-wide">{live.doctorCedula || '—'}</span>
                     </span>
                   </div>
@@ -662,7 +662,7 @@ export default function LivePlayer() {
                   onClick={() => setShowChat(!showChat)}
                 >
                   <MessageSquare className="w-4 h-4" />
-                  Chat
+                  {t('livePlayerPage.chat')}
                 </Button>
                 {role === 'patient' && !isOwner && isLiveActive && consultationFee > 0 && (
                   <Button
@@ -672,7 +672,7 @@ export default function LivePlayer() {
                     onClick={() => setShowBooking(true)}
                   >
                     <Stethoscope className="w-4 h-4" />
-                    Reservar Orientación - ${consultationFee}
+                    {t('livePlayerPage.bookConsultation')} - ${consultationFee}
                   </Button>
                 )}
                 {isOwner && isLiveActive && (
@@ -825,9 +825,9 @@ export default function LivePlayer() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="w-5 h-5 text-primary" />
-              Compartir Live
+              {t('livePlayerPage.shareLive')}
             </DialogTitle>
-            <DialogDescription>Comparte esta transmisión en tus redes</DialogDescription>
+            <DialogDescription>{t('livePlayerPage.shareDescription')}</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-4">
             <Button variant="outline" className="gap-2 h-12" onClick={() => { window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank'); setShowShareModal(false); }}>
@@ -844,7 +844,7 @@ export default function LivePlayer() {
             </Button>
             <Button variant="outline" className="gap-2 h-12" onClick={handleCopyLink}>
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              Copiar link
+              {t('livePlayerPage.copyLink')}
             </Button>
           </div>
         </DialogContent>

@@ -11,22 +11,24 @@ import {
   Calculator, Heart, Brain, Activity, Baby, Droplets,
   Ruler, Scale, TrendingUp, AlertTriangle, CheckCircle,
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ═══════════════════════════════════════════════════
 // BMI Calculator with OMS Visual Table
 // ═══════════════════════════════════════════════════
 const BMI_RANGES = [
-  { min: 0, max: 16, label: 'Bajo peso', color: 'bg-primary', textColor: 'text-primary', risk: 'Alto' },
-  { min: 16, max: 17, label: 'Delgadez moderada', color: 'bg-primary', textColor: 'text-primary', risk: 'Moderado' },
-  { min: 17, max: 18.5, label: 'Delgadez leve', color: 'bg-primary', textColor: 'text-primary', risk: 'Bajo' },
-  { min: 18.5, max: 25, label: 'Normal', color: 'bg-success', textColor: 'text-success', risk: 'Normal' },
-  { min: 25, max: 30, label: 'Sobrepeso', color: 'bg-warning', textColor: 'text-warning', risk: 'Aumentado' },
-  { min: 30, max: 35, label: 'Obesidad grado I', color: 'bg-warning', textColor: 'text-warning', risk: 'Alto' },
-  { min: 35, max: 40, label: 'Obesidad grado II', color: 'bg-destructive', textColor: 'text-destructive', risk: 'Muy alto' },
-  { min: 40, max: 100, label: 'Obesidad grado III', color: 'bg-destructive', textColor: 'text-destructive', risk: 'Extremo' },
+  { min: 0, max: 16, labelKey: 'underweightSevere', color: 'bg-primary', textColor: 'text-primary', riskKey: 'high' },
+  { min: 16, max: 17, labelKey: 'underweightModerate', color: 'bg-primary', textColor: 'text-primary', riskKey: 'moderate' },
+  { min: 17, max: 18.5, labelKey: 'underweightMild', color: 'bg-primary', textColor: 'text-primary', riskKey: 'low' },
+  { min: 18.5, max: 25, labelKey: 'normal', color: 'bg-success', textColor: 'text-success', riskKey: 'normal' },
+  { min: 25, max: 30, labelKey: 'overweight', color: 'bg-warning', textColor: 'text-warning', riskKey: 'increased' },
+  { min: 30, max: 35, labelKey: 'obesityI', color: 'bg-warning', textColor: 'text-warning', riskKey: 'high' },
+  { min: 35, max: 40, labelKey: 'obesityII', color: 'bg-destructive', textColor: 'text-destructive', riskKey: 'veryHigh' },
+  { min: 40, max: 100, labelKey: 'obesityIII', color: 'bg-destructive', textColor: 'text-destructive', riskKey: 'extreme' },
 ];
 
 function BMICalculator() {
+  const { t } = useLanguage();
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [result, setResult] = useState<{ bmi: number; range: typeof BMI_RANGES[0]; idealMin: number; idealMax: number } | null>(null);
@@ -51,23 +53,23 @@ function BMICalculator() {
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Scale className="w-4 h-4 text-primary" />
           </div>
-          Índice de Masa Corporal (IMC)
-          <Badge variant="outline" className="text-[10px] ml-auto">OMS</Badge>
+          {t('healthCalculators.bmi.title')}
+          <Badge variant="outline" className="text-[10px] ml-auto">{t('healthCalculators.bmi.badge')}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.height')}</Label>
             <Input type="number" placeholder="170" value={height} onChange={e => setHeight(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.weight')}</Label>
             <Input type="number" placeholder="70" value={weight} onChange={e => setWeight(e.target.value)} className="mt-1" />
           </div>
           <div className="col-span-2 sm:col-span-1 flex items-end">
             <Button onClick={calculate} size="sm" className="w-full gap-2">
-              <Calculator className="w-3.5 h-3.5" /> Calcular
+              <Calculator className="w-3.5 h-3.5" /> {t('healthCalculators.common.calculate')}
             </Button>
           </div>
         </div>
@@ -78,15 +80,15 @@ function BMICalculator() {
             <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 border border-border">
               <div className="text-center">
                 <p className="text-3xl font-bold text-foreground">{result.bmi}</p>
-                <p className="text-[10px] text-muted-foreground">kg/m²</p>
+                <p className="text-[10px] text-muted-foreground">{t('healthCalculators.bmi.unit')}</p>
               </div>
               <div className="flex-1">
-                <p className={`font-semibold text-sm ${result.range.textColor}`}>{result.range.label}</p>
+                <p className={`font-semibold text-sm ${result.range.textColor}`}>{t(`healthCalculators.bmi.ranges.${result.range.labelKey}`)}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Riesgo: <span className="font-medium">{result.range.risk}</span>
+                  {t('healthCalculators.bmi.risk')}: <span className="font-medium">{t(`healthCalculators.bmi.riskLevels.${result.range.riskKey}`)}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Peso ideal: {result.idealMin}–{result.idealMax} kg
+                  {t('healthCalculators.bmi.idealWeight')}: {result.idealMin}–{result.idealMax} kg
                 </p>
               </div>
             </div>
@@ -119,7 +121,7 @@ function BMICalculator() {
         {/* OMS Classification Table */}
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="bg-muted/50 px-3 py-2 border-b border-border">
-            <p className="text-xs font-semibold text-foreground">Clasificación OMS del IMC</p>
+            <p className="text-xs font-semibold text-foreground">{t('healthCalculators.bmi.classificationTitle')}</p>
           </div>
           <div className="divide-y divide-border">
             {BMI_RANGES.map((r, i) => (
@@ -130,15 +132,15 @@ function BMICalculator() {
                 }`}
               >
                 <div className={`w-2.5 h-2.5 rounded-full ${r.color} mr-2.5 shrink-0`} />
-                <span className="flex-1">{r.label}</span>
+                <span className="flex-1">{t(`healthCalculators.bmi.ranges.${r.labelKey}`)}</span>
                 <span className="text-muted-foreground tabular-nums">
                   {r.min === 0 ? '<' : r.min}–{r.max === 100 ? '50+' : r.max}
                 </span>
                 <Badge
-                  variant={r.risk === 'Normal' ? 'verified' : r.risk === 'Bajo' ? 'secondary' : 'outline'}
+                  variant={r.riskKey === 'normal' ? 'verified' : r.riskKey === 'low' ? 'secondary' : 'outline'}
                   className="ml-2 text-[9px] px-1.5"
                 >
-                  {r.risk}
+                  {t(`healthCalculators.bmi.riskLevels.${r.riskKey}`)}
                 </Badge>
               </div>
             ))}
@@ -153,6 +155,7 @@ function BMICalculator() {
 // Cardiovascular Risk (SCORE2 / Framingham simplified)
 // ═══════════════════════════════════════════════════
 function CardiovascularRisk() {
+  const { t } = useLanguage();
   const [age, setAge] = useState('');
   const [sex, setSex] = useState('male');
   const [systolic, setSystolic] = useState('');
@@ -161,7 +164,7 @@ function CardiovascularRisk() {
   const [smoker, setSmoker] = useState('no');
   const [diabetic, setDiabetic] = useState('no');
   const [hypertensive, setHypertensive] = useState('no');
-  const [result, setResult] = useState<{ risk: number; level: string; color: string; recommendations: string[] } | null>(null);
+  const [result, setResult] = useState<{ risk: number; levelKey: string; color: string; recommendationKeys: string[] } | null>(null);
 
   const calculate = () => {
     const a = parseInt(age);
@@ -196,24 +199,24 @@ function CardiovascularRisk() {
     if (hypertensive === 'yes') score += 2;
 
     const risk = Math.max(0, Math.min(score * 2.5, 40));
-    let level = '', color = '';
-    const recommendations: string[] = [];
+    let levelKey = '', color = '';
+    const recommendationKeys: string[] = [];
 
     if (risk < 5) {
-      level = 'Bajo'; color = 'text-success';
-      recommendations.push('Mantener estilo de vida saludable', 'Control anual');
+      levelKey = 'low'; color = 'text-success';
+      recommendationKeys.push('lowHealthyLifestyle', 'lowAnnualControl');
     } else if (risk < 10) {
-      level = 'Moderado'; color = 'text-warning';
-      recommendations.push('Modificar factores de riesgo', 'Ejercicio 150 min/semana', 'Dieta mediterránea');
+      levelKey = 'moderate'; color = 'text-warning';
+      recommendationKeys.push('moderateModifyRisk', 'moderateExercise', 'moderateMediterranean');
     } else if (risk < 20) {
-      level = 'Alto'; color = 'text-warning';
-      recommendations.push('Consulta cardiológica', 'Estatinas si LDL > 115', 'Control cada 3 meses');
+      levelKey = 'high'; color = 'text-warning';
+      recommendationKeys.push('highCardioConsult', 'highStatins', 'highQuarterlyControl');
     } else {
-      level = 'Muy alto'; color = 'text-destructive';
-      recommendations.push('Tratamiento farmacológico urgente', 'Estatinas de alta intensidad', 'Control mensual estricto');
+      levelKey = 'veryHigh'; color = 'text-destructive';
+      recommendationKeys.push('veryHighUrgentPharm', 'veryHighHighIntensityStatins', 'veryHighMonthlyControl');
     }
 
-    setResult({ risk: Math.round(risk * 10) / 10, level, color, recommendations });
+    setResult({ risk: Math.round(risk * 10) / 10, levelKey, color, recommendationKeys });
   };
 
   return (
@@ -223,53 +226,53 @@ function CardiovascularRisk() {
           <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
             <Heart className="w-4 h-4 text-destructive" />
           </div>
-          Riesgo Cardiovascular
-          <Badge variant="outline" className="text-[10px] ml-auto">SCORE2</Badge>
+          {t('healthCalculators.cardio.title')}
+          <Badge variant="outline" className="text-[10px] ml-auto">{t('healthCalculators.cardio.badge')}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Edad</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.age')}</Label>
             <Input type="number" placeholder="45" value={age} onChange={e => setAge(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Sexo</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.sex')}</Label>
             <Select value={sex} onValueChange={setSex}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Masculino</SelectItem>
-                <SelectItem value="female">Femenino</SelectItem>
+                <SelectItem value="male">{t('healthCalculators.common.male')}</SelectItem>
+                <SelectItem value="female">{t('healthCalculators.common.female')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">P. sistólica (mmHg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.cardio.systolic')}</Label>
             <Input type="number" placeholder="120" value={systolic} onChange={e => setSystolic(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Colesterol total (mg/dL)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.cardio.totalCholesterol')}</Label>
             <Input type="number" placeholder="200" value={cholesterol} onChange={e => setCholesterol(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">HDL (mg/dL)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.cardio.hdl')}</Label>
             <Input type="number" placeholder="50" value={hdl} onChange={e => setHdl(e.target.value)} className="mt-1" />
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
           {[
-            { key: 'smoker', label: '¿Fuma?', value: smoker, set: setSmoker },
-            { key: 'diabetic', label: '¿Diabetes?', value: diabetic, set: setDiabetic },
-            { key: 'hypertensive', label: '¿HTA tratada?', value: hypertensive, set: setHypertensive },
+            { key: 'smoker', labelKey: 'smoker', value: smoker, set: setSmoker },
+            { key: 'diabetic', labelKey: 'diabetic', value: diabetic, set: setDiabetic },
+            { key: 'hypertensive', labelKey: 'hypertensive', value: hypertensive, set: setHypertensive },
           ].map(f => (
             <div key={f.key}>
-              <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
+              <Label className="text-[10px] text-muted-foreground">{t(`healthCalculators.cardio.factors.${f.labelKey}`)}</Label>
               <Select value={f.value} onValueChange={f.set}>
                 <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no">No</SelectItem>
-                  <SelectItem value="yes">Sí</SelectItem>
+                  <SelectItem value="no">{t('healthCalculators.common.no')}</SelectItem>
+                  <SelectItem value="yes">{t('healthCalculators.common.yes')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -277,7 +280,7 @@ function CardiovascularRisk() {
         </div>
 
         <Button onClick={calculate} size="sm" className="w-full gap-2">
-          <TrendingUp className="w-3.5 h-3.5" /> Calcular riesgo
+          <TrendingUp className="w-3.5 h-3.5" /> {t('healthCalculators.cardio.calculateButton')}
         </Button>
 
         {result && (
@@ -306,18 +309,18 @@ function CardiovascularRisk() {
                   </div>
                 </div>
                 <div>
-                  <p className={`font-semibold ${result.color}`}>Riesgo {result.level}</p>
-                  <p className="text-[10px] text-muted-foreground">a 10 años de evento cardiovascular</p>
+                  <p className={`font-semibold ${result.color}`}>{t('healthCalculators.cardio.riskLabel').replace('{{level}}', t(`healthCalculators.cardio.levels.${result.levelKey}`))}</p>
+                  <p className="text-[10px] text-muted-foreground">{t('healthCalculators.cardio.riskCaption')}</p>
                 </div>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-foreground">Recomendaciones:</p>
-              {result.recommendations.map((r, i) => (
+              <p className="text-xs font-medium text-foreground">{t('healthCalculators.cardio.recommendationsTitle')}</p>
+              {result.recommendationKeys.map((r, i) => (
                 <div key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
                   <CheckCircle className="w-3 h-3 text-primary mt-0.5 shrink-0" />
-                  <span>{r}</span>
+                  <span>{t(`healthCalculators.cardio.recommendations.${r}`)}</span>
                 </div>
               ))}
             </div>
@@ -332,15 +335,16 @@ function CardiovascularRisk() {
 // Glasgow Coma Scale — enhanced visual
 // ═══════════════════════════════════════════════════
 function GlasgowScale() {
+  const { t } = useLanguage();
   const [eye, setEye] = useState(4);
   const [verbal, setVerbal] = useState(5);
   const [motor, setMotor] = useState(6);
   const total = eye + verbal + motor;
 
   let severity = '', color = '', bgColor = '';
-  if (total <= 8) { severity = 'Grave (Intubación)'; color = 'text-destructive'; bgColor = 'bg-destructive/10'; }
-  else if (total <= 12) { severity = 'Moderado'; color = 'text-warning'; bgColor = 'bg-warning dark:bg-warning/20'; }
-  else { severity = 'Leve'; color = 'text-success'; bgColor = 'bg-success dark:bg-success/20'; }
+  if (total <= 8) { severity = t('healthCalculators.glasgow.severity.severe'); color = 'text-destructive'; bgColor = 'bg-destructive/10'; }
+  else if (total <= 12) { severity = t('healthCalculators.glasgow.severity.moderate'); color = 'text-warning'; bgColor = 'bg-warning dark:bg-warning/20'; }
+  else { severity = t('healthCalculators.glasgow.severity.mild'); color = 'text-success'; bgColor = 'bg-success dark:bg-success/20'; }
 
   return (
     <Card>
@@ -349,34 +353,25 @@ function GlasgowScale() {
           <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center">
             <Brain className="w-4 h-4 text-info" />
           </div>
-          Escala de Glasgow
+          {t('healthCalculators.glasgow.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {[
           {
-            label: 'Apertura ocular', val: eye, set: setEye, max: 4,
-            opts: [
-              { v: 4, l: 'Espontánea' }, { v: 3, l: 'A la voz' },
-              { v: 2, l: 'Al dolor' }, { v: 1, l: 'Ninguna' },
-            ],
+            key: 'eye', label: t('healthCalculators.glasgow.sections.eye'), val: eye, set: setEye, max: 4,
+            opts: [4, 3, 2, 1].map(v => ({ v, l: t(`healthCalculators.glasgow.eyeOpts.${v}`) })),
           },
           {
-            label: 'Respuesta verbal', val: verbal, set: setVerbal, max: 5,
-            opts: [
-              { v: 5, l: 'Orientada' }, { v: 4, l: 'Confusa' },
-              { v: 3, l: 'Inapropiada' }, { v: 2, l: 'Incomprensible' }, { v: 1, l: 'Ninguna' },
-            ],
+            key: 'verbal', label: t('healthCalculators.glasgow.sections.verbal'), val: verbal, set: setVerbal, max: 5,
+            opts: [5, 4, 3, 2, 1].map(v => ({ v, l: t(`healthCalculators.glasgow.verbalOpts.${v}`) })),
           },
           {
-            label: 'Respuesta motora', val: motor, set: setMotor, max: 6,
-            opts: [
-              { v: 6, l: 'Obedece' }, { v: 5, l: 'Localiza' }, { v: 4, l: 'Retira' },
-              { v: 3, l: 'Flexión anormal' }, { v: 2, l: 'Extensión' }, { v: 1, l: 'Ninguna' },
-            ],
+            key: 'motor', label: t('healthCalculators.glasgow.sections.motor'), val: motor, set: setMotor, max: 6,
+            opts: [6, 5, 4, 3, 2, 1].map(v => ({ v, l: t(`healthCalculators.glasgow.motorOpts.${v}`) })),
           },
         ].map(section => (
-          <div key={section.label}>
+          <div key={section.key}>
             <div className="flex items-center justify-between mb-1">
               <Label className="text-xs text-muted-foreground">{section.label}</Label>
               <Badge variant="secondary" className="text-[10px]">{section.val}/{section.max}</Badge>
@@ -399,7 +394,7 @@ function GlasgowScale() {
             <Progress value={(total / 15) * 100} className="h-2" />
           </div>
           <div className="flex justify-between mt-1 text-[9px] text-muted-foreground">
-            <span>3 (Grave)</span><span>8</span><span>12</span><span>15 (Normal)</span>
+            <span>{t('healthCalculators.glasgow.scaleLabels.severe')}</span><span>8</span><span>12</span><span>{t('healthCalculators.glasgow.scaleLabels.normal')}</span>
           </div>
         </div>
       </CardContent>
@@ -411,6 +406,7 @@ function GlasgowScale() {
 // Body Surface Area (Mosteller)
 // ═══════════════════════════════════════════════════
 function BodySurfaceArea() {
+  const { t } = useLanguage();
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [result, setResult] = useState<number | null>(null);
@@ -431,32 +427,32 @@ function BodySurfaceArea() {
           <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
             <Ruler className="w-4 h-4 text-secondary" />
           </div>
-          Superficie Corporal
-          <Badge variant="outline" className="text-[10px] ml-auto">Mosteller</Badge>
+          {t('healthCalculators.bsa.title')}
+          <Badge variant="outline" className="text-[10px] ml-auto">{t('healthCalculators.bsa.badge')}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.height')}</Label>
             <Input type="number" placeholder="170" value={height} onChange={e => setHeight(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.weight')}</Label>
             <Input type="number" placeholder="70" value={weight} onChange={e => setWeight(e.target.value)} className="mt-1" />
           </div>
         </div>
-        <Button onClick={calculate} size="sm" className="w-full">Calcular</Button>
+        <Button onClick={calculate} size="sm" className="w-full">{t('healthCalculators.common.calculate')}</Button>
         {result !== null && (
           <div className="p-4 rounded-xl bg-muted/50 border border-border text-center">
-            <p className="text-3xl font-bold text-foreground">{result} <span className="text-sm font-normal text-muted-foreground">m²</span></p>
+            <p className="text-3xl font-bold text-foreground">{result} <span className="text-sm font-normal text-muted-foreground">{t('healthCalculators.bsa.unit')}</span></p>
             <p className="text-xs text-muted-foreground mt-1">
-              Normal adulto: 1.7–2.0 m² · {result < 1.7 ? 'Por debajo' : result > 2.0 ? 'Por encima' : 'Dentro'} del rango
+              {t('healthCalculators.bsa.normalAdult')} · {result < 1.7 ? t('healthCalculators.bsa.below') : result > 2.0 ? t('healthCalculators.bsa.above') : t('healthCalculators.bsa.within')} {t('healthCalculators.bsa.ofRange')}
             </p>
           </div>
         )}
         <p className="text-[10px] text-muted-foreground">
-          Fórmula: BSA = √(altura × peso / 3600). Útil para dosificación de quimioterapia y cálculos renales.
+          {t('healthCalculators.bsa.formula')}
         </p>
       </CardContent>
     </Card>
@@ -467,11 +463,12 @@ function BodySurfaceArea() {
 // Creatinine Clearance (Cockcroft-Gault)
 // ═══════════════════════════════════════════════════
 function CreatinineClearance() {
+  const { t } = useLanguage();
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [creatinine, setCreatinine] = useState('');
   const [sex, setSex] = useState('male');
-  const [result, setResult] = useState<{ clcr: number; stage: string; color: string } | null>(null);
+  const [result, setResult] = useState<{ clcr: number; stageKey: string; color: string } | null>(null);
 
   const calculate = () => {
     const a = parseInt(age);
@@ -482,14 +479,14 @@ function CreatinineClearance() {
     let clcr = ((140 - a) * w) / (72 * cr);
     if (sex === 'female') clcr *= 0.85;
 
-    let stage = '', color = '';
-    if (clcr >= 90) { stage = 'Normal (G1)'; color = 'text-success'; }
-    else if (clcr >= 60) { stage = 'Leve (G2)'; color = 'text-warning'; }
-    else if (clcr >= 30) { stage = 'Moderado (G3)'; color = 'text-warning'; }
-    else if (clcr >= 15) { stage = 'Grave (G4)'; color = 'text-destructive'; }
-    else { stage = 'Falla renal (G5)'; color = 'text-destructive'; }
+    let stageKey = '', color = '';
+    if (clcr >= 90) { stageKey = 'g1'; color = 'text-success'; }
+    else if (clcr >= 60) { stageKey = 'g2'; color = 'text-warning'; }
+    else if (clcr >= 30) { stageKey = 'g3'; color = 'text-warning'; }
+    else if (clcr >= 15) { stageKey = 'g4'; color = 'text-destructive'; }
+    else { stageKey = 'g5'; color = 'text-destructive'; }
 
-    setResult({ clcr: Math.round(clcr * 10) / 10, stage, color });
+    setResult({ clcr: Math.round(clcr * 10) / 10, stageKey, color });
   };
 
   return (
@@ -499,40 +496,40 @@ function CreatinineClearance() {
           <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
             <Droplets className="w-4 h-4 text-warning" />
           </div>
-          Función Renal
-          <Badge variant="outline" className="text-[10px] ml-auto">Cockcroft-Gault</Badge>
+          {t('healthCalculators.renal.title')}
+          <Badge variant="outline" className="text-[10px] ml-auto">{t('healthCalculators.renal.badge')}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Edad</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.age')}</Label>
             <Input type="number" placeholder="45" value={age} onChange={e => setAge(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.weight')}</Label>
             <Input type="number" placeholder="70" value={weight} onChange={e => setWeight(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Creatinina (mg/dL)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.renal.creatinine')}</Label>
             <Input type="number" placeholder="1.0" step="0.1" value={creatinine} onChange={e => setCreatinine(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Sexo</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.sex')}</Label>
             <Select value={sex} onValueChange={setSex}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Masculino</SelectItem>
-                <SelectItem value="female">Femenino</SelectItem>
+                <SelectItem value="male">{t('healthCalculators.common.male')}</SelectItem>
+                <SelectItem value="female">{t('healthCalculators.common.female')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        <Button onClick={calculate} size="sm" className="w-full">Calcular</Button>
+        <Button onClick={calculate} size="sm" className="w-full">{t('healthCalculators.common.calculate')}</Button>
         {result && (
           <div className="p-4 rounded-xl bg-muted/50 border border-border text-center">
-            <p className="text-3xl font-bold text-foreground">{result.clcr} <span className="text-sm font-normal text-muted-foreground">mL/min</span></p>
-            <p className={`text-sm font-semibold mt-1 ${result.color}`}>{result.stage}</p>
+            <p className="text-3xl font-bold text-foreground">{result.clcr} <span className="text-sm font-normal text-muted-foreground">{t('healthCalculators.renal.unit')}</span></p>
+            <p className={`text-sm font-semibold mt-1 ${result.color}`}>{t(`healthCalculators.renal.stages.${result.stageKey}`)}</p>
             <div className="mt-2">
               <Progress value={Math.min((result.clcr / 120) * 100, 100)} className="h-2" />
             </div>
@@ -542,22 +539,22 @@ function CreatinineClearance() {
         {/* KDIGO stages table */}
         <div className="border border-border rounded-lg overflow-hidden">
           <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
-            <p className="text-[10px] font-semibold text-foreground">Estadios KDIGO</p>
+            <p className="text-[10px] font-semibold text-foreground">{t('healthCalculators.renal.stagesTitle')}</p>
           </div>
           <div className="divide-y divide-border text-[10px]">
             {[
-              { stage: 'G1', range: '≥90', label: 'Normal', c: 'bg-success' },
-              { stage: 'G2', range: '60–89', label: 'Leve ↓', c: 'bg-warning' },
-              { stage: 'G3a', range: '45–59', label: 'Moderada ↓', c: 'bg-warning' },
-              { stage: 'G3b', range: '30–44', label: 'Moderada-grave ↓', c: 'bg-warning' },
-              { stage: 'G4', range: '15–29', label: 'Grave ↓', c: 'bg-destructive' },
-              { stage: 'G5', range: '<15', label: 'Falla renal', c: 'bg-destructive' },
+              { stage: 'G1', range: '≥90', labelKey: 'g1', c: 'bg-success' },
+              { stage: 'G2', range: '60–89', labelKey: 'g2', c: 'bg-warning' },
+              { stage: 'G3a', range: '45–59', labelKey: 'g3a', c: 'bg-warning' },
+              { stage: 'G3b', range: '30–44', labelKey: 'g3b', c: 'bg-warning' },
+              { stage: 'G4', range: '15–29', labelKey: 'g4', c: 'bg-destructive' },
+              { stage: 'G5', range: '<15', labelKey: 'g5', c: 'bg-destructive' },
             ].map(s => (
               <div key={s.stage} className="flex items-center px-3 py-1.5">
                 <div className={`w-2 h-2 rounded-full ${s.c} mr-2`} />
                 <span className="font-mono font-medium w-8">{s.stage}</span>
-                <span className="flex-1">{s.label}</span>
-                <span className="text-muted-foreground tabular-nums">{s.range} mL/min</span>
+                <span className="flex-1">{t(`healthCalculators.renal.kdigo.${s.labelKey}`)}</span>
+                <span className="text-muted-foreground tabular-nums">{s.range} {t('healthCalculators.renal.unit')}</span>
               </div>
             ))}
           </div>
@@ -571,6 +568,7 @@ function CreatinineClearance() {
 // Pediatric Dosing Calculator
 // ═══════════════════════════════════════════════════
 function PediatricDosing() {
+  const { t } = useLanguage();
   const [weight, setWeight] = useState('');
   const [dosePerKg, setDosePerKg] = useState('');
   const [frequency, setFrequency] = useState('8');
@@ -598,61 +596,61 @@ function PediatricDosing() {
           <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
             <Baby className="w-4 h-4 text-accent" />
           </div>
-          Dosis Pediátrica
+          {t('healthCalculators.pediatric.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Peso (kg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.weight')}</Label>
             <Input type="number" placeholder="15" value={weight} onChange={e => setWeight(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Dosis (mg/kg)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.pediatric.dosePerKg')}</Label>
             <Input type="number" placeholder="10" step="0.5" value={dosePerKg} onChange={e => setDosePerKg(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Cada (horas)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.pediatric.everyHours')}</Label>
             <Select value={frequency} onValueChange={setFrequency}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="4">c/4h</SelectItem>
-                <SelectItem value="6">c/6h</SelectItem>
-                <SelectItem value="8">c/8h</SelectItem>
-                <SelectItem value="12">c/12h</SelectItem>
-                <SelectItem value="24">c/24h</SelectItem>
+                <SelectItem value="4">{t('healthCalculators.pediatric.frequencies.4')}</SelectItem>
+                <SelectItem value="6">{t('healthCalculators.pediatric.frequencies.6')}</SelectItem>
+                <SelectItem value="8">{t('healthCalculators.pediatric.frequencies.8')}</SelectItem>
+                <SelectItem value="12">{t('healthCalculators.pediatric.frequencies.12')}</SelectItem>
+                <SelectItem value="24">{t('healthCalculators.pediatric.frequencies.24')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Concentración (mg/mL)</Label>
-            <Input type="number" placeholder="Opcional" step="0.1" value={concentration} onChange={e => setConcentration(e.target.value)} className="mt-1" />
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.pediatric.concentration')}</Label>
+            <Input type="number" placeholder={t('healthCalculators.pediatric.concentrationPlaceholder')} step="0.1" value={concentration} onChange={e => setConcentration(e.target.value)} className="mt-1" />
           </div>
         </div>
-        <Button onClick={calculate} size="sm" className="w-full">Calcular dosis</Button>
+        <Button onClick={calculate} size="sm" className="w-full">{t('healthCalculators.pediatric.calculateButton')}</Button>
         {result && (
           <div className="p-4 rounded-xl bg-muted/50 border border-border">
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <p className="text-2xl font-bold text-foreground">{result.dose}</p>
-                <p className="text-[10px] text-muted-foreground">mg por dosis</p>
+                <p className="text-[10px] text-muted-foreground">{t('healthCalculators.pediatric.mgPerDose')}</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{result.dailyDose}</p>
-                <p className="text-[10px] text-muted-foreground">mg/día total</p>
+                <p className="text-[10px] text-muted-foreground">{t('healthCalculators.pediatric.mgPerDay')}</p>
               </div>
             </div>
             {result.volume !== undefined && (
               <div className="text-center mt-3 pt-3 border-t border-border">
                 <p className="text-lg font-bold text-primary">{result.volume} mL</p>
-                <p className="text-[10px] text-muted-foreground">volumen por dosis</p>
+                <p className="text-[10px] text-muted-foreground">{t('healthCalculators.pediatric.volumePerDose')}</p>
               </div>
             )}
           </div>
         )}
         <p className="text-[10px] text-muted-foreground flex items-start gap-1">
           <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0 text-warning" />
-          Herramienta orientativa. Verificar siempre con el vademécum y ajustar según función renal/hepática.
+          {t('healthCalculators.pediatric.warning')}
         </p>
       </CardContent>
     </Card>
@@ -663,6 +661,7 @@ function PediatricDosing() {
 // Ideal Body Weight (Devine)
 // ═══════════════════════════════════════════════════
 function IdealBodyWeight() {
+  const { t } = useLanguage();
   const [height, setHeight] = useState('');
   const [sex, setSex] = useState('male');
 
@@ -687,35 +686,35 @@ function IdealBodyWeight() {
           <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
             <Scale className="w-4 h-4 text-success" />
           </div>
-          Peso Ideal
-          <Badge variant="outline" className="text-[10px] ml-auto">Devine</Badge>
+          {t('healthCalculators.ibw.title')}
+          <Badge variant="outline" className="text-[10px] ml-auto">{t('healthCalculators.ibw.badge')}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.height')}</Label>
             <Input type="number" placeholder="170" value={height} onChange={e => setHeight(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Sexo</Label>
+            <Label className="text-xs text-muted-foreground">{t('healthCalculators.common.sex')}</Label>
             <Select value={sex} onValueChange={setSex}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="male">Masculino</SelectItem>
-                <SelectItem value="female">Femenino</SelectItem>
+                <SelectItem value="male">{t('healthCalculators.common.male')}</SelectItem>
+                <SelectItem value="female">{t('healthCalculators.common.female')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         {ibw !== null && (
           <div className="p-4 rounded-xl bg-muted/50 border border-border text-center">
-            <p className="text-3xl font-bold text-foreground">{ibw} <span className="text-sm font-normal text-muted-foreground">kg</span></p>
-            <p className="text-xs text-muted-foreground mt-1">Rango aceptable: {abw} kg</p>
+            <p className="text-3xl font-bold text-foreground">{ibw} <span className="text-sm font-normal text-muted-foreground">{t('healthCalculators.ibw.unit')}</span></p>
+            <p className="text-xs text-muted-foreground mt-1">{t('healthCalculators.ibw.acceptableRange').replace('{{range}}', abw)}</p>
           </div>
         )}
         <p className="text-[10px] text-muted-foreground">
-          Hombres: 50 + 2.3 × (altura en pulgadas − 60) · Mujeres: 45.5 + 2.3 × (altura en pulgadas − 60)
+          {t('healthCalculators.ibw.formulaNote')}
         </p>
       </CardContent>
     </Card>
@@ -726,6 +725,7 @@ function IdealBodyWeight() {
 // Main Export — Tabbed layout like QuirónSalud
 // ═══════════════════════════════════════════════════
 export function HealthCalculators() {
+  const { t } = useLanguage();
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-1">
@@ -733,27 +733,27 @@ export function HealthCalculators() {
           <Activity className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-heading font-semibold text-base">Calculadoras de Salud</h3>
-          <p className="text-xs text-muted-foreground">Herramientas clínicas de referencia rápida</p>
+          <h3 className="font-heading font-semibold text-base">{t('healthCalculators.title')}</h3>
+          <p className="text-xs text-muted-foreground">{t('healthCalculators.subtitle')}</p>
         </div>
       </div>
 
       <Tabs defaultValue="imc" className="space-y-4">
         <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 gap-1 h-auto p-1">
           <TabsTrigger value="imc" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Scale className="w-3 h-3" /> IMC
+            <Scale className="w-3 h-3" /> {t('healthCalculators.tabs.imc')}
           </TabsTrigger>
           <TabsTrigger value="cardio" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Heart className="w-3 h-3" /> Cardio
+            <Heart className="w-3 h-3" /> {t('healthCalculators.tabs.cardio')}
           </TabsTrigger>
           <TabsTrigger value="renal" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Droplets className="w-3 h-3" /> Renal
+            <Droplets className="w-3 h-3" /> {t('healthCalculators.tabs.renal')}
           </TabsTrigger>
           <TabsTrigger value="pediatric" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Baby className="w-3 h-3" /> Pediátrica
+            <Baby className="w-3 h-3" /> {t('healthCalculators.tabs.pediatric')}
           </TabsTrigger>
           <TabsTrigger value="weight" className="text-[10px] sm:text-xs gap-1 py-1.5">
-            <Ruler className="w-3 h-3" /> Peso/SC
+            <Ruler className="w-3 h-3" /> {t('healthCalculators.tabs.weight')}
           </TabsTrigger>
         </TabsList>
 

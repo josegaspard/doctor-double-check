@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,15 +16,7 @@ import {
 import { Clock, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const DAYS_OF_WEEK = [
-  { value: 'monday', label: 'Lunes' },
-  { value: 'tuesday', label: 'Martes' },
-  { value: 'wednesday', label: 'Miércoles' },
-  { value: 'thursday', label: 'Jueves' },
-  { value: 'friday', label: 'Viernes' },
-  { value: 'saturday', label: 'Sábado' },
-  { value: 'sunday', label: 'Domingo' },
-];
+const DAY_VALUES = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 const HOURS = Array.from({ length: 24 }, (_, i) => {
   const hour = i.toString().padStart(2, '0');
@@ -32,11 +25,17 @@ const HOURS = Array.from({ length: 24 }, (_, i) => {
 
 export function OfficeHoursConfig() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [startTime, setStartTime] = useState('08:00:00');
   const [endTime, setEndTime] = useState('20:00:00');
   const [selectedDays, setSelectedDays] = useState<string[]>(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+
+  const daysOfWeek = DAY_VALUES.map(value => ({
+    value,
+    label: t(`officeHoursConfig.days.${value}`),
+  }));
 
   useEffect(() => {
     const fetchOfficeHours = async () => {
@@ -65,8 +64,8 @@ export function OfficeHoursConfig() {
   }, [user?.id]);
 
   const toggleDay = (day: string) => {
-    setSelectedDays(prev => 
-      prev.includes(day) 
+    setSelectedDays(prev =>
+      prev.includes(day)
         ? prev.filter(d => d !== day)
         : [...prev, day]
     );
@@ -88,10 +87,10 @@ export function OfficeHoursConfig() {
 
       if (error) throw error;
 
-      toast.success('Horarios de atención actualizados');
+      toast.success(t('officeHoursConfig.saveSuccess'));
     } catch (error) {
       console.error('Error saving office hours:', error);
-      toast.error('Error al guardar los horarios');
+      toast.error(t('officeHoursConfig.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -111,19 +110,28 @@ export function OfficeHoursConfig() {
     );
   }
 
+  const daysText = selectedDays.length > 0
+    ? daysOfWeek.filter(d => selectedDays.includes(d.value)).map(d => d.label).join(', ')
+    : t('officeHoursConfig.noDaysSelected');
+
+  const previewText = t('officeHoursConfig.previewText')
+    .replace('{{start}}', formatTimeDisplay(startTime))
+    .replace('{{end}}', formatTimeDisplay(endTime))
+    .replace('{{days}}', daysText);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary" />
-          Horarios de Atención
+          {t('officeHoursConfig.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Time Range */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Hora de inicio</Label>
+            <Label>{t('officeHoursConfig.startTimeLabel')}</Label>
             <Select value={startTime} onValueChange={setStartTime}>
               <SelectTrigger>
                 <SelectValue />
@@ -138,7 +146,7 @@ export function OfficeHoursConfig() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Hora de cierre</Label>
+            <Label>{t('officeHoursConfig.endTimeLabel')}</Label>
             <Select value={endTime} onValueChange={setEndTime}>
               <SelectTrigger>
                 <SelectValue />
@@ -156,9 +164,9 @@ export function OfficeHoursConfig() {
 
         {/* Days of Week */}
         <div className="space-y-3">
-          <Label>Días de atención</Label>
+          <Label>{t('officeHoursConfig.daysLabel')}</Label>
           <div className="space-y-2">
-            {DAYS_OF_WEEK.map(day => (
+            {daysOfWeek.map(day => (
               <div key={day.value} className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg">
                 <span className="text-sm font-medium">{day.label}</span>
                 <Switch
@@ -173,11 +181,7 @@ export function OfficeHoursConfig() {
         {/* Preview */}
         <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
           <p className="text-sm text-muted-foreground">
-            <strong>Vista previa:</strong> Atiendes de {formatTimeDisplay(startTime)} a {formatTimeDisplay(endTime)} los{' '}
-            {selectedDays.length > 0 
-              ? DAYS_OF_WEEK.filter(d => selectedDays.includes(d.value)).map(d => d.label).join(', ')
-              : 'ningún día seleccionado'
-            }
+            <strong>{t('officeHoursConfig.previewLabel')}</strong> {previewText}
           </p>
         </div>
 
@@ -185,12 +189,12 @@ export function OfficeHoursConfig() {
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Guardando...
+              {t('officeHoursConfig.savingButton')}
             </>
           ) : (
             <>
               <Save className="w-4 h-4" />
-              Guardar Horarios
+              {t('officeHoursConfig.saveButton')}
             </>
           )}
         </Button>

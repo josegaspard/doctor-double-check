@@ -17,7 +17,7 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
 
   return (
     <div className="space-y-3">
-      <Label>{t('content.audienceType')}</Label>
+      <Label>{t('audienceSelector.audienceType')}</Label>
       <RadioGroup
         value={value}
         onValueChange={(v) => onChange(v as ContentAudience)}
@@ -33,9 +33,9 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
           <RadioGroupItem value="all" id="audience-all" />
           <Users className="h-5 w-5 text-muted-foreground" />
           <div>
-            <p className="font-medium">{t('content.all')}</p>
+            <p className="font-medium">{t('audienceSelector.all')}</p>
             <p className="text-xs text-muted-foreground">
-              Visible para todos los usuarios
+              {t('audienceSelector.allDescription')}
             </p>
           </div>
         </Label>
@@ -49,9 +49,9 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
           <RadioGroupItem value="professionals" id="audience-professionals" />
           <GraduationCap className="h-5 w-5 text-warning" />
           <div>
-            <p className="font-medium">{t('content.professionals')}</p>
+            <p className="font-medium">{t('audienceSelector.professionals')}</p>
             <p className="text-xs text-muted-foreground">
-              {t('content.professionalsDescription')}
+              {t('audienceSelector.professionalsDescription')}
             </p>
           </div>
         </Label>
@@ -65,9 +65,9 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
           <RadioGroupItem value="subscribers" id="audience-subscribers" />
           <Crown className="h-5 w-5 text-warning" />
           <div>
-            <p className="font-medium">Suscriptores de pago</p>
+            <p className="font-medium">{t('audienceSelector.subscribers')}</p>
             <p className="text-xs text-muted-foreground">
-              Solo visible para pacientes con suscripción Básica o Premium activa
+              {t('audienceSelector.subscribersDescription')}
             </p>
           </div>
         </Label>

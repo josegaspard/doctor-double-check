@@ -4,9 +4,11 @@ import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AppBackground } from "@/components/layout/AppBackground";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function EmailConfirmed() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const redirected = useRef(false);
 
@@ -82,8 +84,8 @@ export default function EmailConfirmed() {
         {status === "loading" && (
           <>
             <Loader2 className="w-16 h-16 animate-spin text-white mx-auto" />
-            <h1 className="text-2xl font-bold text-foreground">Verificando...</h1>
-            <p className="text-muted-foreground">Estamos confirmando tu correo electrónico...</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('emailConfirmedPage.loadingTitle')}</h1>
+            <p className="text-muted-foreground">{t('emailConfirmedPage.loadingDescription')}</p>
           </>
         )}
 
@@ -92,9 +94,9 @@ export default function EmailConfirmed() {
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto animate-in zoom-in-50 duration-500">
               <CheckCircle2 className="w-12 h-12 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">¡Correo confirmado!</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('emailConfirmedPage.successTitle')}</h1>
             <p className="text-muted-foreground">
-              Tu cuenta ha sido verificada exitosamente. Te redirigiremos en unos segundos...
+              {t('emailConfirmedPage.successDescription')}
             </p>
             <Loader2 className="w-5 h-5 animate-spin text-white/80 mx-auto" />
           </>
@@ -105,12 +107,12 @@ export default function EmailConfirmed() {
             <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
               <AlertCircle className="w-12 h-12 text-destructive" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Enlace expirado</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('emailConfirmedPage.errorTitle')}</h1>
             <p className="text-muted-foreground">
-              Este enlace de confirmación ha expirado o ya fue utilizado. Intenta iniciar sesión o solicita un nuevo enlace.
+              {t('emailConfirmedPage.errorDescription')}
             </p>
             <Button onClick={() => navigate("/login", { replace: true })} className="w-full">
-              Ir a Iniciar Sesión
+              {t('emailConfirmedPage.goToLogin')}
             </Button>
           </>
         )}

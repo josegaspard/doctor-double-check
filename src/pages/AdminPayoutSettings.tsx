@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   Settings, Loader2, Save, DollarSign, Calendar, Percent, FileText, Play, ArrowLeft, Info, CreditCard, Building, AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,12 +27,22 @@ interface PayoutSettings {
   minimum_payout_amount: number; auto_payout_enabled: boolean; require_invoice: boolean;
 }
 
-const dayNames = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
 export default function AdminPayoutSettings() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
+
+  const dayNames = [
+    '',
+    t('adminPayoutSettings.days.monday'),
+    t('adminPayoutSettings.days.tuesday'),
+    t('adminPayoutSettings.days.wednesday'),
+    t('adminPayoutSettings.days.thursday'),
+    t('adminPayoutSettings.days.friday'),
+    t('adminPayoutSettings.days.saturday'),
+    t('adminPayoutSettings.days.sunday'),
+  ];
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -73,26 +83,26 @@ export default function AdminPayoutSettings() {
     try {
       const { error } = await supabase.from('payout_settings').upsert({ id: 'default', ...settings, updated_at: new Date().toISOString() });
       if (error) throw error;
-      toast.success('Configuración guardada');
+      toast.success(t('adminPayoutSettings.toast.saved'));
     } catch (error: any) { toast.error(error.message); } finally { setIsSaving(false); }
   };
 
   const handleProcessPayouts = async () => {
-    if (!confirm('¿Procesar todos los pagos pendientes vía Stripe ahora?\n\nSolo se procesarán doctores con cuenta Stripe configurada.')) return;
+    if (!confirm(t('adminPayoutSettings.confirm.processPayouts'))) return;
     setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('process-doctor-payouts');
       if (error) throw error;
-      if (data?.processed > 0) toast.success(`${data.processed} pagos procesados`);
-      else toast.info('No hay pagos Stripe pendientes');
+      if (data?.processed > 0) toast.success(t('adminPayoutSettings.toast.processed').replace('{{count}}', String(data.processed)));
+      else toast.info(t('adminPayoutSettings.toast.noPending'));
     } catch (error: any) { toast.error(error.message); } finally { setIsProcessing(false); }
   };
 
   const getPayoutPreview = () => {
-    if (settings.payout_frequency === 'daily') return 'Pagos se procesan todos los días';
-    if (settings.payout_frequency === 'weekly') return `Próximo pago: ${dayNames[settings.payout_day] || 'Lunes'} de cada semana`;
-    if (settings.payout_frequency === 'biweekly') return `Cada 2 semanas, día ${settings.payout_day}`;
-    return `Día ${settings.payout_day} de cada mes`;
+    if (settings.payout_frequency === 'daily') return t('adminPayoutSettings.preview.daily');
+    if (settings.payout_frequency === 'weekly') return t('adminPayoutSettings.preview.weekly').replace('{{day}}', dayNames[settings.payout_day] || dayNames[1]);
+    if (settings.payout_frequency === 'biweekly') return t('adminPayoutSettings.preview.biweekly').replace('{{day}}', String(settings.payout_day));
+    return t('adminPayoutSettings.preview.monthly').replace('{{day}}', String(settings.payout_day));
   };
 
   if (role !== 'admin') return null;
@@ -101,12 +111,12 @@ export default function AdminPayoutSettings() {
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="hidden sm:inline-flex mb-4 -ml-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4 mr-1" />Volver al panel
+          <ArrowLeft className="w-4 h-4 mr-1" />{t('adminPayoutSettings.backToPanel')}
         </Button>
 
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6" />Configuración de Pagos</h1>
-          <p className="text-muted-foreground mt-1">Configura cómo y cuándo se procesan los pagos a doctores</p>
+          <h1 className="font-heading text-2xl font-bold flex items-center gap-2"><Settings className="w-6 h-6" />{t('adminPayoutSettings.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('adminPayoutSettings.subtitle')}</p>
         </div>
 
         {isLoading ? (
@@ -117,33 +127,32 @@ export default function AdminPayoutSettings() {
             <Alert className="border-info/30 bg-info/5">
               <Info className="w-4 h-4 text-info" />
               <AlertDescription className="text-sm">
-                <strong>Pagos automáticos</strong> solo aplican para doctores con cuenta <Badge variant="outline" className="text-xs gap-1 mx-1"><CreditCard className="w-3 h-3" />Stripe Connect</Badge> verificada.
-                Los doctores sin Stripe deben pagarse manualmente desde <strong>"Gestión de Pagos"</strong> vía <Badge variant="outline" className="text-xs gap-1 mx-1"><Building className="w-3 h-3" />transferencia bancaria</Badge>.
+                <strong>{t('adminPayoutSettings.banner.autoLead')}</strong>{t('adminPayoutSettings.banner.autoBody')}<Badge variant="outline" className="text-xs gap-1 mx-1"><CreditCard className="w-3 h-3" />{t('adminPayoutSettings.banner.stripeConnect')}</Badge>{t('adminPayoutSettings.banner.verifiedBody')}<strong>{t('adminPayoutSettings.banner.paymentMgmt')}</strong>{t('adminPayoutSettings.banner.viaBody')}<Badge variant="outline" className="text-xs gap-1 mx-1"><Building className="w-3 h-3" />{t('adminPayoutSettings.banner.bankTransfer')}</Badge>{t('adminPayoutSettings.banner.bankTransferSuffix')}
               </AlertDescription>
             </Alert>
 
             {/* Frequency */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Frecuencia de Pagos</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />{t('adminPayoutSettings.frequency.title')}</CardTitle>
                 <CardDescription>{getPayoutPreview()}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Frecuencia</Label>
+                  <Label>{t('adminPayoutSettings.frequency.label')}</Label>
                   <Select value={settings.payout_frequency} onValueChange={(v) => setSettings(s => ({ ...s, payout_frequency: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily">Diario</SelectItem>
-                      <SelectItem value="weekly">Semanal</SelectItem>
-                      <SelectItem value="biweekly">Quincenal</SelectItem>
-                      <SelectItem value="monthly">Mensual</SelectItem>
+                      <SelectItem value="daily">{t('adminPayoutSettings.frequency.daily')}</SelectItem>
+                      <SelectItem value="weekly">{t('adminPayoutSettings.frequency.weekly')}</SelectItem>
+                      <SelectItem value="biweekly">{t('adminPayoutSettings.frequency.biweekly')}</SelectItem>
+                      <SelectItem value="monthly">{t('adminPayoutSettings.frequency.monthly')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 {settings.payout_frequency !== 'daily' && (
                   <div className="space-y-2">
-                    <Label>{settings.payout_frequency === 'weekly' ? 'Día de la semana' : 'Día del mes'}</Label>
+                    <Label>{settings.payout_frequency === 'weekly' ? t('adminPayoutSettings.frequency.dayOfWeek') : t('adminPayoutSettings.frequency.dayOfMonth')}</Label>
                     {settings.payout_frequency === 'weekly' ? (
                       <Select value={String(settings.payout_day)} onValueChange={(v) => setSettings(s => ({ ...s, payout_day: parseInt(v) }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -162,28 +171,28 @@ export default function AdminPayoutSettings() {
             {/* Commissions */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Percent className="w-5 h-5" />Comisiones y Límites</CardTitle>
-                <CardDescription>Configura la comisión que cobra la plataforma por cada tipo de servicio</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Percent className="w-5 h-5" />{t('adminPayoutSettings.commissions.title')}</CardTitle>
+                <CardDescription>{t('adminPayoutSettings.commissions.description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Comisión general (%)</Label>
+                  <Label>{t('adminPayoutSettings.commissions.generalLabel')}</Label>
                   <Input type="number" min={0} max={100} value={settings.commission_percentage} onChange={(e) => setSettings(s => ({ ...s, commission_percentage: parseFloat(e.target.value) || 0 }))} />
-                  <p className="text-xs text-muted-foreground">Se aplica cuando no hay comisión específica por tipo</p>
+                  <p className="text-xs text-muted-foreground">{t('adminPayoutSettings.commissions.generalHint')}</p>
                 </div>
 
                 <Separator />
 
                 <div>
-                  <Label className="text-sm font-semibold mb-3 block">Comisiones por tipo de servicio</Label>
-                  <p className="text-xs text-muted-foreground mb-4">Deja vacío para usar la comisión general ({settings.commission_percentage}%)</p>
+                  <Label className="text-sm font-semibold mb-3 block">{t('adminPayoutSettings.commissions.byTypeLabel')}</Label>
+                  <p className="text-xs text-muted-foreground mb-4">{t('adminPayoutSettings.commissions.byTypeHint').replace('{{percent}}', String(settings.commission_percentage))}</p>
                   <div className="space-y-3">
                     {[
-                      { key: 'commission_consultation' as const, label: 'Orientaciones médicas / Consultas', icon: '💬' },
-                      { key: 'commission_recording' as const, label: 'Videos / Grabaciones premium', icon: '🎥' },
-                      { key: 'commission_live' as const, label: 'Lives (si monetizados)', icon: '📡' },
-                      { key: 'commission_chat' as const, label: 'Chat con doctores', icon: '💬' },
-                      { key: 'commission_content' as const, label: 'Contenido descargable', icon: '📄' },
+                      { key: 'commission_consultation' as const, label: t('adminPayoutSettings.commissions.items.consultation'), icon: '💬' },
+                      { key: 'commission_recording' as const, label: t('adminPayoutSettings.commissions.items.recording'), icon: '🎥' },
+                      { key: 'commission_live' as const, label: t('adminPayoutSettings.commissions.items.live'), icon: '📡' },
+                      { key: 'commission_chat' as const, label: t('adminPayoutSettings.commissions.items.chat'), icon: '💬' },
+                      { key: 'commission_content' as const, label: t('adminPayoutSettings.commissions.items.content'), icon: '📄' },
                     ].map(item => (
                       <div key={item.key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
                         <span className="text-lg w-6">{item.icon}</span>
@@ -202,9 +211,9 @@ export default function AdminPayoutSettings() {
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label>Monto mínimo de pago (MXN)</Label>
+                  <Label>{t('adminPayoutSettings.commissions.minLabel')}</Label>
                   <Input type="number" min={0} value={settings.minimum_payout_amount} onChange={(e) => setSettings(s => ({ ...s, minimum_payout_amount: parseFloat(e.target.value) || 0 }))} />
-                  <p className="text-xs text-muted-foreground">Los pagos solo se procesan cuando el saldo supera este monto</p>
+                  <p className="text-xs text-muted-foreground">{t('adminPayoutSettings.commissions.minHint')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -212,17 +221,17 @@ export default function AdminPayoutSettings() {
             {/* Automation */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5" />Automatización</CardTitle>
+                <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5" />{t('adminPayoutSettings.automation.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <Label className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-primary" />
-                      Pagos automáticos vía Stripe
+                      {t('adminPayoutSettings.automation.autoStripeLabel')}
                     </Label>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Solo aplica para doctores con Stripe Connect verificado
+                      {t('adminPayoutSettings.automation.autoStripeHint')}
                     </p>
                   </div>
                   <Switch checked={settings.auto_payout_enabled} onCheckedChange={(v) => setSettings(s => ({ ...s, auto_payout_enabled: v }))} />
@@ -232,9 +241,9 @@ export default function AdminPayoutSettings() {
                   <div>
                     <Label className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      Requerir factura aprobada
+                      {t('adminPayoutSettings.automation.requireInvoiceLabel')}
                     </Label>
-                    <p className="text-sm text-muted-foreground mt-0.5">Solo procesar pagos si el doctor tiene factura aprobada</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t('adminPayoutSettings.automation.requireInvoiceHint')}</p>
                   </div>
                   <Switch checked={settings.require_invoice} onCheckedChange={(v) => setSettings(s => ({ ...s, require_invoice: v }))} />
                 </div>
@@ -242,7 +251,7 @@ export default function AdminPayoutSettings() {
                 {!settings.auto_payout_enabled && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                    Con pagos automáticos desactivados, deberás procesar cada pago manualmente desde "Gestión de Pagos a Doctores".
+                    {t('adminPayoutSettings.automation.disabledWarning')}
                   </div>
                 )}
               </CardContent>
@@ -251,10 +260,10 @@ export default function AdminPayoutSettings() {
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Button onClick={handleSave} disabled={isSaving} className="flex-1">
-                {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</> : <><Save className="w-4 h-4 mr-2" />Guardar Cambios</>}
+                {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('adminPayoutSettings.actions.saving')}</> : <><Save className="w-4 h-4 mr-2" />{t('adminPayoutSettings.actions.save')}</>}
               </Button>
               <Button onClick={handleProcessPayouts} disabled={isProcessing} variant="outline" className="flex-1">
-                {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</> : <><Play className="w-4 h-4 mr-2" />Procesar Pagos Stripe Ahora</>}
+                {isProcessing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('adminPayoutSettings.actions.processing')}</> : <><Play className="w-4 h-4 mr-2" />{t('adminPayoutSettings.actions.processNow')}</>}
               </Button>
             </div>
           </div>

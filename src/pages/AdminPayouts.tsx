@@ -98,9 +98,9 @@ interface PayoutSettings {
 export default function AdminPayouts() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage() as any;
   const locale = language === 'es' ? es : enUS;
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [doctors, setDoctors] = useState<DoctorPayoutInfo[]>([]);
   const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
@@ -108,7 +108,7 @@ export default function AdminPayouts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDoctors, setSelectedDoctors] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('pending');
-  
+
   // Expandable detail
   const [expandedDoctor, setExpandedDoctor] = useState<string | null>(null);
   const [doctorBreakdown, setDoctorBreakdown] = useState<Record<string, { source: string; amount: number; date: string; description: string }[]>>({});
@@ -129,6 +129,18 @@ export default function AdminPayouts() {
   const [txTypeFilter, setTxTypeFilter] = useState<string>('all');
   const [txSearch, setTxSearch] = useState('');
   const [txProfileMap, setTxProfileMap] = useState<Map<string, { name: string; avatar_url: string | null }>>(new Map());
+
+  // Helper for simple key + params interpolation when t doesn't support params
+  const tt = (key: string, params?: Record<string, string | number>): string => {
+    let s = typeof t === 'function' ? t(key, params) : key;
+    if (typeof s !== 'string') s = String(s);
+    if (params) {
+      Object.keys(params).forEach(k => {
+        s = s.split(`{${k}}`).join(String(params[k]));
+      });
+    }
+    return s;
+  };
 
   useEffect(() => {
     if (role !== 'admin') { navigate('/'); return; }
@@ -157,7 +169,7 @@ export default function AdminPayouts() {
 
       if (doctorProfiles) {
         const doctorIds = doctorProfiles.map(d => d.user_id);
-        
+
         // Fetch names
         const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url').in('id', doctorIds);
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -189,7 +201,7 @@ export default function AdminPayouts() {
           const bank = bankMap.get(dp.user_id);
           return {
             user_id: dp.user_id,
-            name: profileMap.get(dp.user_id)?.name || 'Doctor',
+            name: profileMap.get(dp.user_id)?.name || tt('adminPayoutsPage.fallback.doctor'),
             avatar_url: profileMap.get(dp.user_id)?.avatar_url || null,
             specialty: dp.specialty,
             pending_earnings: dp.pending_earnings || 0,
@@ -227,7 +239,7 @@ export default function AdminPayouts() {
 
         setPayoutHistory(payoutsData.map(p => ({
           ...p,
-          doctor_name: nameMap.get(p.doctor_id) || 'Doctor',
+          doctor_name: nameMap.get(p.doctor_id) || tt('adminPayoutsPage.fallback.doctor'),
         })));
       }
     } catch (error) {
@@ -286,12 +298,12 @@ export default function AdminPayouts() {
 
   const exportTransactionsCSV = () => {
     const rows = filteredTransactions.map(tx => ({
-      Fecha: format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
-      Usuario: txProfileMap.get(tx.user_id)?.name || tx.user_id,
-      Tipo: tx.type,
-      Monto: tx.amount,
-      Descripción: tx.description,
-      Estado: tx.status,
+      [tt('adminPayoutsPage.csv.colDate')]: format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
+      [tt('adminPayoutsPage.csv.colUser')]: txProfileMap.get(tx.user_id)?.name || tx.user_id,
+      [tt('adminPayoutsPage.csv.colType')]: tx.type,
+      [tt('adminPayoutsPage.csv.colAmount')]: tx.amount,
+      [tt('adminPayoutsPage.csv.colDescription')]: tx.description,
+      [tt('adminPayoutsPage.csv.colStatus')]: tx.status,
     }));
     if (!rows.length) return;
     const headers = Object.keys(rows[0]);
@@ -306,18 +318,18 @@ export default function AdminPayouts() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `transacciones_${format(new Date(), 'yyyyMMdd')}.csv`;
+    a.download = tt('adminPayoutsPage.csv.fileName', { date: format(new Date(), 'yyyyMMdd') });
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const getTxTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      topup: language === 'es' ? 'Recarga' : 'Top-up',
-      purchase: language === 'es' ? 'Compra' : 'Purchase',
-      refund: language === 'es' ? 'Reembolso' : 'Refund',
-      subscription: language === 'es' ? 'Suscripción' : 'Subscription',
-      earning: language === 'es' ? 'Ganancia' : 'Earning',
+      topup: tt('adminPayoutsPage.txType.topup'),
+      purchase: tt('adminPayoutsPage.txType.purchase'),
+      refund: tt('adminPayoutsPage.txType.refund'),
+      subscription: tt('adminPayoutsPage.txType.subscription'),
+      earning: tt('adminPayoutsPage.txType.earning'),
     };
     return labels[type] || type;
   };
@@ -372,7 +384,7 @@ export default function AdminPayouts() {
         : payoutDialog.doctor ? [payoutDialog.doctor] : [];
 
       if (doctorsToProcess.length === 0) {
-        toast.error(language === 'es' ? 'No hay doctores seleccionados con saldo' : 'No doctors selected with balance');
+        toast.error(tt('adminPayoutsPage.toast.noSelection'));
         setIsProcessing(false);
         return;
       }
@@ -382,11 +394,7 @@ export default function AdminPayouts() {
         const noStripe = doctorsToProcess.filter(d => !d.stripe_account_id);
         if (noStripe.length > 0) {
           const names = noStripe.map(d => d.name).join(', ');
-          toast.error(
-            language === 'es'
-              ? `No se pudo procesar: ${names} no tiene(n) cuenta Stripe conectada. Selecciona otro método de pago.`
-              : `Cannot process: ${names} has no Stripe account connected. Select another payment method.`
-          );
+          toast.error(tt('adminPayoutsPage.toast.noStripeAccount', { names }));
           setStripeError(true);
           setIsProcessing(false);
           return;
@@ -399,10 +407,10 @@ export default function AdminPayouts() {
         try {
           const formData = new FormData();
           formData.append('file', receiptFile);
-          
+
           const { data: session } = await supabase.auth.getSession();
           const token = session?.session?.access_token;
-          
+
           const uploadRes = await fetch(
             `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-payout-receipt`,
             {
@@ -413,7 +421,7 @@ export default function AdminPayouts() {
               body: formData,
             }
           );
-          
+
           const uploadData = await uploadRes.json();
           if (!uploadRes.ok || uploadData.error) {
             throw new Error(uploadData.error || 'Upload failed');
@@ -421,7 +429,7 @@ export default function AdminPayouts() {
           receiptPath = uploadData.path;
         } catch (uploadErr: any) {
           console.error('Upload error:', uploadErr);
-          toast.error(language === 'es' ? 'Error subiendo comprobante' : 'Error uploading receipt');
+          toast.error(tt('adminPayoutsPage.toast.uploadError'));
         }
       }
 
@@ -431,7 +439,7 @@ export default function AdminPayouts() {
       for (const doctor of doctorsToProcess) {
         try {
           if (doctor.has_processing_payout) {
-            toast.warning(`${doctor.name} ya tiene un pago en proceso`);
+            toast.warning(tt('adminPayoutsPage.toast.alreadyProcessing', { name: doctor.name }));
             errorCount++;
             continue;
           }
@@ -497,14 +505,10 @@ export default function AdminPayouts() {
       }
 
       if (successCount > 0) {
-        toast.success(language === 'es' 
-          ? `${successCount} pago(s) procesado(s)` 
-          : `${successCount} payout(s) processed`);
+        toast.success(tt('adminPayoutsPage.toast.payoutsProcessed', { count: successCount }));
       }
       if (errorCount > 0) {
-        toast.error(language === 'es' 
-          ? `${errorCount} pago(s) fallaron` 
-          : `${errorCount} payout(s) failed`);
+        toast.error(tt('adminPayoutsPage.toast.payoutsFailed', { count: errorCount }));
       }
 
       setPayoutDialog({ open: false, doctor: null, bulk: false });
@@ -520,15 +524,13 @@ export default function AdminPayouts() {
   const handleDeleteSelected = async () => {
     const selectedList = doctors.filter(d => selectedDoctors.has(d.user_id));
     const names = selectedList.map(d => `${d.name} ($${d.pending_earnings.toFixed(2)})`).join('\n');
-    if (!confirm(language === 'es' 
-      ? `¿Eliminar ${selectedDoctors.size} registro(s) seleccionado(s)?\n\n${names}\n\nEsto pondrá en 0 sus ganancias pendientes y eliminará pagos pendientes asociados.` 
-      : `Delete ${selectedDoctors.size} selected record(s)?`)) return;
-    
+    if (!confirm(tt('adminPayoutsPage.confirm.deleteRecords', { count: selectedDoctors.size, names }))) return;
+
     // Immediately remove from UI BEFORE async operations
     const deletedIds = new Set(selectedList.map(d => d.user_id));
     setDoctors(prev => prev.filter(d => !deletedIds.has(d.user_id)));
     setSelectedDoctors(new Set());
-    
+
     setIsProcessing(true);
     try {
       let successCount = 0;
@@ -538,21 +540,19 @@ export default function AdminPayouts() {
           .from('doctor_profiles')
           .update({ pending_earnings: 0 })
           .eq('user_id', doctor.user_id);
-        
+
         // Also delete any "pending" payout records for this doctor
         await supabase
           .from('doctor_payouts')
           .delete()
           .eq('doctor_id', doctor.user_id)
           .eq('status', 'pending');
-        
+
         if (!error) successCount++;
       }
-      
-      toast.success(language === 'es' 
-        ? `${successCount} registro(s) eliminado(s)` 
-        : `${successCount} record(s) cleared`);
-      
+
+      toast.success(tt('adminPayoutsPage.toast.recordsCleared', { count: successCount }));
+
       // Do NOT call loadData() here — it would re-fetch all approved doctors
       // and bring back the ones we just "deleted" (they still exist with pending_earnings=0)
     } catch (error: any) {
@@ -578,7 +578,7 @@ export default function AdminPayouts() {
           .from('recordings')
           .select('id, title')
           .eq('doctor_id', doctorId);
-        
+
         if (recordings && recordings.length > 0) {
           const recIds = recordings.map(r => r.id);
           const recMap = new Map(recordings.map(r => [r.id, r.title]));
@@ -587,13 +587,13 @@ export default function AdminPayouts() {
             .select('amount, created_at, recording_id')
             .in('recording_id', recIds)
             .order('created_at', { ascending: false });
-          
+
           purchases?.forEach(p => {
             items.push({
               source: 'recording',
               amount: Number(p.amount),
               date: p.created_at,
-              description: recMap.get(p.recording_id) || 'Grabación',
+              description: recMap.get(p.recording_id) || tt('adminPayoutsPage.breakdown.recordingFallback'),
             });
           });
         }
@@ -604,13 +604,13 @@ export default function AdminPayouts() {
           .select('price_paid, created_at, tier')
           .eq('creator_id', doctorId)
           .order('created_at', { ascending: false });
-        
+
         subs?.forEach(s => {
           items.push({
             source: 'subscription',
             amount: Number(s.price_paid),
             date: s.created_at,
-            description: `Suscripción ${s.tier}`,
+            description: tt('adminPayoutsPage.breakdown.subscriptionDesc', { tier: s.tier }),
           });
         });
 
@@ -629,14 +629,14 @@ export default function AdminPayouts() {
           .eq('user_id', doctorId)
           .single();
         const fee = dpData?.consultation_fee || 0;
-        
+
         consults?.forEach(c => {
           if (fee > 0) {
             items.push({
               source: 'consultation',
               amount: Number(fee),
               date: c.started_at,
-              description: 'Orientación médica',
+              description: tt('adminPayoutsPage.breakdown.consultationDesc'),
             });
           }
         });
@@ -662,7 +662,7 @@ export default function AdminPayouts() {
 
         // Sort all items by date descending
         items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        
+
         setDoctorBreakdown(prev => ({ ...prev, [doctorId]: items }));
       } catch (err) {
         console.error('Error loading breakdown:', err);
@@ -693,15 +693,15 @@ export default function AdminPayouts() {
 
   const getSourceLabel = (source: string) => {
     const labels: Record<string, string> = {
-      consultation: language === 'es' ? 'Orientaciones' : 'Consultations',
-      recording: language === 'es' ? 'Grabaciones' : 'Recordings',
-      subscription: language === 'es' ? 'Suscripciones' : 'Subscriptions',
-      subscription_renewal: language === 'es' ? 'Renovaciones' : 'Renewals',
+      consultation: tt('adminPayoutsPage.source.consultation'),
+      recording: tt('adminPayoutsPage.source.recording'),
+      subscription: tt('adminPayoutsPage.source.subscription'),
+      subscription_renewal: tt('adminPayoutsPage.source.subscriptionRenewal'),
     };
-    return labels[source] || (language === 'es' ? 'Otros' : 'Other');
+    return labels[source] || tt('adminPayoutsPage.source.other');
   };
 
-  const filteredDoctors = doctors.filter(d => 
+  const filteredDoctors = doctors.filter(d =>
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -712,10 +712,10 @@ export default function AdminPayouts() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid': return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />Pagado</Badge>;
-      case 'processing': return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />Procesando</Badge>;
-      case 'failed': return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Fallido</Badge>;
-      default: return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" />Pendiente</Badge>;
+      case 'paid': return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{tt('adminPayoutsPage.status.paid')}</Badge>;
+      case 'processing': return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{tt('adminPayoutsPage.status.processing')}</Badge>;
+      case 'failed': return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />{tt('adminPayoutsPage.status.failed')}</Badge>;
+      default: return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" />{tt('adminPayoutsPage.status.pending')}</Badge>;
     }
   };
 
@@ -728,16 +728,16 @@ export default function AdminPayouts() {
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4 mr-1" />
-          {language === 'es' ? 'Volver al panel' : 'Back to panel'}
+          {tt('adminPayoutsPage.backToPanel')}
         </Button>
 
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <Banknote className="w-6 h-6" />
-            {language === 'es' ? 'Gestión de Pagos a Doctores' : 'Doctor Payouts Management'}
+            {tt('adminPayoutsPage.title')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {language === 'es' ? 'Paga a doctores por Stripe o registro manual bancario' : 'Pay doctors via Stripe or manual bank transfer'}
+            {tt('adminPayoutsPage.subtitle')}
           </p>
         </div>
 
@@ -752,7 +752,7 @@ export default function AdminPayouts() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-warning/10"><Clock className="w-5 h-5 text-warning" /></div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{language === 'es' ? 'Total Bruto Pendiente' : 'Gross Pending'}</p>
+                      <p className="text-sm text-muted-foreground">{tt('adminPayoutsPage.summary.grossPending')}</p>
                       <p className="text-xl font-bold">{formatCurrency(totalPending)}</p>
                     </div>
                   </div>
@@ -763,7 +763,7 @@ export default function AdminPayouts() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-success/10"><DollarSign className="w-5 h-5 text-success" /></div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{language === 'es' ? 'Total Neto a Pagar' : 'Net to Pay'}</p>
+                      <p className="text-sm text-muted-foreground">{tt('adminPayoutsPage.summary.netToPay')}</p>
                       <p className="text-xl font-bold text-success">{formatCurrency(totalNetPending)}</p>
                     </div>
                   </div>
@@ -774,7 +774,7 @@ export default function AdminPayouts() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10"><Percent className="w-5 h-5 text-primary" /></div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{language === 'es' ? 'Comisión Plataforma' : 'Platform Commission'}</p>
+                      <p className="text-sm text-muted-foreground">{tt('adminPayoutsPage.summary.platformCommission')}</p>
                       <p className="text-xl font-bold">{settings.commission_percentage}%</p>
                     </div>
                   </div>
@@ -785,7 +785,7 @@ export default function AdminPayouts() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-info/10"><Users className="w-5 h-5 text-info" /></div>
                     <div>
-                      <p className="text-sm text-muted-foreground">{language === 'es' ? 'Doctores con Saldo' : 'Doctors with Balance'}</p>
+                      <p className="text-sm text-muted-foreground">{tt('adminPayoutsPage.summary.doctorsWithBalance')}</p>
                       <p className="text-xl font-bold">{doctorsWithBalance}</p>
                     </div>
                   </div>
@@ -797,15 +797,15 @@ export default function AdminPayouts() {
               <TabsList className="mb-4">
                 <TabsTrigger value="pending" className="gap-2">
                   <DollarSign className="w-4 h-4" />
-                  {language === 'es' ? 'Pagos Pendientes' : 'Pending Payouts'}
+                  {tt('adminPayoutsPage.tabs.pending')}
                 </TabsTrigger>
                 <TabsTrigger value="history" className="gap-2">
                   <History className="w-4 h-4" />
-                  {language === 'es' ? 'Historial' : 'History'}
+                  {tt('adminPayoutsPage.tabs.history')}
                 </TabsTrigger>
                 <TabsTrigger value="transactions" className="gap-2">
                   <CreditCard className="w-4 h-4" />
-                  {language === 'es' ? 'Todas las Transacciones' : 'All Transactions'}
+                  {tt('adminPayoutsPage.tabs.transactions')}
                 </TabsTrigger>
               </TabsList>
 
@@ -815,24 +815,24 @@ export default function AdminPayouts() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder={language === 'es' ? 'Buscar doctor...' : 'Search doctor...'}
+                      placeholder={tt('adminPayoutsPage.search.doctorPlaceholder')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                   <Button variant="outline" onClick={selectAll} size="sm">
-                    {selectedDoctors.size > 0 ? (language === 'es' ? 'Deseleccionar todo' : 'Deselect all') : (language === 'es' ? 'Seleccionar todos' : 'Select all')}
+                    {selectedDoctors.size > 0 ? tt('adminPayoutsPage.actions.deselectAll') : tt('adminPayoutsPage.actions.selectAll')}
                   </Button>
                   {selectedDoctors.size > 0 && (
                     <>
                       <Button onClick={() => openPayoutDialog(null, true)} className="gap-2">
                         <Send className="w-4 h-4" />
-                        {language === 'es' ? `Pagar ${selectedDoctors.size} seleccionados` : `Pay ${selectedDoctors.size} selected`}
+                        {tt('adminPayoutsPage.actions.paySelected', { count: selectedDoctors.size })}
                       </Button>
                       <Button variant="destructive" size="sm" onClick={handleDeleteSelected} className="gap-2">
                         <Trash2 className="w-4 h-4" />
-                        {language === 'es' ? `Eliminar ${selectedDoctors.size} seleccionados` : `Delete ${selectedDoctors.size} selected`}
+                        {tt('adminPayoutsPage.actions.deleteSelected', { count: selectedDoctors.size })}
                       </Button>
                     </>
                   )}
@@ -842,7 +842,7 @@ export default function AdminPayouts() {
                 <div className="space-y-3">
                   {filteredDoctors.length === 0 ? (
                     <Card><CardContent className="text-center py-12 text-muted-foreground">
-                      {language === 'es' ? 'No hay doctores con ganancias pendientes' : 'No doctors with pending earnings'}
+                      {tt('adminPayoutsPage.empty.noPendingDoctors')}
                     </CardContent></Card>
                   ) : filteredDoctors.map(doctor => (
                     <Card key={doctor.user_id} className={`transition-colors ${selectedDoctors.has(doctor.user_id) ? 'border-primary bg-primary/5' : ''}`}>
@@ -852,7 +852,7 @@ export default function AdminPayouts() {
                             checked={selectedDoctors.has(doctor.user_id)}
                             onCheckedChange={() => toggleDoctor(doctor.user_id)}
                           />
-                          
+
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                             {doctor.avatar_url ? (
                               <img src={doctor.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -869,16 +869,16 @@ export default function AdminPayouts() {
                                 <Badge variant="verified" className="text-xs gap-1"><CreditCard className="w-3 h-3" />Stripe</Badge>
                               ) : null}
                               {(doctor.clabe || doctor.bank_name) ? (
-                                <Badge variant="secondary" className="text-xs gap-1"><Building className="w-3 h-3" />{doctor.bank_name || 'Banco'}</Badge>
+                                <Badge variant="secondary" className="text-xs gap-1"><Building className="w-3 h-3" />{doctor.bank_name || tt('adminPayoutsPage.doctor.bankFallback')}</Badge>
                               ) : null}
                               {!doctor.stripe_account_id && !doctor.clabe && (
-                                <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin método</Badge>
+                                <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />{tt('adminPayoutsPage.doctor.noMethod')}</Badge>
                               )}
                               {doctor.has_processing_payout && (
-                                <Badge variant="warning" className="text-xs gap-1"><Clock className="w-3 h-3" />En proceso</Badge>
+                                <Badge variant="warning" className="text-xs gap-1"><Clock className="w-3 h-3" />{tt('adminPayoutsPage.doctor.processingBadge')}</Badge>
                               )}
                               {!doctor.has_approved_invoice && settings.require_invoice && (
-                                <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />Sin factura</Badge>
+                                <Badge variant="warning" className="text-xs gap-1"><AlertTriangle className="w-3 h-3" />{tt('adminPayoutsPage.doctor.noInvoice')}</Badge>
                               )}
                             </div>
                             {(doctor.bank_name || doctor.clabe_last4) && (
@@ -893,11 +893,11 @@ export default function AdminPayouts() {
 
                           <div className="text-right flex-shrink-0 space-y-1">
                             <div>
-                              <p className="text-xs text-muted-foreground">{language === 'es' ? 'Bruto' : 'Gross'}</p>
+                              <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.gross')}</p>
                               <p className="font-semibold">{formatCurrency(doctor.pending_earnings)}</p>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">{language === 'es' ? 'Neto' : 'Net'}</p>
+                              <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.net')}</p>
                               <p className="font-bold text-success">{formatCurrency(getNetAmount(doctor.pending_earnings))}</p>
                             </div>
                           </div>
@@ -909,7 +909,7 @@ export default function AdminPayouts() {
                               onClick={() => openPayoutDialog(doctor, false)}
                             >
                               <Send className="w-4 h-4 mr-1" />
-                              {doctor.has_processing_payout ? (language === 'es' ? 'En proceso' : 'Processing') : (language === 'es' ? 'Pagar' : 'Pay')}
+                              {doctor.has_processing_payout ? tt('adminPayoutsPage.doctor.processing') : tt('adminPayoutsPage.doctor.pay')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -918,7 +918,7 @@ export default function AdminPayouts() {
                               className="text-xs gap-1"
                             >
                               {expandedDoctor === doctor.user_id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                              {language === 'es' ? 'Detalle' : 'Detail'}
+                              {tt('adminPayoutsPage.doctor.detail')}
                             </Button>
                           </div>
                         </div>
@@ -943,7 +943,7 @@ export default function AdminPayouts() {
                                   ))}
                                   {Object.keys(getBreakdownSummary(doctor.user_id)).length === 0 && (
                                     <p className="text-sm text-muted-foreground col-span-4">
-                                      {language === 'es' ? 'Sin transacciones de ganancia registradas' : 'No earning transactions recorded'}
+                                      {tt('adminPayoutsPage.empty.noEarnings')}
                                     </p>
                                   )}
                                 </div>
@@ -952,7 +952,7 @@ export default function AdminPayouts() {
                                 {(doctorBreakdown[doctor.user_id] || []).length > 0 && (
                                   <div className="space-y-1 max-h-48 overflow-y-auto">
                                     <p className="text-xs font-medium text-muted-foreground mb-2">
-                                      {language === 'es' ? 'Últimas transacciones' : 'Recent transactions'}
+                                      {tt('adminPayoutsPage.doctor.recentTransactions')}
                                     </p>
                                     {(doctorBreakdown[doctor.user_id] || []).slice(0, 15).map((tx, i) => (
                                       <div key={i} className="flex items-center gap-2 text-xs py-1.5 px-2 rounded hover:bg-muted/30">
@@ -977,7 +977,7 @@ export default function AdminPayouts() {
               <TabsContent value="history">
                 {payoutHistory.length === 0 ? (
                   <Card><CardContent className="text-center py-12 text-muted-foreground">
-                    {language === 'es' ? 'No hay pagos registrados' : 'No payouts recorded'}
+                    {tt('adminPayoutsPage.empty.noPayouts')}
                   </CardContent></Card>
                 ) : (
                   <div className="space-y-3">
@@ -991,7 +991,7 @@ export default function AdminPayouts() {
                                 <Calendar className="w-3 h-3" />
                                 {format(new Date(payout.created_at), 'dd MMM yyyy, HH:mm', { locale })}
                                 {payout.stripe_transfer_id?.startsWith('manual_') ? (
-                                  <Badge variant="secondary" className="text-xs"><Building className="w-3 h-3 mr-1" />Manual</Badge>
+                                  <Badge variant="secondary" className="text-xs"><Building className="w-3 h-3 mr-1" />{tt('adminPayoutsPage.history.manualBadge')}</Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-xs"><CreditCard className="w-3 h-3 mr-1" />Stripe</Badge>
                                 )}
@@ -1018,7 +1018,7 @@ export default function AdminPayouts() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder={language === 'es' ? 'Buscar por usuario o descripción...' : 'Search by user or description...'}
+                      placeholder={tt('adminPayoutsPage.transactions.searchPlaceholder')}
                       value={txSearch}
                       onChange={(e) => setTxSearch(e.target.value)}
                       className="pl-10"
@@ -1026,20 +1026,20 @@ export default function AdminPayouts() {
                   </div>
                   <Select value={txTypeFilter} onValueChange={setTxTypeFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder={language === 'es' ? 'Tipo' : 'Type'} />
+                      <SelectValue placeholder={tt('adminPayoutsPage.transactions.type')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{language === 'es' ? 'Todos' : 'All'}</SelectItem>
-                      <SelectItem value="topup">{language === 'es' ? 'Recargas' : 'Top-ups'}</SelectItem>
-                      <SelectItem value="purchase">{language === 'es' ? 'Compras' : 'Purchases'}</SelectItem>
-                      <SelectItem value="earning">{language === 'es' ? 'Ganancias' : 'Earnings'}</SelectItem>
-                      <SelectItem value="subscription">{language === 'es' ? 'Suscripciones' : 'Subscriptions'}</SelectItem>
-                      <SelectItem value="refund">{language === 'es' ? 'Reembolsos' : 'Refunds'}</SelectItem>
+                      <SelectItem value="all">{tt('adminPayoutsPage.transactions.typeAll')}</SelectItem>
+                      <SelectItem value="topup">{tt('adminPayoutsPage.transactions.typeTopups')}</SelectItem>
+                      <SelectItem value="purchase">{tt('adminPayoutsPage.transactions.typePurchases')}</SelectItem>
+                      <SelectItem value="earning">{tt('adminPayoutsPage.transactions.typeEarnings')}</SelectItem>
+                      <SelectItem value="subscription">{tt('adminPayoutsPage.transactions.typeSubscriptions')}</SelectItem>
+                      <SelectItem value="refund">{tt('adminPayoutsPage.transactions.typeRefunds')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button variant="outline" size="sm" onClick={exportTransactionsCSV} className="gap-1.5">
                     <Banknote className="w-4 h-4" />
-                    {language === 'es' ? 'Exportar CSV' : 'Export CSV'}
+                    {tt('adminPayoutsPage.transactions.exportCsv')}
                   </Button>
                 </div>
 
@@ -1059,7 +1059,7 @@ export default function AdminPayouts() {
                   <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
                 ) : filteredTransactions.length === 0 ? (
                   <Card><CardContent className="text-center py-12 text-muted-foreground">
-                    {language === 'es' ? 'No hay transacciones registradas' : 'No transactions recorded'}
+                    {tt('adminPayoutsPage.empty.noTransactions')}
                   </CardContent></Card>
                 ) : (
                   <div className="border border-border rounded-lg overflow-hidden">
@@ -1067,12 +1067,12 @@ export default function AdminPayouts() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b bg-muted/50">
-                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Fecha' : 'Date'}</th>
-                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Usuario' : 'User'}</th>
-                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Tipo' : 'Type'}</th>
-                            <th className="text-left p-3 font-medium text-muted-foreground">{language === 'es' ? 'Descripción' : 'Description'}</th>
-                            <th className="text-right p-3 font-medium text-muted-foreground">{language === 'es' ? 'Monto' : 'Amount'}</th>
-                            <th className="text-center p-3 font-medium text-muted-foreground">{language === 'es' ? 'Estado' : 'Status'}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colDate')}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colUser')}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colType')}</th>
+                            <th className="text-left p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colDescription')}</th>
+                            <th className="text-right p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colAmount')}</th>
+                            <th className="text-center p-3 font-medium text-muted-foreground">{tt('adminPayoutsPage.transactions.colStatus')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1116,7 +1116,7 @@ export default function AdminPayouts() {
                       </table>
                     </div>
                     <div className="p-3 bg-muted/30 border-t text-xs text-muted-foreground text-right">
-                      {language === 'es' ? `Mostrando ${filteredTransactions.length} transacciones` : `Showing ${filteredTransactions.length} transactions`}
+                      {tt('adminPayoutsPage.transactions.showing', { count: filteredTransactions.length })}
                     </div>
                   </div>
                 )}
@@ -1131,12 +1131,12 @@ export default function AdminPayouts() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-success" />
-                {language === 'es' ? 'Confirmar Pago' : 'Confirm Payout'}
+                {tt('adminPayoutsPage.dialog.title')}
               </DialogTitle>
               <DialogDescription>
                 {payoutDialog.bulk
-                  ? (language === 'es' ? `Procesarás pagos para ${selectedDoctors.size} doctores` : `You'll process payouts for ${selectedDoctors.size} doctors`)
-                  : (language === 'es' ? `Pago para ${payoutDialog.doctor?.name}` : `Payout for ${payoutDialog.doctor?.name}`)}
+                  ? tt('adminPayoutsPage.dialog.descBulk', { count: selectedDoctors.size })
+                  : tt('adminPayoutsPage.dialog.descSingle', { name: payoutDialog.doctor?.name || '' })}
               </DialogDescription>
             </DialogHeader>
 
@@ -1145,16 +1145,16 @@ export default function AdminPayouts() {
               {!payoutDialog.bulk && payoutDialog.doctor && (
                 <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{language === 'es' ? 'Bruto:' : 'Gross:'}</span>
+                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.grossLabel')}</span>
                     <span>{formatCurrency(payoutDialog.doctor.pending_earnings)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{language === 'es' ? 'Comisión' : 'Commission'} ({settings.commission_percentage}%):</span>
+                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.commissionLabel')} ({settings.commission_percentage}%):</span>
                     <span className="text-destructive">-{formatCurrency(payoutDialog.doctor.pending_earnings * settings.commission_percentage / 100)}</span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between font-bold">
-                    <span>{language === 'es' ? 'Neto a pagar:' : 'Net to pay:'}</span>
+                    <span>{tt('adminPayoutsPage.dialog.netToPayLabel')}</span>
                     <span className="text-success">{formatCurrency(getNetAmount(payoutDialog.doctor.pending_earnings))}</span>
                   </div>
                 </div>
@@ -1163,16 +1163,16 @@ export default function AdminPayouts() {
               {payoutDialog.bulk && (
                 <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{language === 'es' ? 'Doctores:' : 'Doctors:'}</span>
+                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.doctorsLabel')}</span>
                     <span>{selectedDoctors.size}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{language === 'es' ? 'Total bruto:' : 'Total gross:'}</span>
+                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.totalGrossLabel')}</span>
                     <span>{formatCurrency(doctors.filter(d => selectedDoctors.has(d.user_id)).reduce((s, d) => s + d.pending_earnings, 0))}</span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between font-bold">
-                    <span>{language === 'es' ? 'Total neto:' : 'Total net:'}</span>
+                    <span>{tt('adminPayoutsPage.dialog.totalNetLabel')}</span>
                     <span className="text-success">{formatCurrency(getNetAmount(doctors.filter(d => selectedDoctors.has(d.user_id)).reduce((s, d) => s + d.pending_earnings, 0)))}</span>
                   </div>
                 </div>
@@ -1180,7 +1180,7 @@ export default function AdminPayouts() {
 
               {/* Payment method */}
               <div className="space-y-2">
-                <Label>{language === 'es' ? 'Método de pago' : 'Payment method'}</Label>
+                <Label>{tt('adminPayoutsPage.dialog.paymentMethod')}</Label>
                 <Select value={payoutMethod} onValueChange={(v: 'stripe' | 'manual') => setPayoutMethod(v)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -1190,7 +1190,7 @@ export default function AdminPayouts() {
                       <span className="flex items-center gap-2"><CreditCard className="w-4 h-4" />Stripe Connect</span>
                     </SelectItem>
                     <SelectItem value="manual">
-                      <span className="flex items-center gap-2"><Building className="w-4 h-4" />{language === 'es' ? 'Transferencia bancaria manual' : 'Manual bank transfer'}</span>
+                      <span className="flex items-center gap-2"><Building className="w-4 h-4" />{tt('adminPayoutsPage.dialog.manualTransfer')}</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1203,14 +1203,14 @@ export default function AdminPayouts() {
                     <div className="p-4 bg-info/10 border border-info/20 rounded-lg space-y-2">
                       <p className="text-sm font-medium text-foreground flex items-center gap-2">
                         <Building className="w-4 h-4" />
-                        {language === 'es' ? 'Datos bancarios del doctor' : 'Doctor bank details'}
+                        {tt('adminPayoutsPage.dialog.bankDetailsTitle')}
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {payoutDialog.doctor.account_holder_name && (
-                          <div><span className="text-muted-foreground">{language === 'es' ? 'Titular:' : 'Holder:'}</span> <span className="font-medium">{payoutDialog.doctor.account_holder_name}</span></div>
+                          <div><span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.holder')}</span> <span className="font-medium">{payoutDialog.doctor.account_holder_name}</span></div>
                         )}
                         {payoutDialog.doctor.bank_name && (
-                          <div><span className="text-muted-foreground">{language === 'es' ? 'Banco:' : 'Bank:'}</span> <span className="font-medium">{payoutDialog.doctor.bank_name}</span></div>
+                          <div><span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.bank')}</span> <span className="font-medium">{payoutDialog.doctor.bank_name}</span></div>
                         )}
                         {payoutDialog.doctor.clabe && (
                           <div className="col-span-2"><span className="text-muted-foreground">CLABE:</span> <span className="font-mono font-medium">{payoutDialog.doctor.clabe}</span></div>
@@ -1219,7 +1219,7 @@ export default function AdminPayouts() {
                           <div><span className="text-muted-foreground">RFC:</span> <span className="font-medium">{payoutDialog.doctor.rfc}</span></div>
                         )}
                         {payoutDialog.doctor.bank_branch && (
-                          <div><span className="text-muted-foreground">{language === 'es' ? 'Sucursal:' : 'Branch:'}</span> <span className="font-medium">{payoutDialog.doctor.bank_branch}</span></div>
+                          <div><span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.branch')}</span> <span className="font-medium">{payoutDialog.doctor.bank_branch}</span></div>
                         )}
                       </div>
                     </div>
@@ -1227,26 +1227,24 @@ export default function AdminPayouts() {
                   {!payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.clabe && !payoutDialog.doctor.bank_name && (
                     <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" />
-                      {language === 'es'
-                        ? 'Este doctor no tiene datos bancarios configurados. Solicita que los ingrese desde su panel.'
-                        : 'This doctor has no bank details configured. Ask them to enter it from their dashboard.'}
+                      {tt('adminPayoutsPage.dialog.noBankWarning')}
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label>{language === 'es' ? 'Referencia de transferencia' : 'Transfer reference'}</Label>
+                    <Label>{tt('adminPayoutsPage.dialog.transferReference')}</Label>
                     <Input
-                      placeholder={language === 'es' ? 'Ej: TRF-2026-0001' : 'E.g. TRF-2026-0001'}
+                      placeholder={tt('adminPayoutsPage.dialog.transferReferencePlaceholder')}
                       value={manualReference}
                       onChange={(e) => setManualReference(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'es' ? 'Comprobante de pago (PDF o imagen)' : 'Payment receipt (PDF or image)'}</Label>
+                    <Label>{tt('adminPayoutsPage.dialog.receipt')}</Label>
                     <div className="flex items-center gap-2 min-w-0 w-full max-w-full">
                       <label className="flex items-center gap-2 px-3 py-2 border border-input rounded-md cursor-pointer hover:bg-muted transition-colors text-sm flex-1 min-w-0 overflow-hidden">
                         <Upload className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         <span className="truncate flex-1 min-w-0 block" title={receiptFile?.name || ''} style={{ wordBreak: 'break-all' }}>
-                          {receiptFile ? receiptFile.name : (language === 'es' ? 'Seleccionar archivo...' : 'Select file...')}
+                          {receiptFile ? receiptFile.name : tt('adminPayoutsPage.dialog.selectFile')}
                         </span>
                         <input
                           type="file"
@@ -1262,15 +1260,13 @@ export default function AdminPayouts() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'es' 
-                        ? 'Este comprobante se enviará por correo al doctor como prueba de pago' 
-                        : 'This receipt will be emailed to the doctor as proof of payment'}
+                      {tt('adminPayoutsPage.dialog.receiptHelp')}
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>{language === 'es' ? 'Notas (opcional)' : 'Notes (optional)'}</Label>
+                    <Label>{tt('adminPayoutsPage.dialog.notes')}</Label>
                     <Textarea
-                      placeholder={language === 'es' ? 'Notas sobre el pago...' : 'Payment notes...'}
+                      placeholder={tt('adminPayoutsPage.dialog.notesPlaceholder')}
                       value={manualNotes}
                       onChange={(e) => setManualNotes(e.target.value)}
                       rows={2}
@@ -1282,31 +1278,27 @@ export default function AdminPayouts() {
               {stripeError && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-foreground flex items-start gap-2">
                   <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-destructive" />
-                  {language === 'es' 
-                    ? 'El doctor no tiene cuenta Stripe conectada. Selecciona "Transferencia bancaria manual" para continuar.' 
-                    : 'Doctor has no Stripe account. Select "Manual bank transfer" to continue.'}
+                  {tt('adminPayoutsPage.dialog.stripeErrorMsg')}
                 </div>
               )}
 
               {payoutMethod === 'stripe' && !payoutDialog.bulk && payoutDialog.doctor && !payoutDialog.doctor.stripe_account_id && !stripeError && (
                 <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm text-foreground flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" />
-                  {language === 'es' 
-                    ? 'Este doctor no tiene cuenta Stripe configurada. El pago fallará. Usa transferencia manual.' 
-                    : 'This doctor has no Stripe account. Payment will fail. Use manual transfer.'}
+                  {tt('adminPayoutsPage.dialog.stripeWarningMsg')}
                 </div>
               )}
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setPayoutDialog({ open: false, doctor: null, bulk: false })} disabled={isProcessing}>
-                {language === 'es' ? 'Cancelar' : 'Cancel'}
+                {tt('adminPayoutsPage.dialog.cancel')}
               </Button>
               <Button onClick={handleProcessPayout} disabled={isProcessing}>
                 {isProcessing ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Procesando...' : 'Processing...'}</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{tt('adminPayoutsPage.dialog.processing')}</>
                 ) : (
-                  <><Send className="w-4 h-4 mr-2" />{language === 'es' ? 'Confirmar Pago' : 'Confirm Payout'}</>
+                  <><Send className="w-4 h-4 mr-2" />{tt('adminPayoutsPage.dialog.confirmPayout')}</>
                 )}
               </Button>
             </DialogFooter>

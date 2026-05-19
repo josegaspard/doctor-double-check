@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Award, GraduationCap, Building2, FileCheck, Plus, X, Loader2, Pencil, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Workplace { name: string; type?: string }
 
@@ -24,6 +25,7 @@ interface CredentialData {
 }
 
 export function DoctorCredentialsCard({ userId }: { userId: string }) {
+  const { t } = useLanguage();
   const [data, setData] = useState<CredentialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -85,9 +87,9 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
       setData(prev => prev ? { ...prev, ...update } : prev);
       setEditing(false);
-      toast.success('Credenciales actualizadas');
+      toast.success(t('doctorCredentialsCard.toastSaved'));
     } catch (e: any) {
-      toast.error(e.message || 'Error al guardar');
+      toast.error(e.message || t('doctorCredentialsCard.toastError'));
     } finally {
       setSaving(false);
     }
@@ -114,19 +116,19 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Award className="w-5 h-5 text-primary" />
-              Credenciales profesionales
+              {t('doctorCredentialsCard.title')}
             </CardTitle>
-            <CardDescription>Universidad, especialidades, lugares de trabajo y cédulas.</CardDescription>
+            <CardDescription>{t('doctorCredentialsCard.description')}</CardDescription>
           </div>
           {!editing ? (
             <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1">
-              <Pencil className="w-3.5 h-3.5" /> Editar
+              <Pencil className="w-3.5 h-3.5" /> {t('doctorCredentialsCard.edit')}
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setUniversity(data.university || ''); setCedulaEsp(data.cedula_especialidad || ''); setSecondarySpecialties(data.secondary_specialties || []); setWorkplaces(Array.isArray(data.workplaces) ? data.workplaces : []); }}>Cancelar</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setUniversity(data.university || ''); setCedulaEsp(data.cedula_especialidad || ''); setSecondarySpecialties(data.secondary_specialties || []); setWorkplaces(Array.isArray(data.workplaces) ? data.workplaces : []); }}>{t('doctorCredentialsCard.cancel')}</Button>
               <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1">
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Guardar
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} {t('doctorCredentialsCard.save')}
               </Button>
             </div>
           )}
@@ -134,20 +136,20 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
         <CardContent className="space-y-5">
           {/* University */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><GraduationCap className="w-4 h-4 text-muted-foreground" /> Universidad donde estudió</Label>
+            <Label className="flex items-center gap-2 text-sm"><GraduationCap className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.universityLabel')}</Label>
             {editing ? (
-              <Input value={university} onChange={e => setUniversity(e.target.value)} placeholder="Ej. UNAM, Facultad de Medicina" maxLength={200} />
+              <Input value={university} onChange={e => setUniversity(e.target.value)} placeholder={t('doctorCredentialsCard.universityPlaceholder')} maxLength={200} />
             ) : (
-              <p className="text-sm font-medium ml-6">{data.university || <span className="text-muted-foreground italic">No especificada</span>}</p>
+              <p className="text-sm font-medium ml-6">{data.university || <span className="text-muted-foreground italic">{t('doctorCredentialsCard.universityEmpty')}</span>}</p>
             )}
           </div>
           <Separator />
 
           {/* Specialties */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><Award className="w-4 h-4 text-muted-foreground" /> Especialidades</Label>
+            <Label className="flex items-center gap-2 text-sm"><Award className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.specialtiesLabel')}</Label>
             <div className="ml-6 flex flex-wrap gap-1.5">
-              <Badge variant="default">{data.specialty} <span className="ml-1 opacity-60 text-[10px]">principal</span></Badge>
+              <Badge variant="default">{data.specialty} <span className="ml-1 opacity-60 text-[10px]">{t('doctorCredentialsCard.principalBadge')}</span></Badge>
               {(editing ? secondarySpecialties : (data.secondary_specialties || [])).map((s, i) => (
                 <Badge key={`${s}-${i}`} variant="secondary" className="gap-1">
                   {s}
@@ -161,7 +163,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
             </div>
             {editing && (
               <div className="ml-6 flex gap-2 pt-2">
-                <Input value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)} placeholder="Agregar especialidad" maxLength={80} className="h-8 text-sm" onKeyDown={e => { if (e.key === 'Enter' && newSpecialty.trim()) { e.preventDefault(); setSecondarySpecialties(p => [...p, newSpecialty.trim()].slice(0, 5)); setNewSpecialty(''); } }} />
+                <Input value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)} placeholder={t('doctorCredentialsCard.addSpecialtyPlaceholder')} maxLength={80} className="h-8 text-sm" onKeyDown={e => { if (e.key === 'Enter' && newSpecialty.trim()) { e.preventDefault(); setSecondarySpecialties(p => [...p, newSpecialty.trim()].slice(0, 5)); setNewSpecialty(''); } }} />
                 <Button type="button" size="sm" variant="outline" disabled={!newSpecialty.trim() || secondarySpecialties.length >= 5} onClick={() => { setSecondarySpecialties(p => [...p, newSpecialty.trim()].slice(0, 5)); setNewSpecialty(''); }}><Plus className="w-3.5 h-3.5" /></Button>
               </div>
             )}
@@ -170,10 +172,10 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
           {/* Workplaces */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><Building2 className="w-4 h-4 text-muted-foreground" /> Hospitales / Clínicas donde trabaja</Label>
+            <Label className="flex items-center gap-2 text-sm"><Building2 className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.workplacesLabel')}</Label>
             <div className="ml-6 space-y-1.5">
               {(editing ? workplaces : (data.workplaces || [])).length === 0 && !editing && (
-                <p className="text-sm text-muted-foreground italic">No registrados</p>
+                <p className="text-sm text-muted-foreground italic">{t('doctorCredentialsCard.workplacesEmpty')}</p>
               )}
               {(editing ? workplaces : (data.workplaces || [])).map((w, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -189,7 +191,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
             </div>
             {editing && (
               <div className="ml-6 flex gap-2 pt-2">
-                <Input value={newWorkplace} onChange={e => setNewWorkplace(e.target.value)} placeholder="Ej. Hospital ABC, Clínica..." maxLength={200} className="h-8 text-sm" onKeyDown={e => { if (e.key === 'Enter' && newWorkplace.trim()) { e.preventDefault(); setWorkplaces(p => [...p, { name: newWorkplace.trim() }].slice(0, 10)); setNewWorkplace(''); } }} />
+                <Input value={newWorkplace} onChange={e => setNewWorkplace(e.target.value)} placeholder={t('doctorCredentialsCard.addWorkplacePlaceholder')} maxLength={200} className="h-8 text-sm" onKeyDown={e => { if (e.key === 'Enter' && newWorkplace.trim()) { e.preventDefault(); setWorkplaces(p => [...p, { name: newWorkplace.trim() }].slice(0, 10)); setNewWorkplace(''); } }} />
                 <Button type="button" size="sm" variant="outline" disabled={!newWorkplace.trim() || workplaces.length >= 10} onClick={() => { setWorkplaces(p => [...p, { name: newWorkplace.trim() }].slice(0, 10)); setNewWorkplace(''); }}><Plus className="w-3.5 h-3.5" /></Button>
               </div>
             )}
@@ -198,32 +200,32 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
           {/* Cedula profesional (read-only - validated by SEP) */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> Cédula profesional</Label>
+            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.licenseLabel')}</Label>
             <div className="ml-6 flex items-center gap-2">
-              <span className="text-sm font-mono">{data.license || <span className="text-muted-foreground italic font-sans">No registrada</span>}</span>
-              {data.license && <Badge variant="verified" className="text-[10px]">SEP</Badge>}
+              <span className="text-sm font-mono">{data.license || <span className="text-muted-foreground italic font-sans">{t('doctorCredentialsCard.licenseEmpty')}</span>}</span>
+              {data.license && <Badge variant="verified" className="text-[10px]">{t('doctorCredentialsCard.sepBadge')}</Badge>}
             </div>
           </div>
           <Separator />
 
           {/* Cedula especialidad */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> Cédula de especialidad</Label>
+            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.specialtyLicenseLabel')}</Label>
             {editing ? (
               <div className="ml-6 space-y-1">
-                <Input value={cedulaEsp} onChange={e => setCedulaEsp(e.target.value)} placeholder="Número de cédula de especialidad" maxLength={50} />
-                <p className="text-xs text-muted-foreground">Al guardar se enviará a verificación administrativa.</p>
+                <Input value={cedulaEsp} onChange={e => setCedulaEsp(e.target.value)} placeholder={t('doctorCredentialsCard.specialtyLicensePlaceholder')} maxLength={50} />
+                <p className="text-xs text-muted-foreground">{t('doctorCredentialsCard.specialtyLicenseHint')}</p>
               </div>
             ) : (
               <div className="ml-6 flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-mono">{data.cedula_especialidad || <span className="text-muted-foreground italic font-sans">No registrada</span>}</span>
-                {data.cedula_especialidad && cedulaStatus === 'approved' && <Badge variant="verified" className="text-[10px]">Verificada</Badge>}
-                {data.cedula_especialidad && cedulaStatus === 'pending' && <Badge variant="warning" className="text-[10px]">En revisión</Badge>}
-                {data.cedula_especialidad && cedulaStatus === 'rejected' && <Badge variant="destructive" className="text-[10px]" title={data.cedula_especialidad_rejection_reason || ''}>Rechazada</Badge>}
+                <span className="text-sm font-mono">{data.cedula_especialidad || <span className="text-muted-foreground italic font-sans">{t('doctorCredentialsCard.specialtyLicenseEmpty')}</span>}</span>
+                {data.cedula_especialidad && cedulaStatus === 'approved' && <Badge variant="verified" className="text-[10px]">{t('doctorCredentialsCard.statusVerified')}</Badge>}
+                {data.cedula_especialidad && cedulaStatus === 'pending' && <Badge variant="warning" className="text-[10px]">{t('doctorCredentialsCard.statusPending')}</Badge>}
+                {data.cedula_especialidad && cedulaStatus === 'rejected' && <Badge variant="destructive" className="text-[10px]" title={data.cedula_especialidad_rejection_reason || ''}>{t('doctorCredentialsCard.statusRejected')}</Badge>}
               </div>
             )}
             {!editing && cedulaStatus === 'rejected' && data.cedula_especialidad_rejection_reason && (
-              <p className="ml-6 text-xs text-destructive">Motivo: {data.cedula_especialidad_rejection_reason}</p>
+              <p className="ml-6 text-xs text-destructive">{t('doctorCredentialsCard.rejectionReason')}: {data.cedula_especialidad_rejection_reason}</p>
             )}
           </div>
         </CardContent>

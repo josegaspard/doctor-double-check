@@ -239,14 +239,14 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   const processWalletPayment = async (): Promise<boolean> => {
     if (!user) return false;
     if (balance < chatPrice) {
-      toast.error(`Saldo insuficiente. Necesitas $${chatPrice} MXN`);
+      toast.error(`${t('liveChat.insufficientBalance')} $${chatPrice} MXN`);
       return false;
     }
 
     try {
       const { data, error } = await supabase.rpc('process_wallet_purchase', {
         p_amount: chatPrice,
-        p_description: `Chat destacado en live`,
+        p_description: t('liveChat.highlightedChatDescription'),
       });
       if (error) throw error;
       if (data && typeof data === 'object' && 'error' in (data as any)) {
@@ -255,7 +255,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       await refreshWallet();
       return true;
     } catch (err: any) {
-      toast.error(err.message || 'Error al procesar el pago');
+      toast.error(err.message || t('liveChat.paymentError'));
       return false;
     }
   };
@@ -271,7 +271,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           liveId,
           amount: chatPrice,
           messageContent: newMessage.trim(),
-          userName: user.name || 'Usuario',
+          userName: user.name || t('liveChat.defaultUserName'),
         },
       });
       if (error) throw error;
@@ -282,7 +282,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       throw new Error('No checkout URL');
     } catch (err: any) {
       sessionStorage.removeItem(`chat_draft_${liveId}`);
-      toast.error(err.message || 'Error al crear el pago');
+      toast.error(err.message || t('liveChat.checkoutError'));
       return false;
     }
   };
@@ -319,7 +319,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       const message: LiveChatMessage = {
         id: msgId,
         userId: user.id,
-        userName: user.name || 'Usuario',
+        userName: user.name || t('liveChat.defaultUserName'),
         content: newMessage.trim(),
         createdAt: new Date(),
         elapsedSeconds: elapsed,
@@ -337,7 +337,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         id: msgId,
         live_id: liveId,
         user_id: user.id,
-        user_name: user.name || 'Usuario',
+        user_name: user.name || t('liveChat.defaultUserName'),
         content: contentToSend,
         elapsed_seconds: elapsed,
         is_paid: isPaidMsg,
@@ -354,7 +354,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       }
 
       if (isPaidMsg) {
-        toast.success(`Mensaje destacado enviado (-$${chatPrice})`);
+        toast.success(`${t('liveChat.highlightedMessageSent')} (-$${chatPrice})`);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -433,7 +433,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                   {notif.userName}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  Chat destacado · <span className="font-medium text-warning">${notif.amount}</span>
+                  {t('liveChat.highlightedChat')} · <span className="font-medium text-warning">${notif.amount}</span>
                 </p>
               </div>
             </div>
@@ -450,7 +450,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         <div className="flex items-center gap-2">
           {isOwner && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-muted-foreground">Chat</span>
+              <span className="text-[10px] text-muted-foreground">{t('liveChat.chatLabel')}</span>
               <Switch checked={chatEnabled} onCheckedChange={handleToggleChat} className="scale-75" />
             </div>
           )}
@@ -466,8 +466,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           <Sparkles className="w-3 h-3 text-primary flex-shrink-0" />
           <span className="text-[10px] sm:text-xs text-muted-foreground">
             {isPaidOnly
-              ? `Chat de pago: $${chatPrice} MXN · Destacado ${highlightDurationLabel}`
-              : `Destaca tu mensaje por $${chatPrice} MXN · ${highlightDurationLabel}`}
+              ? `${t('liveChat.paidChatLabel')}: $${chatPrice} MXN · ${t('liveChat.highlighted')} ${highlightDurationLabel}`
+              : `${t('liveChat.highlightYourMessageFor')} $${chatPrice} MXN · ${highlightDurationLabel}`}
           </span>
         </div>
       )}
@@ -478,7 +478,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           <div className="flex items-center gap-1 mb-1">
             <Pin className="w-3 h-3 text-warning rotate-45" />
             <span className="text-[10px] font-semibold text-warning">
-              {pinnedMessages.length === 1 ? 'Mensaje destacado' : `${pinnedMessages.length} mensajes destacados`}
+              {pinnedMessages.length === 1 ? t('liveChat.highlightedMessage') : `${pinnedMessages.length} ${t('liveChat.highlightedMessagesPlural')}`}
             </span>
           </div>
           {pinnedMessages.map((msg) => (
@@ -507,7 +507,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                   <p className="text-sm text-foreground break-words">{msg.content}</p>
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    Expira en {getRemainingTime(msg.highlightUntil!)}
+                    {t('liveChat.expiresIn')} {getRemainingTime(msg.highlightUntil!)}
                   </p>
                 </div>
               </PopoverContent>
@@ -551,16 +551,16 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                       <span className={`font-medium text-[10px] sm:text-xs truncate max-w-[100px] sm:max-w-[150px] ${
                         msg.isDoctor ? 'text-primary' : 'text-foreground'
                       }`}>
-                        {msg.isDoctor ? `Dr. ${msg.userName}` : msg.userName}
+                        {msg.isDoctor ? `${t('liveChat.doctorPrefix')} ${msg.userName}` : msg.userName}
                       </span>
                       {msg.isDoctor && (
                         <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 border-primary/30 text-primary">
-                          Médico
+                          {t('liveChat.doctorBadge')}
                         </Badge>
                       )}
                       {highlighted && !msg.isDoctor && (
                         <Badge className="text-[8px] px-1 py-0 h-3.5 bg-primary/10 text-primary border-0">
-                          ✨ Destacado
+                          ✨ {t('liveChat.featured')}
                         </Badge>
                       )}
                       <span className="text-[9px] sm:text-[10px] text-muted-foreground">
@@ -598,18 +598,18 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
         ) : chatDisabledForViewers ? (
           <div className="flex items-center gap-2 justify-center py-2 text-muted-foreground">
             <AlertCircle className="w-4 h-4" />
-            <span className="text-xs">El doctor ha desactivado el chat</span>
+            <span className="text-xs">{t('liveChat.doctorDisabledChat')}</span>
           </div>
         ) : questionLimitReached ? (
           <div className="flex items-center gap-2 justify-center py-2 text-muted-foreground">
             <AlertCircle className="w-4 h-4" />
-            <span className="text-xs">Se alcanzó el límite de preguntas</span>
+            <span className="text-xs">{t('liveChat.questionLimitReached')}</span>
           </div>
         ) : showPaymentPicker ? (
           /* Payment method picker */
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground text-center">
-              Elige cómo pagar <strong>${chatPrice} MXN</strong>
+              {t('liveChat.chooseHowToPay')} <strong>${chatPrice} MXN</strong>
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -624,7 +624,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                 ) : (
                   <>
                     <Wallet className="w-4 h-4" />
-                    <span>Billetera (${balance.toFixed(0)})</span>
+                    <span>{t('liveChat.wallet')} (${balance.toFixed(0)})</span>
                   </>
                 )}
               </Button>
@@ -640,7 +640,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    <span>Tarjeta</span>
+                    <span>{t('liveChat.card')}</span>
                   </>
                 )}
               </Button>
@@ -651,7 +651,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               className="w-full h-7 text-[10px]"
               onClick={() => setShowPaymentPicker(false)}
             >
-              Cancelar
+              {t('liveChat.cancel')}
             </Button>
           </div>
         ) : (
@@ -662,7 +662,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                 <Switch checked={wantHighlight} onCheckedChange={setWantHighlight} className="scale-75" />
                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  Destacar por ${chatPrice} · {highlightDurationLabel}
+                  {t('liveChat.highlightFor')} ${chatPrice} · {highlightDurationLabel}
                 </span>
               </label>
             )}
@@ -670,7 +670,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
               <Input
                 placeholder={
                   isPaidOnly && chatPrice > 0
-                    ? `Enviar ($${chatPrice} MXN)...`
+                    ? `${t('liveChat.send')} ($${chatPrice} MXN)...`
                     : t('livePlayer.writeMessage')
                 }
                 value={newMessage}

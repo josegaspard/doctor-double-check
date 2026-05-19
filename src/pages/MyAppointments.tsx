@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Calendar as CalendarIcon, Clock, Stethoscope, Loader2, X, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Appt {
   id: string;
@@ -28,23 +29,24 @@ interface Appt {
   specialty?: string | null;
 }
 
-const STATUS_BADGE: Record<string, { label: string; variant: any; cls?: string }> = {
-  requested: { label: 'Pendiente', variant: 'secondary' },
-  confirmed: { label: 'Confirmada', variant: 'default', cls: 'bg-success' },
-  cancelled: { label: 'Cancelada', variant: 'destructive' },
-  completed: { label: 'Completada', variant: 'outline' },
-};
-
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
 export default function MyAppointments() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const [appts, setAppts] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
+
+  const STATUS_BADGE: Record<string, { label: string; variant: any; cls?: string }> = {
+    requested: { label: t('myAppointments.statusRequested'), variant: 'secondary' },
+    confirmed: { label: t('myAppointments.statusConfirmed'), variant: 'default', cls: 'bg-success' },
+    cancelled: { label: t('myAppointments.statusCancelled'), variant: 'destructive' },
+    completed: { label: t('myAppointments.statusCompleted'), variant: 'outline' },
+  };
 
   const fetchAppts = async () => {
     if (!user) return;
@@ -106,18 +108,18 @@ export default function MyAppointments() {
   }, [user?.id, tab, role]);
 
   const cancelAppt = async (id: string) => {
-    if (!confirm('¿Cancelar esta cita?')) return;
+    if (!confirm(t('myAppointments.confirmCancel'))) return;
     setCancelling(id);
     const { error } = await supabase
       .from('appointments')
-      .update({ status: 'cancelled', cancellation_reason: 'Cancelada por el usuario' } as any)
+      .update({ status: 'cancelled', cancellation_reason: t('myAppointments.cancelledByUser') } as any)
       .eq('id', id);
     setCancelling(null);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success('Cita cancelada');
+    toast.success(t('myAppointments.toastCancelled'));
     fetchAppts();
   };
 
@@ -127,7 +129,7 @@ export default function MyAppointments() {
       toast.error(error.message);
       return;
     }
-    toast.success('Cita confirmada');
+    toast.success(t('myAppointments.toastConfirmed'));
     supabase.functions.invoke('send-appointment-confirmation', { body: { appointmentId: id } })
       .catch((e) => console.warn('send-appointment-confirmation failed:', e));
     fetchAppts();
@@ -140,19 +142,19 @@ export default function MyAppointments() {
           <div>
             <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
               <CalendarIcon className="w-6 h-6 text-primary" />
-              {role === 'doctor' ? 'Citas con pacientes' : 'Mis citas'}
+              {role === 'doctor' ? t('myAppointments.titleDoctor') : t('myAppointments.titlePatient')}
             </h1>
-            <p className="text-sm text-muted-foreground">{role === 'doctor' ? 'Solicitudes y citas confirmadas' : 'Citas que has agendado con médicos'}</p>
+            <p className="text-sm text-muted-foreground">{role === 'doctor' ? t('myAppointments.subtitleDoctor') : t('myAppointments.subtitlePatient')}</p>
           </div>
           {role !== 'doctor' && (
-            <Button onClick={() => navigate('/doctors')} size="sm">Buscar médico</Button>
+            <Button onClick={() => navigate('/doctors')} size="sm">{t('myAppointments.findDoctor')}</Button>
           )}
         </div>
 
         <Tabs value={tab} onValueChange={(v: any) => setTab(v)}>
           <TabsList className="grid grid-cols-2 w-full sm:w-fit">
-            <TabsTrigger value="upcoming">Próximas</TabsTrigger>
-            <TabsTrigger value="past">Pasadas</TabsTrigger>
+            <TabsTrigger value="upcoming">{t('myAppointments.tabUpcoming')}</TabsTrigger>
+            <TabsTrigger value="past">{t('myAppointments.tabPast')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4">
@@ -160,7 +162,7 @@ export default function MyAppointments() {
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
             ) : appts.length === 0 ? (
               <Card><CardContent className="py-12 text-center text-muted-foreground">
-                {tab === 'upcoming' ? 'No tienes citas próximas.' : 'No tienes citas pasadas.'}
+                {tab === 'upcoming' ? t('myAppointments.emptyUpcoming') : t('myAppointments.emptyPast')}
               </CardContent></Card>
             ) : (
               <div className="space-y-3">
@@ -175,13 +177,13 @@ export default function MyAppointments() {
                         <Avatar className="w-12 h-12 border">
                           <AvatarImage src={counterpartAvatar || undefined} alt={counterpart || ''} />
                           <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                            {(counterpart || (role === 'doctor' ? 'Paciente' : 'Dr')).split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                            {(counterpart || (role === 'doctor' ? t('myAppointments.fallbackPatient') : t('myAppointments.fallbackDoctor'))).split(' ').map((n) => n[0]).join('').slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="font-medium text-sm">{role === 'doctor' ? counterpart : `Dr. ${counterpart}`}</p>
+                              <p className="font-medium text-sm">{role === 'doctor' ? counterpart : `${t('myAppointments.doctorPrefix')} ${counterpart}`}</p>
                               {a.specialty && (
                                 <p className="text-xs text-muted-foreground flex items-center gap-1"><Stethoscope className="w-3 h-3" />{a.specialty}</p>
                               )}
@@ -190,7 +192,7 @@ export default function MyAppointments() {
                           </div>
                           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
                             <span className="inline-flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{formatDate(a.scheduled_at)}</span>
-                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(a.scheduled_at)} · {a.duration_minutes} min</span>
+                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(a.scheduled_at)} · {a.duration_minutes} {t('myAppointments.minutes')}</span>
                           </div>
                           {a.reason && <p className="mt-2 text-xs text-foreground/80 line-clamp-2 italic">"{a.reason}"</p>}
                           {a.cancellation_reason && a.status === 'cancelled' && (
@@ -199,17 +201,17 @@ export default function MyAppointments() {
                         </div>
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           {role === 'doctor' && a.status === 'requested' && (
-                            <Button size="sm" className="bg-success hover:bg-success h-7 text-xs" onClick={() => confirmAppt(a.id)}>Confirmar</Button>
+                            <Button size="sm" className="bg-success hover:bg-success h-7 text-xs" onClick={() => confirmAppt(a.id)}>{t('myAppointments.confirm')}</Button>
                           )}
                           {liveSoon && a.daily_room_url && (
                             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(a.daily_room_url!, '_blank')}>
-                              <Video className="w-3 h-3" /> Entrar
+                              <Video className="w-3 h-3" /> {t('myAppointments.enter')}
                             </Button>
                           )}
                           {tab === 'upcoming' && a.status !== 'cancelled' && (
                             <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" disabled={cancelling === a.id} onClick={() => cancelAppt(a.id)}>
                               {cancelling === a.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                              Cancelar
+                              {t('myAppointments.cancel')}
                             </Button>
                           )}
                         </div>

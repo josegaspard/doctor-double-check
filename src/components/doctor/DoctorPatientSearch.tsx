@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface PatientResult {
 /** Doctor-only quick patient finder. Starts a chat session and navigates to /chat. */
 export function DoctorPatientSearch() {
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<PatientResult[]>([]);
@@ -81,7 +83,7 @@ export function DoctorPatientSearch() {
       navigate(`/chat?session=${sessionId}`);
     } catch (e: any) {
       console.error('[PatientSearch] start error', e);
-      toast.error('No se pudo iniciar la conversación');
+      toast.error(t('doctorPatientSearch.toast.startError'));
     } finally {
       setStarting(null);
     }
@@ -94,15 +96,15 @@ export function DoctorPatientSearch() {
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Search className="w-4 h-4 text-primary" />
-          Buscar paciente
+          {t('doctorPatientSearch.title')}
         </CardTitle>
         <CardDescription className="text-xs">
-          Encuentra a tus pacientes por nombre o correo electrónico
+          {t('doctorPatientSearch.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <Input
-          placeholder="Nombre o correo del paciente..."
+          placeholder={t('doctorPatientSearch.placeholder')}
           value={term}
           onChange={e => setTerm(e.target.value)}
         />
@@ -122,7 +124,7 @@ export function DoctorPatientSearch() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{p.name || 'Sin nombre'}</p>
+                <p className="text-sm font-medium truncate">{p.name || t('doctorPatientSearch.noName')}</p>
                 <p className="text-xs text-muted-foreground truncate">{p.email}</p>
               </div>
               <Button
@@ -136,14 +138,14 @@ export function DoctorPatientSearch() {
                 ) : (
                   <>
                     <MessageSquare className="w-3.5 h-3.5 mr-1" />
-                    Abrir chat
+                    {t('doctorPatientSearch.openChat')}
                   </>
                 )}
               </Button>
             </div>
           ))}
           {!loading && term.trim().length >= 2 && results.length === 0 && (
-            <p className="text-xs text-muted-foreground italic text-center py-3">Sin resultados</p>
+            <p className="text-xs text-muted-foreground italic text-center py-3">{t('doctorPatientSearch.noResults')}</p>
           )}
         </div>
       </CardContent>

@@ -17,6 +17,7 @@ import { SecureImage } from '@/components/security/SecureImage';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ContentPreviewModalProps {
   isOpen: boolean;
@@ -42,18 +43,25 @@ interface ContentPreviewModalProps {
   } | null;
 }
 
-const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-  video: { icon: Video, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Video' },
-  pdf: { icon: FileText, color: 'text-primary', bg: 'bg-primary/10', label: 'PDF' },
-  image: { icon: ImageIcon, color: 'text-success', bg: 'bg-success/10', label: 'Imagen' },
-  presentation: { icon: FileText, color: 'text-warning', bg: 'bg-warning/10', label: 'Presentación' },
-};
+function useTypeConfig() {
+  const { t } = useLanguage();
+  const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
+    video: { icon: Video, color: 'text-destructive', bg: 'bg-destructive/10', label: t('contentPreviewModal.typeVideo') },
+    pdf: { icon: FileText, color: 'text-primary', bg: 'bg-primary/10', label: t('contentPreviewModal.typePdf') },
+    image: { icon: ImageIcon, color: 'text-success', bg: 'bg-success/10', label: t('contentPreviewModal.typeImage') },
+    presentation: { icon: FileText, color: 'text-warning', bg: 'bg-warning/10', label: t('contentPreviewModal.typePresentation') },
+  };
+  return typeConfig;
+}
+
+type TypeConfigEntry = { icon: React.ElementType; color: string; bg: string; label: string };
 
 function PreviewLoading() {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center h-48 sm:h-56 bg-muted/50 rounded-xl border border-border/50">
       <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-      <p className="text-sm text-muted-foreground">Cargando vista previa…</p>
+      <p className="text-sm text-muted-foreground">{t('contentPreviewModal.loadingPreview')}</p>
     </div>
   );
 }
@@ -63,10 +71,11 @@ function PreviewError({
   error,
   onRetry,
 }: {
-  config: typeof typeConfig.pdf;
+  config: TypeConfigEntry;
   error: string | null;
   onRetry: () => void;
 }) {
+  const { t } = useLanguage();
   const TypeIcon = config.icon;
   return (
     <div className="flex flex-col items-center justify-center h-48 sm:h-56 bg-muted/50 rounded-xl border border-border/50 gap-3">
@@ -74,11 +83,11 @@ function PreviewError({
         <TypeIcon className={`w-7 h-7 ${config.color}`} />
       </div>
       <p className="text-sm text-muted-foreground text-center max-w-xs px-4">
-        {error || 'No se pudo cargar el archivo'}
+        {error || t('contentPreviewModal.couldNotLoadFile')}
       </p>
       <Button variant="outline" size="sm" onClick={onRetry} className="gap-1.5">
         <RefreshCw className="w-3.5 h-3.5" />
-        Reintentar
+        {t('contentPreviewModal.retry')}
       </Button>
     </div>
   );
@@ -93,6 +102,7 @@ function PreviewContent({
   signedUrl: string;
   blobUrl: string | null;
 }) {
+  const { t } = useLanguage();
   if (!content) return null;
 
   switch (content.type) {
@@ -127,7 +137,7 @@ function PreviewContent({
             poster={content.thumbnail_url || undefined}
             onContextMenu={(e) => e.preventDefault()}
           >
-            Tu navegador no soporta videos HTML5.
+            {t('contentPreviewModal.browserNoVideoSupport')}
           </video>
         </div>
       );
@@ -159,7 +169,7 @@ function PreviewContent({
           <div className="text-center px-6">
             <p className="font-medium text-foreground text-sm">{content.title}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Presentación disponible solo para visualización en plataforma
+              {t('contentPreviewModal.presentationViewOnly')}
             </p>
           </div>
         </div>
@@ -169,13 +179,15 @@ function PreviewContent({
       return (
         <div className="flex flex-col items-center justify-center h-48 bg-muted/50 rounded-xl border border-border/50 gap-3">
           <FileText className="w-12 h-12 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Vista previa no disponible</p>
+          <p className="text-sm text-muted-foreground">{t('contentPreviewModal.previewNotAvailable')}</p>
         </div>
       );
   }
 }
 
 export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreviewModalProps) {
+  const { t } = useLanguage();
+  const typeConfig = useTypeConfig();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -207,13 +219,13 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
       setBlobUrl(null);
     } catch (err) {
       console.error('Error loading content:', err);
-      setError('No se pudo cargar el archivo. Verifica que tengas acceso.');
+      setError(t('contentPreviewModal.couldNotLoadFileVerifyAccess'));
       setSignedUrl(null);
       setBlobUrl(null);
     } finally {
       setIsLoading(false);
     }
-  }, [content?.file_url, content?.type, isOpen]);
+  }, [content?.file_url, content?.type, isOpen, t]);
 
   useEffect(() => {
     if (isOpen && content?.file_url) {
@@ -258,7 +270,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
                 {content.title}
               </DialogTitle>
               <DialogDescription className="sr-only">
-                Vista previa de {config.label}: {content.title}
+                {t('contentPreviewModal.previewOf')} {config.label}: {content.title}
               </DialogDescription>
               <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
                 <Badge variant="secondary" className="capitalize text-[10px] sm:text-xs px-1.5 py-0">
@@ -267,7 +279,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
                 {content.price != null && content.price > 0 && (
                   <Badge variant="outline" className="gap-0.5 text-[10px] sm:text-xs px-1.5 py-0">
                     <DollarSign className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    ${content.price} MXN
+                    ${content.price} {t('contentPreviewModal.currencyMxn')}
                   </Badge>
                 )}
                 {content.created_at && (
@@ -281,7 +293,7 @@ export function ContentPreviewModal({ isOpen, onClose, content }: ContentPreview
             <button
               onClick={onClose}
               className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 rounded-full bg-muted hover:bg-muted-foreground/20 flex items-center justify-center transition-colors shrink-0"
-              aria-label="Cerrar"
+              aria-label={t('contentPreviewModal.close')}
             >
               <X className="w-4 h-4 text-foreground" />
             </button>

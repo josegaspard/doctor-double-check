@@ -51,27 +51,27 @@ interface BankAccount {
   bank_name: string; clabe: string; clabe_last4: string; account_holder_name: string; rfc: string | null;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pendiente', color: 'bg-warning/10 text-warning border-warning/30', icon: <Clock className="w-3 h-3" /> },
-  approved: { label: 'Aprobado', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
-  processed: { label: 'Procesado', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
-  rejected: { label: 'Rechazado', color: 'bg-destructive/10 text-destructive border-destructive/30', icon: <XCircle className="w-3 h-3" /> },
-  pending_transfer: { label: 'Transferencia pendiente', color: 'bg-warning/10 text-warning border-warning/30', icon: <Building2 className="w-3 h-3" /> },
-  transferred: { label: 'Transferido', color: 'bg-info/10 text-info border-info/30', icon: <CreditCard className="w-3 h-3" /> },
-  completed: { label: 'Completado', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
-  awaiting_bank_details: { label: 'Esperando datos bancarios', color: 'bg-accent/10 text-accent border-accent/30', icon: <AlertCircle className="w-3 h-3" /> },
+const statusConfig: Record<string, { labelKey: string; color: string; icon: React.ReactNode }> = {
+  pending: { labelKey: 'adminRefunds.status.pending', color: 'bg-warning/10 text-warning border-warning/30', icon: <Clock className="w-3 h-3" /> },
+  approved: { labelKey: 'adminRefunds.status.approved', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
+  processed: { labelKey: 'adminRefunds.status.processed', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
+  rejected: { labelKey: 'adminRefunds.status.rejected', color: 'bg-destructive/10 text-destructive border-destructive/30', icon: <XCircle className="w-3 h-3" /> },
+  pending_transfer: { labelKey: 'adminRefunds.status.pendingTransfer', color: 'bg-warning/10 text-warning border-warning/30', icon: <Building2 className="w-3 h-3" /> },
+  transferred: { labelKey: 'adminRefunds.status.transferred', color: 'bg-info/10 text-info border-info/30', icon: <CreditCard className="w-3 h-3" /> },
+  completed: { labelKey: 'adminRefunds.status.completed', color: 'bg-success/10 text-success border-success/30', icon: <CheckCircle className="w-3 h-3" /> },
+  awaiting_bank_details: { labelKey: 'adminRefunds.status.awaitingBankDetails', color: 'bg-accent/10 text-accent border-accent/30', icon: <AlertCircle className="w-3 h-3" /> },
 };
 
-const methodConfig: Record<string, { label: string; icon: React.ReactNode }> = {
-  stripe: { label: 'Stripe', icon: <CreditCard className="w-3 h-3" /> },
-  bank_transfer: { label: 'Bancario', icon: <Building2 className="w-3 h-3" /> },
-  wallet: { label: 'Billetera', icon: <Wallet className="w-3 h-3" /> },
+const methodConfig: Record<string, { labelKey: string; icon: React.ReactNode }> = {
+  stripe: { labelKey: 'adminRefunds.method.stripe', icon: <CreditCard className="w-3 h-3" /> },
+  bank_transfer: { labelKey: 'adminRefunds.method.bankTransfer', icon: <Building2 className="w-3 h-3" /> },
+  wallet: { labelKey: 'adminRefunds.method.wallet', icon: <Wallet className="w-3 h-3" /> },
 };
 
 export default function AdminRefunds() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const locale = language === 'es' ? es : enUS;
   const isMobile = useIsMobile();
   
@@ -174,7 +174,7 @@ export default function AdminRefunds() {
           transaction_id: req.transaction_id,
           user_id: req.user_id,
           amount: req.amount,
-          reason: `Solicitud aprobada: ${req.reason}`,
+          reason: `${t('adminRefunds.requestApprovedPrefix')}: ${req.reason}`,
           stripe_payment_intent_id: selectedMethod === 'stripe' ? stripePI : null,
           refund_method: selectedMethod,
           refund_request_id: req.id,
@@ -183,14 +183,14 @@ export default function AdminRefunds() {
       if (error) throw error;
 
       toast.success(
-        selectedMethod === 'stripe' ? 'Reembolso a Stripe procesado' :
-        selectedMethod === 'bank_transfer' ? 'Reembolso bancario iniciado' :
-        'Reembolso a billetera procesado'
+        selectedMethod === 'stripe' ? t('adminRefunds.toast.stripeProcessed') :
+        selectedMethod === 'bank_transfer' ? t('adminRefunds.toast.bankInitiated') :
+        t('adminRefunds.toast.walletProcessed')
       );
       setApprovalDialog({ open: false, request: null });
       loadData();
     } catch (error: any) {
-      toast.error(error.message || 'Error al procesar');
+      toast.error(error.message || t('adminRefunds.toast.processError'));
     } finally {
       setIsProcessing(false);
     }
@@ -208,22 +208,22 @@ export default function AdminRefunds() {
 
       await supabase.from('notifications').insert({
         user_id: req.user_id, type: 'system' as any,
-        title: '❌ Solicitud de reembolso rechazada',
-        message: `Tu solicitud de reembolso fue rechazada.${adminNotes ? ` Motivo: ${adminNotes}` : ''}`,
+        title: t('adminRefunds.notification.rejectedTitle'),
+        message: `${t('adminRefunds.notification.rejectedMessage')}${adminNotes ? ` ${t('adminRefunds.notification.reasonPrefix')}: ${adminNotes}` : ''}`,
         data: { refund_request_id: req.id },
       });
 
-      toast.success('Solicitud rechazada');
+      toast.success(t('adminRefunds.toast.requestRejected'));
       loadData();
     } catch (error: any) {
-      toast.error(error.message || 'Error');
+      toast.error(error.message || t('adminRefunds.toast.genericError'));
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleMarkTransferred = async (req: RefundRequest) => {
-    if (!transferRef.trim()) { toast.error('Ingresa la referencia de transferencia'); return; }
+    if (!transferRef.trim()) { toast.error(t('adminRefunds.toast.transferRefRequired')); return; }
     setIsProcessing(true);
     try {
       await supabase.from('refund_requests' as any).update({
@@ -234,16 +234,16 @@ export default function AdminRefunds() {
 
       await supabase.from('notifications').insert({
         user_id: req.user_id, type: 'system' as any,
-        title: '🏦 Transferencia realizada',
-        message: `Tu reembolso de $${req.amount.toLocaleString()} MXN ha sido transferido a tu cuenta bancaria. Ref: ${transferRef.trim()}`,
+        title: t('adminRefunds.notification.transferDoneTitle'),
+        message: `${t('adminRefunds.notification.transferDoneMessagePrefix')} $${req.amount.toLocaleString()} ${t('adminRefunds.notification.transferDoneMessageSuffix')} ${transferRef.trim()}`,
         data: { refund_request_id: req.id },
       });
 
-      toast.success('Marcado como transferido');
+      toast.success(t('adminRefunds.toast.markedTransferred'));
       setTransferRef('');
       loadData();
     } catch (error: any) {
-      toast.error(error.message || 'Error');
+      toast.error(error.message || t('adminRefunds.toast.genericError'));
     } finally {
       setIsProcessing(false);
     }
@@ -256,14 +256,14 @@ export default function AdminRefunds() {
 
       await supabase.from('wallet_transactions').insert({
         user_id: req.user_id, type: 'refund', amount: req.amount,
-        description: `Reembolso bancario completado`, status: 'paid',
+        description: t('adminRefunds.bankRefundCompletedDescription'), status: 'paid',
         metadata: { refund_method: 'bank_transfer', refund_request_id: req.id, bank_transfer_reference: req.bank_transfer_reference },
       });
 
-      toast.success('Marcado como completado');
+      toast.success(t('adminRefunds.toast.markedCompleted'));
       loadData();
     } catch (error: any) {
-      toast.error(error.message || 'Error');
+      toast.error(error.message || t('adminRefunds.toast.genericError'));
     } finally {
       setIsProcessing(false);
     }
@@ -298,14 +298,25 @@ export default function AdminRefunds() {
 
   const handleExportCSV = () => {
     const rows = getExportRows();
-    if (rows.length === 0) { toast.error('No hay datos para exportar'); return; }
-    
-    const headers = ['Fecha', 'Usuario', 'Email', 'Monto', 'Método', 'Estado', 'Referencia Stripe', 'Referencia Bancaria', 'Motivo', 'Notas Admin'];
+    if (rows.length === 0) { toast.error(t('adminRefunds.toast.noDataToExport')); return; }
+
+    const headers = [
+      t('adminRefunds.csv.date'),
+      t('adminRefunds.csv.user'),
+      t('adminRefunds.csv.email'),
+      t('adminRefunds.csv.amount'),
+      t('adminRefunds.csv.method'),
+      t('adminRefunds.csv.status'),
+      t('adminRefunds.csv.stripeRef'),
+      t('adminRefunds.csv.bankRef'),
+      t('adminRefunds.csv.reason'),
+      t('adminRefunds.csv.adminNotes'),
+    ];
     const csvRows = rows.map(r => [
       format(new Date(r.created_at), 'yyyy-MM-dd HH:mm'),
       r.user_name || '', r.user_email || '', r.amount.toString(),
-      methodConfig[r.refund_method || 'wallet']?.label || r.refund_method || 'Billetera',
-      statusConfig[r.status]?.label || r.status,
+      methodConfig[r.refund_method || 'wallet'] ? t(methodConfig[r.refund_method || 'wallet'].labelKey) : (r.refund_method || t('adminRefunds.method.wallet')),
+      statusConfig[r.status] ? t(statusConfig[r.status].labelKey) : r.status,
       r.stripe_refund_id || '', r.bank_transfer_reference || '',
       `"${(r.reason || '').replace(/"/g, '""')}"`,
       `"${(r.admin_notes || '').replace(/"/g, '""')}"`,
@@ -316,15 +327,15 @@ export default function AdminRefunds() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Reembolsos_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.download = `${t('adminRefunds.csv.fileName')}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`${rows.length} registros exportados`);
+    toast.success(`${rows.length} ${t('adminRefunds.toast.recordsExported')}`);
   };
 
   const handleExportPDF = () => {
     const rows = getExportRows();
-    if (rows.length === 0) { toast.error('No hay datos para exportar'); return; }
+    if (rows.length === 0) { toast.error(t('adminRefunds.toast.noDataToExport')); return; }
 
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -335,7 +346,7 @@ export default function AdminRefunds() {
     const pendingBankRows = rows.filter(r => r.status === 'pending_transfer' || r.status === 'awaiting_bank_details');
 
     doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Reporte de Reembolsos</title>
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${t('adminRefunds.pdf.title')}</title>
     <style>
       body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #333; font-size: 12px; }
       h1 { color: #163a83; font-size: 20px; margin-bottom: 4px; }
@@ -351,38 +362,38 @@ export default function AdminRefunds() {
       .stripe { color: #635bff; } .bank { color: #e65100; } .wallet { color: #0369a1; }
       @media print { body { padding: 0; } }
     </style></head><body>
-    <h1>📊 Reporte de Reembolsos</h1>
-    <p class="subtitle">Generado: ${format(new Date(), 'dd MMMM yyyy, HH:mm', { locale: es })}</p>
-    
+    <h1>${t('adminRefunds.pdf.header')}</h1>
+    <p class="subtitle">${t('adminRefunds.pdf.generated')}: ${format(new Date(), 'dd MMMM yyyy, HH:mm', { locale })}</p>
+
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-value">${rows.length}</div><div class="kpi-label">Total reembolsos</div></div>
-      <div class="kpi"><div class="kpi-value stripe">$${totalStripe.toLocaleString()}</div><div class="kpi-label">Stripe</div></div>
-      <div class="kpi"><div class="kpi-value bank">$${totalBank.toLocaleString()}</div><div class="kpi-label">Bancarios</div></div>
-      <div class="kpi"><div class="kpi-value wallet">$${totalWallet.toLocaleString()}</div><div class="kpi-label">Billetera</div></div>
+      <div class="kpi"><div class="kpi-value">${rows.length}</div><div class="kpi-label">${t('adminRefunds.pdf.totalRefunds')}</div></div>
+      <div class="kpi"><div class="kpi-value stripe">$${totalStripe.toLocaleString()}</div><div class="kpi-label">${t('adminRefunds.method.stripe')}</div></div>
+      <div class="kpi"><div class="kpi-value bank">$${totalBank.toLocaleString()}</div><div class="kpi-label">${t('adminRefunds.kpi.bank')}</div></div>
+      <div class="kpi"><div class="kpi-value wallet">$${totalWallet.toLocaleString()}</div><div class="kpi-label">${t('adminRefunds.method.wallet')}</div></div>
     </div>
 
-    <p class="section-title">Detalle de Reembolsos</p>
+    <p class="section-title">${t('adminRefunds.pdf.detailTitle')}</p>
     <table>
-      <thead><tr><th>Fecha</th><th>Usuario</th><th>Monto</th><th>Método</th><th>Estado</th><th>Referencia</th><th>Motivo</th></tr></thead>
+      <thead><tr><th>${t('adminRefunds.csv.date')}</th><th>${t('adminRefunds.csv.user')}</th><th>${t('adminRefunds.csv.amount')}</th><th>${t('adminRefunds.csv.method')}</th><th>${t('adminRefunds.csv.status')}</th><th>${t('adminRefunds.pdf.reference')}</th><th>${t('adminRefunds.csv.reason')}</th></tr></thead>
       <tbody>${rows.map(r => `<tr>
         <td>${format(new Date(r.created_at), 'dd/MM/yy')}</td>
         <td>${r.user_name || ''}<br/><small style="color:#999">${r.user_email || ''}</small></td>
         <td>$${r.amount.toLocaleString()}</td>
-        <td>${methodConfig[r.refund_method || 'wallet']?.label || 'Billetera'}</td>
-        <td>${statusConfig[r.status]?.label || r.status}</td>
+        <td>${methodConfig[r.refund_method || 'wallet'] ? t(methodConfig[r.refund_method || 'wallet'].labelKey) : t('adminRefunds.method.wallet')}</td>
+        <td>${statusConfig[r.status] ? t(statusConfig[r.status].labelKey) : r.status}</td>
         <td style="font-family:monospace;font-size:10px;">${r.stripe_refund_id || r.bank_transfer_reference || '-'}</td>
         <td>${r.reason || ''}</td>
       </tr>`).join('')}</tbody>
     </table>
 
     ${pendingBankRows.length > 0 ? `
-      <p class="section-title">⚠️ Reembolsos Bancarios Pendientes (${pendingBankRows.length})</p>
+      <p class="section-title">${t('adminRefunds.pdf.pendingBankTitle')} (${pendingBankRows.length})</p>
       <table>
-        <thead><tr><th>Usuario</th><th>Monto</th><th>Estado</th><th>Fecha estimada</th></tr></thead>
+        <thead><tr><th>${t('adminRefunds.csv.user')}</th><th>${t('adminRefunds.csv.amount')}</th><th>${t('adminRefunds.csv.status')}</th><th>${t('adminRefunds.pdf.estimatedDate')}</th></tr></thead>
         <tbody>${pendingBankRows.map(r => `<tr>
           <td>${r.user_name || ''}</td>
           <td>$${r.amount.toLocaleString()}</td>
-          <td>${statusConfig[r.status]?.label || r.status}</td>
+          <td>${statusConfig[r.status] ? t(statusConfig[r.status].labelKey) : r.status}</td>
           <td>${r.estimated_completion_date ? format(new Date(r.estimated_completion_date), 'dd/MM/yy') : '-'}</td>
         </tr>`).join('')}</tbody>
       </table>
@@ -406,13 +417,16 @@ export default function AdminRefunds() {
   };
 
   const StatusBadge = ({ status }: { status: string }) => {
-    const cfg = statusConfig[status] || { label: status, color: 'bg-muted text-muted-foreground', icon: null };
-    return <Badge variant="outline" className={`gap-1 ${cfg.color}`}>{cfg.icon}{cfg.label}</Badge>;
+    const cfg = statusConfig[status];
+    const label = cfg ? t(cfg.labelKey) : status;
+    const color = cfg ? cfg.color : 'bg-muted text-muted-foreground';
+    const icon = cfg ? cfg.icon : null;
+    return <Badge variant="outline" className={`gap-1 ${color}`}>{icon}{label}</Badge>;
   };
 
   const MethodBadge = ({ method }: { method: string | null }) => {
     const cfg = methodConfig[method || 'wallet'] || methodConfig.wallet;
-    return <Badge variant="outline" className="gap-1">{cfg.icon}{cfg.label}</Badge>;
+    return <Badge variant="outline" className="gap-1">{cfg.icon}{t(cfg.labelKey)}</Badge>;
   };
 
   // =========== RENDER HELPERS ===========
@@ -427,7 +441,7 @@ export default function AdminRefunds() {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="font-medium text-sm">{req.user_name || 'Usuario'}</p>
+                <p className="font-medium text-sm">{req.user_name || t('adminRefunds.userFallback')}</p>
                 <p className="text-xs text-muted-foreground truncate">{req.user_email}</p>
               </div>
               <div className="text-right shrink-0">
@@ -445,34 +459,34 @@ export default function AdminRefunds() {
                 {format(new Date(req.created_at), 'dd MMM yyyy, HH:mm', { locale })}
               </p>
               <p className="text-xs bg-muted/50 p-2 rounded">{req.reason}</p>
-              {req.tx_description && <p className="text-xs text-muted-foreground">Tx: {req.tx_description}</p>}
-              {req.stripe_refund_id && <p className="text-xs font-mono text-muted-foreground">Stripe: {req.stripe_refund_id}</p>}
-              {req.bank_transfer_reference && <p className="text-xs font-mono text-muted-foreground">Ref: {req.bank_transfer_reference}</p>}
+              {req.tx_description && <p className="text-xs text-muted-foreground">{t('adminRefunds.card.txPrefix')}: {req.tx_description}</p>}
+              {req.stripe_refund_id && <p className="text-xs font-mono text-muted-foreground">{t('adminRefunds.card.stripePrefix')}: {req.stripe_refund_id}</p>}
+              {req.bank_transfer_reference && <p className="text-xs font-mono text-muted-foreground">{t('adminRefunds.card.refPrefix')}: {req.bank_transfer_reference}</p>}
               {req.estimated_completion_date && (
-                <p className="text-xs text-muted-foreground">Fecha estimada: {format(new Date(req.estimated_completion_date), 'dd MMM yyyy', { locale })}</p>
+                <p className="text-xs text-muted-foreground">{t('adminRefunds.card.estimatedDate')}: {format(new Date(req.estimated_completion_date), 'dd MMM yyyy', { locale })}</p>
               )}
-              {req.admin_notes && <p className="text-xs text-muted-foreground italic">Admin: {req.admin_notes}</p>}
+              {req.admin_notes && <p className="text-xs text-muted-foreground italic">{t('adminRefunds.card.adminPrefix')}: {req.admin_notes}</p>}
             </div>
 
             {/* Actions */}
             {showActions && req.status === 'pending' && (
               <div className="flex gap-2 mt-3 flex-wrap">
                 <Button size="sm" onClick={() => openApprovalDialog(req)} className="gap-1">
-                  <CheckCircle className="w-3 h-3" />Aprobar
+                  <CheckCircle className="w-3 h-3" />{t('adminRefunds.actions.approve')}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => { setAdminNotes(''); handleRejectRequest(req); }} className="gap-1">
-                  <XCircle className="w-3 h-3" />Rechazar
+                  <XCircle className="w-3 h-3" />{t('adminRefunds.actions.reject')}
                 </Button>
               </div>
             )}
 
             {showBankActions && req.status === 'pending_transfer' && (
               <div className="mt-3 space-y-2 p-3 bg-muted/50 rounded-lg">
-                <p className="text-xs font-medium">Marcar como transferido:</p>
+                <p className="text-xs font-medium">{t('adminRefunds.actions.markAsTransferred')}:</p>
                 <div className="flex gap-2">
-                  <Input placeholder="Referencia de transferencia" value={transferRef} onChange={(e) => setTransferRef(e.target.value)} className="text-sm h-8" />
+                  <Input placeholder={t('adminRefunds.actions.transferRefPlaceholder')} value={transferRef} onChange={(e) => setTransferRef(e.target.value)} className="text-sm h-8" />
                   <Button size="sm" onClick={() => handleMarkTransferred(req)} disabled={isProcessing} className="gap-1 shrink-0">
-                    <CheckCircle className="w-3 h-3" />Transferido
+                    <CheckCircle className="w-3 h-3" />{t('adminRefunds.actions.transferred')}
                   </Button>
                 </div>
               </div>
@@ -481,7 +495,7 @@ export default function AdminRefunds() {
             {showBankActions && req.status === 'transferred' && (
               <div className="mt-3">
                 <Button size="sm" variant="outline" onClick={() => handleMarkCompleted(req)} disabled={isProcessing} className="gap-1">
-                  <CheckCircle className="w-3 h-3" />Marcar completado
+                  <CheckCircle className="w-3 h-3" />{t('adminRefunds.actions.markCompleted')}
                 </Button>
               </div>
             )}
@@ -497,7 +511,7 @@ export default function AdminRefunds() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4 mr-1" />Volver al panel
+          <ArrowLeft className="w-4 h-4 mr-1" />{t('adminRefunds.backToPanel')}
         </Button>
 
         <div className="mb-6">
@@ -506,8 +520,8 @@ export default function AdminRefunds() {
               <RefreshCcw className="w-5 h-5 sm:w-6 sm:h-6 text-destructive" />
             </div>
             <div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold">Gestión de Reembolsos</h1>
-              <p className="text-sm text-muted-foreground">Stripe, bancarios y billetera</p>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold">{t('adminRefunds.pageTitle')}</h1>
+              <p className="text-sm text-muted-foreground">{t('adminRefunds.pageSubtitle')}</p>
             </div>
           </div>
         </div>
@@ -518,7 +532,7 @@ export default function AdminRefunds() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 rounded-lg bg-warning/10"><MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-warning" /></div>
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Pendientes</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('adminRefunds.kpi.pending')}</p>
                 <p className="text-lg sm:text-xl font-bold">{pendingRequests.length}</p>
               </div>
             </div>
@@ -527,7 +541,7 @@ export default function AdminRefunds() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10"><CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-primary" /></div>
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Stripe</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('adminRefunds.method.stripe')}</p>
                 <p className="text-lg sm:text-xl font-bold">${totalStripe.toLocaleString()}</p>
               </div>
             </div>
@@ -536,9 +550,9 @@ export default function AdminRefunds() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 rounded-lg bg-warning/10"><Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-warning" /></div>
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Bancarios</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('adminRefunds.kpi.bank')}</p>
                 <p className="text-lg sm:text-xl font-bold">${totalBank.toLocaleString()}</p>
-                {pendingBankCount > 0 && <p className="text-[10px] text-warning">{pendingBankCount} por transferir</p>}
+                {pendingBankCount > 0 && <p className="text-[10px] text-warning">{pendingBankCount} {t('adminRefunds.kpi.toTransfer')}</p>}
               </div>
             </div>
           </CardContent></Card>
@@ -546,7 +560,7 @@ export default function AdminRefunds() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="p-1.5 sm:p-2 rounded-lg bg-info/10"><Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-info" /></div>
               <div>
-                <p className="text-[10px] sm:text-sm text-muted-foreground">Billetera</p>
+                <p className="text-[10px] sm:text-sm text-muted-foreground">{t('adminRefunds.method.wallet')}</p>
                 <p className="text-lg sm:text-xl font-bold">${totalWallet.toLocaleString()}</p>
               </div>
             </div>
@@ -558,14 +572,14 @@ export default function AdminRefunds() {
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Buscar por usuario, email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input placeholder={t('adminRefunds.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1 text-xs">
-                <FileSpreadsheet className="w-3.5 h-3.5" />Excel
+                <FileSpreadsheet className="w-3.5 h-3.5" />{t('adminRefunds.export.excel')}
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-1 text-xs">
-                <FileText className="w-3.5 h-3.5" />PDF
+                <FileText className="w-3.5 h-3.5" />{t('adminRefunds.export.pdf')}
               </Button>
             </div>
           </div>
@@ -578,31 +592,31 @@ export default function AdminRefunds() {
             <TabsList className="mb-4 flex-wrap h-auto gap-1">
               <TabsTrigger value="requests" className="gap-1 text-xs sm:text-sm">
                 <MessageSquare className="w-3.5 h-3.5" />
-                {!isMobile && 'Solicitudes'}
+                {!isMobile && t('adminRefunds.tabs.requests')}
                 {pendingRequests.length > 0 && <Badge variant="destructive" className="ml-0.5 text-[10px] px-1.5">{pendingRequests.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="stripe" className="gap-1 text-xs sm:text-sm">
                 <CreditCard className="w-3.5 h-3.5" />
-                {!isMobile && 'Stripe'}
+                {!isMobile && t('adminRefunds.tabs.stripe')}
               </TabsTrigger>
               <TabsTrigger value="bank" className="gap-1 text-xs sm:text-sm">
                 <Building2 className="w-3.5 h-3.5" />
-                {!isMobile && 'Bancarios'}
+                {!isMobile && t('adminRefunds.tabs.bank')}
                 {pendingBankCount > 0 && <Badge variant="warning" className="ml-0.5 text-[10px] px-1.5">{pendingBankCount}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="wallet" className="gap-1 text-xs sm:text-sm">
                 <Wallet className="w-3.5 h-3.5" />
-                {!isMobile && 'Manuales'}
+                {!isMobile && t('adminRefunds.tabs.manual')}
               </TabsTrigger>
               <TabsTrigger value="all" className="gap-1 text-xs sm:text-sm">
                 <History className="w-3.5 h-3.5" />
-                {!isMobile && 'Historial'}
+                {!isMobile && t('adminRefunds.tabs.history')}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="requests">
               {pendingRequests.length === 0 ? (
-                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">No hay solicitudes pendientes</CardContent></Card>
+                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">{t('adminRefunds.empty.requests')}</CardContent></Card>
               ) : (
                 <div className="space-y-3">{pendingRequests.map(r => renderRefundCard(r, true))}</div>
               )}
@@ -610,7 +624,7 @@ export default function AdminRefunds() {
 
             <TabsContent value="stripe">
               {stripeRefunds.length === 0 ? (
-                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">No hay reembolsos Stripe</CardContent></Card>
+                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">{t('adminRefunds.empty.stripe')}</CardContent></Card>
               ) : (
                 <div className="space-y-3">{stripeRefunds.map(r => renderRefundCard(r))}</div>
               )}
@@ -618,7 +632,7 @@ export default function AdminRefunds() {
 
             <TabsContent value="bank">
               {bankRefunds.length === 0 ? (
-                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">No hay reembolsos bancarios</CardContent></Card>
+                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">{t('adminRefunds.empty.bank')}</CardContent></Card>
               ) : (
                 <div className="space-y-3">{bankRefunds.map(r => renderRefundCard(r, false, true))}</div>
               )}
@@ -626,7 +640,7 @@ export default function AdminRefunds() {
 
             <TabsContent value="wallet">
               {walletRefunds.length === 0 ? (
-                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">No hay reembolsos a billetera</CardContent></Card>
+                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">{t('adminRefunds.empty.wallet')}</CardContent></Card>
               ) : (
                 <div className="space-y-3">{walletRefunds.map(r => renderRefundCard(r))}</div>
               )}
@@ -634,7 +648,7 @@ export default function AdminRefunds() {
 
             <TabsContent value="all">
               {allProcessed.length === 0 ? (
-                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">No hay reembolsos</CardContent></Card>
+                <Card><CardContent className="text-center py-8 text-muted-foreground text-sm">{t('adminRefunds.empty.all')}</CardContent></Card>
               ) : (
                 <div className="space-y-3">{allProcessed.map(r => renderRefundCard(r))}</div>
               )}
@@ -645,12 +659,12 @@ export default function AdminRefunds() {
         {/* Floating selection bar */}
         {selectedIds.size > 0 && (
           <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-lg border rounded-xl px-4 py-3 shadow-lg flex items-center gap-3">
-            <span className="text-sm font-medium">{selectedIds.size} seleccionados</span>
+            <span className="text-sm font-medium">{selectedIds.size} {t('adminRefunds.selectedCount')}</span>
             <Button size="sm" variant="outline" onClick={handleExportCSV} className="gap-1">
-              <FileSpreadsheet className="w-3.5 h-3.5" />CSV
+              <FileSpreadsheet className="w-3.5 h-3.5" />{t('adminRefunds.export.csv')}
             </Button>
             <Button size="sm" variant="outline" onClick={handleExportPDF} className="gap-1">
-              <FileText className="w-3.5 h-3.5" />PDF
+              <FileText className="w-3.5 h-3.5" />{t('adminRefunds.export.pdf')}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
               <XCircle className="w-4 h-4" />
@@ -664,34 +678,34 @@ export default function AdminRefunds() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-success" />
-                Aprobar Reembolso
+                {t('adminRefunds.dialog.title')}
               </DialogTitle>
-              <DialogDescription>Selecciona el método de reembolso</DialogDescription>
+              <DialogDescription>{t('adminRefunds.dialog.description')}</DialogDescription>
             </DialogHeader>
             {approvalDialog.request && (
               <div className="space-y-4">
                 <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                  <p><strong>Usuario:</strong> {approvalDialog.request.user_name}</p>
-                  <p><strong>Monto:</strong> ${approvalDialog.request.amount.toLocaleString()} MXN</p>
-                  <p><strong>Motivo:</strong> {approvalDialog.request.reason}</p>
+                  <p><strong>{t('adminRefunds.dialog.userLabel')}:</strong> {approvalDialog.request.user_name}</p>
+                  <p><strong>{t('adminRefunds.dialog.amountLabel')}:</strong> ${approvalDialog.request.amount.toLocaleString()} MXN</p>
+                  <p><strong>{t('adminRefunds.dialog.reasonLabel')}:</strong> {approvalDialog.request.reason}</p>
                 </div>
 
                 {/* Method selector */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Método de reembolso</label>
+                  <label className="text-sm font-medium">{t('adminRefunds.dialog.methodLabel')}</label>
                   <Select value={selectedMethod} onValueChange={setSelectedMethod}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {detectStripePI(approvalDialog.request) && (
                         <SelectItem value="stripe">
-                          <span className="flex items-center gap-2"><CreditCard className="w-4 h-4" />Reembolsar a Stripe (inmediato)</span>
+                          <span className="flex items-center gap-2"><CreditCard className="w-4 h-4" />{t('adminRefunds.dialog.methodStripe')}</span>
                         </SelectItem>
                       )}
                       <SelectItem value="bank_transfer">
-                        <span className="flex items-center gap-2"><Building2 className="w-4 h-4" />Transferencia bancaria (15 días)</span>
+                        <span className="flex items-center gap-2"><Building2 className="w-4 h-4" />{t('adminRefunds.dialog.methodBank')}</span>
                       </SelectItem>
                       <SelectItem value="wallet">
-                        <span className="flex items-center gap-2"><Wallet className="w-4 h-4" />Acreditar a billetera (inmediato)</span>
+                        <span className="flex items-center gap-2"><Wallet className="w-4 h-4" />{t('adminRefunds.dialog.methodWallet')}</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -701,23 +715,23 @@ export default function AdminRefunds() {
                 {selectedMethod === 'stripe' && (
                   <div className="flex items-start gap-2 p-3 bg-success/10 border border-success/20 rounded-lg">
                     <CreditCard className="w-4 h-4 text-success shrink-0 mt-0.5" />
-                    <p className="text-xs">El monto se reembolsará directamente a la tarjeta/cuenta del usuario vía Stripe. Proceso inmediato.</p>
+                    <p className="text-xs">{t('adminRefunds.dialog.stripeInfo')}</p>
                   </div>
                 )}
                 {selectedMethod === 'bank_transfer' && (
                   <div className="space-y-2">
                     {userBankAccount ? (
                       <div className="p-3 bg-muted/50 rounded-lg space-y-1">
-                        <p className="text-xs font-medium text-foreground">Datos bancarios del usuario:</p>
-                        <p className="text-xs">Banco: <strong>{userBankAccount.bank_name}</strong></p>
-                        <p className="text-xs font-mono">CLABE: {userBankAccount.clabe}</p>
-                        <p className="text-xs">Titular: {userBankAccount.account_holder_name}</p>
-                        {userBankAccount.rfc && <p className="text-xs">RFC: {userBankAccount.rfc}</p>}
+                        <p className="text-xs font-medium text-foreground">{t('adminRefunds.dialog.bankDataTitle')}:</p>
+                        <p className="text-xs">{t('adminRefunds.dialog.bankName')}: <strong>{userBankAccount.bank_name}</strong></p>
+                        <p className="text-xs font-mono">{t('adminRefunds.dialog.clabe')}: {userBankAccount.clabe}</p>
+                        <p className="text-xs">{t('adminRefunds.dialog.holder')}: {userBankAccount.account_holder_name}</p>
+                        {userBankAccount.rfc && <p className="text-xs">{t('adminRefunds.dialog.rfc')}: {userBankAccount.rfc}</p>}
                       </div>
                     ) : (
                       <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">
                         <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-                        <p className="text-xs">El usuario no tiene cuenta bancaria registrada. Se le enviará un email solicitando que registre su CLABE.</p>
+                        <p className="text-xs">{t('adminRefunds.dialog.noBankAccountWarning')}</p>
                       </div>
                     )}
                   </div>
@@ -725,21 +739,21 @@ export default function AdminRefunds() {
                 {selectedMethod === 'wallet' && (
                   <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg">
                     <Wallet className="w-4 h-4 text-info shrink-0 mt-0.5" />
-                    <p className="text-xs">El monto se acreditará directamente a la billetera del usuario.</p>
+                    <p className="text-xs">{t('adminRefunds.dialog.walletInfo')}</p>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Notas del admin (opcional)</label>
-                  <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder="Notas adicionales..." rows={2} />
+                  <label className="text-sm font-medium">{t('adminRefunds.dialog.adminNotesLabel')}</label>
+                  <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder={t('adminRefunds.dialog.adminNotesPlaceholder')} rows={2} />
                 </div>
               </div>
             )}
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setApprovalDialog({ open: false, request: null })} disabled={isProcessing}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setApprovalDialog({ open: false, request: null })} disabled={isProcessing}>{t('adminRefunds.dialog.cancel')}</Button>
               <Button onClick={handleApproveRequest} disabled={isProcessing || !selectedMethod}>
                 {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Confirmar Reembolso
+                {t('adminRefunds.dialog.confirm')}
               </Button>
             </DialogFooter>
           </DialogContent>

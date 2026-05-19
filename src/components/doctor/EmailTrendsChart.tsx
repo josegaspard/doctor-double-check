@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { format, subDays, startOfDay, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -39,10 +40,10 @@ interface ChartDataPoint {
   failed: number;
 }
 
-const PERIOD_OPTIONS: { value: PeriodFilter; label: string; days: number }[] = [
-  { value: '7d', label: 'Últimos 7 días', days: 7 },
-  { value: '14d', label: 'Últimos 14 días', days: 14 },
-  { value: '30d', label: 'Últimos 30 días', days: 30 },
+const PERIOD_VALUES: { value: PeriodFilter; days: number }[] = [
+  { value: '7d', days: 7 },
+  { value: '14d', days: 14 },
+  { value: '30d', days: 30 },
 ];
 
 const EMAIL_TYPE_COLORS = {
@@ -53,16 +54,26 @@ const EMAIL_TYPE_COLORS = {
 
 export function EmailTrendsChart() {
   const { supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [rawEmails, setRawEmails] = useState<EmailRecord[]>([]);
   const [period, setPeriod] = useState<PeriodFilter>('14d');
+
+  const periodOptions = useMemo(
+    () => [
+      { value: '7d' as PeriodFilter, label: t('emailTrendsChart.period7d'), days: 7 },
+      { value: '14d' as PeriodFilter, label: t('emailTrendsChart.period14d'), days: 14 },
+      { value: '30d' as PeriodFilter, label: t('emailTrendsChart.period30d'), days: 30 },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     if (!supabaseUser?.id) return;
 
     const fetchEmails = async () => {
       setIsLoading(true);
-      const daysAgo = PERIOD_OPTIONS.find(p => p.value === period)?.days || 14;
+      const daysAgo = PERIOD_VALUES.find(p => p.value === period)?.days || 14;
       const startDate = subDays(new Date(), daysAgo);
 
       const { data, error } = await supabase
@@ -82,14 +93,14 @@ export function EmailTrendsChart() {
   }, [supabaseUser?.id, period]);
 
   const chartData = useMemo(() => {
-    const daysAgo = PERIOD_OPTIONS.find(p => p.value === period)?.days || 14;
+    const daysAgo = PERIOD_VALUES.find(p => p.value === period)?.days || 14;
     const startDate = startOfDay(subDays(new Date(), daysAgo - 1));
     const endDate = startOfDay(new Date());
 
     const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
     const dataByDate: Record<string, ChartDataPoint> = {};
-    
+
     dateRange.forEach(date => {
       const dateKey = format(date, 'yyyy-MM-dd');
       dataByDate[dateKey] = {
@@ -108,7 +119,7 @@ export function EmailTrendsChart() {
       const dateKey = format(new Date(email.created_at), 'yyyy-MM-dd');
       if (dataByDate[dateKey]) {
         dataByDate[dateKey].total++;
-        
+
         if (email.status === 'sent') {
           dataByDate[dateKey].sent++;
         } else {
@@ -136,7 +147,7 @@ export function EmailTrendsChart() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            Tendencia de Emails
+            {t('emailTrendsChart.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -152,14 +163,14 @@ export function EmailTrendsChart() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            Tendencia de Emails
+            {t('emailTrendsChart.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-muted-foreground">
             <TrendingUp className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No hay datos para mostrar en este período</p>
-            <p className="text-xs mt-1">Los gráficos aparecerán cuando envíes emails</p>
+            <p className="text-sm">{t('emailTrendsChart.emptyTitle')}</p>
+            <p className="text-xs mt-1">{t('emailTrendsChart.emptySubtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -172,14 +183,14 @@ export function EmailTrendsChart() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
-            Tendencia de Emails
+            {t('emailTrendsChart.title')}
           </CardTitle>
           <Select value={period} onValueChange={(v) => setPeriod(v as PeriodFilter)}>
             <SelectTrigger className="w-[160px] h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PERIOD_OPTIONS.map(opt => (
+              {periodOptions.map(opt => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -191,17 +202,17 @@ export function EmailTrendsChart() {
       <CardContent className="space-y-6">
         {/* Emails by Type Chart */}
         <div>
-          <p className="text-sm font-medium text-muted-foreground mb-3">Por tipo de email</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t('emailTrendsChart.byTypeHeading')}</p>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barCategoryGap="20%">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="displayDate" 
+                <XAxis
+                  dataKey="displayDate"
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
                 />
-                <YAxis 
+                <YAxis
                   allowDecimals={false}
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
@@ -215,32 +226,32 @@ export function EmailTrendsChart() {
                   }}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                 />
-                <Legend 
+                <Legend
                   wrapperStyle={{ fontSize: '12px' }}
                   formatter={(value) => {
                     const labels: Record<string, string> = {
-                      new_content: 'Contenido',
-                      live_started: 'Lives',
-                      availability_reminder: 'Recordatorios',
+                      new_content: t('emailTrendsChart.legendNewContent'),
+                      live_started: t('emailTrendsChart.legendLiveStarted'),
+                      availability_reminder: t('emailTrendsChart.legendAvailabilityReminder'),
                     };
                     return labels[value] || value;
                   }}
                 />
-                <Bar 
-                  dataKey="new_content" 
-                  stackId="a" 
+                <Bar
+                  dataKey="new_content"
+                  stackId="a"
                   fill={EMAIL_TYPE_COLORS.new_content}
                   radius={[0, 0, 0, 0]}
                 />
-                <Bar 
-                  dataKey="live_started" 
-                  stackId="a" 
+                <Bar
+                  dataKey="live_started"
+                  stackId="a"
                   fill={EMAIL_TYPE_COLORS.live_started}
                   radius={[0, 0, 0, 0]}
                 />
-                <Bar 
-                  dataKey="availability_reminder" 
-                  stackId="a" 
+                <Bar
+                  dataKey="availability_reminder"
+                  stackId="a"
                   fill={EMAIL_TYPE_COLORS.availability_reminder}
                   radius={[4, 4, 0, 0]}
                 />
@@ -251,17 +262,17 @@ export function EmailTrendsChart() {
 
         {/* Success vs Failed Chart */}
         <div>
-          <p className="text-sm font-medium text-muted-foreground mb-3">Enviados vs Fallidos</p>
+          <p className="text-sm font-medium text-muted-foreground mb-3">{t('emailTrendsChart.sentVsFailedHeading')}</p>
           <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="displayDate" 
+                <XAxis
+                  dataKey="displayDate"
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
                 />
-                <YAxis 
+                <YAxis
                   allowDecimals={false}
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
@@ -276,19 +287,19 @@ export function EmailTrendsChart() {
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                 />
                 <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Line 
-                  type="monotone" 
-                  dataKey="sent" 
-                  name="Enviados"
+                <Line
+                  type="monotone"
+                  dataKey="sent"
+                  name={t('emailTrendsChart.lineSent')}
                   stroke="hsl(var(--success, 142 76% 36%))"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   activeDot={{ r: 5 }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="failed" 
-                  name="Fallidos"
+                <Line
+                  type="monotone"
+                  dataKey="failed"
+                  name={t('emailTrendsChart.lineFailed')}
                   stroke="hsl(var(--destructive))"
                   strokeWidth={2}
                   dot={{ r: 3 }}

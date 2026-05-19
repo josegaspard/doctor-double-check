@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Mail, Video, Radio, Calendar, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { startOfMonth, subMonths, endOfMonth, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -19,21 +20,21 @@ interface MonthStats {
   failed: number;
 }
 
-const EMAIL_TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+const EMAIL_TYPE_ICON_COLOR: Record<string, { icon: React.ReactNode; color: string; labelKey: string }> = {
   new_content: {
-    label: 'Contenido',
     icon: <Video className="w-4 h-4" />,
     color: 'bg-primary/10 text-primary',
+    labelKey: 'emailStatsCard.types.new_content',
   },
   live_started: {
-    label: 'Lives',
     icon: <Radio className="w-4 h-4" />,
     color: 'bg-destructive/10 text-destructive',
+    labelKey: 'emailStatsCard.types.live_started',
   },
   availability_reminder: {
-    label: 'Recordatorios',
     icon: <Calendar className="w-4 h-4" />,
     color: 'bg-warning/10 text-warning',
+    labelKey: 'emailStatsCard.types.availability_reminder',
   },
 };
 
@@ -49,13 +50,14 @@ function calculateChange(current: number, previous: number): { value: number; tr
 }
 
 function TrendBadge({ current, previous, label }: { current: number; previous: number; label: string }) {
+  const { t } = useLanguage();
   const { value, trend } = calculateChange(current, previous);
-  
+
   if (trend === 'neutral') {
     return (
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
         <Minus className="w-3 h-3" />
-        <span>Sin cambios</span>
+        <span>{t('emailStatsCard.trend.noChange')}</span>
       </div>
     );
   }
@@ -63,12 +65,13 @@ function TrendBadge({ current, previous, label }: { current: number; previous: n
   return (
     <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-success' : 'text-destructive'}`}>
       {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-      <span>{value}% vs mes anterior</span>
+      <span>{t('emailStatsCard.trend.vsPreviousMonth').replace('{value}', String(value))}</span>
     </div>
   );
 }
 
 export function EmailStatsCard() {
+  const { t } = useLanguage();
   const { supabaseUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [rawEmails, setRawEmails] = useState<EmailRecord[]>([]);
@@ -79,7 +82,7 @@ export function EmailStatsCard() {
     const fetchEmailStats = async () => {
       // Fetch emails from last 2 months for comparison
       const twoMonthsAgo = startOfMonth(subMonths(new Date(), 1));
-      
+
       const { data, error } = await supabase
         .from('email_history')
         .select('email_type, status, created_at')
@@ -109,7 +112,7 @@ export function EmailStatsCard() {
     for (const email of rawEmails) {
       const emailDate = new Date(email.created_at);
       const type = email.email_type;
-      
+
       // Group by type (all time for the type breakdown)
       if (!grouped[type]) {
         grouped[type] = { type, sent: 0, failed: 0, total: 0 };
@@ -130,7 +133,7 @@ export function EmailStatsCard() {
           current.failed++;
         }
       }
-      
+
       // Previous month
       if (emailDate >= prevMonthStart && emailDate <= prevMonthEnd) {
         previous.total++;
@@ -162,7 +165,7 @@ export function EmailStatsCard() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
-            Estadísticas de Emails
+            {t('emailStatsCard.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -181,14 +184,14 @@ export function EmailStatsCard() {
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
-            Estadísticas de Emails
+            {t('emailStatsCard.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6 text-muted-foreground">
             <Mail className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Aún no has enviado emails</p>
-            <p className="text-xs mt-1">Las estadísticas aparecerán cuando envíes notificaciones</p>
+            <p className="text-sm">{t('emailStatsCard.empty.title')}</p>
+            <p className="text-xs mt-1">{t('emailStatsCard.empty.subtitle')}</p>
           </div>
         </CardContent>
       </Card>
@@ -200,7 +203,7 @@ export function EmailStatsCard() {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary" />
-          Estadísticas de Emails
+          {t('emailStatsCard.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -210,19 +213,19 @@ export function EmailStatsCard() {
             <span className="text-sm font-medium text-foreground capitalize">{currentMonthName}</span>
             <TrendBadge current={currentMonth.total} previous={previousMonth.total} label="total" />
           </div>
-          
+
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
               <p className="text-base sm:text-xl font-bold text-foreground">{currentMonth.total}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.total')}</p>
             </div>
             <div>
               <p className="text-base sm:text-xl font-bold text-success">{currentMonth.sent}</p>
-              <p className="text-xs text-muted-foreground">Enviados</p>
+              <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.sent')}</p>
             </div>
             <div>
               <p className="text-base sm:text-xl font-bold text-destructive">{currentMonth.failed}</p>
-              <p className="text-xs text-muted-foreground">Fallidos</p>
+              <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.failed')}</p>
             </div>
           </div>
 
@@ -230,7 +233,11 @@ export function EmailStatsCard() {
           <div className="pt-2 border-t border-border/50">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="capitalize">{previousMonthName}</span>
-              <span>{previousMonth.total} emails ({previousMonth.sent} enviados)</span>
+              <span>
+                {t('emailStatsCard.previousMonth.summary')
+                  .replace('{total}', String(previousMonth.total))
+                  .replace('{sent}', String(previousMonth.sent))}
+              </span>
             </div>
           </div>
         </div>
@@ -239,32 +246,32 @@ export function EmailStatsCard() {
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-2.5 sm:p-3 bg-muted/50 rounded-lg">
             <p className="text-lg sm:text-2xl font-bold text-foreground">{totalEmails}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.total')}</p>
           </div>
           <div className="text-center p-2.5 sm:p-3 bg-success/10 rounded-lg">
             <div className="flex items-center justify-center gap-1">
               <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
               <p className="text-lg sm:text-2xl font-bold text-success">{totalSent}</p>
             </div>
-            <p className="text-xs text-muted-foreground">Enviados</p>
+            <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.sent')}</p>
           </div>
           <div className="text-center p-2.5 sm:p-3 bg-destructive/10 rounded-lg">
             <div className="flex items-center justify-center gap-1">
               <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-destructive" />
               <p className="text-lg sm:text-2xl font-bold text-destructive">{totalFailed}</p>
             </div>
-            <p className="text-xs text-muted-foreground">Fallidos</p>
+            <p className="text-xs text-muted-foreground">{t('emailStatsCard.labels.failed')}</p>
           </div>
         </div>
 
         {/* Success Rate */}
         <div className="p-3 bg-muted/30 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">Tasa de éxito global</span>
+            <span className="text-sm text-muted-foreground">{t('emailStatsCard.successRate.label')}</span>
             <span className="text-sm font-semibold text-foreground">{successRate}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-success transition-all duration-500"
               style={{ width: `${successRate}%` }}
             />
@@ -273,30 +280,29 @@ export function EmailStatsCard() {
 
         {/* By Type */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">Por tipo de email</p>
+          <p className="text-sm font-medium text-foreground">{t('emailStatsCard.byType.title')}</p>
           <div className="space-y-2">
             {stats.map((stat) => {
-              const config = EMAIL_TYPE_CONFIG[stat.type] || {
-                label: stat.type,
-                icon: <Mail className="w-4 h-4" />,
-                color: 'bg-muted text-muted-foreground',
-              };
+              const config = EMAIL_TYPE_ICON_COLOR[stat.type];
+              const label = config ? t(config.labelKey) : stat.type;
+              const icon = config ? config.icon : <Mail className="w-4 h-4" />;
+              const color = config ? config.color : 'bg-muted text-muted-foreground';
               const typeSuccessRate = stat.total > 0 ? Math.round((stat.sent / stat.total) * 100) : 0;
 
               return (
                 <div key={stat.type} className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color}`}>
-                    {config.icon}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
+                    {icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{config.label}</span>
+                      <span className="text-sm font-medium">{label}</span>
                       <span className="text-xs text-muted-foreground">
                         {stat.sent}/{stat.total} ({typeSuccessRate}%)
                       </span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1">
-                      <div 
+                      <div
                         className="h-full bg-success transition-all duration-500"
                         style={{ width: `${typeSuccessRate}%` }}
                       />

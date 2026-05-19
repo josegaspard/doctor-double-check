@@ -340,7 +340,7 @@ export default function DoctorRecordings() {
         const { data, error } = await supabase.functions.invoke('scan-orphan-recordings');
         if (cancelled || error) return;
         if (data?.recovered > 0) {
-          toast.success(`${data.recovered} grabación(es) recuperada(s) automáticamente`);
+          toast.success(t('doctorRecordingsPage.toasts.orphansRecovered').replace('{count}', String(data.recovered)));
           await fetchMyRecordings();
           await refreshRecordings();
         }
@@ -497,7 +497,7 @@ export default function DoctorRecordings() {
     if (!editingRecording) return;
     const newPrice = parseFloat(editPrice);
     if (isNaN(newPrice) || newPrice < 0) {
-      toast.error('El precio debe ser un número válido mayor o igual a 0');
+      toast.error(t('doctorRecordingsPage.validation.invalidPrice'));
       return;
     }
     setIsSaving(true);
@@ -508,12 +508,12 @@ export default function DoctorRecordings() {
         .eq('id', editingRecording.id)
         .eq('doctor_id', user?.id);
       if (error) throw error;
-      toast.success('Precio actualizado correctamente');
+      toast.success(t('doctorRecordingsPage.toasts.priceUpdated'));
       setEditDialogOpen(false);
       setEditingRecording(null);
       await refreshRecordings();
     } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar el precio');
+      toast.error(error.message || t('doctorRecordingsPage.toasts.priceUpdateError'));
     } finally {
       setIsSaving(false);
     }
@@ -538,7 +538,7 @@ export default function DoctorRecordings() {
         });
         if (b2Err || (data && (data as any).error)) {
           const detail = (b2Err as any)?.message || (data as any)?.error || 'b2-delete-object failed';
-          throw new Error(`No se pudo borrar el archivo en Backblaze: ${detail}`);
+          throw new Error(t('doctorRecordingsPage.errors.b2DeleteFailed').replace('{detail}', detail));
         }
       } else {
         try {
@@ -578,7 +578,7 @@ export default function DoctorRecordings() {
 
     if (error) throw error;
     if (!count || count === 0) {
-      throw new Error('No se pudo eliminar: la grabación no te pertenece o ya fue eliminada');
+      throw new Error(t('doctorRecordingsPage.errors.deleteNotOwned'));
     }
   };
 
@@ -588,13 +588,13 @@ export default function DoctorRecordings() {
     try {
       await deleteRecordingFully(deletingRecording);
       setRecordings(prev => prev.filter(r => r.id !== deletingRecording.id));
-      toast.success('Grabación eliminada correctamente');
+      toast.success(t('doctorRecordingsPage.toasts.recordingDeleted'));
       setDeleteDialogOpen(false);
       setDeletingRecording(null);
       await refreshRecordings();
     } catch (error: any) {
       console.error('Error deleting recording:', error);
-      toast.error(error.message || 'Error al eliminar la grabación');
+      toast.error(error.message || t('doctorRecordingsPage.toasts.deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -612,15 +612,15 @@ export default function DoctorRecordings() {
       }
       const d = data as { totalInB2: number; orphans: number; deleted: string[]; failed: any[] };
       if (d.orphans === 0) {
-        toast.success(`No hay huérfanos. ${d.totalInB2} archivo(s) en B2, todos referenciados.`);
+        toast.success(t('doctorRecordingsPage.toasts.noOrphans').replace('{count}', String(d.totalInB2)));
       } else if (d.failed.length === 0) {
-        toast.success(`Limpieza OK: ${d.deleted.length} huérfano(s) borrado(s) de Backblaze.`);
+        toast.success(t('doctorRecordingsPage.toasts.orphansCleaned').replace('{count}', String(d.deleted.length)));
       } else {
-        toast.error(`Borrados ${d.deleted.length}, fallaron ${d.failed.length}. Ver consola.`);
+        toast.error(t('doctorRecordingsPage.toasts.orphansPartialFailure').replace('{deleted}', String(d.deleted.length)).replace('{failed}', String(d.failed.length)));
         console.warn('Cleanup failures:', d.failed);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Error en la limpieza de huérfanos');
+      toast.error(err.message || t('doctorRecordingsPage.toasts.cleanupError'));
     } finally {
       setIsCleaningOrphans(false);
     }
@@ -658,14 +658,14 @@ export default function DoctorRecordings() {
       const toDelete = recordings.filter(r => selectedIds.has(r.id));
       await Promise.all(toDelete.map(r => deleteRecordingFully(r)));
       setRecordings(prev => prev.filter(r => !selectedIds.has(r.id)));
-      toast.success(`${toDelete.length} grabación(es) eliminada(s) por completo`);
+      toast.success(t('doctorRecordingsPage.toasts.bulkDeleted').replace('{count}', String(toDelete.length)));
       setSelectedIds(new Set());
       setSelectionMode(false);
       setBulkDeleteDialogOpen(false);
       await refreshRecordings();
     } catch (error: any) {
       console.error('Error bulk deleting:', error);
-      toast.error('Error al eliminar algunas grabaciones');
+      toast.error(t('doctorRecordingsPage.toasts.bulkDeleteError'));
     } finally {
       setIsBulkDeleting(false);
     }
@@ -743,10 +743,10 @@ export default function DoctorRecordings() {
     try {
       await deletePastLive(plDeleteSingleId);
       setPastLives(prev => prev.filter(l => l.id !== plDeleteSingleId));
-      toast.success('Live eliminado');
+      toast.success(t('doctorRecordingsPage.toasts.liveDeleted'));
       setPlDeleteSingleId(null);
     } catch (e: any) {
-      toast.error(e.message || 'Error al eliminar');
+      toast.error(e.message || t('doctorRecordingsPage.toasts.liveDeleteError'));
     } finally {
       setIsPlBulkDeleting(false);
     }
@@ -758,32 +758,32 @@ export default function DoctorRecordings() {
     try {
       await Promise.all([...selectedPastLiveIds].map(id => deletePastLive(id)));
       setPastLives(prev => prev.filter(l => !selectedPastLiveIds.has(l.id)));
-      toast.success(`${selectedPastLiveIds.size} live(s) eliminado(s)`);
+      toast.success(t('doctorRecordingsPage.toasts.livesBulkDeleted').replace('{count}', String(selectedPastLiveIds.size)));
       setSelectedPastLiveIds(new Set());
       setPlSelectionMode(false);
       setPlBulkDeleteDialogOpen(false);
     } catch (e: any) {
-      toast.error('Error al eliminar algunos lives');
+      toast.error(t('doctorRecordingsPage.toasts.livesBulkDeleteError'));
     } finally {
       setIsPlBulkDeleting(false);
     }
   };
 
   const pastLiveToCSVRow = (l: PastLive) => ({
-    Título: l.title,
-    Especialidad: l.specialty,
-    'Fecha inicio': l.startedAt.toISOString(),
-    'Fecha fin': l.endedAt?.toISOString() || '',
-    'Pico espectadores': l.peakViewers,
-    Likes: l.likesCount,
-    'Comentarios totales': l.totalComments,
-    'Comentarios de pago': l.paidComments,
-    'Precio chat': l.chatPrice,
-    'Ingresos chats': l.paidRevenue,
+    [t('doctorRecordingsPage.csv.title')]: l.title,
+    [t('doctorRecordingsPage.csv.specialty')]: l.specialty,
+    [t('doctorRecordingsPage.csv.startDate')]: l.startedAt.toISOString(),
+    [t('doctorRecordingsPage.csv.endDate')]: l.endedAt?.toISOString() || '',
+    [t('doctorRecordingsPage.csv.peakViewers')]: l.peakViewers,
+    [t('doctorRecordingsPage.csv.likes')]: l.likesCount,
+    [t('doctorRecordingsPage.csv.totalComments')]: l.totalComments,
+    [t('doctorRecordingsPage.csv.paidComments')]: l.paidComments,
+    [t('doctorRecordingsPage.csv.chatPrice')]: l.chatPrice,
+    [t('doctorRecordingsPage.csv.chatRevenue')]: l.paidRevenue,
   });
 
   const downloadPastLives = (lives: PastLive[]) => {
-    exportToCSV(lives.map(pastLiveToCSVRow), `lives-pasados-${new Date().toISOString().slice(0, 10)}`);
+    exportToCSV(lives.map(pastLiveToCSVRow), `${t('doctorRecordingsPage.csv.filename')}-${new Date().toISOString().slice(0, 10)}`);
   };
 
   // Returns a numeric duration string. Rows that genuinely don't have a
@@ -793,11 +793,11 @@ export default function DoctorRecordings() {
   const formatDuration = (seconds: number) => {
     const s = Math.max(0, Math.floor(Number(seconds) || 0));
     const totalMinutes = Math.floor(s / 60);
-    if (totalMinutes < 1) return `${s} s`;
-    if (totalMinutes < 60) return `${totalMinutes} min`;
+    if (totalMinutes < 1) return `${s} ${t('doctorRecordingsPage.units.seconds')}`;
+    if (totalMinutes < 60) return `${totalMinutes} ${t('doctorRecordingsPage.units.minutes')}`;
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
-    return `${hours}h ${mins}m`;
+    return `${hours}${t('doctorRecordingsPage.units.hourShort')} ${mins}${t('doctorRecordingsPage.units.minuteShort')}`;
   };
 
   const formatDate = (date: Date) => {
@@ -849,10 +849,10 @@ export default function DoctorRecordings() {
           </Button>
           <div className="flex-1">
             <h1 className="font-heading text-2xl font-bold text-foreground">
-              Mis Grabaciones
+              {t('doctorRecordingsPage.header.title')}
             </h1>
             <p className="text-muted-foreground">
-              Gestiona tus grabaciones y revisa el historial de lives
+              {t('doctorRecordingsPage.header.subtitle')}
             </p>
           </div>
         </div>
@@ -862,11 +862,11 @@ export default function DoctorRecordings() {
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="grabaciones" className="gap-2">
               <Video className="w-4 h-4" />
-              Grabaciones
+              {t('doctorRecordingsPage.tabs.recordings')}
             </TabsTrigger>
             <TabsTrigger value="lives-pasados" className="gap-2">
               <Radio className="w-4 h-4" />
-              Lives pasados
+              {t('doctorRecordingsPage.tabs.pastLives')}
             </TabsTrigger>
           </TabsList>
 
@@ -877,12 +877,12 @@ export default function DoctorRecordings() {
               <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
                 <p className="text-sm font-medium text-foreground">
                   {selectedIds.size > 0
-                    ? `${selectedIds.size} grabación(es) seleccionada(s)`
-                    : 'Toca las grabaciones que deseas eliminar'}
+                    ? t('doctorRecordingsPage.selection.recordingsSelected').replace('{count}', String(selectedIds.size))
+                    : t('doctorRecordingsPage.selection.tapToDelete')}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={selectedIds.size === myRecordings.length ? deselectAll : selectAll}>
-                    {selectedIds.size === myRecordings.length ? 'Deseleccionar' : 'Todas'}
+                    {selectedIds.size === myRecordings.length ? t('doctorRecordingsPage.selection.deselect') : t('doctorRecordingsPage.selection.allFem')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={toggleSelectionMode}>
                     <X className="w-4 h-4" />
@@ -901,7 +901,7 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{totalRecordings}</p>
-                      <p className="text-xs text-muted-foreground">Grabaciones</p>
+                      <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.stats.recordings')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -915,7 +915,7 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{totalPurchases}</p>
-                      <p className="text-xs text-muted-foreground">Compras</p>
+                      <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.stats.purchases')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -929,10 +929,10 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{formatCurrency(totalRevenue)}</p>
-                      <p className="text-xs text-muted-foreground">Ingresos totales</p>
+                      <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.stats.totalRevenue')}</p>
                       {(totalVideoRevenue > 0 || totalChatRevenue > 0) && (
                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Video: {formatCurrency(totalVideoRevenue)} · Chats: {formatCurrency(totalChatRevenue)}
+                          {t('doctorRecordingsPage.stats.videoLabel')}: {formatCurrency(totalVideoRevenue)} · {t('doctorRecordingsPage.stats.chatsLabel')}: {formatCurrency(totalChatRevenue)}
                         </p>
                       )}
                     </div>
@@ -948,7 +948,7 @@ export default function DoctorRecordings() {
                     </div>
                     <div>
                       <p className="text-lg sm:text-2xl font-bold text-foreground">{formatDuration(totalDuration)}</p>
-                      <p className="text-xs text-muted-foreground">Duración Total</p>
+                      <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.stats.totalDuration')}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -970,22 +970,22 @@ export default function DoctorRecordings() {
                   </div>
                   <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
                     <SelectTrigger className="w-full md:w-48">
-                      <SelectValue placeholder="Especialidad" />
+                      <SelectValue placeholder={t('doctorRecordingsPage.filters.specialty')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todas las especialidades</SelectItem>
+                      <SelectItem value="all">{t('doctorRecordingsPage.filters.allSpecialties')}</SelectItem>
                       {specialties.map(s => (
                         <SelectItem key={s} value={s}>{s}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button 
-                    variant={showFilters ? "secondary" : "outline"} 
+                  <Button
+                    variant={showFilters ? "secondary" : "outline"}
                     onClick={() => setShowFilters(!showFilters)}
                     className="gap-2"
                   >
                     <Filter className="w-4 h-4" />
-                    Filtros
+                    {t('doctorRecordingsPage.filters.filters')}
                     {hasActiveFilters && (
                       <Badge variant="default" className="ml-1 h-5 w-5 p-0 justify-center">!</Badge>
                     )}
@@ -1000,12 +1000,12 @@ export default function DoctorRecordings() {
                 {showFilters && (
                   <div className="mt-4 pt-4 border-t grid md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label>Desde</Label>
+                      <Label>{t('doctorRecordingsPage.filters.from')}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateFrom ? format(dateFrom, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                            {dateFrom ? format(dateFrom, 'dd MMM yyyy', { locale: es }) : t('doctorRecordingsPage.filters.selectDate')}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -1014,12 +1014,12 @@ export default function DoctorRecordings() {
                       </Popover>
                     </div>
                     <div className="space-y-2">
-                      <Label>Hasta</Label>
+                      <Label>{t('doctorRecordingsPage.filters.to')}</Label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateTo ? format(dateTo, 'dd MMM yyyy', { locale: es }) : 'Seleccionar fecha'}
+                            {dateTo ? format(dateTo, 'dd MMM yyyy', { locale: es }) : t('doctorRecordingsPage.filters.selectDate')}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -1028,7 +1028,7 @@ export default function DoctorRecordings() {
                       </Popover>
                     </div>
                     <div className="space-y-2">
-                      <Label>Rango de precio: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
+                      <Label>{t('doctorRecordingsPage.filters.priceRange')}: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}</Label>
                       <Slider
                         value={priceRange}
                         onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -1048,12 +1048,12 @@ export default function DoctorRecordings() {
                 <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-base sm:text-lg">
                   <span className="flex items-center gap-2">
                     <Video className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Grabaciones
+                    {t('doctorRecordingsPage.recordings.title')}
                   </span>
                   <div className="flex flex-wrap items-center gap-2">
                     {hasActiveFilters && (
                       <Badge variant="secondary" className="text-[10px] sm:text-xs">
-                        {myRecordings.length} de {allRecordings.length}
+                        {t('doctorRecordingsPage.recordings.filteredCount').replace('{shown}', String(myRecordings.length)).replace('{total}', String(allRecordings.length))}
                       </Badge>
                     )}
                     {myRecordings.length > 0 && (
@@ -1064,7 +1064,7 @@ export default function DoctorRecordings() {
                         className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-xs"
                       >
                         {selectionMode ? <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                        <span className="hidden xs:inline">{selectionMode ? 'Cancelar' : 'Seleccionar'}</span>
+                        <span className="hidden xs:inline">{selectionMode ? t('doctorRecordingsPage.actions.cancel') : t('doctorRecordingsPage.actions.select')}</span>
                       </Button>
                     )}
                     <Button
@@ -1073,11 +1073,11 @@ export default function DoctorRecordings() {
                       onClick={handleCleanupOrphans}
                       disabled={isCleaningOrphans}
                       className="gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-xs"
-                      title="Borra archivos en Backblaze que ya no tienen grabación asociada"
+                      title={t('doctorRecordingsPage.actions.cleanupOrphansTitle')}
                     >
                       {isCleaningOrphans ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                      <span className="hidden sm:inline">Limpiar huérfanos</span>
-                      <span className="sm:hidden">Limpiar</span>
+                      <span className="hidden sm:inline">{t('doctorRecordingsPage.actions.cleanupOrphans')}</span>
+                      <span className="sm:hidden">{t('doctorRecordingsPage.actions.cleanup')}</span>
                     </Button>
                   </div>
                 </CardTitle>
@@ -1086,12 +1086,12 @@ export default function DoctorRecordings() {
                 {myRecordings.length === 0 ? (
                   <div className="text-center py-12">
                     <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <h3 className="font-semibold text-lg mb-2">No tienes grabaciones</h3>
+                    <h3 className="font-semibold text-lg mb-2">{t('doctorRecordingsPage.empty.noRecordings')}</h3>
                     <p className="text-muted-foreground mb-4">
-                      Las grabaciones se crean automáticamente al terminar un live
+                      {t('doctorRecordingsPage.empty.recordingsDesc')}
                     </p>
                     <Button onClick={() => navigate('/doctor/dashboard')}>
-                      Ir al Dashboard
+                      {t('doctorRecordingsPage.empty.goToDashboard')}
                     </Button>
                   </div>
                 ) : isCompact ? (
@@ -1140,21 +1140,21 @@ export default function DoctorRecordings() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
-                                    <Eye className="w-4 h-4 mr-2" />Ver grabación
+                                    <Eye className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.viewRecording')}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                                    <BarChart3 className="w-4 h-4 mr-2" />Estadísticas
+                                    <BarChart3 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.stats')}
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
-                                    <Pencil className="w-4 h-4 mr-2" />Editar precio
+                                    <Pencil className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.editPrice')}
                                    </DropdownMenuItem>
                                    <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
                                      <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
                                    </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
-                                    <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                    <Trash2 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.delete')}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -1164,16 +1164,16 @@ export default function DoctorRecordings() {
                             <span className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               {recording.videoUrl?.startsWith('pending:')
-                                ? 'Procesando…'
+                                ? t('doctorRecordingsPage.recording.processing')
                                 : !recording.videoUrl
-                                  ? 'Sin video'
+                                  ? t('doctorRecordingsPage.recording.noVideo')
                                   : recording.duration > 0
                                     ? formatDuration(recording.duration)
                                     : '—'}
                             </span>
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
-                              {recording.price === 0 ? 'Gratis' : formatCurrency(recording.price)}
+                              {recording.price === 0 ? t('doctorRecordingsPage.recording.free') : formatCurrency(recording.price)}
                             </span>
                             <span className="flex items-center gap-1">
                               <Users className="w-3 h-3" />
@@ -1194,7 +1194,7 @@ export default function DoctorRecordings() {
                               )}
                               {stats.paidComments > 0 && (
                                 <span className="flex items-center gap-1">
-                                  <Sparkles className="w-3 h-3" /> {stats.paidComments} de pago
+                                  <Sparkles className="w-3 h-3" /> {stats.paidComments} {t('doctorRecordingsPage.recording.paid')}
                                 </span>
                               )}
                             </div>
@@ -1211,14 +1211,14 @@ export default function DoctorRecordings() {
                       <TableHeader>
                         <TableRow>
                           {selectionMode && <TableHead className="w-10"></TableHead>}
-                          <TableHead>Grabación</TableHead>
-                          <TableHead>Especialidad</TableHead>
-                          <TableHead>Duración</TableHead>
-                          <TableHead>Precio</TableHead>
-                          <TableHead>Compras</TableHead>
-                          <TableHead>Chats pago</TableHead>
-                          <TableHead>Ingresos</TableHead>
-                          <TableHead>Fecha</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.recording')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.specialty')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.duration')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.price')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.purchases')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.paidChats')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.revenue')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.table.date')}</TableHead>
                           {!selectionMode && <TableHead className="w-12"></TableHead>}
                         </TableRow>
                       </TableHeader>
@@ -1262,16 +1262,16 @@ export default function DoctorRecordings() {
                               <TableCell><Badge variant="secondary">{recording.specialty}</Badge></TableCell>
                               <TableCell>
                                 {recording.videoUrl?.startsWith('pending:') ? (
-                                  <Badge variant="pending">Procesando…</Badge>
+                                  <Badge variant="pending">{t('doctorRecordingsPage.recording.processing')}</Badge>
                                 ) : !recording.videoUrl ? (
-                                  <Badge variant="outline">Sin video</Badge>
+                                  <Badge variant="outline">{t('doctorRecordingsPage.recording.noVideo')}</Badge>
                                 ) : (
                                   formatDuration(recording.duration)
                                 )}
                               </TableCell>
                               <TableCell>
                                 {recording.price === 0 ? (
-                                  <Badge variant="success">Gratis</Badge>
+                                  <Badge variant="success">{t('doctorRecordingsPage.recording.free')}</Badge>
                                 ) : (
                                   formatCurrency(recording.price)
                                 )}
@@ -1320,21 +1320,21 @@ export default function DoctorRecordings() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                       <DropdownMenuItem onClick={() => navigate(`/recording/${recording.id}`)}>
-                                        <Eye className="w-4 h-4 mr-2" />Ver grabación
+                                        <Eye className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.viewRecording')}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleViewStats(recording)}>
-                                        <BarChart3 className="w-4 h-4 mr-2" />Ver estadísticas
+                                        <BarChart3 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.viewStats')}
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => handleEditPrice(recording)}>
-                                        <Pencil className="w-4 h-4 mr-2" />Editar precio
+                                        <Pencil className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.editPrice')}
                                        </DropdownMenuItem>
                                        <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
                                          <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
                                        </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
-                                        <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                        <Trash2 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.delete')}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -1353,7 +1353,7 @@ export default function DoctorRecordings() {
             {/* Floating bulk delete bar */}
             {selectionMode && selectedIds.size > 0 && (
               <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm mx-auto bg-destructive text-destructive-foreground px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
-                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedIds.size} seleccionada(s)</span>
+                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{t('doctorRecordingsPage.bulk.selectedFem').replace('{count}', String(selectedIds.size))}</span>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -1361,7 +1361,7 @@ export default function DoctorRecordings() {
                   onClick={() => setBulkDeleteDialogOpen(true)}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Eliminar
+                  {t('doctorRecordingsPage.actions.delete')}
                 </Button>
               </div>
             )}
@@ -1380,7 +1380,7 @@ export default function DoctorRecordings() {
                       </div>
                       <div>
                         <p className="text-lg sm:text-2xl font-bold text-foreground">{pastLives.length}</p>
-                        <p className="text-xs text-muted-foreground">Lives</p>
+                        <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.pastStats.lives')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1395,7 +1395,7 @@ export default function DoctorRecordings() {
                         <p className="text-lg sm:text-2xl font-bold text-foreground">
                           {Math.max(...pastLives.map(l => l.peakViewers), 0)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Pico espectadores</p>
+                        <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.pastStats.peakViewers')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1410,7 +1410,7 @@ export default function DoctorRecordings() {
                         <p className="text-lg sm:text-2xl font-bold text-foreground">
                           {pastLives.reduce((s, l) => s + l.totalComments, 0)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Comentarios</p>
+                        <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.pastStats.comments')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1425,7 +1425,7 @@ export default function DoctorRecordings() {
                         <p className="text-lg sm:text-2xl font-bold text-foreground">
                           {formatCurrency(pastLives.reduce((s, l) => s + l.paidRevenue, 0))}
                         </p>
-                        <p className="text-xs text-muted-foreground">Ingresos chats</p>
+                        <p className="text-xs text-muted-foreground">{t('doctorRecordingsPage.pastStats.chatRevenue')}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1438,12 +1438,12 @@ export default function DoctorRecordings() {
               <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between gap-3">
                 <p className="text-sm font-medium text-foreground">
                   {selectedPastLiveIds.size > 0
-                    ? `${selectedPastLiveIds.size} live(s) seleccionado(s)`
-                    : 'Toca los lives que deseas gestionar'}
+                    ? t('doctorRecordingsPage.selection.livesSelected').replace('{count}', String(selectedPastLiveIds.size))
+                    : t('doctorRecordingsPage.selection.tapToManage')}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={selectedPastLiveIds.size === pastLives.length ? deselectAllPl : selectAllPl}>
-                    {selectedPastLiveIds.size === pastLives.length ? 'Deseleccionar' : 'Todos'}
+                    {selectedPastLiveIds.size === pastLives.length ? t('doctorRecordingsPage.selection.deselect') : t('doctorRecordingsPage.selection.allMasc')}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={togglePlSelectionMode}>
                     <X className="w-4 h-4" />
@@ -1457,7 +1457,7 @@ export default function DoctorRecordings() {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Radio className="w-5 h-5" />
-                    Lives pasados
+                    {t('doctorRecordingsPage.tabs.pastLives')}
                     {pastLives.length > 0 && (
                       <Badge variant="secondary">{pastLives.length}</Badge>
                     )}
@@ -1472,7 +1472,7 @@ export default function DoctorRecordings() {
                           className="gap-1.5"
                         >
                           <Download className="w-4 h-4" />
-                          {!isMobile && 'Descargar todo'}
+                          {!isMobile && t('doctorRecordingsPage.actions.downloadAll')}
                         </Button>
                         <Button
                           variant={plSelectionMode ? "default" : "outline"}
@@ -1481,7 +1481,7 @@ export default function DoctorRecordings() {
                           className="gap-1.5"
                         >
                           {plSelectionMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                          {plSelectionMode ? 'Cancelar' : 'Seleccionar'}
+                          {plSelectionMode ? t('doctorRecordingsPage.actions.cancel') : t('doctorRecordingsPage.actions.select')}
                         </Button>
                       </>
                     )}
@@ -1492,14 +1492,14 @@ export default function DoctorRecordings() {
                 {isLoadingPastLives ? (
                   <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Cargando...
+                    {t('doctorRecordingsPage.empty.loading')}
                   </div>
                 ) : pastLives.length === 0 ? (
                   <div className="text-center py-12">
                     <Radio className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                    <h3 className="font-semibold text-lg mb-2">No hay lives pasados</h3>
+                    <h3 className="font-semibold text-lg mb-2">{t('doctorRecordingsPage.empty.noPastLives')}</h3>
                     <p className="text-muted-foreground">
-                      Aquí aparecerán los lives que no fueron guardados como grabación
+                      {t('doctorRecordingsPage.empty.pastLivesDesc')}
                     </p>
                   </div>
                 ) : isCompact ? (
@@ -1538,11 +1538,11 @@ export default function DoctorRecordings() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => downloadPastLives([live])}>
-                                  <Download className="w-4 h-4 mr-2" />Descargar CSV
+                                  <Download className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.downloadCsv')}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive" onClick={() => setPlDeleteSingleId(live.id)}>
-                                  <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                  <Trash2 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1553,28 +1553,28 @@ export default function DoctorRecordings() {
                             <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-bold text-foreground">{live.peakViewers}</p>
-                              <p className="text-[10px] text-muted-foreground">Pico</p>
+                              <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.pastCard.peak')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                             <Heart className="w-3.5 h-3.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-bold text-foreground">{live.likesCount}</p>
-                              <p className="text-[10px] text-muted-foreground">Likes</p>
+                              <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.pastCard.likes')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                             <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-bold text-foreground">{live.totalComments}</p>
-                              <p className="text-[10px] text-muted-foreground">Comentarios</p>
+                              <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.pastCard.comments')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                             <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
                             <div>
                               <p className="text-sm font-bold text-foreground">{live.paidComments}</p>
-                              <p className="text-[10px] text-muted-foreground">De pago</p>
+                              <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.pastCard.paid')}</p>
                             </div>
                           </div>
                         </div>
@@ -1582,7 +1582,7 @@ export default function DoctorRecordings() {
                           <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-success/10 border border-success/20">
                             <DollarSign className="w-4 h-4 text-success" />
                             <span className="text-sm font-semibold text-success">
-                              +{formatCurrency(live.paidRevenue)} en chats de pago
+                              +{formatCurrency(live.paidRevenue)} {t('doctorRecordingsPage.pastCard.inPaidChats')}
                             </span>
                           </div>
                         )}
@@ -1596,14 +1596,14 @@ export default function DoctorRecordings() {
                       <TableHeader>
                         <TableRow>
                           {plSelectionMode && <TableHead className="w-10" />}
-                          <TableHead>Live</TableHead>
-                          <TableHead>Especialidad</TableHead>
-                          <TableHead>Pico</TableHead>
-                          <TableHead>Likes</TableHead>
-                          <TableHead>Comentarios</TableHead>
-                          <TableHead>De pago</TableHead>
-                          <TableHead>Ingresos chats</TableHead>
-                          <TableHead>Fecha</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.live')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.specialty')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.peak')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.likes')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.comments')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.paid')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.chatRevenue')}</TableHead>
+                          <TableHead>{t('doctorRecordingsPage.pastTable.date')}</TableHead>
                           {!plSelectionMode && <TableHead className="w-10" />}
                         </TableRow>
                       </TableHeader>
@@ -1667,11 +1667,11 @@ export default function DoctorRecordings() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => downloadPastLives([live])}>
-                                      <Download className="w-4 h-4 mr-2" />Descargar CSV
+                                      <Download className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.downloadCsv')}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem className="text-destructive" onClick={() => setPlDeleteSingleId(live.id)}>
-                                      <Trash2 className="w-4 h-4 mr-2" />Eliminar
+                                      <Trash2 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.delete')}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -1690,7 +1690,7 @@ export default function DoctorRecordings() {
             {/* Floating bulk action bar for past lives */}
             {plSelectionMode && selectedPastLiveIds.size > 0 && (
               <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md mx-auto bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between animate-slide-in-bottom">
-                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{selectedPastLiveIds.size} seleccionado(s)</span>
+                <span className="text-xs sm:text-sm font-medium whitespace-nowrap">{t('doctorRecordingsPage.bulk.selectedMasc').replace('{count}', String(selectedPastLiveIds.size))}</span>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="secondary"
@@ -1702,7 +1702,7 @@ export default function DoctorRecordings() {
                     }}
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Descargar
+                    {t('doctorRecordingsPage.actions.download')}
                   </Button>
                   <Button
                     variant="destructive"
@@ -1711,7 +1711,7 @@ export default function DoctorRecordings() {
                     onClick={() => setPlBulkDeleteDialogOpen(true)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Eliminar
+                    {t('doctorRecordingsPage.actions.delete')}
                   </Button>
                 </div>
               </div>
@@ -1725,11 +1725,11 @@ export default function DoctorRecordings() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Precio</DialogTitle>
+            <DialogTitle>{t('doctorRecordingsPage.dialogs.editPriceTitle')}</DialogTitle>
             <DialogDescription>{editingRecording?.title}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="price">Precio (MXN)</Label>
+            <Label htmlFor="price">{t('doctorRecordingsPage.dialogs.priceLabel')}</Label>
             <div className="relative mt-2">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -1744,15 +1744,15 @@ export default function DoctorRecordings() {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Establece 0 para hacer la grabación gratuita
+              {t('doctorRecordingsPage.dialogs.priceHelp')}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={isSaving}>
-              Cancelar
+              {t('doctorRecordingsPage.actions.cancel')}
             </Button>
             <Button onClick={handleSavePrice} disabled={isSaving}>
-              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>) : 'Guardar'}
+              {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorRecordingsPage.actions.saving')}</>) : t('doctorRecordingsPage.actions.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1762,19 +1762,19 @@ export default function DoctorRecordings() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar grabación?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorRecordingsPage.dialogs.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La grabación "{deletingRecording?.title}" será eliminada permanentemente junto con sus archivos y contenido asociado.
+              {t('doctorRecordingsPage.dialogs.deleteDesc').replace('{title}', deletingRecording?.title || '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('doctorRecordingsPage.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : 'Eliminar'}
+              {isDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorRecordingsPage.actions.deleting')}</>) : t('doctorRecordingsPage.actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1784,19 +1784,19 @@ export default function DoctorRecordings() {
       <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {selectedIds.size} grabación(es)?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorRecordingsPage.dialogs.bulkDeleteTitle').replace('{count}', String(selectedIds.size))}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción es irreversible. Se eliminarán permanentemente las grabaciones seleccionadas, sus archivos de video y todo el contenido asociado de la plataforma.
+              {t('doctorRecordingsPage.dialogs.bulkDeleteDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isBulkDeleting}>{t('doctorRecordingsPage.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isBulkDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : `Eliminar ${selectedIds.size}`}
+              {isBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorRecordingsPage.actions.deleting')}</>) : `${t('doctorRecordingsPage.actions.delete')} ${selectedIds.size}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1808,7 +1808,7 @@ export default function DoctorRecordings() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
-              Estadísticas
+              {t('doctorRecordingsPage.statsDialog.title')}
             </DialogTitle>
             <DialogDescription>{selectedRecording?.title}</DialogDescription>
           </DialogHeader>
@@ -1823,14 +1823,14 @@ export default function DoctorRecordings() {
                   <CardContent className="p-3 text-center">
                     <Users className="w-6 h-6 mx-auto text-primary mb-1" />
                     <p className="text-xl font-bold">{recStats.purchaseCount}</p>
-                    <p className="text-[10px] text-muted-foreground">Compras video</p>
+                    <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.statsDialog.videoPurchases')}</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-3 text-center">
                     <TrendingUp className="w-6 h-6 mx-auto text-success mb-1" />
                     <p className="text-xl font-bold">{formatCurrency(combined)}</p>
-                    <p className="text-[10px] text-muted-foreground">Ingresos totales</p>
+                    <p className="text-[10px] text-muted-foreground">{t('doctorRecordingsPage.statsDialog.totalRevenue')}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -1838,13 +1838,13 @@ export default function DoctorRecordings() {
               {/* Revenue breakdown */}
               {(recStats.totalRevenue > 0 || recStats.paidChatRevenue > 0) && (
                 <div className="p-3 bg-success/5 border border-success/20 rounded-lg space-y-2">
-                  <p className="text-xs font-semibold text-foreground">Desglose de ingresos</p>
+                  <p className="text-xs font-semibold text-foreground">{t('doctorRecordingsPage.statsDialog.revenueBreakdown')}</p>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Ventas de video:</span>
+                    <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.videoSales')}:</span>
                     <span className="font-medium">{formatCurrency(recStats.totalRevenue)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Chats de pago:</span>
+                    <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.paidChats')}:</span>
                     <span className="font-medium">{formatCurrency(recStats.paidChatRevenue)}</span>
                   </div>
                 </div>
@@ -1853,22 +1853,22 @@ export default function DoctorRecordings() {
               {/* Live metrics */}
               {hasLiveData && (
                 <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
-                  <p className="text-xs font-semibold text-foreground">Métricas del live</p>
+                  <p className="text-xs font-semibold text-foreground">{t('doctorRecordingsPage.statsDialog.liveMetrics')}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> Pico:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" /> {t('doctorRecordingsPage.statsDialog.peak')}:</span>
                       <span className="font-medium">{recStats.peakViewers}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground flex items-center gap-1"><Heart className="w-3 h-3" /> Likes:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><Heart className="w-3 h-3" /> {t('doctorRecordingsPage.statsDialog.likes')}:</span>
                       <span className="font-medium">{recStats.likesCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Comentarios:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><MessageSquare className="w-3 h-3" /> {t('doctorRecordingsPage.statsDialog.comments')}:</span>
                       <span className="font-medium">{recStats.totalComments}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> De pago:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><Sparkles className="w-3 h-3" /> {t('doctorRecordingsPage.statsDialog.paid')}:</span>
                       <span className="font-medium">{recStats.paidComments}</span>
                     </div>
                   </div>
@@ -1877,24 +1877,24 @@ export default function DoctorRecordings() {
 
               <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Precio actual:</span>
-                  <span className="font-medium">{selectedRecording.price === 0 ? 'Gratis' : formatCurrency(selectedRecording.price)}</span>
+                  <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.currentPrice')}:</span>
+                  <span className="font-medium">{selectedRecording.price === 0 ? t('doctorRecordingsPage.recording.free') : formatCurrency(selectedRecording.price)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Duración:</span>
+                  <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.duration')}:</span>
                   <span className="font-medium">{formatDuration(selectedRecording.duration)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Especialidad:</span>
+                  <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.specialty')}:</span>
                   <span className="font-medium">{selectedRecording.specialty}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Fecha:</span>
+                  <span className="text-muted-foreground">{t('doctorRecordingsPage.statsDialog.date')}:</span>
                   <span className="font-medium">{formatDate(selectedRecording.createdAt)}</span>
                 </div>
               </div>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 variant="outline"
                 onClick={() => {
                   setStatsDialogOpen(false);
@@ -1902,7 +1902,7 @@ export default function DoctorRecordings() {
                 }}
               >
                 <Pencil className="w-4 h-4 mr-2" />
-                Editar precio
+                {t('doctorRecordingsPage.menu.editPrice')}
               </Button>
             </div>
             );
@@ -1914,19 +1914,19 @@ export default function DoctorRecordings() {
       <AlertDialog open={!!plDeleteSingleId} onOpenChange={(open) => { if (!open) setPlDeleteSingleId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar este live?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorRecordingsPage.dialogs.deleteLiveTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminarán permanentemente el registro del live, sus mensajes de chat y likes. Esta acción no se puede deshacer.
+              {t('doctorRecordingsPage.dialogs.deleteLiveDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>{t('doctorRecordingsPage.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSinglePastLive}
               disabled={isPlBulkDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : 'Eliminar'}
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorRecordingsPage.actions.deleting')}</>) : t('doctorRecordingsPage.actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1936,19 +1936,19 @@ export default function DoctorRecordings() {
       <AlertDialog open={plBulkDeleteDialogOpen} onOpenChange={setPlBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {selectedPastLiveIds.size} live(s)?</AlertDialogTitle>
+            <AlertDialogTitle>{t('doctorRecordingsPage.dialogs.bulkDeleteLivesTitle').replace('{count}', String(selectedPastLiveIds.size))}</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminarán permanentemente los registros seleccionados, incluyendo mensajes de chat y likes. Esta acción es irreversible.
+              {t('doctorRecordingsPage.dialogs.bulkDeleteLivesDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPlBulkDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPlBulkDeleting}>{t('doctorRecordingsPage.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDeletePastLives}
               disabled={isPlBulkDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : `Eliminar ${selectedPastLiveIds.size}`}
+              {isPlBulkDeleting ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorRecordingsPage.actions.deleting')}</>) : `${t('doctorRecordingsPage.actions.delete')} ${selectedPastLiveIds.size}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1966,7 +1966,7 @@ export default function DoctorRecordings() {
           <div className="space-y-4">
             {thumbnailPreview ? (
               <div className="relative group">
-                <img src={thumbnailPreview} alt="Preview" className="w-full aspect-video object-cover rounded-lg border" />
+                <img src={thumbnailPreview} alt={t('doctorRecordingsPage.thumbnail.previewAlt')} className="w-full aspect-video object-cover rounded-lg border" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                   <Button size="sm" variant="secondary" className="gap-1.5" onClick={() => thumbnailInputRef.current?.click()}>
                     <Upload className="w-3.5 h-3.5" />

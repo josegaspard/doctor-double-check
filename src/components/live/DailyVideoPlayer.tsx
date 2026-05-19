@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
@@ -58,6 +59,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   className: externalClassName,
   children,
 }, ref) {
+  const { t } = useLanguage();
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const screenShareRef = useRef<HTMLDivElement>(null);
   const callRef = useRef<DailyCall | null>(null);
@@ -121,9 +123,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         if (cancelled) return;
         console.error('[DAILY] join failed:', err);
         console.error('[DAILY] error stack:', err?.stack);
-        const detail = err?.errorMsg || err?.message || err?.toString?.() || 'error desconocido';
-        setError(`No se pudo unirse a la sala. Detalle: ${detail}`);
-        toast.error(`No se pudo conectar: ${detail}`, { duration: 8000 });
+        const detail = err?.errorMsg || err?.message || err?.toString?.() || t('dailyVideoPlayer.unknownError');
+        setError(`${t('dailyVideoPlayer.joinFailed')} ${detail}`);
+        toast.error(`${t('dailyVideoPlayer.connectFailed')} ${detail}`, { duration: 8000 });
         setIsJoining(false);
       }
     };
@@ -150,9 +152,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const handleJoinedMeeting = useCallback(() => {
     setIsJoining(false);
     setIsConnected(true);
-    toast.success(isOwner ? 'Transmisión iniciada' : 'Conectado a la transmisión');
+    toast.success(isOwner ? t('dailyVideoPlayer.streamStarted') : t('dailyVideoPlayer.connectedToStream'));
     onJoined?.();
-  }, [isOwner, onJoined]);
+  }, [isOwner, onJoined, t]);
 
   const handleLeftMeeting = useCallback(() => {
     if (cleaningUpRef.current) return;
@@ -218,23 +220,23 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     // Mensajes accionables según tipo
     let userMessage: string;
     if (errorMsg.includes('account-missing-payment-method')) {
-      userMessage = 'Daily.co requiere configurar un método de pago para transmitir.';
+      userMessage = t('dailyVideoPlayer.errorPaymentMethod');
     } else if (errorMsg.includes('invalid-request-error') || errorType === 'invalid-request-error') {
-      userMessage = `Configuración inválida del servidor: ${rawMsg}`;
+      userMessage = `${t('dailyVideoPlayer.errorInvalidConfig')} ${rawMsg}`;
     } else if (errorMsg.includes('not-allowed') || errorMsg.includes('permission')) {
-      userMessage = 'Permisos de cámara/micrófono denegados. Habilítalos en tu navegador.';
+      userMessage = t('dailyVideoPlayer.errorPermissionDenied');
     } else if (errorMsg.includes('meeting-token-error') || errorMsg.includes('token')) {
-      userMessage = 'Token de transmisión inválido. Cierra y reabre la sesión.';
+      userMessage = t('dailyVideoPlayer.errorInvalidToken');
     } else if (errorMsg.includes('connection') || errorMsg.includes('network') || errorMsg.includes('websocket') || errorMsg.includes('ice')) {
-      userMessage = `Conexión bloqueada por red/firewall. Si usas Brave, baja Shields para doctores.daily.co. Detalle: ${rawMsg || errorType || 'desconocido'}`;
+      userMessage = `${t('dailyVideoPlayer.errorNetworkBlocked')} ${rawMsg || errorType || t('dailyVideoPlayer.unknown')}`;
     } else {
       // Mostrar el mensaje real de Daily para que el usuario pueda compartirlo
-      userMessage = `Daily: ${rawMsg || errorType || 'error desconocido'}`;
+      userMessage = `Daily: ${rawMsg || errorType || t('dailyVideoPlayer.unknownError')}`;
     }
 
     setError(userMessage);
     toast.error(userMessage, { duration: 8000 });
-  }, [onLeave, roomUrl, token]);
+  }, [onLeave, roomUrl, token, t]);
 
   const updateVideoElements = (participants: Record<string, DailyParticipant>) => {
     if (!videoContainerRef.current) return;
@@ -365,7 +367,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
       }
     } catch (err) {
       console.error('Screen share error:', err);
-      toast.error('No se pudo compartir pantalla');
+      toast.error(t('dailyVideoPlayer.screenShareFailed'));
     }
   };
 
@@ -488,7 +490,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         <div className="text-center px-4">
           <VideoOff className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={onLeave} className="mt-4" variant="outline">Volver</Button>
+          <Button onClick={onLeave} className="mt-4" variant="outline">{t('dailyVideoPlayer.back')}</Button>
         </div>
       </div>
     );
@@ -501,7 +503,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <p className="text-muted-foreground">Conectando...</p>
+            <p className="text-muted-foreground">{t('dailyVideoPlayer.connecting')}</p>
           </div>
         </div>
       </div>
@@ -545,7 +547,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         >
           <div className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white px-5 py-3 rounded-full shadow-xl ring-1 ring-white/20 text-sm font-semibold hover:scale-105 transition-transform">
             <Volume2 className="w-5 h-5" />
-            Toca para activar el sonido
+            {t('dailyVideoPlayer.tapToUnmute')}
           </div>
         </button>
       )}
@@ -557,7 +559,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
             <Badge variant="live" className="gap-1">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              EN VIVO
+              {t('dailyVideoPlayer.live')}
             </Badge>
           </div>
           
@@ -565,7 +567,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
             <Badge variant="secondary" className="gap-1 bg-black/60 text-white border-0">
               <Users className="w-3 h-3" />
-              {participantCount} viendo
+              {participantCount} {t('dailyVideoPlayer.watching')}
             </Badge>
           </div>
 
@@ -574,7 +576,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20">
               <Badge variant="secondary" className="gap-1 bg-primary/80 text-white border-0">
                 <Monitor className="w-3 h-3" />
-                Pantalla compartida
+                {t('dailyVideoPlayer.screenShared')}
               </Badge>
             </div>
           )}

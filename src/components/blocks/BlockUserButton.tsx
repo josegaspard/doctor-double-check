@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ interface BlockUserButtonProps {
 
 export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: BlockUserButtonProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isBlocked, setIsBlocked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,16 +55,16 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
           .eq('blocker_id', user.id)
           .eq('blocked_id', targetUserId);
         setIsBlocked(false);
-        toast.success(`${targetUserName} ha sido desbloqueado`);
+        toast.success(`${targetUserName} ${t('blockUserButton.toastUnblocked')}`);
       } else {
         await supabase
           .from('user_blocks')
           .insert({ blocker_id: user.id, blocked_id: targetUserId });
         setIsBlocked(true);
-        toast.success(`${targetUserName} ha sido bloqueado`);
+        toast.success(`${targetUserName} ${t('blockUserButton.toastBlocked')}`);
       }
     } catch (error) {
-      toast.error('Error al actualizar el bloqueo');
+      toast.error(t('blockUserButton.toastError'));
     } finally {
       setIsLoading(false);
     }
@@ -80,8 +82,8 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
           size="icon"
           onClick={handleToggleBlock}
           disabled={isLoading}
-          title="Desbloquear"
-          aria-label="Desbloquear"
+          title={t('blockUserButton.unblock')}
+          aria-label={t('blockUserButton.unblock')}
           className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-destructive border-destructive/40 hover:bg-destructive/10 rounded-md"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
@@ -97,7 +99,7 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
         className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10"
       >
         {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ban className="w-3.5 h-3.5" />}
-        Desbloquear
+        {t('blockUserButton.unblock')}
       </Button>
     );
   }
@@ -107,28 +109,28 @@ export function BlockUserButton({ targetUserId, targetUserName, size = 'sm' }: B
       <AlertDialogTrigger asChild>
         {size === 'icon' ? (
           // Icon-only para grid: mismo alto que Suscribirse/Ver Lives (h-9 sm:h-10)
-          <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md" title="Bloquear" aria-label="Bloquear">
+          <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md" title={t('blockUserButton.block')} aria-label={t('blockUserButton.block')}>
             <Ban className="w-4 h-4" />
           </Button>
         ) : (
           <Button variant="ghost" size={size} className="gap-1.5 text-muted-foreground hover:text-destructive">
             <Ban className="w-3.5 h-3.5" />
-            Bloquear
+            {t('blockUserButton.block')}
           </Button>
         )}
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Bloquear a {targetUserName}?</AlertDialogTitle>
+          <AlertDialogTitle>{t('blockUserButton.dialogTitle')} {targetUserName}?</AlertDialogTitle>
           <AlertDialogDescription>
-            No podrás ver su contenido ni iniciar orientaciones médicas con esta persona. Puedes desbloquear en cualquier momento.
+            {t('blockUserButton.dialogDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel>{t('blockUserButton.cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={handleToggleBlock} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Bloquear
+            {t('blockUserButton.block')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag, Users } from 'lucide-react';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   isApproved: boolean;
@@ -14,71 +15,72 @@ interface Props {
 export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props) {
   const navigate = useNavigate();
   const { toggles } = useSiteToggles();
+  const { t } = useLanguage();
 
   const actions = [
     {
-      title: 'Iniciar Live',
-      description: 'Comienza una transmisión en vivo',
+      title: t('doctorQuickActions.goLive.title'),
+      description: t('doctorQuickActions.goLive.description'),
       icon: Radio,
       color: 'live',
       requiresApproval: true,
       onClick: () => navigate('/doctor/go-live'),
-      buttonLabel: 'Iniciar',
+      buttonLabel: t('doctorQuickActions.goLive.buttonLabel'),
     },
     ...(toggles.show_content_medical ? [{
-      title: 'Subir Contenido',
-      description: 'Sube videos, PDFs o imágenes',
+      title: t('doctorQuickActions.uploadContent.title'),
+      description: t('doctorQuickActions.uploadContent.description'),
       icon: Upload,
       color: 'primary',
       requiresApproval: true,
       onClick: () => navigate('/doctor/upload'),
-      buttonLabel: 'Subir',
-      extraButton: { label: 'Biblioteca', onClick: () => navigate('/doctor/content') },
+      buttonLabel: t('doctorQuickActions.uploadContent.buttonLabel'),
+      extraButton: { label: t('doctorQuickActions.uploadContent.libraryLabel'), onClick: () => navigate('/doctor/content') },
     }] : []),
     {
-      title: 'Mi Perfil Profesional',
-      description: 'Edita tu educación, certificaciones y experiencia',
+      title: t('doctorQuickActions.myProfile.title'),
+      description: t('doctorQuickActions.myProfile.description'),
       icon: UserCircle,
       color: 'accent',
       requiresApproval: false,
       onClick: () => navigate(`/doctor/${userId}`),
-      buttonLabel: 'Ver y editar perfil',
+      buttonLabel: t('doctorQuickActions.myProfile.buttonLabel'),
     },
     ...(canPublishNews ? [{
-      title: 'Subir Contenido',
-      description: 'Sube videos, PDFs, artículos o imágenes para la comunidad',
+      title: t('doctorQuickActions.uploadCommunityContent.title'),
+      description: t('doctorQuickActions.uploadCommunityContent.description'),
       icon: Upload,
       color: 'warning',
       requiresApproval: true,
       onClick: () => navigate('/doctor/upload'),
-      buttonLabel: 'Subir',
+      buttonLabel: t('doctorQuickActions.uploadCommunityContent.buttonLabel'),
     }] : []),
     {
-      title: 'Mis Compras',
-      description: 'Revisa el estado de tus pedidos de material médico',
+      title: t('doctorQuickActions.myOrders.title'),
+      description: t('doctorQuickActions.myOrders.description'),
       icon: ShoppingBag,
       color: 'secondary',
       requiresApproval: false,
       onClick: () => navigate('/my-orders'),
-      buttonLabel: 'Ver Compras',
+      buttonLabel: t('doctorQuickActions.myOrders.buttonLabel'),
     },
     {
-      title: 'Orientaciones',
-      description: 'Revisa tus chats con pacientes',
+      title: t('doctorQuickActions.consultations.title'),
+      description: t('doctorQuickActions.consultations.description'),
       icon: MessageSquare,
       color: 'info',
       requiresApproval: false,
       onClick: () => navigate('/chat'),
-      buttonLabel: 'Ver Chats',
+      buttonLabel: t('doctorQuickActions.consultations.buttonLabel'),
     },
     {
-      title: 'Mis suscriptores',
-      description: 'Consulta quién está suscrito a tu contenido',
+      title: t('doctorQuickActions.subscribers.title'),
+      description: t('doctorQuickActions.subscribers.description'),
       icon: Users,
       color: 'primary',
       requiresApproval: false,
       onClick: () => navigate('/doctor/subscribers'),
-      buttonLabel: 'Ver lista',
+      buttonLabel: t('doctorQuickActions.subscribers.buttonLabel'),
     },
   ];
 
@@ -113,7 +115,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
                       size="sm"
                       className="h-7 sm:h-8 text-xs px-3"
                     >
-                      {disabled ? 'No disponible' : action.buttonLabel}
+                      {disabled ? t('doctorQuickActions.unavailable') : action.buttonLabel}
                     </Button>
                     {action.extraButton && (
                       <Button

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'];
 
 export function DoctorAnalytics() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d');
@@ -152,7 +154,7 @@ export function DoctorAnalytics() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-base sm:text-xl font-bold flex items-center gap-2">
           <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-          Analytics Dashboard
+          {t('doctorAnalytics.title')}
         </h2>
         <Tabs value={period} onValueChange={(v) => setPeriod(v as any)}>
           <TabsList className="h-8 sm:h-9">
@@ -166,10 +168,10 @@ export function DoctorAnalytics() {
       {/* Stats Grid — responsive sizes */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
         {[
-          { icon: DollarSign, iconClass: 'text-success', bg: 'bg-success/10', value: `$${data.totalEarnings.toLocaleString()}`, label: 'Ganancias Totales' },
-          { icon: DollarSign, iconClass: 'text-info', bg: 'bg-info/10', value: `$${data.pendingEarnings.toLocaleString()}`, label: 'Pendiente de Cobro' },
-          { icon: Users, iconClass: 'text-primary', bg: 'bg-primary/10', value: data.subscriberCount, label: 'Suscriptores' },
-          { icon: Star, iconClass: 'text-info', bg: 'bg-info/10', value: data.avgRating.toFixed(1), label: `${data.totalRatings} calificaciones` },
+          { icon: DollarSign, iconClass: 'text-success', bg: 'bg-success/10', value: `$${data.totalEarnings.toLocaleString()}`, label: t('doctorAnalytics.stats.totalEarnings') },
+          { icon: DollarSign, iconClass: 'text-info', bg: 'bg-info/10', value: `$${data.pendingEarnings.toLocaleString()}`, label: t('doctorAnalytics.stats.pendingEarnings') },
+          { icon: Users, iconClass: 'text-primary', bg: 'bg-primary/10', value: data.subscriberCount, label: t('doctorAnalytics.stats.subscribers') },
+          { icon: Star, iconClass: 'text-info', bg: 'bg-info/10', value: data.avgRating.toFixed(1), label: `${data.totalRatings} ${t('doctorAnalytics.stats.ratings')}` },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -196,7 +198,7 @@ export function DoctorAnalytics() {
           <CardHeader className="pb-2 sm:pb-4">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
-              Ganancias por Día
+              {t('doctorAnalytics.charts.earningsPerDay')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -212,13 +214,13 @@ export function DoctorAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="date" fontSize={10} tick={{ fontSize: 10 }} />
                   <YAxis fontSize={10} tick={{ fontSize: 10 }} width={45} />
-                  <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, 'Ganancias']} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
+                  <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, t('doctorAnalytics.charts.earningsTooltip')]} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                   <Area type="monotone" dataKey="amount" stroke="#22c55e" fillOpacity={1} fill="url(#colorEarnings)" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[180px] flex items-center justify-center text-muted-foreground text-sm">
-                No hay datos para este período
+                {t('doctorAnalytics.charts.noData')}
               </div>
             )}
           </CardContent>
@@ -228,7 +230,7 @@ export function DoctorAnalytics() {
           <CardHeader className="pb-2 sm:pb-4">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              Consultas por Día
+              {t('doctorAnalytics.charts.consultationsPerDay')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -238,13 +240,13 @@ export function DoctorAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                   <XAxis dataKey="date" fontSize={10} tick={{ fontSize: 10 }} />
                   <YAxis fontSize={10} tick={{ fontSize: 10 }} width={30} />
-                  <Tooltip formatter={(value: number) => [value, 'Consultas']} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
+                  <Tooltip formatter={(value: number) => [value, t('doctorAnalytics.charts.consultationsTooltip')]} contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                   <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[180px] flex items-center justify-center text-muted-foreground text-sm">
-                No hay datos para este período
+                {t('doctorAnalytics.charts.noData')}
               </div>
             )}
           </CardContent>
@@ -257,7 +259,7 @@ export function DoctorAnalytics() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <Star className="w-4 h-4" />
-              Distribución de Calificaciones
+              {t('doctorAnalytics.ratings.distributionTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -278,7 +280,7 @@ export function DoctorAnalytics() {
                         <Cell key={`cell-${index}`} fill={COLORS[entry.rating - 1]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value, name) => [`${value} votos`, `${name} ⭐`]} />
+                    <Tooltip formatter={(value, name) => [`${value} ${t('doctorAnalytics.ratings.votes')}`, `${name} ⭐`]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="space-y-1 ml-3">
@@ -293,7 +295,7 @@ export function DoctorAnalytics() {
               </div>
             ) : (
               <div className="h-[130px] flex items-center justify-center text-muted-foreground text-sm">
-                Sin calificaciones aún
+                {t('doctorAnalytics.ratings.empty')}
               </div>
             )}
           </CardContent>
@@ -303,14 +305,14 @@ export function DoctorAnalytics() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <PlayCircle className="w-4 h-4" />
-              Contenido Creado
+              {t('doctorAnalytics.content.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
             {[
-              { icon: PlayCircle, iconClass: 'text-primary', label: 'Grabaciones', value: data.recordingsCount },
-              { icon: Eye, iconClass: 'text-destructive', label: 'Lives realizados', value: data.livesCount },
-              { icon: Eye, iconClass: 'text-info', label: 'Vistas totales', value: data.totalViews.toLocaleString() },
+              { icon: PlayCircle, iconClass: 'text-primary', label: t('doctorAnalytics.content.recordings'), value: data.recordingsCount },
+              { icon: Eye, iconClass: 'text-destructive', label: t('doctorAnalytics.content.lives'), value: data.livesCount },
+              { icon: Eye, iconClass: 'text-info', label: t('doctorAnalytics.content.totalViews'), value: data.totalViews.toLocaleString() },
             ].map((item, i) => {
               const Icon = item.icon;
               return (
@@ -330,20 +332,20 @@ export function DoctorAnalytics() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
-              Consultas
+              {t('doctorAnalytics.consultations.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
             <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
-              <span className="text-xs sm:text-sm">Total consultas</span>
+              <span className="text-xs sm:text-sm">{t('doctorAnalytics.consultations.total')}</span>
               <Badge variant="secondary" className="text-xs">{data.totalConsultations}</Badge>
             </div>
             <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
-              <span className="text-xs sm:text-sm">Promedio de rating</span>
+              <span className="text-xs sm:text-sm">{t('doctorAnalytics.consultations.avgRating')}</span>
               <Badge variant="secondary" className="text-xs">{data.avgRating.toFixed(1)} ⭐</Badge>
             </div>
             <div className="flex items-center justify-between p-2.5 bg-success/10 rounded-lg">
-              <span className="text-xs sm:text-sm text-success">Tasa de satisfacción</span>
+              <span className="text-xs sm:text-sm text-success">{t('doctorAnalytics.consultations.satisfactionRate')}</span>
               <Badge className="bg-success text-xs">
                 {data.totalRatings > 0 
                   ? Math.round((data.ratingDistribution.filter(r => r.rating >= 4).reduce((s, r) => s + r.count, 0) / data.totalRatings) * 100)

@@ -86,7 +86,7 @@ export default function RoleSelector() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f47' }}>
         <div className="flex items-center gap-3 text-white/90">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          <span>Cargando...</span>
+          <span>{t('common.loading')}</span>
         </div>
       </div>
     );

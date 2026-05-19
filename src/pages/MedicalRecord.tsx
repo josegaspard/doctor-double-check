@@ -28,36 +28,36 @@ import { exportClinicalSummary } from '@/lib/exportClinicalSummary';
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'No sé'];
 
 const FREQUENCY_OPTIONS = [
-  { value: 'never', label: 'Nunca' },
-  { value: 'rarely', label: 'Raramente' },
-  { value: 'occasionally', label: 'Ocasionalmente' },
-  { value: 'weekly', label: 'Semanalmente' },
-  { value: 'daily', label: 'Diariamente' },
-];
+  { value: 'never' },
+  { value: 'rarely' },
+  { value: 'occasionally' },
+  { value: 'weekly' },
+  { value: 'daily' },
+] as const;
 
 const VACCINES = [
-  { key: 'bcg', label: 'BCG (Tuberculosis)' },
-  { key: 'hepatitis_b', label: 'Hepatitis B' },
-  { key: 'pentavalente', label: 'Pentavalente (DPaT+VPI+Hib)' },
-  { key: 'dpt', label: 'DPT (Difteria, Pertussis, Tétanos)' },
-  { key: 'rotavirus', label: 'Rotavirus' },
-  { key: 'neumococo_conjugada', label: 'Neumococo conjugada (PCV13)' },
-  { key: 'neumococo_23', label: 'Neumococo 23 (PPSV23)' },
-  { key: 'influenza', label: 'Influenza (estacional)' },
-  { key: 'srp', label: 'SRP (Sarampión, Rubéola, Parotiditis)' },
-  { key: 'sabin', label: 'Sabin (Polio oral)' },
-  { key: 'salk', label: 'Salk (Polio inyectable)' },
-  { key: 'sr', label: 'SR (Sarampión-Rubéola)' },
-  { key: 'vph', label: 'VPH (Virus del Papiloma Humano)' },
-  { key: 'hepatitis_a', label: 'Hepatitis A' },
-  { key: 'tetanos_td', label: 'Tétanos / Td' },
-  { key: 'tdpa', label: 'Tdpa (Tétanos, Difteria, Pertussis acelular)' },
-  { key: 'covid19', label: 'COVID-19' },
-  { key: 'meningococo', label: 'Meningococo' },
-  { key: 'varicela', label: 'Varicela' },
-  { key: 'fiebre_amarilla', label: 'Fiebre amarilla' },
-  { key: 'rabia', label: 'Rabia' },
-];
+  { key: 'bcg' },
+  { key: 'hepatitis_b' },
+  { key: 'pentavalente' },
+  { key: 'dpt' },
+  { key: 'rotavirus' },
+  { key: 'neumococo_conjugada' },
+  { key: 'neumococo_23' },
+  { key: 'influenza' },
+  { key: 'srp' },
+  { key: 'sabin' },
+  { key: 'salk' },
+  { key: 'sr' },
+  { key: 'vph' },
+  { key: 'hepatitis_a' },
+  { key: 'tetanos_td' },
+  { key: 'tdpa' },
+  { key: 'covid19' },
+  { key: 'meningococo' },
+  { key: 'varicela' },
+  { key: 'fiebre_amarilla' },
+  { key: 'rabia' },
+] as const;
 
 interface MedicationItem { name: string; dose: string; frequency: string; }
 interface SurgeryItem { procedure: string; date: string; complications?: string; }
@@ -70,17 +70,17 @@ const CHRONIC_CONDITIONS_LIST = [
 ];
 
 const EXTRA_FAMILY_CONDITIONS = [
-  { key: 'renal', label: 'Enfermedades renales' },
-  { key: 'hepatic', label: 'Enfermedades hepáticas' },
-  { key: 'thyroid', label: 'Enfermedades tiroideas' },
-  { key: 'asthma_copd', label: 'Asma / EPOC' },
-  { key: 'arthritis', label: 'Artritis / Reumatismo' },
-  { key: 'epilepsy', label: 'Epilepsia' },
-  { key: 'obesity', label: 'Obesidad' },
-  { key: 'alcoholism', label: 'Alcoholismo / Adicciones' },
-  { key: 'hereditary_allergies', label: 'Alergias hereditarias' },
-  { key: 'autoimmune', label: 'Enfermedades autoinmunes' },
-];
+  { key: 'renal' },
+  { key: 'hepatic' },
+  { key: 'thyroid' },
+  { key: 'asthma_copd' },
+  { key: 'arthritis' },
+  { key: 'epilepsy' },
+  { key: 'obesity' },
+  { key: 'alcoholism' },
+  { key: 'hereditary_allergies' },
+  { key: 'autoimmune' },
+] as const;
 
 interface ClinicalData {
   sex: string; date_of_birth: string; blood_type: string;
@@ -171,6 +171,7 @@ const DEFAULT_DATA: ClinicalData = {
 };
 
 function ConsultationSummariesSection({ patientId }: { patientId: string }) {
+  const { t } = useLanguage();
   const [consultationIds, setConsultationIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -202,7 +203,7 @@ function ConsultationSummariesSection({ patientId }: { patientId: string }) {
       <Card>
         <CardContent className="py-10 text-center text-muted-foreground text-sm">
           <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          No hay resúmenes médicos disponibles aún.
+          {t('medicalRecordPage.consultationSummaries.empty')}
         </CardContent>
       </Card>
     );
@@ -398,10 +399,10 @@ export default function MedicalRecord() {
       }
 
       if (error) throw error;
-      toast.success('Expediente guardado correctamente');
+      toast.success(t('medicalRecordPage.toastSaveSuccess'));
     } catch (err) {
       console.error(err);
-      toast.error('Error al guardar el expediente');
+      toast.error(t('medicalRecordPage.toastSaveError'));
     } finally {
       setIsSaving(false);
     }
@@ -427,30 +428,30 @@ export default function MedicalRecord() {
           <div className="min-w-0">
             <h1 className="font-heading text-lg sm:text-2xl font-bold flex items-center gap-2">
               <Stethoscope className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-              <span className="truncate">Expediente Médico</span>
+              <span className="truncate">{t('medicalRecordPage.header.title')}</span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Tu historial clínico completo</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{t('medicalRecordPage.header.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {role === 'patient' && hasRecord && (
               <Button
                 onClick={() => exportClinicalSummary({
-                  patient: { name: user?.name || 'Paciente', email: user?.email || '' },
+                  patient: { name: user?.name || t('medicalRecordPage.header.patientFallback'), email: user?.email || '' },
                   data,
                   language,
                 })}
                 size="sm"
                 variant="outline"
                 className="gap-1.5 h-9 px-3 flex-1 sm:flex-initial bg-card"
-                title="Descargar resumen clínico (uso personal)"
+                title={t('medicalRecordPage.header.downloadTitle')}
               >
                 <Download className="w-4 h-4" />
-                <span>Descargar</span>
+                <span>{t('medicalRecordPage.header.download')}</span>
               </Button>
             )}
             <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2 h-9 px-3 flex-1 sm:flex-initial">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Guardar
+              {t('medicalRecordPage.header.save')}
             </Button>
           </div>
         </div>
@@ -461,9 +462,9 @@ export default function MedicalRecord() {
               <ShieldCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </div>
             <span className="leading-snug">
-              Tu expediente es privado. Puedes descargar un{' '}
-              <strong className="font-bold underline decoration-primary-foreground/40 underline-offset-2">resumen para uso personal</strong>{' '}
-              con marca de agua. No compartas el documento fuera de la plataforma.
+              {t('medicalRecordPage.privacyNotice.prefix')}{' '}
+              <strong className="font-bold underline decoration-primary-foreground/40 underline-offset-2">{t('medicalRecordPage.privacyNotice.highlight')}</strong>{' '}
+              {t('medicalRecordPage.privacyNotice.suffix')}
             </span>
           </div>
         )}
@@ -471,63 +472,63 @@ export default function MedicalRecord() {
         <Tabs defaultValue="personal" className="space-y-3 sm:space-y-4">
           {/* Mobile: horizontal scroll (1 fila, sin wrap). Desktop: 7-col grid. */}
           <TabsList className="w-full flex sm:grid sm:grid-cols-7 gap-1 overflow-x-auto scrollbar-hide sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-1 h-auto py-1 justify-start">
-            <TabsTrigger value="personal" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><User className="w-3.5 h-3.5" /> Personal</TabsTrigger>
-            <TabsTrigger value="family" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Heart className="w-3.5 h-3.5" /> Familia</TabsTrigger>
-            <TabsTrigger value="habits" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Wine className="w-3.5 h-3.5" /> Hábitos</TabsTrigger>
-            <TabsTrigger value="vaccines" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Syringe className="w-3.5 h-3.5" /> Vacunas</TabsTrigger>
-            <TabsTrigger value="studies" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Upload className="w-3.5 h-3.5" /> Estudios</TabsTrigger>
-            <TabsTrigger value="summaries" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><FileText className="w-3.5 h-3.5" /> Resúmenes</TabsTrigger>
-            <TabsTrigger value="calculators" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Calculator className="w-3.5 h-3.5" /> Calc.</TabsTrigger>
+            <TabsTrigger value="personal" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><User className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.personal')}</TabsTrigger>
+            <TabsTrigger value="family" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Heart className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.family')}</TabsTrigger>
+            <TabsTrigger value="habits" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Wine className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.habits')}</TabsTrigger>
+            <TabsTrigger value="vaccines" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Syringe className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.vaccines')}</TabsTrigger>
+            <TabsTrigger value="studies" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Upload className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.studies')}</TabsTrigger>
+            <TabsTrigger value="summaries" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><FileText className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.summaries')}</TabsTrigger>
+            <TabsTrigger value="calculators" className="text-xs gap-1 flex-shrink-0 px-3 py-1.5 sm:px-1 whitespace-nowrap"><Calculator className="w-3.5 h-3.5" /> {t('medicalRecordPage.tabs.calculators')}</TabsTrigger>
           </TabsList>
 
           {/* ── DATOS PERSONALES ── */}
           <TabsContent value="personal" className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Datos Personales</CardTitle>
+                <CardTitle className="text-sm">{t('medicalRecordPage.personal.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
-                    <Label className="text-xs">Sexo</Label>
+                    <Label className="text-xs">{t('medicalRecordPage.personal.sex')}</Label>
                     <Select value={data.sex} onValueChange={v => update('sex', v)}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="male">Masculino</SelectItem>
-                        <SelectItem value="female">Femenino</SelectItem>
-                        <SelectItem value="other">Otro</SelectItem>
+                        <SelectItem value="male">{t('medicalRecordPage.personal.sexMale')}</SelectItem>
+                        <SelectItem value="female">{t('medicalRecordPage.personal.sexFemale')}</SelectItem>
+                        <SelectItem value="other">{t('medicalRecordPage.personal.sexOther')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Fecha de nacimiento</Label>
+                    <Label className="text-xs">{t('medicalRecordPage.personal.dateOfBirth')}</Label>
                     <Input type="date" value={data.date_of_birth} onChange={e => update('date_of_birth', e.target.value)} />
                   </div>
                   <div>
-                    <Label className="text-xs">Tipo de sangre</Label>
+                    <Label className="text-xs">{t('medicalRecordPage.personal.bloodType')}</Label>
                     <Select value={data.blood_type} onValueChange={v => update('blood_type', v)}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
                       <SelectContent>
-                        {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{t(`medical.bloodType.${bt}`)}</SelectItem>)}
+                        {BLOOD_TYPES.map(bt => <SelectItem key={bt} value={bt}>{bt === 'No sé' ? t('medicalRecordPage.bloodTypeUnknown') : bt}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">Altura (cm)</Label>
+                    <Label className="text-xs">{t('medicalRecordPage.personal.heightCm')}</Label>
                     <Input type="number" placeholder="170" value={data.height_cm} onChange={e => update('height_cm', e.target.value)} />
                   </div>
                   <div>
-                    <Label className="text-xs">Peso (kg)</Label>
+                    <Label className="text-xs">{t('medicalRecordPage.personal.weightKg')}</Label>
                     <Input type="number" placeholder="70" value={data.weight_kg} onChange={e => update('weight_kg', e.target.value)} />
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-xs">Alergias</Label>
-                  <Textarea placeholder="Medicamentos, alimentos, etc." value={data.allergies} onChange={e => update('allergies', e.target.value)} rows={2} />
+                  <Label className="text-xs">{t('medicalRecordPage.personal.allergies')}</Label>
+                  <Textarea placeholder={t('medicalRecordPage.personal.allergiesPlaceholder')} value={data.allergies} onChange={e => update('allergies', e.target.value)} rows={2} />
                 </div>
                 <div>
-                  <Label className="text-xs font-medium">Enfermedades crónicas</Label>
+                  <Label className="text-xs font-medium">{t('medicalRecordPage.personal.chronicConditions')}</Label>
                   <div className="space-y-2 mt-2">
                     {(() => {
                       // Lista libre de "Otras enfermedades crónicas" — cual + fecha + tratamiento.
@@ -556,23 +557,23 @@ export default function MedicalRecord() {
                               {others.map((o, i) => (
                                 <div key={i} className="rounded-md border border-border p-2 bg-muted/20 space-y-1.5">
                                   <div className="flex items-center justify-between gap-2">
-                                    <Label className="text-[11px] text-muted-foreground">Otra enfermedad crónica</Label>
+                                    <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.otherChronicCondition')}</Label>
                                     <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={() => removeOther(i)}>✕</Button>
                                   </div>
                                   <Input
-                                    placeholder="¿Cuál? (nombre de la enfermedad)"
+                                    placeholder={t('medicalRecordPage.personal.otherChronicNamePlaceholder')}
                                     className="text-sm"
                                     value={o.cual}
                                     onChange={e => updateOther(i, { cual: e.target.value })}
                                   />
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div>
-                                      <Label className="text-[11px] text-muted-foreground">Fecha de diagnóstico</Label>
+                                      <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.diagnosisDate')}</Label>
                                       <Input type="date" className="text-sm" value={o.date} onChange={e => updateOther(i, { date: e.target.value })} />
                                     </div>
                                     <div>
-                                      <Label className="text-[11px] text-muted-foreground">Recordatorio de tratamiento</Label>
-                                      <Input className="text-sm" placeholder="Medicamento, frecuencia…" value={o.treatment} onChange={e => updateOther(i, { treatment: e.target.value })} />
+                                      <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.treatmentReminder')}</Label>
+                                      <Input className="text-sm" placeholder={t('medicalRecordPage.personal.treatmentReminderPlaceholder')} value={o.treatment} onChange={e => updateOther(i, { treatment: e.target.value })} />
                                     </div>
                                   </div>
                                 </div>
@@ -580,7 +581,7 @@ export default function MedicalRecord() {
                             </div>
                           )}
                           <Button type="button" variant="outline" size="sm" className="text-xs h-7 gap-1 mb-2" onClick={addOther}>
-                            + Agregar otra enfermedad crónica
+                            {t('medicalRecordPage.personal.addOtherChronic')}
                           </Button>
                         </>
                       );
@@ -594,17 +595,17 @@ export default function MedicalRecord() {
                             <Checkbox checked={item.active} onCheckedChange={(v) => {
                               setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, active: !!v } } }));
                             }} />
-                            <Label className="text-sm cursor-pointer">{t(`medical.chronicCondition.${condition}`)}</Label>
+                            <Label className="text-sm cursor-pointer">{t(`medicalRecordPage.chronicConditions.${condition}`)}</Label>
                           </div>
                           {item.active && (
                             <div className="ml-6 space-y-1.5">
                               {isDiabetes && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                   <div>
-                                    <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                    <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.diabetesType')}</Label>
                                     <Input
                                       className="text-sm"
-                                      placeholder="Ej: Tipo 2, gestacional, prediabetes…"
+                                      placeholder={t('medicalRecordPage.personal.diabetesTypePlaceholder')}
                                       value={(item as any).diabetes_type || ''}
                                       onChange={e => {
                                         const v = e.target.value;
@@ -613,7 +614,7 @@ export default function MedicalRecord() {
                                     />
                                   </div>
                                   <div>
-                                    <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                    <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.familyRelationship')}</Label>
                                     {(() => {
                                       const relatives: string[] = ((item as any).diabetes_relatives as string[]) || [];
                                       const toggle = (key: string) => {
@@ -621,25 +622,19 @@ export default function MedicalRecord() {
                                         setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_relatives: next } as any } }));
                                       };
                                       const RELATIVES = [
-                                        { key: 'father', label: 'Padre' },
-                                        { key: 'mother', label: 'Madre' },
-                                        { key: 'sibling', label: 'Hermano(a)' },
-                                        { key: 'grandparent', label: 'Abuelo(a)' },
-                                        { key: 'uncle_aunt', label: 'Tío(a)' },
-                                        { key: 'cousin', label: 'Primo(a)' },
-                                        { key: 'child', label: 'Hijo(a)' },
-                                        { key: 'none', label: 'Ninguno' },
-                                      ];
+                                        'father', 'mother', 'sibling', 'grandparent',
+                                        'uncle_aunt', 'cousin', 'child', 'none',
+                                      ] as const;
                                       return (
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                          {RELATIVES.map(r => (
+                                          {RELATIVES.map(rkey => (
                                             <button
-                                              key={r.key}
+                                              key={rkey}
                                               type="button"
-                                              onClick={() => toggle(r.key)}
-                                              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${relatives.includes(r.key) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+                                              onClick={() => toggle(rkey)}
+                                              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${relatives.includes(rkey) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
                                             >
-                                              {r.label}
+                                              {t(`medicalRecordPage.relatives.${rkey}`)}
                                             </button>
                                           ))}
                                         </div>
@@ -650,14 +645,14 @@ export default function MedicalRecord() {
                               )}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
-                                  <Label className="text-[11px] text-muted-foreground">Fecha de diagnóstico</Label>
+                                  <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.diagnosisDate')}</Label>
                                   <Input type="date" className="text-sm" value={(item as any).diagnosis_date || ''} onChange={e => {
                                     setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diagnosis_date: e.target.value } as any } }));
                                   }} />
                                 </div>
                                 <div>
-                                  <Label className="text-[11px] text-muted-foreground">Recordatorio de tratamiento</Label>
-                                  <Input placeholder="Medicamento, frecuencia, próxima dosis…" className="text-sm" value={(item as any).treatment_reminder || item.detail || ''} onChange={e => {
+                                  <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.treatmentReminder')}</Label>
+                                  <Input placeholder={t('medicalRecordPage.personal.treatmentReminderLongPlaceholder')} className="text-sm" value={(item as any).treatment_reminder || item.detail || ''} onChange={e => {
                                     setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, treatment_reminder: e.target.value, detail: e.target.value } as any } }));
                                   }} />
                                 </div>
@@ -671,43 +666,43 @@ export default function MedicalRecord() {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs font-medium">Medicamentos actuales</Label>
-                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addMedication}>+ Agregar</Button>
+                    <Label className="text-xs font-medium">{t('medicalRecordPage.personal.currentMedications')}</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addMedication}>{t('medicalRecordPage.personal.add')}</Button>
                   </div>
                   {data.medications.map((med, i) => (
                     <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 mb-2 items-end">
-                      <Input placeholder="Nombre" value={med.name} onChange={e => updateMedication(i, 'name', e.target.value)} className="text-sm" />
-                      <Input placeholder="Dosis" value={med.dose} onChange={e => updateMedication(i, 'dose', e.target.value)} className="text-sm w-24" />
-                      <Input placeholder="Frecuencia" value={med.frequency} onChange={e => updateMedication(i, 'frequency', e.target.value)} className="text-sm w-28" />
+                      <Input placeholder={t('medicalRecordPage.personal.medicationNamePlaceholder')} value={med.name} onChange={e => updateMedication(i, 'name', e.target.value)} className="text-sm" />
+                      <Input placeholder={t('medicalRecordPage.personal.medicationDosePlaceholder')} value={med.dose} onChange={e => updateMedication(i, 'dose', e.target.value)} className="text-sm w-24" />
+                      <Input placeholder={t('medicalRecordPage.personal.medicationFrequencyPlaceholder')} value={med.frequency} onChange={e => updateMedication(i, 'frequency', e.target.value)} className="text-sm w-28" />
                       <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeMedication(i)}>✕</Button>
                     </div>
                   ))}
-                  {data.medications.length === 0 && <p className="text-xs text-muted-foreground">Sin medicamentos registrados</p>}
+                  {data.medications.length === 0 && <p className="text-xs text-muted-foreground">{t('medicalRecordPage.personal.noMedications')}</p>}
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label className="text-xs font-medium">Cirugías previas</Label>
-                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addSurgery}>+ Agregar</Button>
+                    <Label className="text-xs font-medium">{t('medicalRecordPage.personal.previousSurgeries')}</Label>
+                    <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addSurgery}>{t('medicalRecordPage.personal.add')}</Button>
                   </div>
                   {data.surgeries.map((s, i) => (
                     <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_1fr_auto] gap-2 mb-2 items-end">
-                      <Input placeholder="Procedimiento" value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
+                      <Input placeholder={t('medicalRecordPage.personal.surgeryProcedurePlaceholder')} value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
                       <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm" />
-                      <Input placeholder="Complicaciones (si las hubo)" value={s.complications || ''} onChange={e => updateSurgery(i, 'complications' as any, e.target.value)} className="text-sm" />
+                      <Input placeholder={t('medicalRecordPage.personal.surgeryComplicationsPlaceholder')} value={s.complications || ''} onChange={e => updateSurgery(i, 'complications' as any, e.target.value)} className="text-sm" />
                       <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)}>✕</Button>
                     </div>
                   ))}
-                  {data.surgeries.length === 0 && <p className="text-xs text-muted-foreground">Sin cirugías registradas</p>}
+                  {data.surgeries.length === 0 && <p className="text-xs text-muted-foreground">{t('medicalRecordPage.personal.noSurgeries')}</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs">Contacto de emergencia</Label>
-                    <Input placeholder="Nombre" value={data.emergency_contact_name} onChange={e => update('emergency_contact_name', e.target.value)} />
+                    <Label className="text-xs">{t('medicalRecordPage.personal.emergencyContact')}</Label>
+                    <Input placeholder={t('medicalRecordPage.personal.emergencyContactNamePlaceholder')} value={data.emergency_contact_name} onChange={e => update('emergency_contact_name', e.target.value)} />
                   </div>
                   <div>
-                    <Label className="text-xs">Teléfono emergencia</Label>
-                    <Input placeholder="+52 55..." value={data.emergency_contact_phone} onChange={e => update('emergency_contact_phone', e.target.value)} />
+                    <Label className="text-xs">{t('medicalRecordPage.personal.emergencyContactPhone')}</Label>
+                    <Input placeholder={t('medicalRecordPage.personal.emergencyContactPhonePlaceholder')} value={data.emergency_contact_phone} onChange={e => update('emergency_contact_phone', e.target.value)} />
                   </div>
                 </div>
               </CardContent>
@@ -718,39 +713,39 @@ export default function MedicalRecord() {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">Ginecología</Badge>
+                    <Badge variant="outline" className="text-xs">{t('medicalRecordPage.gynecology.title')}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-xs">Última menstruación</Label>
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.lastPeriod')}</Label>
                       <Input type="date" value={data.gyn_last_period} onChange={e => update('gyn_last_period', e.target.value)} />
                     </div>
                     <div>
-                      <Label className="text-xs">Embarazos</Label>
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.pregnancies')}</Label>
                       <Input type="number" value={data.gyn_pregnancies} onChange={e => update('gyn_pregnancies', e.target.value)} />
                     </div>
                     <div>
-                      <Label className="text-xs">Partos</Label>
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.births')}</Label>
                       <Input type="number" value={data.gyn_births} onChange={e => update('gyn_births', e.target.value)} />
                     </div>
                     <div>
-                      <Label className="text-xs">Cesáreas</Label>
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.cesareans')}</Label>
                       <Input type="number" value={data.gyn_cesareans} onChange={e => update('gyn_cesareans', e.target.value)} />
                     </div>
                     <div>
-                      <Label className="text-xs">Abortos</Label>
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.abortions')}</Label>
                       <Input type="number" value={data.gyn_abortions} onChange={e => update('gyn_abortions', e.target.value)} />
                     </div>
                     <div>
-                      <Label className="text-xs">Anticonceptivo</Label>
-                      <Input placeholder="Tipo de anticonceptivo" value={data.gyn_contraceptive} onChange={e => update('gyn_contraceptive', e.target.value)} />
+                      <Label className="text-xs">{t('medicalRecordPage.gynecology.contraceptive')}</Label>
+                      <Input placeholder={t('medicalRecordPage.gynecology.contraceptivePlaceholder')} value={data.gyn_contraceptive} onChange={e => update('gyn_contraceptive', e.target.value)} />
                     </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Resultado último Papanicolaou</Label>
-                    <Input placeholder="Normal, anormal, pendiente..." value={data.gyn_pap_result} onChange={e => update('gyn_pap_result', e.target.value)} />
+                    <Label className="text-xs">{t('medicalRecordPage.gynecology.papResult')}</Label>
+                    <Input placeholder={t('medicalRecordPage.gynecology.papResultPlaceholder')} value={data.gyn_pap_result} onChange={e => update('gyn_pap_result', e.target.value)} />
                   </div>
                 </CardContent>
               </Card>
@@ -761,7 +756,7 @@ export default function MedicalRecord() {
           <TabsContent value="family" className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Antecedentes Familiares</CardTitle>
+                <CardTitle className="text-sm">{t('medicalRecordPage.family.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
@@ -798,33 +793,33 @@ export default function MedicalRecord() {
                           <div className="space-y-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
-                                <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.diabetesType')}</Label>
                                 <Input
                                   className="h-9 text-xs"
-                                  placeholder="Ej: Tipo 2, gestacional, prediabetes…"
+                                  placeholder={t('medicalRecordPage.family.diabetesTypePlaceholder')}
                                   value={dbDetail.type || ''}
                                   onChange={e => setDbDetail({ type: e.target.value })}
                                 />
                               </div>
                               <div>
-                                <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.relationship')}</Label>
                                 <Select value={dbDetail.relationship || ''} onValueChange={v => setDbDetail({ relationship: v })}>
-                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="father">Padre</SelectItem>
-                                    <SelectItem value="mother">Madre</SelectItem>
-                                    <SelectItem value="sibling">Hermano(a)</SelectItem>
-                                    <SelectItem value="grandparent">Abuelo(a)</SelectItem>
-                                    <SelectItem value="uncle_aunt">Tío(a)</SelectItem>
-                                    <SelectItem value="cousin">Primo(a)</SelectItem>
-                                    <SelectItem value="child">Hijo(a)</SelectItem>
-                                    <SelectItem value="other">Otro</SelectItem>
+                                    <SelectItem value="father">{t('medicalRecordPage.relatives.father')}</SelectItem>
+                                    <SelectItem value="mother">{t('medicalRecordPage.relatives.mother')}</SelectItem>
+                                    <SelectItem value="sibling">{t('medicalRecordPage.relatives.sibling')}</SelectItem>
+                                    <SelectItem value="grandparent">{t('medicalRecordPage.relatives.grandparent')}</SelectItem>
+                                    <SelectItem value="uncle_aunt">{t('medicalRecordPage.relatives.uncle_aunt')}</SelectItem>
+                                    <SelectItem value="cousin">{t('medicalRecordPage.relatives.cousin')}</SelectItem>
+                                    <SelectItem value="child">{t('medicalRecordPage.relatives.child')}</SelectItem>
+                                    <SelectItem value="other">{t('medicalRecordPage.relatives.other')}</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                             </div>
                             <Textarea
-                              placeholder="Detalles adicionales..."
+                              placeholder={t('medicalRecordPage.family.additionalDetails')}
                               value={dbDetail.notes || ''}
                               onChange={e => setDbDetail({ notes: e.target.value })}
                               rows={2}
@@ -848,7 +843,7 @@ export default function MedicalRecord() {
                 {/* Extended family conditions */}
                 {EXTRA_FAMILY_CONDITIONS.map(item => {
                   const val = data.extra_family[item.key] || { active: false, detail: '' };
-                  const localizedLabel = t(`medical.familyCondition.${item.key}`);
+                  const localizedLabel = t(`medicalRecordPage.extraFamilyConditions.${item.key}`);
                   return (
                     <div key={item.key} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -866,7 +861,7 @@ export default function MedicalRecord() {
                       {val.active && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Qué familiar</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.whichRelative')}</Label>
                             <Select
                               value={val.relationship || ''}
                               onValueChange={v => {
@@ -876,21 +871,21 @@ export default function MedicalRecord() {
                                 }));
                               }}
                             >
-                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="father">Padre</SelectItem>
-                                <SelectItem value="mother">Madre</SelectItem>
-                                <SelectItem value="sibling">Hermano(a)</SelectItem>
-                                <SelectItem value="grandparent">Abuelo(a)</SelectItem>
-                                <SelectItem value="uncle_aunt">Tío(a)</SelectItem>
-                                <SelectItem value="cousin">Primo(a)</SelectItem>
-                                <SelectItem value="child">Hijo(a)</SelectItem>
-                                <SelectItem value="other">Otro</SelectItem>
+                                <SelectItem value="father">{t('medicalRecordPage.relatives.father')}</SelectItem>
+                                <SelectItem value="mother">{t('medicalRecordPage.relatives.mother')}</SelectItem>
+                                <SelectItem value="sibling">{t('medicalRecordPage.relatives.sibling')}</SelectItem>
+                                <SelectItem value="grandparent">{t('medicalRecordPage.relatives.grandparent')}</SelectItem>
+                                <SelectItem value="uncle_aunt">{t('medicalRecordPage.relatives.uncle_aunt')}</SelectItem>
+                                <SelectItem value="cousin">{t('medicalRecordPage.relatives.cousin')}</SelectItem>
+                                <SelectItem value="child">{t('medicalRecordPage.relatives.child')}</SelectItem>
+                                <SelectItem value="other">{t('medicalRecordPage.relatives.other')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Detalles</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.details')}</Label>
                             <Textarea
                               placeholder={`${t('medical.familyDetailPrefix')} ${localizedLabel.toLowerCase()}...`}
                               value={val.detail}
@@ -911,8 +906,8 @@ export default function MedicalRecord() {
                 })}
 
                 <div>
-                  <Label className="text-xs">Otros antecedentes familiares</Label>
-                  <Textarea placeholder="Otros antecedentes relevantes..." value={data.family_other} onChange={e => update('family_other', e.target.value)} rows={2} />
+                  <Label className="text-xs">{t('medicalRecordPage.family.otherFamilyHistory')}</Label>
+                  <Textarea placeholder={t('medicalRecordPage.family.otherFamilyHistoryPlaceholder')} value={data.family_other} onChange={e => update('family_other', e.target.value)} rows={2} />
                 </div>
               </CardContent>
             </Card>
@@ -922,7 +917,7 @@ export default function MedicalRecord() {
           <TabsContent value="habits" className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Hábitos y Estilo de Vida</CardTitle>
+                <CardTitle className="text-sm">{t('medicalRecordPage.habits.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* ALCOHOL */}
@@ -935,7 +930,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🍷</span><Label className="text-sm font-medium">Alcoholismo</Label></div>
+                        <div className="flex items-center gap-2"><span className="text-lg">🍷</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.alcohol')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -945,38 +940,38 @@ export default function MedicalRecord() {
                         >
                           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="negative">Negativo</SelectItem>
-                            <SelectItem value="positive">Positivo</SelectItem>
+                            <SelectItem value="negative">{t('medicalRecordPage.habits.negative')}</SelectItem>
+                            <SelectItem value="positive">{t('medicalRecordPage.habits.positive')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {isPositive && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Bebida</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.beverage')}</Label>
                             <Select value={parsed.beverage || ''} onValueChange={v => setAlcohol({ beverage: v })}>
-                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.habits.beveragePlaceholder')} /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="beer">Cerveza</SelectItem>
-                                <SelectItem value="wine">Vino</SelectItem>
-                                <SelectItem value="spirits">Destilados</SelectItem>
-                                <SelectItem value="cocktails">Cócteles</SelectItem>
-                                <SelectItem value="mixed">Mezcla</SelectItem>
+                                <SelectItem value="beer">{t('medicalRecordPage.habits.beverages.beer')}</SelectItem>
+                                <SelectItem value="wine">{t('medicalRecordPage.habits.beverages.wine')}</SelectItem>
+                                <SelectItem value="spirits">{t('medicalRecordPage.habits.beverages.spirits')}</SelectItem>
+                                <SelectItem value="cocktails">{t('medicalRecordPage.habits.beverages.cocktails')}</SelectItem>
+                                <SelectItem value="mixed">{t('medicalRecordPage.habits.beverages.mixed')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.frequencyLabel')}</Label>
                             <Select value={data.habit_alcohol} onValueChange={v => update('habit_alcohol', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medicalRecordPage.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Cantidad</Label>
-                            <Input placeholder="Ej: 2 copas" value={parsed.amount || ''} onChange={e => setAlcohol({ amount: e.target.value })} className="h-9 text-xs" />
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.amount')}</Label>
+                            <Input placeholder={t('medicalRecordPage.habits.alcoholAmountPlaceholder')} value={parsed.amount || ''} onChange={e => setAlcohol({ amount: e.target.value })} className="h-9 text-xs" />
                           </div>
                         </div>
                       )}
@@ -990,7 +985,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🚬</span><Label className="text-sm font-medium">Tabaquismo</Label></div>
+                        <div className="flex items-center gap-2"><span className="text-lg">🚬</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.smoking')}</Label></div>
                         <Select
                           value={anyPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1003,17 +998,17 @@ export default function MedicalRecord() {
                         >
                           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="negative">Negativo</SelectItem>
-                            <SelectItem value="positive">Positivo</SelectItem>
+                            <SelectItem value="negative">{t('medicalRecordPage.habits.negative')}</SelectItem>
+                            <SelectItem value="positive">{t('medicalRecordPage.habits.positive')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {anyPositive && (
                         <div className="space-y-2 pl-7">
                           {[
-                            { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: 'Cigarro', icon: '🚬', placeholder: '5 cig/día' },
-                            { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: 'Vape', icon: '💨', placeholder: '1 pod / 2 días' },
-                            { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: 'Arguile/Hookah', icon: '🫧', placeholder: '1 sesión/sem' },
+                            { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: t('medicalRecordPage.habits.subtypes.cigarette'), icon: '🚬', placeholder: t('medicalRecordPage.habits.cigarettePlaceholder') },
+                            { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: t('medicalRecordPage.habits.subtypes.vape'), icon: '💨', placeholder: t('medicalRecordPage.habits.vapePlaceholder') },
+                            { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: t('medicalRecordPage.habits.subtypes.hookah'), icon: '🫧', placeholder: t('medicalRecordPage.habits.hookahPlaceholder') },
                           ].map(sub => {
                             const subActive = data[sub.key] !== 'never' && data[sub.key] !== '';
                             return (
@@ -1035,11 +1030,11 @@ export default function MedicalRecord() {
                                       <Select value={data[sub.key]} onValueChange={v => update(sub.key, v)}>
                                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                          {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
+                                          {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medicalRecordPage.frequency.${o.value}`)}</SelectItem>)}
                                         </SelectContent>
                                       </Select>
                                       <Input placeholder={sub.placeholder} value={parsed.amount || ''} onChange={e => setParsed({ amount: e.target.value })} className="h-8 text-xs" />
-                                      <Input placeholder="Hace cuánto empezaste (ej: 5 años)" value={parsed.started || ''} onChange={e => setParsed({ started: e.target.value })} className="h-8 text-xs" />
+                                      <Input placeholder={t('medicalRecordPage.habits.startedAgo')} value={parsed.started || ''} onChange={e => setParsed({ started: e.target.value })} className="h-8 text-xs" />
                                     </div>
                                   );
                                 })()}
@@ -1061,7 +1056,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">💊</span><Label className="text-sm font-medium">Otras drogas</Label></div>
+                        <div className="flex items-center gap-2"><span className="text-lg">💊</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.drugs')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1071,29 +1066,29 @@ export default function MedicalRecord() {
                         >
                           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="negative">Negativo</SelectItem>
-                            <SelectItem value="positive">Positivo</SelectItem>
+                            <SelectItem value="negative">{t('medicalRecordPage.habits.negative')}</SelectItem>
+                            <SelectItem value="positive">{t('medicalRecordPage.habits.positive')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {isPositive && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Tipo</Label>
-                            <Input placeholder="Ej: marihuana, cocaína..." value={parsed.type || ''} onChange={e => setDrugs({ type: e.target.value })} className="h-9 text-xs" />
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.drugsType')}</Label>
+                            <Input placeholder={t('medicalRecordPage.habits.drugsTypePlaceholder')} value={parsed.type || ''} onChange={e => setDrugs({ type: e.target.value })} className="h-9 text-xs" />
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.frequencyLabel')}</Label>
                             <Select value={data.habit_drugs} onValueChange={v => update('habit_drugs', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medicalRecordPage.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Cantidad</Label>
-                            <Input placeholder="Cantidad" value={parsed.amount || ''} onChange={e => setDrugs({ amount: e.target.value })} className="h-9 text-xs" />
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.amount')}</Label>
+                            <Input placeholder={t('medicalRecordPage.habits.drugsAmountPlaceholder')} value={parsed.amount || ''} onChange={e => setDrugs({ amount: e.target.value })} className="h-9 text-xs" />
                           </div>
                         </div>
                       )}
@@ -1110,7 +1105,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🏃</span><Label className="text-sm font-medium">Actividad física</Label></div>
+                        <div className="flex items-center gap-2"><span className="text-lg">🏃</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.exercise')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1120,42 +1115,42 @@ export default function MedicalRecord() {
                         >
                           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="negative">Sedentario</SelectItem>
-                            <SelectItem value="positive">Activo</SelectItem>
+                            <SelectItem value="negative">{t('medicalRecordPage.habits.sedentary')}</SelectItem>
+                            <SelectItem value="positive">{t('medicalRecordPage.habits.active')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       {isPositive && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pl-7">
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Tipo de ejercicio</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.exerciseType')}</Label>
                             <Select value={parsed.type || ''} onValueChange={v => setEx({ type: v })}>
-                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.habits.exerciseTypePlaceholder')} /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="cardio">Cardio</SelectItem>
-                                <SelectItem value="strength">Fuerza/Pesas</SelectItem>
-                                <SelectItem value="hiit">HIIT</SelectItem>
-                                <SelectItem value="yoga">Yoga/Pilates</SelectItem>
-                                <SelectItem value="sports">Deportes</SelectItem>
-                                <SelectItem value="walking">Caminata</SelectItem>
-                                <SelectItem value="cycling">Ciclismo</SelectItem>
-                                <SelectItem value="swimming">Natación</SelectItem>
-                                <SelectItem value="mixed">Mixto</SelectItem>
+                                <SelectItem value="cardio">{t('medicalRecordPage.habits.exerciseTypes.cardio')}</SelectItem>
+                                <SelectItem value="strength">{t('medicalRecordPage.habits.exerciseTypes.strength')}</SelectItem>
+                                <SelectItem value="hiit">{t('medicalRecordPage.habits.exerciseTypes.hiit')}</SelectItem>
+                                <SelectItem value="yoga">{t('medicalRecordPage.habits.exerciseTypes.yoga')}</SelectItem>
+                                <SelectItem value="sports">{t('medicalRecordPage.habits.exerciseTypes.sports')}</SelectItem>
+                                <SelectItem value="walking">{t('medicalRecordPage.habits.exerciseTypes.walking')}</SelectItem>
+                                <SelectItem value="cycling">{t('medicalRecordPage.habits.exerciseTypes.cycling')}</SelectItem>
+                                <SelectItem value="swimming">{t('medicalRecordPage.habits.exerciseTypes.swimming')}</SelectItem>
+                                <SelectItem value="mixed">{t('medicalRecordPage.habits.exerciseTypes.mixed')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Frecuencia</Label>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.frequencyLabel')}</Label>
                             <Select value={data.habit_exercise} onValueChange={v => update('habit_exercise', v)}>
                               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
+                                {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medicalRecordPage.frequency.${o.value}`)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-[11px] text-muted-foreground">Duración / Cantidad</Label>
-                            <Input placeholder="Ej: 30 min × 4 días" value={parsed.amount || ''} onChange={e => setEx({ amount: e.target.value })} className="h-9 text-xs" />
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.habits.exerciseDuration')}</Label>
+                            <Input placeholder={t('medicalRecordPage.habits.exerciseDurationPlaceholder')} value={parsed.amount || ''} onChange={e => setEx({ amount: e.target.value })} className="h-9 text-xs" />
                           </div>
                         </div>
                       )}
@@ -1177,12 +1172,12 @@ export default function MedicalRecord() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <FileText className="w-4 h-4 text-primary" />
-                  Estudios Médicos
+                  {t('medicalRecordPage.studies.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Sube tus laboratorios, radiografías, resonancias y otros estudios.
+                  {t('medicalRecordPage.studies.description')}
                 </p>
                 <Button
                   variant="outline"
@@ -1190,7 +1185,7 @@ export default function MedicalRecord() {
                   onClick={() => window.location.href = '/medical-history'}
                 >
                   <Upload className="w-4 h-4" />
-                  Ir a subir estudios
+                  {t('medicalRecordPage.studies.goToUpload')}
                 </Button>
               </CardContent>
             </Card>

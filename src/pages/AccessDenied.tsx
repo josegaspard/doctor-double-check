@@ -5,10 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldOff, ArrowLeft, Lock, Download, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function AccessDenied() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { t } = useLanguage();
   const reason = params.get('reason') || 'protected';
   const fileId = params.get('file_id');
   const patientId = params.get('patient_id');
@@ -35,24 +37,20 @@ export default function AccessDenied() {
 
   const messages: Record<string, { title: string; description: string }> = {
     role: {
-      title: 'Acceso restringido',
-      description:
-        'Tu rol actual no tiene permiso para descargar o ver este contenido. Si crees que es un error, contacta a soporte.',
+      title: t('accessDeniedPage.role.title'),
+      description: t('accessDeniedPage.role.description'),
     },
     expired: {
-      title: 'Tu acceso ha expirado',
-      description:
-        'El enlace o sesión que intentas usar ya caducó. Vuelve al contenido original y solicita un nuevo acceso.',
+      title: t('accessDeniedPage.expired.title'),
+      description: t('accessDeniedPage.expired.description'),
     },
     drm: {
-      title: 'Descarga bloqueada',
-      description:
-        'Por motivos de confidencialidad médica y derechos de autor, las descargas directas están deshabilitadas. Puedes ver el contenido dentro de la plataforma cuantas veces quieras.',
+      title: t('accessDeniedPage.drm.title'),
+      description: t('accessDeniedPage.drm.description'),
     },
     protected: {
-      title: 'Contenido protegido',
-      description:
-        'Este contenido está protegido por las políticas de confidencialidad médica de Medical Masters. Las descargas externas y compartidos directos están deshabilitados para proteger la información de pacientes y profesionales.',
+      title: t('accessDeniedPage.protected.title'),
+      description: t('accessDeniedPage.protected.description'),
     },
   };
 
@@ -77,33 +75,33 @@ export default function AccessDenied() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto pt-4">
               <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left">
                 <Lock className="w-5 h-5 text-primary mb-1" />
-                <p className="text-xs font-medium text-foreground">Confidencial</p>
-                <p className="text-[11px] text-muted-foreground">Datos médicos protegidos</p>
+                <p className="text-xs font-medium text-foreground">{t('accessDeniedPage.badges.confidential.title')}</p>
+                <p className="text-[11px] text-muted-foreground">{t('accessDeniedPage.badges.confidential.description')}</p>
               </div>
               <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left">
                 <Download className="w-5 h-5 text-destructive mb-1" />
-                <p className="text-xs font-medium text-foreground">Sin descargas</p>
-                <p className="text-[11px] text-muted-foreground">Streaming-only por DRM</p>
+                <p className="text-xs font-medium text-foreground">{t('accessDeniedPage.badges.noDownloads.title')}</p>
+                <p className="text-[11px] text-muted-foreground">{t('accessDeniedPage.badges.noDownloads.description')}</p>
               </div>
               <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left">
                 <Eye className="w-5 h-5 text-info mb-1" />
-                <p className="text-xs font-medium text-foreground">Vista ilimitada</p>
-                <p className="text-[11px] text-muted-foreground">Re-visualiza desde la plataforma</p>
+                <p className="text-xs font-medium text-foreground">{t('accessDeniedPage.badges.unlimitedView.title')}</p>
+                <p className="text-[11px] text-muted-foreground">{t('accessDeniedPage.badges.unlimitedView.description')}</p>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 justify-center pt-4">
               <Button variant="outline" onClick={() => navigate(-1)} className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
-                Volver
+                {t('accessDeniedPage.actions.back')}
               </Button>
               <Button asChild>
-                <Link to="/help">Contactar soporte</Link>
+                <Link to="/help">{t('accessDeniedPage.actions.contactSupport')}</Link>
               </Button>
             </div>
 
             <p className="text-[11px] text-muted-foreground pt-2">
-              Política DRM Medical Masters · cumplimiento HIPAA-equivalente MX
+              {t('accessDeniedPage.footer.policy')}
             </p>
           </CardContent>
         </Card>

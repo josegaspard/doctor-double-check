@@ -78,7 +78,7 @@ export default function DoctorDashboard() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
         </Button>
         <DoctorDashboardHeader
           userName={user?.name}
@@ -93,15 +93,15 @@ export default function DoctorDashboard() {
 
         <Tabs defaultValue="overview" className="mb-4 sm:mb-6">
           <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex" style={hasCampaigns ? { gridTemplateColumns: 'repeat(3, 1fr)' } : undefined}>
-            <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">General</TabsTrigger>
+            <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">{t('doctorDashboardPage.tabs.overview')}</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm">
               <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Analytics
+              {t('doctorDashboardPage.tabs.analytics')}
             </TabsTrigger>
             {hasCampaigns && (
               <TabsTrigger value="advertising" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm" onClick={() => navigate('/advertiser/dashboard')}>
                 <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                Publicidad
+                {t('doctorDashboardPage.tabs.advertising')}
               </TabsTrigger>
             )}
           </TabsList>
@@ -109,7 +109,7 @@ export default function DoctorDashboard() {
           <TabsContent value="overview" className="space-y-5 sm:space-y-6">
             {/* ── MI PRÁCTICA ── */}
             <section className="space-y-3">
-              <SectionHeader>Mi Práctica</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.myPractice')}</SectionHeader>
               <DoctorProfileCard />
               <DoctorStatsGrid
                 recordingsCount={recordingsCount}
@@ -120,7 +120,7 @@ export default function DoctorDashboard() {
 
             {/* ── ACCIONES RÁPIDAS ── */}
             <section className="space-y-3">
-              <SectionHeader>Acciones Rápidas</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.quickActions')}</SectionHeader>
               <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
             </section>
 
@@ -129,20 +129,20 @@ export default function DoctorDashboard() {
 
             {/* ── MIS NOTAS ── */}
             <section className="space-y-3">
-              <SectionHeader>Mis notas privadas</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.myPrivateNotes')}</SectionHeader>
               <MyNotesWidget />
             </section>
 
             {/* ── PACIENTES ── */}
             <section className="space-y-3">
-              <SectionHeader>Pacientes</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.patients')}</SectionHeader>
               <DoctorPatientSearch />
               <DoctorPatientsList />
             </section>
 
             {/* ── FINANZAS ── */}
             <section className="space-y-3">
-              <SectionHeader>Finanzas</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.finances')}</SectionHeader>
               <div className="grid gap-3 md:grid-cols-2">
                 <EarningsCard />
                 <FundHoldsCard />
@@ -151,7 +151,7 @@ export default function DoctorDashboard() {
 
             {/* ── COMUNICACIONES ── */}
             <section className="space-y-3">
-              <SectionHeader>Comunicaciones</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.communications')}</SectionHeader>
               <div className="grid gap-3 md:grid-cols-2">
                 <EmailStatsCard />
                 <EmailHistoryCard />
@@ -160,7 +160,7 @@ export default function DoctorDashboard() {
 
             {/* ── CONFIGURACIÓN ── */}
             <section className="space-y-3">
-              <SectionHeader>Configuración</SectionHeader>
+              <SectionHeader>{t('doctorDashboardPage.sections.settings')}</SectionHeader>
               <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
                 <CollapsibleTrigger asChild>
                   <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40">
@@ -170,8 +170,8 @@ export default function DoctorDashboard() {
                           <Settings className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm sm:text-base text-foreground">Configuración</h3>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground">Horarios, firma y tendencias de email</p>
+                          <h3 className="font-semibold text-sm sm:text-base text-foreground">{t('doctorDashboardPage.settingsCard.title')}</h3>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorDashboardPage.settingsCard.description')}</p>
                         </div>
                       </div>
                       <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${configOpen ? 'rotate-180' : ''}`} />
@@ -191,7 +191,7 @@ export default function DoctorDashboard() {
             {/* ── ARCHIVOS ── */}
             {accessibleVaultFiles.length > 0 && (
               <section className="space-y-3">
-                <SectionHeader>Archivos de Pacientes</SectionHeader>
+                <SectionHeader>{t('doctorDashboardPage.sections.patientFiles')}</SectionHeader>
                 <Card>
                   <CardHeader className="pb-2 sm:pb-3">
                     <CardTitle className="text-sm sm:text-base flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function DoctorDashboard() {
                     </div>
                     {accessibleVaultFiles.length > 5 && (
                       <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/doctor/vault')}>
-                        Ver todos ({accessibleVaultFiles.length})
+                        {t('doctorDashboardPage.viewAll')} ({accessibleVaultFiles.length})
                       </Button>
                     )}
                   </CardContent>

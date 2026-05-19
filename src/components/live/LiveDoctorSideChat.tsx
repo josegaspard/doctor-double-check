@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,6 +31,7 @@ interface LiveDoctorSideChatProps {
  */
 export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<SideMessage[]>([]);
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
@@ -114,7 +116,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
       const { error } = await supabase.from('live_doctor_chat' as any).insert({
         live_id: liveId,
         user_id: user.id,
-        user_name: user.name || 'Profesional',
+        user_name: user.name || t('liveDoctorSideChat.defaultUserName'),
         user_specialty: specialty,
         content: trimmed,
         reply_to_id: replyTo?.id || null,
@@ -123,7 +125,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
       setContent('');
       setReplyTo(null);
     } catch (e: any) {
-      toast.error(e.message || 'No se pudo enviar el mensaje');
+      toast.error(e.message || t('liveDoctorSideChat.sendError'));
     } finally {
       setSending(false);
     }
@@ -131,7 +133,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
 
   if (allowed === null) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">Cargando…</div>
+      <div className="p-4 text-center text-sm text-muted-foreground">{t('liveDoctorSideChat.loading')}</div>
     );
   }
 
@@ -139,7 +141,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center gap-2 text-muted-foreground">
         <Lock className="w-6 h-6" />
-        <p className="text-sm font-medium">Canal exclusivo para doctores y residentes verificados</p>
+        <p className="text-sm font-medium">{t('liveDoctorSideChat.exclusiveChannel')}</p>
       </div>
     );
   }
@@ -149,15 +151,15 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
       <div className="p-3 border-b flex items-center justify-between bg-primary/5">
         <div className="flex items-center gap-2">
           <Stethoscope className="w-4 h-4 text-primary" />
-          <span className="font-semibold text-sm">Chat profesional</span>
+          <span className="font-semibold text-sm">{t('liveDoctorSideChat.headerTitle')}</span>
         </div>
-        <Badge variant="secondary" className="text-[10px]">Privado</Badge>
+        <Badge variant="secondary" className="text-[10px]">{t('liveDoctorSideChat.privateBadge')}</Badge>
       </div>
 
       <ScrollArea className="flex-1 min-h-0 px-3 py-3">
         {messages.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-6">
-            Sin mensajes aún. Comparte observaciones con tus colegas.
+            {t('liveDoctorSideChat.emptyState')}
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -198,7 +200,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
                           isOwn ? 'text-primary-foreground/80 hover:text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                         }`}
                       >
-                        <Reply className="w-3 h-3" /> Responder
+                        <Reply className="w-3 h-3" /> {t('liveDoctorSideChat.reply')}
                       </button>
                     </div>
                   </div>
@@ -213,13 +215,13 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
       {replyTo && (
         <div className="px-3 py-2 border-t bg-muted/40 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold text-primary">Respondiendo a {replyTo.user_name}</p>
+            <p className="text-[11px] font-semibold text-primary">{t('liveDoctorSideChat.replyingTo')} {replyTo.user_name}</p>
             <p className="text-xs text-muted-foreground line-clamp-1">{replyTo.content}</p>
           </div>
           <button
             type="button"
             onClick={() => setReplyTo(null)}
-            aria-label="Cancelar respuesta"
+            aria-label={t('liveDoctorSideChat.cancelReplyAria')}
             className="text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
@@ -237,7 +239,7 @@ export function LiveDoctorSideChat({ liveId }: LiveDoctorSideChatProps) {
               handleSend();
             }
           }}
-          placeholder="Mensaje a colegas…"
+          placeholder={t('liveDoctorSideChat.inputPlaceholder')}
           className="h-11 text-base"
           disabled={sending}
         />

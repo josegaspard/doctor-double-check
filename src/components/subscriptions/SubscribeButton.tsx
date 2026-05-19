@@ -77,7 +77,7 @@ export function SubscribeButton({
       onSubscriptionChange?.();
       toast({
         title: t('subscriptions.subscribed'),
-        description: `${t('subscriptions.nowFollowing')} ${doctorName || 'este doctor'}`,
+        description: `${t('subscriptions.nowFollowing')} ${doctorName || t('subscribeButton.thisDoctorFallback')}`,
       });
     } else {
       toast({
@@ -98,8 +98,8 @@ export function SubscribeButton({
       onSubscriptionChange?.();
       if (subscription?.tier !== 'free' && subscription?.expiresAt) {
         toast({
-          title: 'Suscripción cancelada',
-          description: `Mantendrás acceso hasta el fin del período pagado.`,
+          title: t('subscribeButton.subscriptionCancelled'),
+          description: t('subscribeButton.keepAccessUntilPeriodEnd'),
         });
       } else {
         toast({ description: t('subscriptions.unsubscribe') });
@@ -170,7 +170,7 @@ export function SubscribeButton({
               {isPaid ? (
                 <span className="flex items-center gap-1">
                   <Crown className="h-3 w-3 text-warning" />
-                  {subscription?.tier === 'premium' ? 'Premium' : 'Básica'}
+                  {subscription?.tier === 'premium' ? t('subscribeButton.premiumTierLabel') : t('subscribeButton.basicTierLabel')}
                 </span>
               ) : (
                 t('subscriptions.subscribed')
@@ -261,7 +261,7 @@ export function SubscribeButton({
             className="gap-1.5"
           >
             <Crown className="h-4 w-4" />
-            Suscripción Pro
+            {t('subscribeButton.proSubscriptionCta')}
           </Button>
         )}
       </div>
@@ -270,28 +270,28 @@ export function SubscribeButton({
       <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Cancelar suscripción?</DialogTitle>
+            <DialogTitle>{t('subscribeButton.cancelSubscriptionTitle')}</DialogTitle>
             <DialogDescription>
               {subscription?.tier !== 'free' ? (
                 <div className="space-y-3 mt-2">
-                  <p>Al cancelar tu suscripción de pago con <strong>{doctorName || 'este doctor'}</strong>:</p>
+                  <p>{t('subscribeButton.cancelPaidIntro')} <strong>{doctorName || t('subscribeButton.thisDoctorFallback')}</strong>:</p>
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg text-sm">
-                    <p className="font-medium text-warning">⚠️ Tu suscripción se mantendrá activa hasta el fin del período pagado.</p>
-                    <p className="text-muted-foreground mt-1">No se realizarán más cobros después de esa fecha.</p>
+                    <p className="font-medium text-warning">{t('subscribeButton.cancelPaidWarning')}</p>
+                    <p className="text-muted-foreground mt-1">{t('subscribeButton.cancelPaidNoMoreCharges')}</p>
                   </div>
                 </div>
               ) : (
-                <p>Dejarás de seguir a <strong>{doctorName || 'este doctor'}</strong> y no recibirás más notificaciones.</p>
+                <p>{t('subscribeButton.cancelFreeMessagePrefix')} <strong>{doctorName || t('subscribeButton.thisDoctorFallback')}</strong> {t('subscribeButton.cancelFreeMessageSuffix')}</p>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end mt-4">
             <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
-              Mantener suscripción
+              {t('subscribeButton.keepSubscription')}
             </Button>
             <Button variant="destructive" onClick={handleUnsubscribe} disabled={isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              Confirmar cancelación
+              {t('subscribeButton.confirmCancellation')}
             </Button>
           </div>
         </DialogContent>
@@ -306,14 +306,14 @@ export function SubscribeButton({
               {t('subscriptions.upgradeTitle')}
             </DialogTitle>
             <DialogDescription>
-              {t('subscriptions.upgradeDescription')} {doctorName || 'este doctor'}
+              {t('subscriptions.upgradeDescription')} {doctorName || t('subscribeButton.thisDoctorFallback')}
             </DialogDescription>
           </DialogHeader>
 
           {/* Explainer */}
           <div className="p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground border">
-            <p><strong>Seguir</strong> es gratis — recibes notificaciones cuando el doctor transmite en vivo o sube contenido.</p>
-            <p className="mt-1"><strong>Suscribirte</strong> te da acceso a contenido exclusivo, chat prioritario y descuentos en grabaciones.</p>
+            <p><strong>{t('subscribeButton.explainerFollowFreeBold')}</strong> {t('subscribeButton.explainerFollowFree')}</p>
+            <p className="mt-1"><strong>{t('subscribeButton.explainerSubscribeBold')}</strong> {t('subscribeButton.explainerSubscribe')}</p>
           </div>
 
           <div className="grid gap-4 py-2">

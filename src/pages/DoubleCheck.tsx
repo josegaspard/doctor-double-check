@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ interface DoubleCheckDoctor {
 export default function DoubleCheck() {
   const navigate = useNavigate();
   const { user, role, refreshUser } = useAuth();
+  const { t } = useLanguage();
   const [doctors, setDoctors] = useState<DoubleCheckDoctor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -67,7 +69,7 @@ export default function DoubleCheck() {
         setDoctors(doctorProfiles.map(d => ({
           id: d.id!,
           userId: d.user_id!,
-          name: profileMap.get(d.user_id!)?.name || 'Doctor',
+          name: profileMap.get(d.user_id!)?.name || t('doubleCheckPage.doctorFallbackName'),
           avatarUrl: profileMap.get(d.user_id!)?.avatar_url || undefined,
           specialty: d.specialty!,
           rating: Number(d.rating),
@@ -100,14 +102,14 @@ export default function DoubleCheck() {
       if (error) throw error;
 
       toast.success(
-        !isAvailableForDoubleCheck 
-          ? 'Ahora estás disponible para Segunda Opinión' 
-          : 'Ya no estás disponible para Segunda Opinión'
+        !isAvailableForDoubleCheck
+          ? t('doubleCheckPage.toastNowAvailable')
+          : t('doubleCheckPage.toastNoLongerAvailable')
       );
       await refreshUser();
       await fetchDoubleCheckDoctors();
     } catch (error: any) {
-      toast.error(error.message || 'Error al actualizar disponibilidad');
+      toast.error(error.message || t('doubleCheckPage.toastUpdateError'));
     } finally {
       setIsUpdating(false);
     }
@@ -133,14 +135,14 @@ export default function DoubleCheck() {
           </div>
           <div className="min-w-0">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
-              Segunda Opinión
+              {t('doubleCheckPage.headerTitle')}
               <Badge variant="verified" className="gap-1">
                 <CheckCheck className="w-3 h-3" />
-                Verificado
+                {t('doubleCheckPage.headerVerifiedBadge')}
               </Badge>
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm">
-              Segunda opinión médica por especialistas verificados
+              {t('doubleCheckPage.headerSubtitle')}
             </p>
           </div>
         </div>
@@ -156,12 +158,12 @@ export default function DoubleCheck() {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">
-                      Disponibilidad Segunda Opinión
+                      {t('doubleCheckPage.availabilityTitle')}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {isAvailableForDoubleCheck 
-                        ? 'Estás recibiendo solicitudes de segunda opinión' 
-                        : 'Activa para recibir solicitudes de segunda opinión'}
+                      {isAvailableForDoubleCheck
+                        ? t('doubleCheckPage.availabilityActive')
+                        : t('doubleCheckPage.availabilityInactive')}
                     </p>
                   </div>
                 </div>
@@ -178,12 +180,9 @@ export default function DoubleCheck() {
         {/* Info Card */}
         <Card className="mb-6 bg-info/5 border-info/20">
           <CardContent className="p-4">
-            <h3 className="font-semibold text-foreground mb-2">¿Qué es Segunda Opinión?</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('doubleCheckPage.infoTitle')}</h3>
             <p className="text-sm text-muted-foreground">
-              Segunda Opinión te permite obtener una segunda opinión médica de especialistas 
-              verificados. Comparte tus estudios desde tu Vault de forma segura y recibe 
-              una evaluación profesional adicional para tomar decisiones informadas sobre 
-              tu salud.
+              {t('doubleCheckPage.infoBody')}
             </p>
           </CardContent>
         </Card>
@@ -193,7 +192,7 @@ export default function DoubleCheck() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Stethoscope className="w-5 h-5" />
-              Especialistas Disponibles
+              {t('doubleCheckPage.availableSpecialistsTitle')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -238,7 +237,7 @@ export default function DoubleCheck() {
                               className="gap-1"
                             >
                               <MessageSquare className="w-4 h-4" />
-                              Consultar
+                              {t('doubleCheckPage.consultButton')}
                             </Button>
                           )}
                         </div>
@@ -246,19 +245,19 @@ export default function DoubleCheck() {
                         <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Star className="w-3 h-3 fill-premium text-premium" />
-                            {doctor.rating.toFixed(1)} rating
+                            {doctor.rating.toFixed(1)} {t('doubleCheckPage.ratingLabel')}
                           </span>
                           <span className="flex items-center gap-1">
                             <Award className="w-3 h-3" />
-                            {doctor.totalConsultations} consultas
+                            {doctor.totalConsultations} {t('doubleCheckPage.consultationsLabel')}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            {doctor.followersCount} seguidores
+                            {doctor.followersCount} {t('doubleCheckPage.followersLabel')}
                           </span>
                           <span className="flex items-center gap-1 text-success">
                             <DollarSign className="w-3 h-3" />
-                            ${doctor.consultationFee} MXN
+                            ${doctor.consultationFee} {t('doubleCheckPage.feeSuffix')}
                           </span>
                         </div>
                       </div>
@@ -270,7 +269,7 @@ export default function DoubleCheck() {
               <div className="text-center py-8">
                 <CheckCheck className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  No hay especialistas disponibles en este momento
+                  {t('doubleCheckPage.emptyStateMessage')}
                 </p>
               </div>
             )}
@@ -280,7 +279,7 @@ export default function DoubleCheck() {
         {/* How it Works */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-lg">¿Cómo funciona?</CardTitle>
+            <CardTitle className="text-lg">{t('doubleCheckPage.howItWorksTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
@@ -288,27 +287,27 @@ export default function DoubleCheck() {
                 <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-3">
                   <span className="font-bold text-primary">1</span>
                 </div>
-                <h4 className="font-semibold text-sm mb-1">Elige un especialista</h4>
+                <h4 className="font-semibold text-sm mb-1">{t('doubleCheckPage.step1Title')}</h4>
                 <p className="text-xs text-muted-foreground">
-                  Selecciona un médico verificado de la especialidad que necesitas
+                  {t('doubleCheckPage.step1Body')}
                 </p>
               </div>
               <div className="text-center p-4">
                 <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-3">
                   <span className="font-bold text-primary">2</span>
                 </div>
-                <h4 className="font-semibold text-sm mb-1">Comparte tus estudios</h4>
+                <h4 className="font-semibold text-sm mb-1">{t('doubleCheckPage.step2Title')}</h4>
                 <p className="text-xs text-muted-foreground">
-                  Desde tu Vault, comparte los estudios relevantes de forma segura
+                  {t('doubleCheckPage.step2Body')}
                 </p>
               </div>
               <div className="text-center p-4">
                 <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-3">
                   <span className="font-bold text-primary">3</span>
                 </div>
-                <h4 className="font-semibold text-sm mb-1">Recibe tu segunda opinión</h4>
+                <h4 className="font-semibold text-sm mb-1">{t('doubleCheckPage.step3Title')}</h4>
                 <p className="text-xs text-muted-foreground">
-                  El especialista revisará tu caso y te dará su opinión profesional
+                  {t('doubleCheckPage.step3Body')}
                 </p>
               </div>
             </div>

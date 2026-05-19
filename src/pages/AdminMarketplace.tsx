@@ -21,7 +21,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 export default function AdminMarketplace() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const es = language === 'es';
 
   useEffect(() => { if (role && role !== 'admin') navigate('/'); }, [role, navigate]);
@@ -31,7 +31,7 @@ export default function AdminMarketplace() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('adminMarketplacePage.backToAdmin')}
         </Button>
         <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
           <div className="flex items-center gap-3">
@@ -40,26 +40,26 @@ export default function AdminMarketplace() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
-                {es ? 'Marketplace - Material Médico' : 'Marketplace - Medical Supplies'}
+                {t('adminMarketplacePage.title')}
               </h1>
-              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Administra productos, proveedores, categorías, pedidos y ventas' : 'Manage products, vendors, categories, orders and sales'}</p>
+              <p className="text-xs sm:text-sm text-secondary/70">{t('adminMarketplacePage.subtitle')}</p>
             </div>
           </div>
         </div>
 
         <Tabs defaultValue="products">
           <TabsList className="w-full grid grid-cols-4 sm:grid-cols-11 mb-4 h-auto">
-            <TabsTrigger value="products" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Package className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Productos' : 'Products'}</span></TabsTrigger>
-            <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Vendors' : 'Vendors'}</span></TabsTrigger>
-            <TabsTrigger value="categories" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Cats' : 'Cats'}</span></TabsTrigger>
-            <TabsTrigger value="orders" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ShoppingCart className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Pedidos' : 'Orders'}</span></TabsTrigger>
-            <TabsTrigger value="sales" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><TrendingUp className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Ventas' : 'Sales'}</span></TabsTrigger>
-            <TabsTrigger value="refunds" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Devol.' : 'Refunds'}</span></TabsTrigger>
-            <TabsTrigger value="disputes" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Disputas' : 'Disputes'}</span></TabsTrigger>
-            <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Pagos' : 'Payouts'}</span></TabsTrigger>
-            <TabsTrigger value="stock" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Warehouse className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Stock' : 'Stock'}</span></TabsTrigger>
-            <TabsTrigger value="audit" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ClipboardList className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Audit' : 'Audit'}</span></TabsTrigger>
-            <TabsTrigger value="reviews" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Star className="w-3 h-3" /><span className="hidden sm:inline">{es ? 'Reviews' : 'Reviews'}</span></TabsTrigger>
+            <TabsTrigger value="products" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Package className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.products')}</span></TabsTrigger>
+            <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.vendors')}</span></TabsTrigger>
+            <TabsTrigger value="categories" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.categories')}</span></TabsTrigger>
+            <TabsTrigger value="orders" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ShoppingCart className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.orders')}</span></TabsTrigger>
+            <TabsTrigger value="sales" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><TrendingUp className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.sales')}</span></TabsTrigger>
+            <TabsTrigger value="refunds" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.refunds')}</span></TabsTrigger>
+            <TabsTrigger value="disputes" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.disputes')}</span></TabsTrigger>
+            <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.payouts')}</span></TabsTrigger>
+            <TabsTrigger value="stock" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Warehouse className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.stock')}</span></TabsTrigger>
+            <TabsTrigger value="audit" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ClipboardList className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.audit')}</span></TabsTrigger>
+            <TabsTrigger value="reviews" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Star className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.reviews')}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="products"><ProductsTab es={es} /></TabsContent>
@@ -80,7 +80,8 @@ export default function AdminMarketplace() {
 }
 
 /* =================== PRODUCTS TAB =================== */
-function ProductsTab({ es }: { es: boolean }) {
+function ProductsTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<any[]>([]);
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,18 +102,18 @@ function ProductsTab({ es }: { es: boolean }) {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!form.name || !form.vendor_id) { toast.error(es ? 'Nombre y proveedor requeridos' : 'Name and vendor required'); return; }
+    if (!form.name || !form.vendor_id) { toast.error(t('adminMarketplacePage.common.nameAndVendorRequired')); return; }
     setSaving(true);
     const payload = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: form.vendor_id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
     if (editingId) await supabase.from('marketplace_products').update(payload as any).eq('id', editingId);
     else await supabase.from('marketplace_products').insert(payload as any);
-    setSaving(false); setDialogOpen(false); fetchData(); toast.success(es ? 'Guardado' : 'Saved');
+    setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(es ? '¿Eliminar?' : 'Delete?')) return;
+    if (!confirm(t('adminMarketplacePage.common.confirmDelete'))) return;
     await supabase.from('marketplace_products').delete().eq('id', id);
-    fetchData(); toast.success(es ? 'Eliminado' : 'Deleted');
+    fetchData(); toast.success(t('adminMarketplacePage.common.deleted'));
   };
 
   const filtered = products.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
@@ -122,10 +123,10 @@ function ProductsTab({ es }: { es: boolean }) {
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder={es ? 'Buscar producto...' : 'Search product...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={t('adminMarketplacePage.common.searchProduct')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', category: '', price: '', vendor_id: '', image_url: '', stock: '0', is_active: true }); setDialogOpen(true); }} className="gap-1.5">
-          <Plus className="w-4 h-4" /> {es ? 'Agregar' : 'Add'}
+          <Plus className="w-4 h-4" /> {t('adminMarketplacePage.common.add')}
         </Button>
       </div>
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : (
@@ -137,34 +138,34 @@ function ProductsTab({ es }: { es: boolean }) {
                 <p className="font-medium text-sm truncate">{p.name}</p>
                 <p className="text-xs text-muted-foreground">{(p as any).marketplace_vendors?.name} · ${p.price} MXN · Stock: {p.stock}</p>
               </div>
-              <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-[10px]">{p.is_active ? (es ? 'Activo' : 'Active') : (es ? 'Inactivo' : 'Inactive')}</Badge>
+              <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-[10px]">{p.is_active ? t('adminMarketplacePage.common.active') : t('adminMarketplacePage.common.inactive')}</Badge>
               <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), vendor_id: p.vendor_id, image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
           ))}
-          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{es ? 'Sin productos' : 'No products'}</p>}
+          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{t('adminMarketplacePage.common.noProducts')}</p>}
         </div>
       )}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editingId ? (es ? 'Editar Producto' : 'Edit Product') : (es ? 'Nuevo Producto' : 'New Product')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? t('adminMarketplacePage.common.editProduct') : t('adminMarketplacePage.common.newProduct')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{es ? 'Nombre' : 'Name'} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-            <div><Label>{es ? 'Descripción' : 'Description'}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
-            <div><Label>{es ? 'Proveedor' : 'Vendor'} *</Label>
+            <div><Label>{t('adminMarketplacePage.common.name')} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.common.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
+            <div><Label>{t('adminMarketplacePage.common.vendor')} *</Label>
               <Select value={form.vendor_id} onValueChange={v => setForm(f => ({ ...f, vendor_id: v }))}>
-                <SelectTrigger><SelectValue placeholder={es ? 'Seleccionar' : 'Select'} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('adminMarketplacePage.common.select')} /></SelectTrigger>
                 <SelectContent>{vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Precio (MXN)' : 'Price (MXN)'}</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.common.pricemxn')}</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} /></div>
               <div><Label>Stock</Label><Input type="number" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} /></div>
             </div>
-            <div><Label>{es ? 'Categoría' : 'Category'}</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
-            <div><Label>{es ? 'URL de Imagen' : 'Image URL'}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
-            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{es ? 'Activo' : 'Active'}</Label></div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}</Button>
+            <div><Label>{t('adminMarketplacePage.common.category')}</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.common.imageUrl')}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
+            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('adminMarketplacePage.common.active')}</Label></div>
+            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -173,7 +174,8 @@ function ProductsTab({ es }: { es: boolean }) {
 }
 
 /* =================== VENDORS TAB =================== */
-function VendorsTab({ es }: { es: boolean }) {
+function VendorsTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -185,31 +187,31 @@ function VendorsTab({ es }: { es: boolean }) {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!form.name) { toast.error(es ? 'Nombre requerido' : 'Name required'); return; }
+    if (!form.name) { toast.error(t('adminMarketplacePage.vendors.nameRequired')); return; }
     setSaving(true);
     const commission = Math.max(0, Math.min(1, parseFloat(form.commission_rate) || 0.15));
     const iva = Math.max(0, Math.min(1, parseFloat(form.iva_rate) || 0.16));
     const payload: any = { name: form.name, description: form.description || null, website: form.website || null, phone: form.phone || null, location: form.location || null, logo_url: form.logo_url || null, status: form.status, commission_rate: commission, iva_rate: iva, legal_name: form.legal_name || null, tax_id: form.tax_id || null };
     if (editingId) await supabase.from('marketplace_vendors').update(payload as any).eq('id', editingId);
     else await supabase.from('marketplace_vendors').insert(payload as any);
-    setSaving(false); setDialogOpen(false); fetchData(); toast.success(es ? 'Guardado' : 'Saved');
+    setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
   };
 
   const updateStatus = async (id: string, status: string) => {
     await supabase.from('marketplace_vendors').update({ status } as any).eq('id', id);
-    fetchData(); toast.success(es ? 'Estado actualizado' : 'Status updated');
+    fetchData(); toast.success(t('adminMarketplacePage.vendors.statusUpdated'));
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(es ? '¿Eliminar?' : 'Delete?')) return;
+    if (!confirm(t('adminMarketplacePage.common.confirmDelete'))) return;
     await supabase.from('marketplace_vendors').delete().eq('id', id);
-    fetchData(); toast.success(es ? 'Eliminado' : 'Deleted');
+    fetchData(); toast.success(t('adminMarketplacePage.common.deleted'));
   };
 
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved', commission_rate: '0.15', iva_rate: '0.16', legal_name: '', tax_id: '' }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {es ? 'Agregar Proveedor' : 'Add Vendor'}</Button>
+        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', website: '', phone: '', location: '', logo_url: '', status: 'approved', commission_rate: '0.15', iva_rate: '0.16', legal_name: '', tax_id: '' }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {t('adminMarketplacePage.vendors.addVendor')}</Button>
       </div>
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : (
         <div className="space-y-2">
@@ -219,36 +221,36 @@ function VendorsTab({ es }: { es: boolean }) {
               <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{v.name}</p><p className="text-xs text-muted-foreground truncate">{v.location || v.website || ''}</p></div>
               <Badge variant={v.status === 'approved' ? 'default' : v.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px]">{v.status}</Badge>
               {v.status === 'pending' && (<><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'approved')}><Check className="w-4 h-4 text-success" /></Button><Button variant="ghost" size="icon" onClick={() => updateStatus(v.id, 'rejected')}><X className="w-4 h-4 text-destructive" /></Button></>)}
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20" title="Comisión plataforma">{((v.commission_rate || 0.15) * 100).toFixed(0)}%</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20" title={t('adminMarketplacePage.vendors.platformCommission')}>{((v.commission_rate || 0.15) * 100).toFixed(0)}%</span>
               <Button variant="ghost" size="icon" onClick={() => { setEditingId(v.id); setForm({ name: v.name, description: v.description || '', website: v.website || '', phone: v.phone || '', location: v.location || '', logo_url: v.logo_url || '', status: v.status, commission_rate: String(v.commission_rate ?? 0.15), iva_rate: String(v.iva_rate ?? 0.16), legal_name: v.legal_name || '', tax_id: v.tax_id || '' }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
           ))}
-          {vendors.length === 0 && <p className="text-center text-muted-foreground py-8">{es ? 'Sin proveedores' : 'No vendors'}</p>}
+          {vendors.length === 0 && <p className="text-center text-muted-foreground py-8">{t('adminMarketplacePage.vendors.noVendors')}</p>}
         </div>
       )}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editingId ? (es ? 'Editar Proveedor' : 'Edit Vendor') : (es ? 'Nuevo Proveedor' : 'New Vendor')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? t('adminMarketplacePage.vendors.editVendor') : t('adminMarketplacePage.vendors.newVendor')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{es ? 'Nombre' : 'Name'} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-            <div><Label>{es ? 'Descripción' : 'Description'}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
+            <div><Label>{t('adminMarketplacePage.common.name')} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.common.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Sitio Web' : 'Website'}</Label><Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} /></div>
-              <div><Label>{es ? 'Teléfono' : 'Phone'}</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.vendors.website')}</Label><Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.vendors.phone')}</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
             </div>
-            <div><Label>{es ? 'Ubicación' : 'Location'}</Label><Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.vendors.location')}</Label><Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
             <div><Label>Logo URL</Label><Input value={form.logo_url} onChange={e => setForm(f => ({ ...f, logo_url: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
               <div>
-                <Label className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" /> {es ? 'Comisión plataforma' : 'Platform commission'}</Label>
+                <Label className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" /> {t('adminMarketplacePage.vendors.platformCommission')}</Label>
                 <div className="relative">
                   <Input type="number" step="0.01" min="0" max="1" value={form.commission_rate} onChange={e => setForm(f => ({ ...f, commission_rate: e.target.value }))} className="pr-12" />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">= {((parseFloat(form.commission_rate) || 0) * 100).toFixed(1)}%</span>
                 </div>
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Tasa IVA' : 'VAT rate'}</Label>
+                <Label className="text-xs">{t('adminMarketplacePage.vendors.vatRate')}</Label>
                 <div className="relative">
                   <Input type="number" step="0.01" min="0" max="1" value={form.iva_rate} onChange={e => setForm(f => ({ ...f, iva_rate: e.target.value }))} className="pr-12" />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">= {((parseFloat(form.iva_rate) || 0) * 100).toFixed(1)}%</span>
@@ -256,16 +258,16 @@ function VendorsTab({ es }: { es: boolean }) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Razón social' : 'Legal name'}</Label><Input value={form.legal_name} onChange={e => setForm(f => ({ ...f, legal_name: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.vendors.legalName')}</Label><Input value={form.legal_name} onChange={e => setForm(f => ({ ...f, legal_name: e.target.value }))} /></div>
               <div><Label>RFC / Tax ID</Label><Input value={form.tax_id} onChange={e => setForm(f => ({ ...f, tax_id: e.target.value }))} /></div>
             </div>
-            <div><Label>{es ? 'Estado' : 'Status'}</Label>
+            <div><Label>{t('adminMarketplacePage.vendors.status')}</Label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="approved">{es ? 'Aprobado' : 'Approved'}</SelectItem><SelectItem value="pending">{es ? 'Pendiente' : 'Pending'}</SelectItem><SelectItem value="rejected">{es ? 'Rechazado' : 'Rejected'}</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="approved">{t('adminMarketplacePage.vendors.approved')}</SelectItem><SelectItem value="pending">{t('adminMarketplacePage.vendors.pending')}</SelectItem><SelectItem value="rejected">{t('adminMarketplacePage.vendors.rejected')}</SelectItem></SelectContent>
               </Select>
             </div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}</Button>
+            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -275,6 +277,7 @@ function VendorsTab({ es }: { es: boolean }) {
 
 /* =================== CATEGORIES TAB =================== */
 function CategoriesTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -286,16 +289,16 @@ function CategoriesTab({ es }: { es: boolean }) {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!form.name_es || !form.name_en) { toast.error(es ? 'Nombres requeridos' : 'Names required'); return; }
+    if (!form.name_es || !form.name_en) { toast.error(t('adminMarketplacePage.categories.namesRequired')); return; }
     setSaving(true);
     const payload = { name_es: form.name_es, name_en: form.name_en, icon: form.icon, sort_order: parseInt(form.sort_order) || 0, is_active: form.is_active };
     if (editingId) await supabase.from('marketplace_categories').update(payload as any).eq('id', editingId);
     else await supabase.from('marketplace_categories').insert(payload as any);
-    setSaving(false); setDialogOpen(false); fetchData(); toast.success(es ? 'Guardado' : 'Saved');
+    setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(es ? '¿Eliminar?' : 'Delete?')) return;
+    if (!confirm(t('adminMarketplacePage.common.confirmDelete'))) return;
     await supabase.from('marketplace_categories').delete().eq('id', id);
     fetchData();
   };
@@ -303,7 +306,7 @@ function CategoriesTab({ es }: { es: boolean }) {
   return (
     <div>
       <div className="flex justify-end mb-4">
-        <Button onClick={() => { setEditingId(null); setForm({ name_es: '', name_en: '', icon: 'Package', sort_order: '0', is_active: true }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {es ? 'Agregar Categoría' : 'Add Category'}</Button>
+        <Button onClick={() => { setEditingId(null); setForm({ name_es: '', name_en: '', icon: 'Package', sort_order: '0', is_active: true }); setDialogOpen(true); }} className="gap-1.5"><Plus className="w-4 h-4" /> {t('adminMarketplacePage.categories.addCategory')}</Button>
       </div>
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : (
         <div className="space-y-2">
@@ -311,7 +314,7 @@ function CategoriesTab({ es }: { es: boolean }) {
             <Card key={c.id}><CardContent className="p-3 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-xs font-bold">{c.sort_order}</div>
               <div className="flex-1"><p className="font-medium text-sm">{es ? c.name_es : c.name_en}</p><p className="text-xs text-muted-foreground">{c.icon}</p></div>
-              <Badge variant={c.is_active ? 'default' : 'secondary'} className="text-[10px]">{c.is_active ? (es ? 'Activo' : 'Active') : (es ? 'Inactivo' : 'Inactive')}</Badge>
+              <Badge variant={c.is_active ? 'default' : 'secondary'} className="text-[10px]">{c.is_active ? t('adminMarketplacePage.common.active') : t('adminMarketplacePage.common.inactive')}</Badge>
               <Button variant="ghost" size="icon" onClick={() => { setEditingId(c.id); setForm({ name_es: c.name_es, name_en: c.name_en, icon: c.icon, sort_order: c.sort_order.toString(), is_active: c.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
@@ -320,16 +323,16 @@ function CategoriesTab({ es }: { es: boolean }) {
       )}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>{editingId ? (es ? 'Editar Categoría' : 'Edit Category') : (es ? 'Nueva Categoría' : 'New Category')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? t('adminMarketplacePage.categories.editCategory') : t('adminMarketplacePage.categories.newCategory')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{es ? 'Nombre (ES)' : 'Name (ES)'} *</Label><Input value={form.name_es} onChange={e => setForm(f => ({ ...f, name_es: e.target.value }))} /></div>
-            <div><Label>{es ? 'Nombre (EN)' : 'Name (EN)'} *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.categories.nameEs')} *</Label><Input value={form.name_es} onChange={e => setForm(f => ({ ...f, name_es: e.target.value }))} /></div>
+            <div><Label>{t('adminMarketplacePage.categories.nameEn')} *</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Ícono' : 'Icon'}</Label><Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} /></div>
-              <div><Label>{es ? 'Orden' : 'Order'}</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.categories.icon')}</Label><Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} /></div>
+              <div><Label>{t('adminMarketplacePage.categories.order')}</Label><Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: e.target.value }))} /></div>
             </div>
-            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{es ? 'Activo' : 'Active'}</Label></div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}</Button>
+            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('adminMarketplacePage.common.active')}</Label></div>
+            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -339,6 +342,7 @@ function CategoriesTab({ es }: { es: boolean }) {
 
 /* =================== ORDERS TAB =================== */
 function OrdersTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -358,7 +362,7 @@ function OrdersTab({ es }: { es: boolean }) {
       .order('created_at', { ascending: false });
     if (ordersErr) {
       console.error('orders fetch error', ordersErr);
-      toast.error(es ? 'Error cargando pedidos' : 'Error loading orders');
+      toast.error(t('adminMarketplacePage.orders.errorLoading'));
       setOrders([]); setLoading(false); return;
     }
     const ordersArr: any[] = (rawOrders as any[]) || [];
@@ -455,7 +459,7 @@ function OrdersTab({ es }: { es: boolean }) {
               trackingNumber: trackingInput[id] || order.tracking_number || undefined,
             },
           });
-          toast.success(es ? `Correo de "${status}" enviado al comprador` : `"${status}" email sent to buyer`);
+          toast.success(t('adminMarketplacePage.orders.emailSent').replace('{status}', status));
         } catch (e) {
           console.error('Email send error:', e);
         }
@@ -464,7 +468,7 @@ function OrdersTab({ es }: { es: boolean }) {
 
     fetchData();
     setUpdatingId(null);
-    toast.success(es ? 'Estado actualizado' : 'Status updated');
+    toast.success(t('adminMarketplacePage.orders.statusUpdated'));
   };
 
   const saveTracking = async (id: string) => {
@@ -472,7 +476,7 @@ function OrdersTab({ es }: { es: boolean }) {
     if (!val) return;
     await supabase.from('marketplace_orders').update({ tracking_number: val } as any).eq('id', id);
     fetchData();
-    toast.success(es ? 'Número de rastreo guardado' : 'Tracking number saved');
+    toast.success(t('adminMarketplacePage.orders.trackingSaved'));
   };
 
   // Despacho con confirmación + tracking + ETA + email + notificación in-app
@@ -542,7 +546,7 @@ function OrdersTab({ es }: { es: boolean }) {
     setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' });
     fetchData();
     setUpdatingId(null);
-    toast.success(es ? `Pedido despachado · ETA ${eta.toLocaleDateString('es-MX')}` : `Order dispatched · ETA ${eta.toLocaleDateString('es-MX')}`);
+    toast.success(t('adminMarketplacePage.orders.dispatched').replace('{eta}', eta.toLocaleDateString('es-MX')));
   };
 
   const openDispatch = (order: any) => {
@@ -619,7 +623,7 @@ function OrdersTab({ es }: { es: boolean }) {
   <button style="margin-top:16px;background:#00768B;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600" onclick="window.print()">Imprimir / Guardar PDF</button>
 </body></html>`;
     const win = window.open('', '_blank', 'width=820,height=900');
-    if (!win) { toast.error(es ? 'Permite ventanas emergentes para descargar el PDF' : 'Allow popups to download the PDF'); return; }
+    if (!win) { toast.error(t('adminMarketplacePage.orders.allowPopups')); return; }
     win.document.write(html);
     win.document.close();
     setTimeout(() => { try { win.print(); } catch {} }, 500);
@@ -641,7 +645,7 @@ function OrdersTab({ es }: { es: boolean }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success(es ? 'CSV exportado' : 'CSV exported');
+    toast.success(t('adminMarketplacePage.orders.csvExported'));
   };
 
   const statusColors: Record<string, string> = {
@@ -659,22 +663,22 @@ function OrdersTab({ es }: { es: boolean }) {
         <Card><CardContent className="p-4 text-center">
           <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
           <p className="text-lg font-bold">${stats.revenue.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Ingresos totales' : 'Total Revenue'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.orders.totalRevenue')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <ShoppingCart className="w-5 h-5 text-primary mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.today}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Pedidos hoy' : 'Orders Today'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.orders.ordersToday')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <Package className="w-5 h-5 text-warning mx-auto mb-1" />
           <p className="text-lg font-bold">{stats.pending}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Por enviar' : 'Pending Ship'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.orders.pendingShip')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <BarChart3 className="w-5 h-5 text-secondary mx-auto mb-1" />
           <p className="text-lg font-bold">${Math.round(stats.avg).toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Promedio pedido' : 'Avg Order'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.orders.avgOrder')}</p>
         </CardContent></Card>
       </div>
 
@@ -689,7 +693,7 @@ function OrdersTab({ es }: { es: boolean }) {
                 statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
-              {s === 'all' ? (es ? 'Todos' : 'All') : s.charAt(0).toUpperCase() + s.slice(1)}
+              {s === 'all' ? t('adminMarketplacePage.orders.all') : s.charAt(0).toUpperCase() + s.slice(1)}
               <span className="ml-1 opacity-60">({s === 'all' ? orders.length : orders.filter(o => o.status === s).length})</span>
             </button>
           ))}
@@ -697,14 +701,14 @@ function OrdersTab({ es }: { es: boolean }) {
         <div className="flex gap-2">
           <div className="relative flex-1 sm:w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input placeholder={es ? 'Buscar...' : 'Search...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
+            <Input placeholder={t('adminMarketplacePage.orders.search')} value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
           </div>
           <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 text-xs gap-1"><Download className="w-3.5 h-3.5" /> CSV</Button>
         </div>
       </div>
 
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> : filtered.length === 0 ? (
-        <p className="text-center text-muted-foreground py-12">{es ? 'No hay pedidos' : 'No orders'}</p>
+        <p className="text-center text-muted-foreground py-12">{t('adminMarketplacePage.orders.noOrders')}</p>
       ) : (
         <div className="space-y-2">
           {filtered.map(o => {
@@ -715,9 +719,9 @@ function OrdersTab({ es }: { es: boolean }) {
                   <button onClick={() => setExpandedId(expanded ? null : o.id)} className="w-full flex items-center gap-3 p-3 text-left">
                     {o.marketplace_products?.image_url && <img src={o.marketplace_products.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{o.marketplace_products?.name || 'Producto eliminado'}</p>
+                      <p className="font-medium text-sm truncate">{o.marketplace_products?.name || t('adminMarketplacePage.orders.productDeleted')}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {o.profiles?.name || 'Anónimo'} · {es ? 'Cant' : 'Qty'}: {o.quantity} · ${Number(o.total_amount).toLocaleString()} · {new Date(o.created_at).toLocaleDateString()}
+                        {o.profiles?.name || t('adminMarketplacePage.orders.anonymous')} · {t('adminMarketplacePage.orders.qty')}: {o.quantity} · ${Number(o.total_amount).toLocaleString()} · {new Date(o.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusColors[o.status] || ''}`}>{o.status}</span>
@@ -729,7 +733,7 @@ function OrdersTab({ es }: { es: boolean }) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* Buyer info */}
                         <div className="bg-primary/8 border border-primary/25 rounded-lg p-3 space-y-1">
-                          <p className="text-xs font-semibold text-primary flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {es ? 'Comprador' : 'Buyer'}</p>
+                          <p className="text-xs font-semibold text-primary flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.buyer')}</p>
                           <p className="text-sm text-secondary font-medium">{o.profiles?.name || 'N/A'}</p>
                           {o.profiles?.email && <p className="text-xs text-secondary/70 flex items-center gap-1 break-all"><Mail className="w-3 h-3 flex-shrink-0" /> {o.profiles.email}</p>}
                         </div>
@@ -737,7 +741,7 @@ function OrdersTab({ es }: { es: boolean }) {
                         {/* Shipping info */}
                         {(o.shipping_name || o.shipping_city) ? (
                           <div className="bg-secondary/8 border border-secondary/25 rounded-lg p-3 space-y-1">
-                            <p className="text-xs font-semibold text-secondary flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {es ? 'Dirección de envío' : 'Shipping address'}</p>
+                            <p className="text-xs font-semibold text-secondary flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.shippingAddress')}</p>
                             {o.shipping_name && <p className="text-sm text-secondary font-medium">{o.shipping_name}</p>}
                             {o.shipping_phone && <p className="text-xs text-secondary/70 flex items-center gap-1"><Phone className="w-3 h-3" /> {o.shipping_phone}</p>}
                             <p className="text-xs text-secondary/70">{[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ') || '—'}</p>
@@ -745,7 +749,7 @@ function OrdersTab({ es }: { es: boolean }) {
                           </div>
                         ) : (
                           <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
-                            ⚠ {es ? 'Sin dirección de envío registrada' : 'No shipping address on file'}
+                            ⚠ {t('adminMarketplacePage.orders.noShippingAddress')}
                           </div>
                         )}
                       </div>
@@ -758,7 +762,7 @@ function OrdersTab({ es }: { es: boolean }) {
                           onClick={() => printOrderPDF(o)}
                           className="h-9 text-xs gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
                         >
-                          <FileText className="w-3.5 h-3.5" /> {es ? 'Descargar PDF' : 'Download PDF'}
+                          <FileText className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.downloadPDF')}
                         </Button>
 
                         {o.status === 'paid' && (
@@ -768,7 +772,7 @@ function OrdersTab({ es }: { es: boolean }) {
                             disabled={updatingId === o.id}
                             className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow"
                           >
-                            <Truck className="w-3.5 h-3.5" /> {es ? 'Despachar ahora' : 'Dispatch now'}
+                            <Truck className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.dispatchNow')}
                           </Button>
                         )}
 
@@ -779,7 +783,7 @@ function OrdersTab({ es }: { es: boolean }) {
                             disabled={updatingId === o.id}
                             className="h-9 text-xs gap-1.5 bg-secondary text-primary-foreground hover:bg-secondary/90"
                           >
-                            <Check className="w-3.5 h-3.5" /> {es ? 'Marcar entregado' : 'Mark delivered'}
+                            <Check className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.markDelivered')}
                           </Button>
                         )}
 
@@ -791,13 +795,13 @@ function OrdersTab({ es }: { es: boolean }) {
                             disabled={updatingId === o.id}
                             className="h-9 text-xs gap-1.5"
                           >
-                            <DollarSign className="w-3.5 h-3.5" /> {es ? 'Marcar pagado' : 'Mark paid'}
+                            <DollarSign className="w-3.5 h-3.5" /> {t('adminMarketplacePage.orders.markPaid')}
                           </Button>
                         )}
 
                         {/* Status override avanzado */}
                         <div className="flex items-center gap-2 ml-auto">
-                          <Label className="text-xs text-secondary/70">{es ? 'Estado:' : 'Status:'}</Label>
+                          <Label className="text-xs text-secondary/70">{t('adminMarketplacePage.orders.statusLabel')}</Label>
                           <Select value={o.status} onValueChange={v => updateStatus(o.id, v)}>
                             <SelectTrigger className="w-32 h-9 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -812,25 +816,25 @@ function OrdersTab({ es }: { es: boolean }) {
 
                       {/* Tracking number (siempre editable, también después de despachar) */}
                       <div className="flex gap-2 items-center">
-                        <Label className="text-xs text-secondary/70 whitespace-nowrap">{es ? 'Tracking:' : 'Tracking:'}</Label>
+                        <Label className="text-xs text-secondary/70 whitespace-nowrap">{t('adminMarketplacePage.orders.trackingLabel')}</Label>
                         <Input
-                          placeholder={es ? 'Número de guía...' : 'Tracking #...'}
+                          placeholder={t('adminMarketplacePage.orders.trackingPlaceholder')}
                           value={trackingInput[o.id] ?? o.tracking_number ?? ''}
                           onChange={e => setTrackingInput(p => ({ ...p, [o.id]: e.target.value }))}
                           className="h-8 text-xs flex-1"
                         />
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => saveTracking(o.id)}>
-                          <Truck className="w-3.5 h-3.5 mr-1" /> {es ? 'Guardar' : 'Save'}
+                          <Truck className="w-3.5 h-3.5 mr-1" /> {t('adminMarketplacePage.common.save')}
                         </Button>
                       </div>
 
                       {/* Timestamps */}
                       <div className="text-[10px] text-secondary/60 space-y-0.5 pt-2 border-t border-primary/15">
-                        <p>🕒 {es ? 'Creado' : 'Created'}: {new Date(o.created_at).toLocaleString('es-MX')}</p>
-                        {o.paid_at && <p>✅ {es ? 'Pagado' : 'Paid'}: {new Date(o.paid_at).toLocaleString('es-MX')}</p>}
-                        {o.shipped_at && <p>📦 {es ? 'Enviado' : 'Shipped'}: {new Date(o.shipped_at).toLocaleString('es-MX')}</p>}
-                        {o.estimated_delivery && <p>🚚 {es ? 'Llegada estimada' : 'ETA'}: {new Date(o.estimated_delivery).toLocaleDateString('es-MX')}</p>}
-                        {o.delivered_at && <p>🎉 {es ? 'Entregado' : 'Delivered'}: {new Date(o.delivered_at).toLocaleString('es-MX')}</p>}
+                        <p>🕒 {t('adminMarketplacePage.orders.created')}: {new Date(o.created_at).toLocaleString('es-MX')}</p>
+                        {o.paid_at && <p>✅ {t('adminMarketplacePage.orders.paid')}: {new Date(o.paid_at).toLocaleString('es-MX')}</p>}
+                        {o.shipped_at && <p>📦 {t('adminMarketplacePage.orders.shipped')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</p>}
+                        {o.estimated_delivery && <p>🚚 {t('adminMarketplacePage.orders.eta')}: {new Date(o.estimated_delivery).toLocaleDateString('es-MX')}</p>}
+                        {o.delivered_at && <p>🎉 {t('adminMarketplacePage.orders.delivered')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</p>}
                       </div>
                     </div>
                   )}
@@ -847,7 +851,7 @@ function OrdersTab({ es }: { es: boolean }) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-secondary">
               <Truck className="w-5 h-5 text-primary" />
-              {es ? 'Despachar pedido' : 'Dispatch order'}
+              {t('adminMarketplacePage.orders.dispatchOrder')}
             </DialogTitle>
           </DialogHeader>
           {(() => {
@@ -858,14 +862,14 @@ function OrdersTab({ es }: { es: boolean }) {
                 <div className="bg-primary/8 border border-primary/25 rounded-lg p-3">
                   <p className="text-xs font-semibold text-primary mb-1">{o.marketplace_products?.name || 'Producto'}</p>
                   <p className="text-xs text-secondary/70">
-                    {o.shipping_name || o.profiles?.name || 'Sin destinatario'}
+                    {o.shipping_name || o.profiles?.name || t('adminMarketplacePage.orders.noRecipient')}
                     {o.shipping_city ? ` · ${o.shipping_city}` : ''}
                     {o.shipping_state ? `, ${o.shipping_state}` : ''}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">{es ? 'Llegará al comprador en (días)' : 'Will arrive in (days)'}</Label>
+                  <Label className="text-xs">{t('adminMarketplacePage.orders.willArriveDays')}</Label>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -885,15 +889,17 @@ function OrdersTab({ es }: { es: boolean }) {
                   </div>
                   <p className="text-[10px] text-secondary/60">
                     {es
-                      ? `ETA: ${new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })}. Se guarda como default para esta zona (${o.shipping_state || o.shipping_city || 'sin zona'}).`
-                      : `ETA: ${new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}.`}
+                      ? t('adminMarketplacePage.orders.etaWithZoneEs')
+                          .replace('{date}', new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }))
+                          .replace('{zone}', o.shipping_state || o.shipping_city || t('adminMarketplacePage.orders.noZone'))
+                      : t('adminMarketplacePage.orders.etaSimpleEn').replace('{date}', new Date(Date.now() + (dispatchDialog.days || 0) * 86400000).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }))}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">{es ? 'Paquetería' : 'Carrier'}</Label>
+                  <Label className="text-xs">{t('adminMarketplacePage.orders.carrier')}</Label>
                   <Select value={dispatchDialog.carrier} onValueChange={(v) => setDispatchDialog(d => ({ ...d, carrier: v, trackingUrl: buildTrackingUrl(v, d.tracking) }))}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={es ? 'Selecciona paquetería' : 'Select carrier'} /></SelectTrigger>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={t('adminMarketplacePage.orders.selectCarrier')} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Estafeta">Estafeta</SelectItem>
                       <SelectItem value="DHL">DHL</SelectItem>
@@ -902,13 +908,13 @@ function OrdersTab({ es }: { es: boolean }) {
                       <SelectItem value="Redpack">Redpack</SelectItem>
                       <SelectItem value="Paquetexpress">Paquetexpress</SelectItem>
                       <SelectItem value="99minutos">99minutos</SelectItem>
-                      <SelectItem value="Otro">{es ? 'Otro' : 'Other'}</SelectItem>
+                      <SelectItem value="Otro">{t('adminMarketplacePage.orders.other')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">{es ? 'Número de guía / tracking' : 'Tracking number'}</Label>
+                  <Label className="text-xs">{t('adminMarketplacePage.orders.trackingNumber')}</Label>
                   <Input
                     placeholder="Ej: 1234567890"
                     value={dispatchDialog.tracking}
@@ -918,7 +924,7 @@ function OrdersTab({ es }: { es: boolean }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs">{es ? 'URL de rastreo (auto-generada — editable)' : 'Tracking URL (auto-filled — editable)'}</Label>
+                  <Label className="text-xs">{t('adminMarketplacePage.orders.trackingUrlLabel')}</Label>
                   <Input
                     placeholder="https://..."
                     value={dispatchDialog.trackingUrl}
@@ -927,27 +933,27 @@ function OrdersTab({ es }: { es: boolean }) {
                   />
                   {dispatchDialog.trackingUrl && (
                     <a href={dispatchDialog.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-primary underline inline-flex items-center gap-1">
-                      <Truck className="w-3 h-3" /> {es ? 'Abrir en nueva pestaña' : 'Open in new tab'}
+                      <Truck className="w-3 h-3" /> {t('adminMarketplacePage.orders.openNewTab')}
                     </a>
                   )}
                 </div>
 
                 <div className="bg-secondary/8 border border-secondary/25 rounded-lg p-3 text-xs text-secondary/80">
-                  <p className="font-semibold mb-1 text-secondary flex items-center gap-1"><Send className="w-3 h-3" /> {es ? 'Al confirmar:' : 'On confirm:'}</p>
+                  <p className="font-semibold mb-1 text-secondary flex items-center gap-1"><Send className="w-3 h-3" /> {t('adminMarketplacePage.orders.onConfirm')}</p>
                   <ul className="list-disc list-inside space-y-0.5 text-[11px]">
-                    <li>{es ? 'Estado → enviado, ETA registrada' : 'Status → shipped, ETA logged'}</li>
-                    <li>{es ? 'Email al comprador con tracking' : 'Email to buyer with tracking'}</li>
-                    <li>{es ? 'Notificación in-app al comprador' : 'In-app notification to buyer'}</li>
+                    <li>{t('adminMarketplacePage.orders.confirmStatus')}</li>
+                    <li>{t('adminMarketplacePage.orders.confirmEmail')}</li>
+                    <li>{t('adminMarketplacePage.orders.confirmNotification')}</li>
                   </ul>
                 </div>
 
                 <div className="flex gap-2 justify-end pt-2">
                   <Button variant="outline" onClick={() => setDispatchDialog({ orderId: null, days: 3, tracking: '', carrier: '', trackingUrl: '' })} disabled={updatingId === o.id}>
-                    {es ? 'Cancelar' : 'Cancel'}
+                    {t('adminMarketplacePage.orders.cancel')}
                   </Button>
                   <Button onClick={confirmDispatch} disabled={updatingId === o.id} className="gap-1.5">
                     {updatingId === o.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    {es ? 'Confirmar despacho' : 'Confirm dispatch'}
+                    {t('adminMarketplacePage.orders.confirmDispatch')}
                   </Button>
                 </div>
               </div>
@@ -960,7 +966,8 @@ function OrdersTab({ es }: { es: boolean }) {
 }
 
 /* =================== SALES / ACCOUNTING TAB =================== */
-function SalesTab({ es }: { es: boolean }) {
+function SalesTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -1040,7 +1047,7 @@ function SalesTab({ es }: { es: boolean }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `sales-report-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success(es ? 'Reporte exportado' : 'Report exported');
+    toast.success(t('adminMarketplacePage.sales.reportExported'));
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -1052,22 +1059,22 @@ function SalesTab({ es }: { es: boolean }) {
         <Card><CardContent className="p-4 text-center">
           <DollarSign className="w-5 h-5 text-success mx-auto mb-1" />
           <p className="text-xl font-bold">${stats.totalRevenue.toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Ventas totales' : 'Total Sales'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.sales.totalSales')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <Package className="w-5 h-5 text-primary mx-auto mb-1" />
           <p className="text-xl font-bold">{stats.totalUnits}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Unidades vendidas' : 'Units Sold'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.sales.unitsSold')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <Users className="w-5 h-5 text-secondary mx-auto mb-1" />
           <p className="text-xl font-bold">{stats.uniqueBuyers}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Compradores' : 'Buyers'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.sales.buyers')}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <BarChart3 className="w-5 h-5 text-warning mx-auto mb-1" />
           <p className="text-xl font-bold">${Math.round(stats.avg).toLocaleString()}</p>
-          <p className="text-[10px] text-muted-foreground">{es ? 'Promedio' : 'Avg Order'}</p>
+          <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.sales.avgOrder')}</p>
         </CardContent></Card>
       </div>
 
@@ -1075,14 +1082,14 @@ function SalesTab({ es }: { es: boolean }) {
       {monthlyData.length > 1 && (
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm font-semibold mb-3">{es ? 'Tendencia de Ventas' : 'Sales Trend'}</p>
+            <p className="text-sm font-semibold mb-3">{t('adminMarketplacePage.sales.salesTrend')}</p>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, es ? 'Ingresos' : 'Revenue']} />
+                  <Tooltip formatter={(v: number) => [`$${v.toLocaleString()}`, t('adminMarketplacePage.sales.revenue')]} />
                   <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -1095,8 +1102,8 @@ function SalesTab({ es }: { es: boolean }) {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold">{es ? 'Ventas por Proveedor' : 'Sales by Vendor'}</p>
-            <Button variant="outline" size="sm" onClick={exportAccounting} className="h-7 text-xs gap-1"><Download className="w-3 h-3" /> {es ? 'Exportar' : 'Export'}</Button>
+            <p className="text-sm font-semibold">{t('adminMarketplacePage.sales.salesByVendor')}</p>
+            <Button variant="outline" size="sm" onClick={exportAccounting} className="h-7 text-xs gap-1"><Download className="w-3 h-3" /> {t('adminMarketplacePage.sales.export')}</Button>
           </div>
           <div className="space-y-2">
             {vendorBreakdown.map((v, i) => (
@@ -1104,12 +1111,12 @@ function SalesTab({ es }: { es: boolean }) {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{i + 1}</div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{v.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{v.orders} {es ? 'pedidos' : 'orders'} · {v.units} {es ? 'unidades' : 'units'}</p>
+                  <p className="text-[10px] text-muted-foreground">{v.orders} {t('adminMarketplacePage.sales.orders')} · {v.units} {t('adminMarketplacePage.sales.units')}</p>
                 </div>
                 <p className="text-sm font-bold text-primary">${v.revenue.toLocaleString()}</p>
               </div>
             ))}
-            {vendorBreakdown.length === 0 && <p className="text-center text-muted-foreground py-4">{es ? 'Sin datos' : 'No data'}</p>}
+            {vendorBreakdown.length === 0 && <p className="text-center text-muted-foreground py-4">{t('adminMarketplacePage.sales.noData')}</p>}
           </div>
         </CardContent>
       </Card>
@@ -1117,14 +1124,14 @@ function SalesTab({ es }: { es: boolean }) {
       {/* Top products */}
       <Card>
         <CardContent className="p-4">
-          <p className="text-sm font-semibold mb-3">{es ? 'Top 10 Productos' : 'Top 10 Products'}</p>
+          <p className="text-sm font-semibold mb-3">{t('adminMarketplacePage.sales.topProducts')}</p>
           <div className="space-y-2">
             {topProducts.map((p, i) => (
               <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
                 <span className="text-xs font-bold text-muted-foreground w-5 text-center">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{p.units} {es ? 'unidades' : 'units'}</p>
+                  <p className="text-[10px] text-muted-foreground">{p.units} {t('adminMarketplacePage.sales.units')}</p>
                 </div>
                 <p className="text-sm font-bold text-primary">${p.revenue.toLocaleString()}</p>
               </div>
@@ -1136,7 +1143,7 @@ function SalesTab({ es }: { es: boolean }) {
       {/* Status breakdown */}
       <Card>
         <CardContent className="p-4">
-          <p className="text-sm font-semibold mb-3">{es ? 'Por Estado' : 'By Status'}</p>
+          <p className="text-sm font-semibold mb-3">{t('adminMarketplacePage.sales.byStatus')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {statusBreakdown.map(s => (
               <div key={s.status} className="text-center p-3 rounded-lg bg-muted/50">
@@ -1153,7 +1160,8 @@ function SalesTab({ es }: { es: boolean }) {
 
 
 /* =================== REFUNDS TAB =================== */
-function RefundsTab({ es }: { es: boolean }) {
+function RefundsTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [refunds, setRefunds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('requested');
@@ -1182,7 +1190,7 @@ function RefundsTab({ es }: { es: boolean }) {
     });
     setBusy(false);
     if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
-    toast.success(actionDialog === 'approve' ? (es ? 'Reembolso aprobado' : 'Refund approved') : (es ? 'Reembolso rechazado' : 'Refund rejected'));
+    toast.success(actionDialog === 'approve' ? t('adminMarketplacePage.refunds.refundApproved') : t('adminMarketplacePage.refunds.refundRejected'));
     setActionDialog(null); setSelected(null); setNotes(''); setRejection(''); fetchData();
   };
 
@@ -1192,18 +1200,18 @@ function RefundsTab({ es }: { es: boolean }) {
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-44 h-9"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{es ? 'Todos' : 'All'}</SelectItem>
-            <SelectItem value="requested">{es ? 'Solicitados' : 'Requested'}</SelectItem>
-            <SelectItem value="approved">{es ? 'Aprobados' : 'Approved'}</SelectItem>
-            <SelectItem value="rejected">{es ? 'Rechazados' : 'Rejected'}</SelectItem>
-            <SelectItem value="refunded">{es ? 'Reembolsados' : 'Refunded'}</SelectItem>
+            <SelectItem value="all">{t('adminMarketplacePage.orders.all')}</SelectItem>
+            <SelectItem value="requested">{t('adminMarketplacePage.refunds.requested')}</SelectItem>
+            <SelectItem value="approved">{t('adminMarketplacePage.refunds.approved')}</SelectItem>
+            <SelectItem value="rejected">{t('adminMarketplacePage.refunds.rejected')}</SelectItem>
+            <SelectItem value="refunded">{t('adminMarketplacePage.refunds.refunded')}</SelectItem>
           </SelectContent>
         </Select>
-        <Button size="sm" variant="outline" onClick={fetchData} disabled={loading}>{es ? 'Actualizar' : 'Refresh'}</Button>
+        <Button size="sm" variant="outline" onClick={fetchData} disabled={loading}>{t('adminMarketplacePage.refunds.refresh')}</Button>
       </div>
 
       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : refunds.length === 0 ? (
-        <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin devoluciones' : 'No refunds'}</CardContent></Card>
+        <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{t('adminMarketplacePage.refunds.noRefunds')}</CardContent></Card>
       ) : (
         <div className="space-y-2">
           {refunds.map(r => (
@@ -1217,14 +1225,14 @@ function RefundsTab({ es }: { es: boolean }) {
                     </div>
                     <p className="text-sm font-medium mt-1 line-clamp-2">{r.marketplace_orders?.marketplace_products?.name || '—'}</p>
                     <p className="text-xs text-muted-foreground">{r.marketplace_orders?.marketplace_vendors?.name || '—'} · <span className="capitalize">{r.reason_category}</span></p>
-                    <p className="text-xs mt-1 line-clamp-2"><strong>{es ? 'Motivo' : 'Reason'}:</strong> {r.reason}</p>
+                    <p className="text-xs mt-1 line-clamp-2"><strong>{t('adminMarketplacePage.refunds.reason')}:</strong> {r.reason}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold">{Number(r.amount).toFixed(2)} {r.currency}</p>
                     {r.status === 'requested' && (
                       <div className="flex gap-1 mt-2">
-                        <Button size="sm" variant="default" onClick={() => { setSelected(r); setActionDialog('approve'); }}>{es ? 'Aprobar' : 'Approve'}</Button>
-                        <Button size="sm" variant="destructive" onClick={() => { setSelected(r); setActionDialog('reject'); }}>{es ? 'Rechazar' : 'Reject'}</Button>
+                        <Button size="sm" variant="default" onClick={() => { setSelected(r); setActionDialog('approve'); }}>{t('adminMarketplacePage.refunds.approve')}</Button>
+                        <Button size="sm" variant="destructive" onClick={() => { setSelected(r); setActionDialog('reject'); }}>{t('adminMarketplacePage.refunds.reject')}</Button>
                       </div>
                     )}
                   </div>
@@ -1237,23 +1245,23 @@ function RefundsTab({ es }: { es: boolean }) {
 
       <Dialog open={!!actionDialog} onOpenChange={(o) => { if (!o) { setActionDialog(null); setSelected(null); } }}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{actionDialog === 'approve' ? (es ? 'Aprobar devolución' : 'Approve refund') : (es ? 'Rechazar devolución' : 'Reject refund')}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{actionDialog === 'approve' ? t('adminMarketplacePage.refunds.approveRefund') : t('adminMarketplacePage.refunds.rejectRefund')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">{selected && `${Number(selected.amount).toFixed(2)} ${selected.currency} — ${selected.marketplace_orders?.marketplace_products?.name || '—'}`}</p>
             {actionDialog === 'reject' && (
               <div>
-                <Label className="text-xs">{es ? 'Razón del rechazo (visible al paciente)' : 'Rejection reason (visible to patient)'}</Label>
+                <Label className="text-xs">{t('adminMarketplacePage.refunds.rejectionReason')}</Label>
                 <Textarea value={rejection} onChange={e => setRejection(e.target.value)} rows={3} />
               </div>
             )}
             <div>
-              <Label className="text-xs">{es ? 'Notas internas' : 'Internal notes'}</Label>
+              <Label className="text-xs">{t('adminMarketplacePage.refunds.internalNotes')}</Label>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setActionDialog(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button variant="outline" onClick={() => setActionDialog(null)}>{t('adminMarketplacePage.refunds.cancel')}</Button>
               <Button onClick={handleAction} disabled={busy}>
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (actionDialog === 'approve' ? (es ? 'Aprobar y reembolsar' : 'Approve & refund') : (es ? 'Rechazar' : 'Reject'))}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (actionDialog === 'approve' ? t('adminMarketplacePage.refunds.approveAndRefund') : t('adminMarketplacePage.refunds.reject'))}
               </Button>
             </div>
           </div>
@@ -1264,7 +1272,8 @@ function RefundsTab({ es }: { es: boolean }) {
 }
 
 /* =================== DISPUTES TAB =================== */
-function DisputesTab({ es }: { es: boolean }) {
+function DisputesTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -1277,7 +1286,7 @@ function DisputesTab({ es }: { es: boolean }) {
     })();
   }, []);
   if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
-  if (disputes.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin disputas activas' : 'No active disputes'}</CardContent></Card>;
+  if (disputes.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{t('adminMarketplacePage.disputes.noActive')}</CardContent></Card>;
   return (
     <div className="space-y-2">
       {disputes.map(d => (
@@ -1291,7 +1300,7 @@ function DisputesTab({ es }: { es: boolean }) {
                 </div>
                 <p className="text-sm font-medium mt-1">{d.marketplace_orders?.marketplace_products?.name || '—'}</p>
                 <p className="text-xs text-muted-foreground">{d.marketplace_orders?.marketplace_vendors?.name || '—'} · {d.reason || '—'}</p>
-                {d.evidence_due_by && <p className="text-xs text-warning mt-1">{es ? 'Evidencia hasta' : 'Evidence due'} {new Date(d.evidence_due_by).toLocaleDateString()}</p>}
+                {d.evidence_due_by && <p className="text-xs text-warning mt-1">{t('adminMarketplacePage.disputes.evidenceDue')} {new Date(d.evidence_due_by).toLocaleDateString()}</p>}
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold">{Number(d.amount).toFixed(2)} {d.currency}</p>
@@ -1307,6 +1316,7 @@ function DisputesTab({ es }: { es: boolean }) {
 
 /* =================== PAYOUTS TAB =================== */
 function PayoutsTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [balances, setBalances] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1327,12 +1337,17 @@ function PayoutsTab({ es }: { es: boolean }) {
   const eligible = balances.filter((b: any) => b.payouts_enabled && b.stripe_account_id && Number(b.available_amount) > 0);
 
   const handlePayAll = async () => {
-    if (!confirm(es ? `¿Pagar ${eligible.length} vendors por un total de ${eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2)} MXN?` : `Pay ${eligible.length} vendors?`)) return;
+    const confirmMsg = es
+      ? t('adminMarketplacePage.payouts.confirmPayAllEs')
+          .replace('{count}', String(eligible.length))
+          .replace('{total}', eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2))
+      : t('adminMarketplacePage.payouts.confirmPayAllEn').replace('{count}', String(eligible.length));
+    if (!confirm(confirmMsg)) return;
     setBusy(true);
     const { data, error } = await supabase.functions.invoke('process-vendor-payouts', { body: {} });
     setBusy(false);
     if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
-    toast.success(`${data.processed} payouts procesados`);
+    toast.success(t('adminMarketplacePage.payouts.payoutsProcessed').replace('{count}', String(data.processed)));
     fetchData();
   };
 
@@ -1341,7 +1356,7 @@ function PayoutsTab({ es }: { es: boolean }) {
     const { data, error } = await supabase.functions.invoke('process-vendor-payouts', { body: { vendorIds: [vendorId] } });
     setBusy(false);
     if (error || !data?.ok) { toast.error(error?.message || data?.error || 'Error'); return; }
-    toast.success(es ? 'Payout enviado' : 'Payout sent');
+    toast.success(t('adminMarketplacePage.payouts.payoutSent'));
     fetchData();
   };
 
@@ -1353,12 +1368,12 @@ function PayoutsTab({ es }: { es: boolean }) {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold">{es ? 'Balances de vendors' : 'Vendor balances'}</p>
-              <p className="text-xs text-muted-foreground">{eligible.length} {es ? 'vendors elegibles' : 'eligible vendors'} · {eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2)} MXN {es ? 'disponible' : 'available'}</p>
+              <p className="text-sm font-semibold">{t('adminMarketplacePage.payouts.vendorBalances')}</p>
+              <p className="text-xs text-muted-foreground">{eligible.length} {t('adminMarketplacePage.payouts.eligibleVendors')} · {eligible.reduce((s: number,e: any)=>s+Number(e.available_amount),0).toFixed(2)} MXN {t('adminMarketplacePage.payouts.available')}</p>
             </div>
             <Button onClick={handlePayAll} disabled={busy || eligible.length === 0}>
               {busy ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
-              {es ? 'Pagar a TODOS los elegibles' : 'Pay ALL eligible'}
+              {t('adminMarketplacePage.payouts.payAllEligible')}
             </Button>
           </div>
         </CardContent>
@@ -1372,13 +1387,13 @@ function PayoutsTab({ es }: { es: boolean }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-sm truncate">{b.vendor_name}</p>
-                    {b.payouts_enabled ? <Badge variant="verified" className="text-[10px]">Stripe OK</Badge> : <Badge variant="destructive" className="text-[10px]">{es ? 'Sin Stripe' : 'No Stripe'}</Badge>}
+                    {b.payouts_enabled ? <Badge variant="verified" className="text-[10px]">Stripe OK</Badge> : <Badge variant="destructive" className="text-[10px]">{t('adminMarketplacePage.payouts.noStripe')}</Badge>}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{es ? 'Disp.' : 'Avail.'}: <strong className="text-primary">{Number(b.available_amount).toFixed(2)}</strong> · {es ? 'Pend.' : 'Pend.'}: {Number(b.pending_amount).toFixed(2)} · {es ? 'Pagado total' : 'Total paid'}: {Number(b.total_paid).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('adminMarketplacePage.payouts.avail')}: <strong className="text-primary">{Number(b.available_amount).toFixed(2)}</strong> · {t('adminMarketplacePage.payouts.pend')}: {Number(b.pending_amount).toFixed(2)} · {t('adminMarketplacePage.payouts.totalPaid')}: {Number(b.total_paid).toFixed(2)}</p>
                 </div>
                 {b.payouts_enabled && Number(b.available_amount) > 0 && (
                   <Button size="sm" variant="outline" onClick={() => handlePayOne(b.vendor_id)} disabled={busy}>
-                    {es ? 'Pagar' : 'Pay'}
+                    {t('adminMarketplacePage.payouts.pay')}
                   </Button>
                 )}
               </div>
@@ -1388,14 +1403,14 @@ function PayoutsTab({ es }: { es: boolean }) {
       </div>
 
       <div>
-        <p className="text-sm font-semibold mb-2">{es ? 'Historial de pagos' : 'Payout history'}</p>
+        <p className="text-sm font-semibold mb-2">{t('adminMarketplacePage.payouts.history')}</p>
         <div className="space-y-1.5">
           {payouts.map((p: any) => (
             <Card key={p.id} className="bg-muted/30">
               <CardContent className="p-3 flex items-center justify-between text-sm">
                 <div>
                   <span className="font-medium">{p.marketplace_vendors?.name || '—'}</span>
-                  <span className="text-muted-foreground"> · {p.earnings_count} {es ? 'ventas' : 'sales'}</span>
+                  <span className="text-muted-foreground"> · {p.earnings_count} {t('adminMarketplacePage.payouts.sales')}</span>
                   <span className="text-muted-foreground"> · {new Date(p.initiated_at).toLocaleDateString()}</span>
                 </div>
                 <div className="text-right">
@@ -1405,7 +1420,7 @@ function PayoutsTab({ es }: { es: boolean }) {
               </CardContent>
             </Card>
           ))}
-          {payouts.length === 0 && <p className="text-xs text-muted-foreground">{es ? 'Sin payouts aún' : 'No payouts yet'}</p>}
+          {payouts.length === 0 && <p className="text-xs text-muted-foreground">{t('adminMarketplacePage.payouts.noPayouts')}</p>}
         </div>
       </div>
     </div>
@@ -1413,7 +1428,8 @@ function PayoutsTab({ es }: { es: boolean }) {
 }
 
 /* =================== STOCK TAB =================== */
-function StockTab({ es }: { es: boolean }) {
+function StockTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'low' | 'out'>('low');
@@ -1438,22 +1454,22 @@ function StockTab({ es }: { es: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{es ? 'Todos' : 'All'} ({products.length})</Button>
-        <Button size="sm" variant={filter === 'low' ? 'default' : 'outline'} onClick={() => setFilter('low')}>{es ? 'Bajo' : 'Low'}</Button>
-        <Button size="sm" variant={filter === 'out' ? 'default' : 'outline'} onClick={() => setFilter('out')}>{es ? 'Agotados' : 'Out'}</Button>
+        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{t('adminMarketplacePage.stock.all')} ({products.length})</Button>
+        <Button size="sm" variant={filter === 'low' ? 'default' : 'outline'} onClick={() => setFilter('low')}>{t('adminMarketplacePage.stock.low')}</Button>
+        <Button size="sm" variant={filter === 'out' ? 'default' : 'outline'} onClick={() => setFilter('out')}>{t('adminMarketplacePage.stock.out')}</Button>
       </div>
-      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin productos en este filtro' : 'No products in this filter'}</CardContent></Card> : (
+      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{t('adminMarketplacePage.stock.noProductsFilter')}</CardContent></Card> : (
         <div className="space-y-1.5">
           {filtered.map(p => (
             <Card key={p.id} className={p.stock === 0 ? 'border-destructive' : ''}>
               <CardContent className="p-3 flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground">{p.marketplace_vendors?.name} · {p.total_sold || 0} {es ? 'vendidos' : 'sold'}</p>
+                  <p className="text-xs text-muted-foreground">{p.marketplace_vendors?.name} · {p.total_sold || 0} {t('adminMarketplacePage.stock.sold')}</p>
                 </div>
                 <div className="text-right">
                   <p className={`text-lg font-bold ${p.stock === 0 ? 'text-destructive' : p.stock <= p.low_stock_threshold ? 'text-warning' : 'text-foreground'}`}>{p.stock}</p>
-                  <p className="text-[10px] text-muted-foreground">{es ? 'mín' : 'min'} {p.low_stock_threshold}</p>
+                  <p className="text-[10px] text-muted-foreground">{t('adminMarketplacePage.stock.min')} {p.low_stock_threshold}</p>
                 </div>
               </CardContent>
             </Card>
@@ -1465,7 +1481,8 @@ function StockTab({ es }: { es: boolean }) {
 }
 
 /* =================== AUDIT TAB =================== */
-function AuditTab({ es }: { es: boolean }) {
+function AuditTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -1476,7 +1493,7 @@ function AuditTab({ es }: { es: boolean }) {
     })();
   }, []);
   if (loading) return <Loader2 className="w-5 h-5 animate-spin" />;
-  if (logs.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin registros de auditoría' : 'No audit logs'}</CardContent></Card>;
+  if (logs.length === 0) return <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{t('adminMarketplacePage.audit.noLogs')}</CardContent></Card>;
   return (
     <div className="space-y-1">
       {logs.map(l => (
@@ -1500,7 +1517,8 @@ function AuditTab({ es }: { es: boolean }) {
 }
 
 /* =================== REVIEWS TAB =================== */
-function ReviewsTab({ es }: { es: boolean }) {
+function ReviewsTab({ es: _es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'visible' | 'hidden'>('all');
@@ -1526,15 +1544,15 @@ function ReviewsTab({ es }: { es: boolean }) {
   const toggleHide = async (r: any) => {
     const { error } = await (supabase as any).from('product_reviews').update({ is_hidden: !r.is_hidden }).eq('id', r.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(r.is_hidden ? (es ? 'Reseña visible' : 'Review visible') : (es ? 'Reseña oculta' : 'Review hidden'));
+    toast.success(r.is_hidden ? t('adminMarketplacePage.reviews.reviewVisible') : t('adminMarketplacePage.reviews.reviewHidden'));
     fetchData();
   };
 
   const deleteReview = async (id: string) => {
-    if (!confirm(es ? '¿Eliminar esta reseña permanentemente?' : 'Delete this review permanently?')) return;
+    if (!confirm(t('adminMarketplacePage.reviews.confirmDelete'))) return;
     const { error } = await (supabase as any).from('product_reviews').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
-    toast.success(es ? 'Reseña eliminada' : 'Review deleted');
+    toast.success(t('adminMarketplacePage.reviews.reviewDeleted'));
     fetchData();
   };
 
@@ -1543,11 +1561,11 @@ function ReviewsTab({ es }: { es: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{es ? 'Todas' : 'All'} ({reviews.length})</Button>
-        <Button size="sm" variant={filter === 'visible' ? 'default' : 'outline'} onClick={() => setFilter('visible')}>{es ? 'Visibles' : 'Visible'} ({reviews.filter(r => !r.is_hidden).length})</Button>
-        <Button size="sm" variant={filter === 'hidden' ? 'default' : 'outline'} onClick={() => setFilter('hidden')}>{es ? 'Ocultas' : 'Hidden'} ({reviews.filter(r => r.is_hidden).length})</Button>
+        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>{t('adminMarketplacePage.reviews.all')} ({reviews.length})</Button>
+        <Button size="sm" variant={filter === 'visible' ? 'default' : 'outline'} onClick={() => setFilter('visible')}>{t('adminMarketplacePage.reviews.visible')} ({reviews.filter(r => !r.is_hidden).length})</Button>
+        <Button size="sm" variant={filter === 'hidden' ? 'default' : 'outline'} onClick={() => setFilter('hidden')}>{t('adminMarketplacePage.reviews.hidden')} ({reviews.filter(r => r.is_hidden).length})</Button>
       </div>
-      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{es ? 'Sin reseñas' : 'No reviews'}</CardContent></Card> : (
+      {filtered.length === 0 ? <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">{t('adminMarketplacePage.reviews.noReviews')}</CardContent></Card> : (
         <div className="space-y-2">
           {filtered.map(r => (
             <Card key={r.id} className={r.is_hidden ? 'bg-muted/40 opacity-70' : ''}>
@@ -1561,8 +1579,8 @@ function ReviewsTab({ es }: { es: boolean }) {
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
-                      {r.verified_purchase && <Badge variant="verified" className="text-[10px]">✓ Compra verificada</Badge>}
-                      {r.is_hidden && <Badge variant="destructive" className="text-[10px]">Oculta</Badge>}
+                      {r.verified_purchase && <Badge variant="verified" className="text-[10px]">✓ {t('adminMarketplacePage.reviews.verifiedPurchase')}</Badge>}
+                      {r.is_hidden && <Badge variant="destructive" className="text-[10px]">{t('adminMarketplacePage.reviews.hiddenBadge')}</Badge>}
                     </div>
                     {r.title && <p className="text-sm font-semibold">{r.title}</p>}
                     {r.body && <p className="text-xs text-muted-foreground line-clamp-3 mt-1">{r.body}</p>}
@@ -1571,10 +1589,10 @@ function ReviewsTab({ es }: { es: boolean }) {
                     </p>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleHide(r)} title={r.is_hidden ? 'Mostrar' : 'Ocultar'}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleHide(r)} title={r.is_hidden ? t('adminMarketplacePage.reviews.show') : t('adminMarketplacePage.reviews.hide')}>
                       {r.is_hidden ? <EyeIcon className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteReview(r.id)} title="Eliminar">
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteReview(r.id)} title={t('adminMarketplacePage.reviews.delete')}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>

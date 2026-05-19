@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
+import { useLanguage } from '@/contexts/LanguageContext';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
 import heroBgDesktop from '@/assets/landing/hero-bg-desktop.png';
@@ -31,8 +32,9 @@ import {
 import { LandingFooter } from '@/components/landing/LandingFooter';
 
 export default function Landing() {
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
-  
+
   const [showDemoModal, setShowDemoModal] = useState(false);
 
   // Scroll effect for navbar
@@ -64,38 +66,38 @@ export default function Landing() {
           <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
             <Link to="/" className="flex items-center gap-2 group">
               <div className="relative h-8 sm:h-10 md:h-12 overflow-hidden">
-                <img src={logoWhite} alt="Logo" className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
-                <img src={logoBlue} alt="Logo" className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
+                <img src={logoWhite} alt={t('landing.nav.logoAlt')} className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
+                <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
               </div>
             </Link>
 
             <div className="hidden lg:flex items-center space-x-1">
               <div className={`flex items-center backdrop-blur-md rounded-full p-1 mr-6 transition-all duration-300 ${scrolled ? 'bg-gray-100 border-gray-200' : 'bg-white/10 border-white/20'} border`}>
-                <a href="#red-global" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Red Global</a>
-                <a href="#features" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Tecnología</a>
-                <a href="#workflow" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Proceso</a>
-                <a href="#reviews" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Reseñas</a>
+                <a href="#red-global" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>{t('landing.nav.globalNetwork')}</a>
+                <a href="#features" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>{t('landing.nav.technology')}</a>
+                <a href="#workflow" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>{t('landing.nav.process')}</a>
+                <a href="#reviews" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>{t('landing.nav.reviews')}</a>
               </div>
-              
-              <Link 
-                to="/app" 
+
+              <Link
+                to="/app"
                 className="relative overflow-hidden group bg-[#00768b] hover:bg-white text-white hover:text-[#163a83] font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,118,139,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] border border-transparent hover:border-[#163a83]"
               >
                 <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-wider">
-                  Entrar a la App <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  {t('landing.nav.enterApp')} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
             </div>
 
-            <Link 
-              to="/app" 
+            <Link
+              to="/app"
               className={`lg:hidden font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
-                scrolled 
-                  ? 'bg-[#00768b] text-white' 
+                scrolled
+                  ? 'bg-[#00768b] text-white'
                   : 'bg-white/20 backdrop-blur-md text-white border border-white/30'
               }`}
             >
-              Entrar
+              {t('landing.nav.enter')}
             </Link>
           </div>
         </div>
@@ -125,20 +127,20 @@ export default function Landing() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">LIVE</span>
-                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">· Orientación médica y retransmisiones en tiempo real</span>
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.hero.liveBadge')}</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">{t('landing.hero.liveTagline')}</span>
               </div>
 
               <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
-                La Medicina,<br />Sin Fronteras.<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#00768b] to-[#839ed5]">En Tiempo Real.</span>
+                {t('landing.hero.titleLine1')}<br />{t('landing.hero.titleLine2')}<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#00768b] to-[#839ed5]">{t('landing.hero.titleLine3')}</span>
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 font-light leading-relaxed">
-                Orientación médica en vivo, formación médica y colaboración global en una única plataforma inteligente.
+                {t('landing.hero.subtitle')}
               </p>
               <p className="text-xs sm:text-sm text-slate-300/80 font-light leading-relaxed hidden lg:block">
-                Conectamos médicos, hospitales y conocimiento en todo el mundo. Desde una segunda opinión hasta retransmisiones quirúrgicas en directo.
+                {t('landing.hero.description')}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
@@ -147,14 +149,14 @@ export default function Landing() {
                   className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[#00768b] rounded-full shadow-[0_0_30px_rgba(0,118,139,0.45)] hover:bg-[#00879f] hover:shadow-[0_0_45px_rgba(0,118,139,0.7)] hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <ArrowRight className="w-4 h-4 mr-2 -ml-0.5 rotate-[-45deg]" />
-                  <span>Acceder a la Plataforma</span>
+                  <span>{t('landing.hero.ctaPrimary')}</span>
                 </Link>
                 <button
                   onClick={() => setShowDemoModal(true)}
                   className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-white border border-white/25 rounded-full hover:bg-white/10 hover:border-white/50 transition-all backdrop-blur-md group"
                 >
                   <PlayCircle className="w-4 h-4 mr-2 text-[#aed3d9] group-hover:scale-110 transition-transform" />
-                  Ver Demo en Vivo
+                  {t('landing.hero.ctaSecondary')}
                 </button>
               </div>
 
@@ -182,7 +184,7 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-white/75 font-medium mt-1.5">Médicos en línea</p>
+              <p className="text-[10px] text-white/75 font-medium mt-1.5">{t('landing.hero.doctorsOnline')}</p>
             </div>
 
             {/* Right-side LIVE cards removed per client request 2026-05-18 —
@@ -196,10 +198,10 @@ export default function Landing() {
           <div className="absolute left-4 right-4 sm:left-6 sm:right-6 lg:left-12 lg:right-12 bottom-3 sm:bottom-4 lg:bottom-6 z-20">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl lg:rounded-2xl p-2.5 sm:p-3 lg:p-4 shadow-2xl">
               {[
-                { icon: iconEducacion, title: 'Educación Médica', desc: 'Accede a cursos, webinars y contenidos de expertos líderes.' },
-                { icon: iconConsultas, title: 'Orientación Médica en Línea', desc: 'Segundas opiniones y orientación médica especializada en tiempo real.' },
-                { icon: iconUsuarios, title: 'Red de Residentes', desc: 'Conecta, colabora y crece junto a miles de médicos residentes.' },
-                { icon: iconRetransmision, title: 'Retransmisiones Live', desc: 'Cirugías, eventos y conferencias en vivo desde cualquier parte.' },
+                { icon: iconEducacion, title: t('landing.heroFeatures.education.title'), desc: t('landing.heroFeatures.education.desc') },
+                { icon: iconConsultas, title: t('landing.heroFeatures.consults.title'), desc: t('landing.heroFeatures.consults.desc') },
+                { icon: iconUsuarios, title: t('landing.heroFeatures.network.title'), desc: t('landing.heroFeatures.network.desc') },
+                { icon: iconRetransmision, title: t('landing.heroFeatures.live.title'), desc: t('landing.heroFeatures.live.desc') },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
                   <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
@@ -223,13 +225,13 @@ export default function Landing() {
         <div className="flex w-[300%] sm:w-[200%] animate-scroll">
           {[1, 2].map((i) => (
             <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> Cédula validada</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> Identidad biométrica</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> Lives de doctores</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> Contenido premium</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> Vault clínico</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> Recetas digitales</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> Pagos en MXN</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.licenseValidated')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.biometricId')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.doctorLives')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.paymentsMxn')}</span>
             </div>
           ))}
         </div>
@@ -241,10 +243,10 @@ export default function Landing() {
         <section id="red-global" className="py-24 lg:py-32 relative overflow-hidden">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-4xl mx-auto mb-20">
-              <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">El Nuevo Estándar</span>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#163a83] mb-6">Un sistema operativo para la salud</h2>
+              <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">{t('landing.ecosystem.eyebrow')}</span>
+              <h2 className="text-4xl lg:text-5xl font-bold text-[#163a83] mb-6">{t('landing.ecosystem.title')}</h2>
               <p className="text-xl text-slate-500 font-light leading-relaxed">
-                Eliminamos las barreras entre la tecnología y la atención humana. Nuestra infraestructura conecta <span className="font-bold text-[#163a83]">laboratorios</span>, <span className="font-bold text-[#163a83]">especialistas</span> y <span className="font-bold text-[#163a83]">pacientes</span> en un flujo continuo de información segura.
+                {t('landing.ecosystem.descriptionPart1')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionLabs')}</span>{t('landing.ecosystem.descriptionComma1')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionSpecialists')}</span> {t('landing.ecosystem.descriptionAnd')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionPatients')}</span> {t('landing.ecosystem.descriptionPart2')}
               </p>
             </div>
 
@@ -256,9 +258,9 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-[#163a83] rounded-2xl flex items-center justify-center text-white text-2xl mb-8 shadow-lg shadow-[#163a83]/30">
                     <Network className="w-7 h-7" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Red Global de Médicos VIP</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">{t('landing.ecosystem.vip.title')}</h3>
                   <p className="text-gray-500 leading-relaxed mb-6">
-                    Orientación médica por video, contenido premium grabado, recetas digitales con firma y vault clínico privado — todo en una sola plataforma global para doctores, residentes y pacientes.
+                    {t('landing.ecosystem.vip.desc')}
                   </p>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
                     <div className="flex -space-x-3">
@@ -266,7 +268,7 @@ export default function Landing() {
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
                     </div>
-                    <span className="text-sm font-bold text-[#00768b]">Doctores con credenciales verificadas</span>
+                    <span className="text-sm font-bold text-[#00768b]">{t('landing.ecosystem.vip.verifiedCredentials')}</span>
                   </div>
                 </div>
               </div>
@@ -275,11 +277,11 @@ export default function Landing() {
                 <ShieldCheck className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 group-hover:text-white/10 transition-colors" />
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <h3 className="text-xl font-bold">Seguridad clínica y control de acceso</h3>
+                    <h3 className="text-xl font-bold">{t('landing.ecosystem.security.title')}</h3>
                     <Lock className="w-5 h-5 text-[#aed3d9]" />
                   </div>
                   <p className="text-blue-100 text-sm leading-relaxed">
-                    Expedientes protegidos, permisos por paciente, autorización temporal para consultar documentos y auditoría completa de cada acceso clínico.
+                    {t('landing.ecosystem.security.desc')}
                   </p>
                 </div>
               </div>
@@ -288,8 +290,8 @@ export default function Landing() {
                 <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-6 group-hover:scale-110 transition-transform">
                   <Zap className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Video en HD sin descargas</h3>
-                <p className="text-sm text-gray-500">Lives y orientaciones en tiempo real con baja latencia. Contenido protegido para evitar descargas no autorizadas.</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('landing.ecosystem.video.title')}</h3>
+                <p className="text-sm text-gray-500">{t('landing.ecosystem.video.desc')}</p>
               </div>
             </div>
           </div>
@@ -299,12 +301,12 @@ export default function Landing() {
         <section id="features" className="py-24 bg-slate-100/50">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-bold text-[#163a83] mb-4">Experiencia Inmersiva</h2>
+              <h2 className="text-4xl font-bold text-[#163a83] mb-4">{t('landing.video.title')}</h2>
               <p className="text-slate-600 text-lg">
-                Descubre cómo nuestra interfaz intuitiva transforma la gestión clínica.
+                {t('landing.video.subtitle')}
               </p>
             </div>
-            
+
             <div className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-black">
               <video
                 autoPlay
@@ -322,9 +324,9 @@ export default function Landing() {
         <section id="workflow" className="py-24 bg-white relative">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-bold text-[#163a83] mb-4">Hecho para doctores, residentes y pacientes</h2>
+              <h2 className="text-4xl font-bold text-[#163a83] mb-4">{t('landing.profiles.title')}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Desde una segunda opinión hasta retransmisiones quirúrgicas en directo: cada perfil entra a la misma red con las herramientas que necesita.
+                {t('landing.profiles.subtitle')}
               </p>
             </div>
 
@@ -335,20 +337,20 @@ export default function Landing() {
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#aed3d9]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#aed3d9]">Doctores</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.profiles.doctors.badge')}</span>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3">Atiende, transmite y monetiza</h3>
+                  <h3 className="text-2xl font-bold mb-3">{t('landing.profiles.doctors.title')}</h3>
                   <p className="text-blue-100/90 text-sm leading-relaxed mb-6">
-                    Verifica tus credenciales médicas, construye tu práctica digital y cobra en MXN con depósitos directos a tu cuenta.
+                    {t('landing.profiles.doctors.desc')}
                   </p>
                   <ul className="space-y-2.5 text-sm text-blue-50">
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Orientación médica 1:1 por video</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Lives en HD y contenido premium grabado</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Recetas firmadas con cédula y QR</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> Suscriptores, wallet y facturación</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> {t('landing.profiles.doctors.feature1')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> {t('landing.profiles.doctors.feature2')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> {t('landing.profiles.doctors.feature3')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0 mt-0.5" /> {t('landing.profiles.doctors.feature4')}</li>
                   </ul>
                   <Link to="/for-doctors" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#aed3d9] hover:text-white transition-colors">
-                    Soy doctor <ArrowRight className="w-4 h-4" />
+                    {t('landing.profiles.doctors.cta')} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -359,22 +361,22 @@ export default function Landing() {
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00768b]/10 border border-[#00768b]/20 mb-5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00768b]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#00768b]">Residentes</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#00768b]">{t('landing.profiles.residents.badge')}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Aprende y conecta con la red</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.residents.title')}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                    Acceso reducido a la red global con 50% de descuento en lives y contenido premium. Networking formal con doctores verificados.
+                    {t('landing.profiles.residents.desc')}
                   </p>
                   <ul className="space-y-2.5 text-sm text-gray-700">
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> 50% off en todo el contenido</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Sesiones clínicas y grupos privados</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Solicitud formal a doctores tratantes</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> Expedientes clínicos personales</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature1')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature2')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature3')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature4')}</li>
                   </ul>
                   <Link to="/for-residents" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#00768b] hover:text-[#163a83] transition-colors">
-                    Soy residente <ArrowRight className="w-4 h-4" />
+                    {t('landing.profiles.residents.cta')} <ArrowRight className="w-4 h-4" />
                   </Link>
-                  <p className="mt-3 text-[11px] text-slate-500">Los residentes no pueden cobrar ni emitir recetas.</p>
+                  <p className="mt-3 text-[11px] text-slate-500">{t('landing.profiles.residents.note')}</p>
                 </div>
               </div>
 
@@ -384,20 +386,20 @@ export default function Landing() {
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 border border-white/80 mb-5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#163a83]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#163a83]">Pacientes</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#163a83]">{t('landing.profiles.patients.badge')}</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">Tu salud, en tus manos</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.patients.title')}</h3>
                   <p className="text-gray-700 text-sm leading-relaxed mb-6">
-                    Encuentra doctores con cédula validada, agenda orientación por video y guarda tu expediente cifrado. Tú decides quién accede y por cuánto tiempo.
+                    {t('landing.profiles.patients.desc')}
                   </p>
                   <ul className="space-y-2.5 text-sm text-gray-800">
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Segunda opinión con especialistas</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Chat persistente 30 días tras la sesión</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Expediente clínico con autorización temporal</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> Recetas digitales válidas en tu país</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> {t('landing.profiles.patients.feature1')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> {t('landing.profiles.patients.feature2')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> {t('landing.profiles.patients.feature3')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> {t('landing.profiles.patients.feature4')}</li>
                   </ul>
                   <Link to="/for-patients" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#163a83] hover:text-[#0b1d45] transition-colors">
-                    Soy paciente <ArrowRight className="w-4 h-4" />
+                    {t('landing.profiles.patients.cta')} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -408,16 +410,16 @@ export default function Landing() {
         {/* Lo que incluye Medical Masters */}
         <section id="reviews" className="py-24 bg-white border-t border-slate-100">
           <div className="container mx-auto px-6">
-            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-4 text-[#163a83]">Todo lo que incluye Medical Masters</h2>
-            <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">Funciones que hoy ya están en producción dentro de la plataforma.</p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-4 text-[#163a83]">{t('landing.includes.title')}</h2>
+            <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">{t('landing.includes.subtitle')}</p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { title: 'Orientación médica por video', desc: 'Sesiones 1:1 con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
-                { title: 'Lives y Contenido Premium', desc: 'Transmite en vivo en HD con chat moderado y monetiza grabaciones por compra única o suscripción.', icon: <PlayCircle className="w-5 h-5" /> },
-                { title: 'Recetas digitales', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
-                { title: 'Expediente clínico privado', desc: 'Pacientes guardan estudios y autorizan el acceso por tiempo limitado. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
-                { title: 'Directorio de hospitales', desc: 'Hospitales y clínicas privadas a nivel global con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
-                { title: 'Verificación médica', desc: 'Revisión de cédula profesional, identidad y permisos antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
+                { title: t('landing.includes.video.title'), desc: t('landing.includes.video.desc'), icon: <Video className="w-5 h-5" /> },
+                { title: t('landing.includes.lives.title'), desc: t('landing.includes.lives.desc'), icon: <PlayCircle className="w-5 h-5" /> },
+                { title: t('landing.includes.prescriptions.title'), desc: t('landing.includes.prescriptions.desc'), icon: <Check className="w-5 h-5" /> },
+                { title: t('landing.includes.records.title'), desc: t('landing.includes.records.desc'), icon: <Lock className="w-5 h-5" /> },
+                { title: t('landing.includes.hospitals.title'), desc: t('landing.includes.hospitals.desc'), icon: <Hospital className="w-5 h-5" /> },
+                { title: t('landing.includes.verification.title'), desc: t('landing.includes.verification.desc'), icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
                 <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
@@ -433,70 +435,70 @@ export default function Landing() {
         <section id="pricing" className="py-24 bg-gradient-to-b from-[#0b1d45] to-[#163a83] relative overflow-hidden">
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center mb-16">
-              <span className="text-[#aed3d9] font-bold tracking-widest text-xs uppercase mb-4 block">Modelo transparente</span>
-              <h2 className="text-4xl font-bold text-white mb-4">Sin mensualidades. Pagas solo lo que usas.</h2>
+              <span className="text-[#aed3d9] font-bold tracking-widest text-xs uppercase mb-4 block">{t('landing.pricing.eyebrow')}</span>
+              <h2 className="text-4xl font-bold text-white mb-4">{t('landing.pricing.title')}</h2>
               <p className="text-slate-300 max-w-2xl mx-auto">
-                Crear cuenta es gratis para doctores, residentes y pacientes. Cada doctor define el precio de sus servicios.
+                {t('landing.pricing.subtitle')}
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* Pacientes */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">Pacientes</h3>
+                <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.patients.title')}</h3>
                 <div className="my-4">
-                  <span className="text-4xl font-bold text-white">Gratis</span>
-                  <span className="text-slate-400"> registro</span>
+                  <span className="text-4xl font-bold text-white">{t('landing.pricing.patients.price')}</span>
+                  <span className="text-slate-400"> {t('landing.pricing.patients.priceSuffix')}</span>
                 </div>
-                <p className="text-slate-400 text-sm mb-6">Pagas por orientación o contenido que consumes, en MXN.</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Crear cuenta</Link>
+                <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.patients.desc')}</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.patients.cta')}</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Expediente clínico privado con autorización temporal</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Chat de 30 días tras orientación</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Wallet en MXN, multimoneda en display</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Recetas digitales firmadas</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature1')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature2')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature3')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature4')}</li>
                 </ul>
               </div>
 
               {/* Doctores */}
               <div className="bg-gradient-to-b from-[#00768b] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">Para médicos</span>
-                <h3 className="text-xl font-bold text-white">Doctores verificados</h3>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">{t('landing.pricing.doctors.popularBadge')}</span>
+                <h3 className="text-xl font-bold text-white">{t('landing.pricing.doctors.title')}</h3>
                 <div className="my-4">
-                  <span className="text-4xl font-bold text-white">0%</span>
-                  <span className="text-blue-100"> alta · comisión por transacción</span>
+                  <span className="text-4xl font-bold text-white">{t('landing.pricing.doctors.price')}</span>
+                  <span className="text-blue-100"> {t('landing.pricing.doctors.priceSuffix')}</span>
                 </div>
-                <p className="text-blue-100 text-sm mb-6">Define tus precios. Cobra por orientación, suscripciones y contenido premium.</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">Verificar mi cédula</Link>
+                <p className="text-blue-100 text-sm mb-6">{t('landing.pricing.doctors.desc')}</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">{t('landing.pricing.doctors.cta')}</Link>
                 <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Validación de cédula e identidad médica</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Orientación 1:1 + lives en HD</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Contenido premium por compra o suscripción</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Depósitos SPEI a tu CLABE</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> Wallet interno + facturación</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature1')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature2')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature3')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature4')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature5')}</li>
                 </ul>
               </div>
 
               {/* Residentes */}
               <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">Residentes</h3>
+                <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.residents.title')}</h3>
                 <div className="my-4">
-                  <span className="text-4xl font-bold text-white">-50%</span>
-                  <span className="text-slate-400"> en todo</span>
+                  <span className="text-4xl font-bold text-white">{t('landing.pricing.residents.price')}</span>
+                  <span className="text-slate-400"> {t('landing.pricing.residents.priceSuffix')}</span>
                 </div>
-                <p className="text-slate-400 text-sm mb-6">Acceso reducido a contenido y networking médico verificado.</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">Soy residente</Link>
+                <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.residents.desc')}</p>
+                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.residents.cta')}</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> 50% off en contenido y lives</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Networking con doctores verificados</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Expedientes clínicos personales</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> Grupos y sesiones clínicas</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature1')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature2')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature3')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature4')}</li>
                 </ul>
               </div>
             </div>
 
             <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
-               Recetas restringidas al país del paciente. Residentes no pueden cobrar orientación médica. Pacientes no acceden al marketplace médico profesional.
+               {t('landing.pricing.disclaimer')}
             </p>
           </div>
         </section>
@@ -510,26 +512,26 @@ export default function Landing() {
 
           <div className="container mx-auto px-6 relative z-10 text-center">
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-              Medicina verificada, mundial.
+              {t('landing.finalCta.title')}
             </h2>
             <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light">
-               Doctores con credenciales verificadas, pacientes con expediente protegido y residentes conectados a la red. Todo en una sola plataforma.
+               {t('landing.finalCta.subtitle')}
             </p>
-            
+
             <div className="flex flex-col md:flex-row justify-center gap-6">
-              <Link 
-                to="/app" 
+              <Link
+                to="/app"
                 className="px-10 py-5 bg-white text-[#163a83] font-bold text-lg rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(255,255,255,0.6)] hover:scale-105 transition-all duration-300"
               >
-                Crear cuenta gratis
+                {t('landing.finalCta.ctaPrimary')}
               </Link>
               <Link to="/contact" className="px-10 py-5 border border-white/30 text-white font-bold text-lg rounded-full hover:bg-white/10 transition-all">
-                Hablar con el equipo
+                {t('landing.finalCta.ctaSecondary')}
               </Link>
             </div>
-            
+
             <p className="mt-8 text-sm text-blue-200/60">
-               Registro gratis • Verificación médica • Seguridad clínica
+               {t('landing.finalCta.footnote')}
             </p>
           </div>
         </section>

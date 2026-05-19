@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Send, Lock, Stethoscope, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
  * Free AI triage chat shown to patients before they purchase a chat session
@@ -31,26 +32,27 @@ function saveUsed(n: number) {
   try { localStorage.setItem(STORAGE_KEY, String(n)); } catch {}
 }
 
-async function fetchTriageReply(userText: string): Promise<string> {
+async function fetchTriageReply(
+  userText: string,
+  t: (key: string) => string,
+): Promise<string> {
   // Placeholder: deterministic safety-first reply. Swap for edge function:
   //   await supabase.functions.invoke('ai-triage', { body: { text: userText } })
   const lower = userText.toLowerCase();
   const red = ['dolor pecho', 'pecho', 'sangrado', 'desmay', 'no respiro', 'no puedo respirar', 'suicid', 'chest pain'];
   if (red.some(k => lower.includes(k))) {
-    return 'Lo que describes puede ser una urgencia. Por favor acude al servicio de emergencias más cercano o llama al 911 ahora mismo. ' +
-           'Aquí no puedo sustituir una valoración presencial inmediata.';
+    return t('triageChat.emergencyReply');
   }
-  return 'Gracias por compartir. Tomando en cuenta lo que mencionas, una orientación general es observar la duración de los síntomas, ' +
-         'identificar factores que los empeoran o alivian, y registrar si hay fiebre. ' +
-         'Para un diagnóstico y plan de tratamiento personalizados, te recomiendo iniciar una consulta con un médico verificado.';
+  return t('triageChat.genericReply');
 }
 
 export function TriageChat() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: 'assistant',
-      text: 'Hola, soy el asistente de orientación de Medical Masters. Cuéntame qué te está pasando y te oriento; cuando quieras una respuesta clínica real, te conecto con un médico verificado.',
+      text: t('triageChat.initialGreeting'),
     },
   ]);
   const [input, setInput] = useState('');
@@ -73,7 +75,7 @@ export function TriageChat() {
     setInput('');
     setSending(true);
     try {
-      const reply = await fetchTriageReply(text);
+      const reply = await fetchTriageReply(text, t);
       setMsgs(prev => [...prev, { role: 'assistant', text: reply }]);
       const next = used + 1;
       setUsed(next);
@@ -88,11 +90,11 @@ export function TriageChat() {
       <div className="px-4 py-3 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5 flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-primary" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-none">Orientación gratuita</p>
+          <p className="text-sm font-semibold leading-none">{t('triageChat.headerTitle')}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
             {blocked
-              ? 'Has usado todas tus consultas gratuitas.'
-              : `${remaining} ${remaining === 1 ? 'consulta gratuita restante' : 'consultas gratuitas restantes'}`}
+              ? t('triageChat.allUsedUp')
+              : `${remaining} ${remaining === 1 ? t('triageChat.remainingSingular') : t('triageChat.remainingPlural')}`}
           </p>
         </div>
       </div>
@@ -114,7 +116,7 @@ export function TriageChat() {
         {sending && (
           <div className="flex justify-start">
             <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Escribiendo…
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('triageChat.typing')}
             </div>
           </div>
         )}
@@ -125,18 +127,18 @@ export function TriageChat() {
           <div className="flex items-start gap-2 mb-3">
             <Lock className="w-4 h-4 text-primary mt-0.5" />
             <div>
-              <p className="text-sm font-semibold">Continúa con un médico verificado</p>
+              <p className="text-sm font-semibold">{t('triageChat.paywallTitle')}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Activa una suscripción para chat ilimitado, o inicia una consulta puntual con un médico.
+                {t('triageChat.paywallDescription')}
               </p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button className="flex-1" onClick={() => navigate('/wallet?tab=subscription')}>
-              Activar suscripción
+              {t('triageChat.activateSubscription')}
             </Button>
             <Button variant="outline" className="flex-1" onClick={() => navigate('/doctors')}>
-              <Stethoscope className="w-4 h-4 mr-1.5" /> Ver médicos
+              <Stethoscope className="w-4 h-4 mr-1.5" /> {t('triageChat.viewDoctors')}
             </Button>
           </div>
         </div>
@@ -149,7 +151,7 @@ export function TriageChat() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
               }}
-              placeholder="Describe brevemente lo que sientes…"
+              placeholder={t('triageChat.inputPlaceholder')}
               rows={2}
               className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               disabled={sending}
@@ -159,7 +161,7 @@ export function TriageChat() {
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">
-            No sustituye una consulta médica. Para emergencias llama al 911.
+            {t('triageChat.disclaimer')}
           </p>
         </div>
       )}

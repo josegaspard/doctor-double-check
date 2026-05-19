@@ -178,21 +178,21 @@ export function ChatMessagesPanel({
       const { data, error } = await supabase.rpc('process_consultation_purchase', {
         p_doctor_id: otherDoctorId,
         p_amount: consultationFee,
-        p_patient_name: user?.name || 'Paciente',
+        p_patient_name: user?.name || t('chatMessagesPanel.defaultPatientName'),
       });
       if (error) throw error;
       const result = data as any;
       if (!result?.success) {
-        setPaywallError(result?.error || 'No se pudo procesar el pago');
+        setPaywallError(result?.error || t('chatMessagesPanel.paymentFailed'));
         return;
       }
       const ok = await refetchEntitlement();
       if (ok) {
-        toast.success('Consulta activada');
+        toast.success(t('chatMessagesPanel.consultationActivated'));
         setPaywallOpen(false);
       }
     } catch (e: any) {
-      setPaywallError(e?.message || 'Error inesperado');
+      setPaywallError(e?.message || t('chatMessagesPanel.unexpectedError'));
     } finally {
       setPaywallProcessing(false);
     }
@@ -211,9 +211,9 @@ export function ChatMessagesPanel({
         window.location.href = data.url;
         return;
       }
-      setPaywallError('No se pudo iniciar el checkout');
+      setPaywallError(t('chatMessagesPanel.checkoutStartFailed'));
     } catch (e: any) {
-      setPaywallError(e?.message || 'Error iniciando checkout');
+      setPaywallError(e?.message || t('chatMessagesPanel.checkoutStartError'));
     } finally {
       setPaywallProcessing(false);
     }
@@ -421,21 +421,21 @@ export function ChatMessagesPanel({
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
                           {consultationFee > 0
-                            ? `Necesitas una consulta activa — $${consultationFee.toLocaleString('es-MX')} MXN`
-                            : 'Necesitas una consulta activa para enviar mensajes'}
+                            ? `${t('chatMessagesPanel.needActiveConsultationWithPrice')} — $${consultationFee.toLocaleString('es-MX')} MXN`
+                            : t('chatMessagesPanel.needActiveConsultation')}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {consultationFee > 0
-                            ? 'Acceso de 30 días tras la compra'
-                            : 'Consulta el precio con el doctor'}
+                            ? t('chatMessagesPanel.accessThirtyDays')
+                            : t('chatMessagesPanel.checkPriceWithDoctor')}
                         </p>
                       </div>
                     </div>
                     <Badge variant="outline" className="gap-1 flex-shrink-0">
                       <ShoppingCart className="w-3 h-3" />
                       {consultationFee > 0
-                        ? `Comprar ($${consultationFee.toLocaleString('es-MX')})`
-                        : 'Comprar'}
+                        ? `${t('chatMessagesPanel.buy')} ($${consultationFee.toLocaleString('es-MX')})`
+                        : t('chatMessagesPanel.buy')}
                     </Badge>
                   </button>
                 )}
@@ -444,14 +444,14 @@ export function ChatMessagesPanel({
                   <div className="flex items-start justify-between gap-2 p-2 rounded-lg bg-muted/60 border-l-2 border-primary">
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-semibold text-primary">
-                        Respondiendo a {replyTo.senderName || 'mensaje'}
+                        {t('chatMessagesPanel.replyingTo')} {replyTo.senderName || t('chatMessagesPanel.message')}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-2">{replyTo.content.slice(0, 160)}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setReplyTo(null)}
-                      aria-label="Cancelar respuesta"
+                      aria-label={t('chatMessagesPanel.cancelReply')}
                       className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded hover:bg-muted"
                     >
                       ✕
@@ -464,7 +464,7 @@ export function ChatMessagesPanel({
                     ref={inputRef}
                     placeholder={
                       isChatGated
-                        ? 'Compra una consulta para enviar mensajes'
+                        ? t('chatMessagesPanel.buyConsultationToSend')
                         : t('chat.writeMessage')
                     }
                     value={newMessage}
@@ -506,16 +506,16 @@ export function ChatMessagesPanel({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              Compra una consulta
+              {t('chatMessagesPanel.buyConsultation')}
             </DialogTitle>
             <DialogDescription>
-              Activa tu chat con este doctor por 30 días.
+              {t('chatMessagesPanel.activateChatThirtyDays')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="text-center py-3 bg-muted/40 rounded-lg">
-              <p className="text-xs text-muted-foreground">Precio único</p>
+              <p className="text-xs text-muted-foreground">{t('chatMessagesPanel.onePrice')}</p>
               <p className="text-3xl font-bold text-foreground mt-1">
                 ${consultationFee.toLocaleString()}{' '}
                 <span className="text-sm font-normal text-muted-foreground">MXN</span>
@@ -541,8 +541,8 @@ export function ChatMessagesPanel({
                   <Wallet className="w-4 h-4" />
                 )}
                 {canAfford(consultationFee)
-                  ? `Pagar con Wallet — $${consultationFee.toFixed(0)} MXN`
-                  : `Saldo insuficiente ($${balance.toLocaleString()})`}
+                  ? `${t('chatMessagesPanel.payWithWallet')} — $${consultationFee.toFixed(0)} MXN`
+                  : `${t('chatMessagesPanel.insufficientBalance')} ($${balance.toLocaleString()})`}
               </Button>
               <Button
                 variant="outline"
@@ -552,7 +552,7 @@ export function ChatMessagesPanel({
                 data-testid="chat-paywall-stripe"
               >
                 <CreditCard className="w-4 h-4" />
-                Pagar con Tarjeta
+                {t('chatMessagesPanel.payWithCard')}
               </Button>
               {!canAfford(consultationFee) && (
                 <Button
@@ -563,7 +563,7 @@ export function ChatMessagesPanel({
                     navigate('/wallet');
                   }}
                 >
-                  Recargar Wallet
+                  {t('chatMessagesPanel.topUpWallet')}
                 </Button>
               )}
             </div>
@@ -571,7 +571,7 @@ export function ChatMessagesPanel({
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPaywallOpen(false)} className="w-full">
-              Cancelar
+              {t('chatMessagesPanel.cancel')}
             </Button>
           </DialogFooter>
         </DialogContent>

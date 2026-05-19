@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, User, Users, Activity, Syringe, FileText, Phone, Heart, Pill, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   patientId: string | null;
@@ -43,6 +44,7 @@ interface VaxRow {
 }
 
 export function PatientRecordPanel({ patientId, enabled = true }: Props) {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [history, setHistory] = useState<History | null>(null);
@@ -78,7 +80,7 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
   if (!patientId) {
     return (
       <div className="p-4 text-center text-xs text-muted-foreground">
-        Sin paciente asociado
+        {t('patientRecordPanel.noPatientAssociated')}
       </div>
     );
   }
@@ -121,10 +123,14 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-sm truncate">{profile?.name || 'Paciente'}</p>
+            <p className="font-semibold text-sm truncate">{profile?.name || t('patientRecordPanel.defaultPatientName')}</p>
             <p className="text-[11px] text-muted-foreground truncate">
-              {ageYears !== null && `${ageYears} años · `}
-              {history?.sex === 'female' ? 'F' : history?.sex === 'male' ? 'M' : history?.sex || '—'}
+              {ageYears !== null && `${ageYears} ${t('patientRecordPanel.ageYearsSuffix')} · `}
+              {history?.sex === 'female'
+                ? t('patientRecordPanel.sexFemaleShort')
+                : history?.sex === 'male'
+                  ? t('patientRecordPanel.sexMaleShort')
+                  : history?.sex || '—'}
               {history?.blood_type && ` · ${history.blood_type}`}
             </p>
           </div>
@@ -141,18 +147,18 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
 
           <ScrollArea className="flex-1">
             <TabsContent value="personal" className="p-3 space-y-2 mt-0">
-              <Field icon={Heart} label="Condiciones crónicas" value={history?.chronic_conditions} />
-              <Field icon={AlertTriangle} label="Alergias" value={history?.allergies} />
-              <Field icon={Pill} label="Medicamentos actuales" value={history?.current_medications} />
-              <Field icon={FileText} label="Cirugías previas" value={history?.previous_surgeries} />
-              <Field icon={Phone} label="Contacto emergencia" value={
+              <Field icon={Heart} label={t('patientRecordPanel.fields.chronicConditions')} value={history?.chronic_conditions} />
+              <Field icon={AlertTriangle} label={t('patientRecordPanel.fields.allergies')} value={history?.allergies} />
+              <Field icon={Pill} label={t('patientRecordPanel.fields.currentMedications')} value={history?.current_medications} />
+              <Field icon={FileText} label={t('patientRecordPanel.fields.previousSurgeries')} value={history?.previous_surgeries} />
+              <Field icon={Phone} label={t('patientRecordPanel.fields.emergencyContact')} value={
                 history?.emergency_contact_name
                   ? `${history.emergency_contact_name} — ${history.emergency_contact_phone || ''}`
                   : null
               } />
               {ext.chronic_other?.length > 0 && (
                 <div className="p-2 rounded-md bg-warning/5 border border-warning/20">
-                  <p className="text-[10px] uppercase text-warning mb-1">Otras enfermedades</p>
+                  <p className="text-[10px] uppercase text-warning mb-1">{t('patientRecordPanel.fields.otherDiseases')}</p>
                   {ext.chronic_other.map((c: any, i: number) => (
                     <div key={i} className="text-xs mb-1">
                       <strong>{c.cual}</strong> · {c.diagnostico} · {c.tratamiento}
@@ -163,10 +169,10 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
             </TabsContent>
 
             <TabsContent value="family" className="p-3 space-y-2 mt-0">
-              <Field icon={Users} label="Antecedentes (notas)" value={history?.family_history} />
+              <Field icon={Users} label={t('patientRecordPanel.fields.familyNotes')} value={history?.family_history} />
               {ext.family_matrix && Object.keys(ext.family_matrix).length > 0 && (
                 <div className="p-2 rounded-md bg-muted/40">
-                  <p className="text-[10px] uppercase text-muted-foreground mb-1">Matriz familiar</p>
+                  <p className="text-[10px] uppercase text-muted-foreground mb-1">{t('patientRecordPanel.fields.familyMatrix')}</p>
                   {Object.entries(ext.family_matrix).map(([disease, rels]: any) => (
                     rels?.length > 0 && (
                       <div key={disease} className="text-xs flex justify-between">
@@ -183,13 +189,13 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
               {ext.habits_detail ? (
                 <>
                   {ext.habits_detail.alcoholism?.active && (
-                    <Field icon={Activity} label="Alcoholismo" value={
+                    <Field icon={Activity} label={t('patientRecordPanel.fields.alcoholism')} value={
                       `${ext.habits_detail.alcoholism.drink || ''} · ${ext.habits_detail.alcoholism.frequency || ''} · ${ext.habits_detail.alcoholism.amount || ''}`
                     } />
                   )}
                   {ext.habits_detail.smoking && (
                     <div className="p-2 rounded-md bg-muted/40">
-                      <p className="text-[10px] uppercase text-muted-foreground mb-1">Tabaquismo</p>
+                      <p className="text-[10px] uppercase text-muted-foreground mb-1">{t('patientRecordPanel.fields.smoking')}</p>
                       {(['cigarette','vape','hookah'] as const).map(k => {
                         const s = ext.habits_detail.smoking?.[k];
                         if (!s?.active) return null;
@@ -202,35 +208,35 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
                     </div>
                   )}
                   {ext.habits_detail.drugs?.active && (
-                    <Field icon={Activity} label="Drogas" value={
+                    <Field icon={Activity} label={t('patientRecordPanel.fields.drugs')} value={
                       `${ext.habits_detail.drugs.substance || ''} · ${ext.habits_detail.drugs.frequency || ''}`
                     } />
                   )}
                   {ext.habits_detail.physical_activity?.active && (
-                    <Field icon={Activity} label="Actividad física" value={
+                    <Field icon={Activity} label={t('patientRecordPanel.fields.physicalActivity')} value={
                       `${ext.habits_detail.physical_activity.type || ''} · ${ext.habits_detail.physical_activity.frequency || ''}`
                     } />
                   )}
                 </>
               ) : (
-                <p className="text-xs text-muted-foreground italic">Sin información de hábitos</p>
+                <p className="text-xs text-muted-foreground italic">{t('patientRecordPanel.habits.empty')}</p>
               )}
             </TabsContent>
 
             <TabsContent value="vax" className="p-3 space-y-1 mt-0">
               {vaccinations.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Sin registros de vacunación</p>
+                <p className="text-xs text-muted-foreground italic">{t('patientRecordPanel.vax.empty')}</p>
               ) : (
                 vaccinations.map(v => (
                   <div key={`${v.vaccine_key}-${v.dose_number}`} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/30">
                     <span className="font-medium">{v.vaccine_key} · D{v.dose_number}</span>
                     {v.applied ? (
                       <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">
-                        ✓ {v.application_date || 'aplicada'}
+                        ✓ {v.application_date || t('patientRecordPanel.vax.applied')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">
-                        Pendiente
+                        {t('patientRecordPanel.vax.pending')}
                       </Badge>
                     )}
                   </div>
@@ -240,7 +246,7 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
 
             <TabsContent value="files" className="p-3 space-y-1 mt-0">
               {files.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">Sin estudios compartidos</p>
+                <p className="text-xs text-muted-foreground italic">{t('patientRecordPanel.files.empty')}</p>
               ) : (
                 files.map((f: any) => (
                   <a

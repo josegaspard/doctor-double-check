@@ -1,12 +1,14 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   isPending: boolean;
 }
 
 export function DoctorStatusAlert({ isPending }: Props) {
+  const { t } = useLanguage();
   return (
     <Card
       className={`mb-6 border-l-4 shadow-md overflow-hidden bg-card ${
@@ -28,19 +30,19 @@ export function DoctorStatusAlert({ isPending }: Props) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-foreground text-base">
-              {isPending ? 'Tu verificación está en proceso' : 'Verificación rechazada'}
+              {isPending ? t('doctorStatusAlert.pendingTitle') : t('doctorStatusAlert.rejectedTitle')}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
               {isPending
-                ? 'Estamos revisando tu documentación. Este proceso puede tomar 24-48 horas. Mientras tanto, puedes explorar la plataforma pero no podrás crear contenido ni atender orientaciones.'
-                : 'Tu solicitud de verificación fue rechazada. Por favor contacta a soporte para más información.'}
+                ? t('doctorStatusAlert.pendingDescription')
+                : t('doctorStatusAlert.rejectedDescription')}
             </p>
             {isPending && (
               <div className="mt-4 flex items-center gap-3">
                 <div className="h-2 flex-1 bg-primary/10 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-primary to-secondary w-1/2 animate-pulse rounded-full" />
                 </div>
-                <span className="text-xs font-medium text-primary">En revisión</span>
+                <span className="text-xs font-medium text-primary">{t('doctorStatusAlert.inReview')}</span>
               </div>
             )}
           </div>
