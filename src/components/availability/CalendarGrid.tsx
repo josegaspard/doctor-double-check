@@ -15,7 +15,7 @@ interface CalendarGridProps {
   currentDate: Date;
   viewMode: ViewMode;
   availabilities: DoctorAvailability[];
-  language: 'es' | 'en';
+  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
   onDayClick: (date: Date) => void;
   onEventClick: (availability: DoctorAvailability) => void;
   isManaging?: boolean;

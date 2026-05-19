@@ -12,7 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Search, Stethoscope, UserPlus, X } from 'lucide-react';
+import { Loader2, Search, Stethoscope, UserPlus, X, Globe, Lock, Languages } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
 import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
@@ -30,6 +31,9 @@ interface Props {
     caseSummary?: string;
     scheduledAt?: Date | null;
     meetingType?: 'case_discussion' | 'resident_class';
+    isPublic?: boolean;
+    translateEnabled?: boolean;
+    translateTargetLang?: string | null;
   } | null;
 }
 
@@ -44,7 +48,11 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
   const { user, role } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
-    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
+    title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
+    meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
+    isPublic: false,
+    translateEnabled: false,
+    translateTargetLang: 'en',
   });
   const isEditing = !!editing;
 
@@ -61,9 +69,13 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           ? new Date(editing.scheduledAt.getTime() - editing.scheduledAt.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
           : '',
         meetingType: editing.meetingType || 'case_discussion',
+        isPublic: editing.isPublic ?? false,
+        translateEnabled: editing.translateEnabled ?? false,
+        translateTargetLang: editing.translateTargetLang ?? 'en',
       });
     } else {
-      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
+      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
+        meetingType: 'case_discussion', isPublic: false, translateEnabled: false, translateTargetLang: 'en' });
     }
   }, [open, editing?.id]);
 
@@ -178,6 +190,9 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             case_summary: form.caseSummary || null,
             scheduled_at: form.scheduledAt || null,
             meeting_type: form.meetingType,
+            is_public: form.isPublic,
+            translate_enabled: form.translateEnabled,
+            translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
           } as any)
           .eq('id', editing.id)
           .eq('organizer_id', user.id);
@@ -206,7 +221,10 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             scheduled_at: form.scheduledAt || null,
             organizer_id: user.id,
             meeting_type: form.meetingType,
-          })
+            is_public: form.isPublic,
+            translate_enabled: form.translateEnabled,
+            translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
+          } as any)
           .select('id')
           .single();
 
@@ -228,7 +246,8 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
       }
 
       onOpenChange(false);
-      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '', meetingType: 'case_discussion' });
+      setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
+        meetingType: 'case_discussion', isPublic: false, translateEnabled: false, translateTargetLang: 'en' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
@@ -307,11 +326,68 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             />
           </div>
 
+          {/* Visibility — public vs private (invite-only) */}
+          <div className="rounded-lg border border-border p-3 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2">
+                {form.isPublic ? <Globe className="w-4 h-4 mt-0.5 text-emerald-600" /> : <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />}
+                <div>
+                  <p className="text-sm font-medium">{form.isPublic ? 'Reunión abierta al público' : 'Reunión cerrada (solo invitados)'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {form.isPublic
+                      ? 'Cualquier usuario verificado podrá unirse desde la lista pública.'
+                      : 'Solo las personas invitadas explícitamente recibirán la invitación.'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={form.isPublic}
+                onCheckedChange={(v) => setForm({ ...form, isPublic: v })}
+                aria-label="Reunión pública"
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-3 pt-3 border-t border-border">
+              <div className="flex items-start gap-2">
+                <Languages className="w-4 h-4 mt-0.5 text-sky-600" />
+                <div>
+                  <p className="text-sm font-medium">Traductor en vivo</p>
+                  <p className="text-xs text-muted-foreground">Subtítulos automáticos traducidos al idioma del asistente.</p>
+                </div>
+              </div>
+              <Switch
+                checked={form.translateEnabled}
+                onCheckedChange={(v) => setForm({ ...form, translateEnabled: v })}
+                aria-label="Traductor en vivo"
+              />
+            </div>
+
+            {form.translateEnabled && (
+              <div>
+                <Label className="text-xs font-medium">Idioma destino preferido</Label>
+                <Select
+                  value={form.translateTargetLang}
+                  onValueChange={(v) => setForm({ ...form, translateTargetLang: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="es">🇪🇸 Español</SelectItem>
+                    <SelectItem value="en">🇺🇸 English</SelectItem>
+                    <SelectItem value="pt">🇵🇹 Português</SelectItem>
+                    <SelectItem value="fr">🇫🇷 Français</SelectItem>
+                    <SelectItem value="it">🇮🇹 Italiano</SelectItem>
+                    <SelectItem value="de">🇩🇪 Deutsch</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
           {/* Invite doctors */}
           <div>
             <Label className="text-xs font-medium flex items-center gap-1.5 mb-2">
               <UserPlus className="w-3.5 h-3.5" />
-              Invitar participantes
+              Invitar participantes {form.isPublic && <span className="text-muted-foreground font-normal">(opcional cuando es pública)</span>}
             </Label>
 
             {selectedInvitees.length > 0 && (

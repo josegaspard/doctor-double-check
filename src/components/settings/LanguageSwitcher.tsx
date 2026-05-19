@@ -1,17 +1,13 @@
 import React, { forwardRef, useState } from 'react';
 import { Globe, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { SupportedLanguage } from '@/lib/i18n';
 
-/**
- * Forward refs to the underlying <button> so Radix Popover can attach
- * its trigger ref without producing "Function components cannot be given refs" warnings.
- */
 const LanguageOption = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & { selected: boolean; label: string }
@@ -30,11 +26,21 @@ const LanguageOption = forwardRef<
 ));
 LanguageOption.displayName = 'LanguageOption';
 
+interface LangDef { code: SupportedLanguage; flag: string; labelKey: string; fallback: string; }
+const LANGS: LangDef[] = [
+  { code: 'es', flag: '🇪🇸', labelKey: 'settings.spanish',    fallback: 'Español' },
+  { code: 'en', flag: '🇺🇸', labelKey: 'settings.english',    fallback: 'English' },
+  { code: 'pt', flag: '🇵🇹', labelKey: 'settings.portuguese', fallback: 'Português' },
+  { code: 'fr', flag: '🇫🇷', labelKey: 'settings.french',     fallback: 'Français' },
+  { code: 'it', flag: '🇮🇹', labelKey: 'settings.italian',    fallback: 'Italiano' },
+  { code: 'de', flag: '🇩🇪', labelKey: 'settings.german',     fallback: 'Deutsch' },
+];
+
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { language, setLanguage, t } = useLanguage();
   const [open, setOpen] = useState(false);
 
-  const handleSelect = (lang: 'es' | 'en') => {
+  const handleSelect = (lang: SupportedLanguage) => {
     setLanguage(lang);
     setOpen(false);
   };
@@ -50,17 +56,15 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           <Globe className="h-4 w-4" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-48 p-1.5">
-        <LanguageOption
-          selected={language === 'es'}
-          label={`🇪🇸 ${t('settings.spanish') || 'Español'}`}
-          onClick={() => handleSelect('es')}
-        />
-        <LanguageOption
-          selected={language === 'en'}
-          label={`🇺🇸 ${t('settings.english') || 'English'}`}
-          onClick={() => handleSelect('en')}
-        />
+      <PopoverContent align="end" className="w-56 p-1.5">
+        {LANGS.map((l) => (
+          <LanguageOption
+            key={l.code}
+            selected={language === l.code}
+            label={`${l.flag} ${t(l.labelKey) || l.fallback}`}
+            onClick={() => handleSelect(l.code)}
+          />
+        ))}
       </PopoverContent>
     </Popover>
   );

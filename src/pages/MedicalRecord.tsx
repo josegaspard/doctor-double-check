@@ -60,7 +60,7 @@ const VACCINES = [
 ];
 
 interface MedicationItem { name: string; dose: string; frequency: string; }
-interface SurgeryItem { procedure: string; date: string; }
+interface SurgeryItem { procedure: string; date: string; complications?: string; }
 interface VaccineData { applied: boolean; doses: string; date: string; }
 
 const CHRONIC_CONDITIONS_LIST = [
@@ -97,7 +97,7 @@ interface ClinicalData {
   family_cancer: boolean; family_cancer_detail: string;
   family_heart_disease: boolean; family_heart_disease_detail: string;
   family_mental_illness: boolean; family_mental_illness_detail: string;
-  extra_family: Record<string, { active: boolean; detail: string }>;
+  extra_family: Record<string, { active: boolean; detail: string; relationship?: string }>;
   family_other: string; family_history: string;
   habit_alcohol: string; habit_smoking: string; habit_vaping: string;
   habit_hookah: string; habit_drugs: string; habit_exercise: string;
@@ -437,7 +437,7 @@ export default function MedicalRecord() {
                 onClick={() => exportClinicalSummary({
                   patient: { name: user?.name || 'Paciente', email: user?.email || '' },
                   data,
-                  language: language as 'es' | 'en',
+                  language,
                 })}
                 size="sm"
                 variant="outline"
@@ -529,6 +529,62 @@ export default function MedicalRecord() {
                 <div>
                   <Label className="text-xs font-medium">Enfermedades crónicas</Label>
                   <div className="space-y-2 mt-2">
+                    {(() => {
+                      // Lista libre de "Otras enfermedades crónicas" — cual + fecha + tratamiento.
+                      // Se serializa dentro de chronic_conditions_list._otras.detail como JSON
+                      // para no requerir migración de schema.
+                      const raw = data.chronic_conditions_list?._otras?.detail || '';
+                      let others: Array<{ cual: string; date: string; treatment: string }> = [];
+                      try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) others = parsed; } catch {}
+                      const saveOthers = (next: typeof others) => {
+                        setData(prev => ({
+                          ...prev,
+                          chronic_conditions_list: {
+                            ...prev.chronic_conditions_list,
+                            _otras: { active: next.length > 0, detail: JSON.stringify(next) },
+                          },
+                        }));
+                      };
+                      const addOther = () => saveOthers([...others, { cual: '', date: '', treatment: '' }]);
+                      const updateOther = (i: number, patch: Partial<typeof others[number]>) =>
+                        saveOthers(others.map((o, idx) => idx === i ? { ...o, ...patch } : o));
+                      const removeOther = (i: number) => saveOthers(others.filter((_, idx) => idx !== i));
+                      return (
+                        <>
+                          {others.length > 0 && (
+                            <div className="space-y-2 mb-2">
+                              {others.map((o, i) => (
+                                <div key={i} className="rounded-md border border-border p-2 bg-muted/20 space-y-1.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <Label className="text-[11px] text-muted-foreground">Otra enfermedad crónica</Label>
+                                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={() => removeOther(i)}>✕</Button>
+                                  </div>
+                                  <Input
+                                    placeholder="¿Cuál? (nombre de la enfermedad)"
+                                    className="text-sm"
+                                    value={o.cual}
+                                    onChange={e => updateOther(i, { cual: e.target.value })}
+                                  />
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div>
+                                      <Label className="text-[11px] text-muted-foreground">Fecha de diagnóstico</Label>
+                                      <Input type="date" className="text-sm" value={o.date} onChange={e => updateOther(i, { date: e.target.value })} />
+                                    </div>
+                                    <div>
+                                      <Label className="text-[11px] text-muted-foreground">Recordatorio de tratamiento</Label>
+                                      <Input className="text-sm" placeholder="Medicamento, frecuencia…" value={o.treatment} onChange={e => updateOther(i, { treatment: e.target.value })} />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <Button type="button" variant="outline" size="sm" className="text-xs h-7 gap-1 mb-2" onClick={addOther}>
+                            + Agregar otra enfermedad crónica
+                          </Button>
+                        </>
+                      );
+                    })()}
                     {CHRONIC_CONDITIONS_LIST.map(condition => {
                       const item = data.chronic_conditions_list[condition] || { active: false, detail: '' };
                       const isDiabetes = condition === 'Diabetes';
@@ -543,64 +599,33 @@ export default function MedicalRecord() {
                           {item.active && (
                             <div className="ml-6 space-y-1.5">
                               {isDiabetes && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  <div>
-                                    <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
-                                    <Select
-                                      value={(item as any).diabetes_type || ''}
-                                      onValueChange={(v) => {
-                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
-                                      }}
-                                    >
-                                      <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="type1">Tipo 1</SelectItem>
-                                        <SelectItem value="type2">Tipo 2</SelectItem>
-                                        <SelectItem value="gestational">Gestacional</SelectItem>
-                                        <SelectItem value="prediabetes">Prediabetes</SelectItem>
-                                        <SelectItem value="other">Otro</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
-                                    {(() => {
-                                      const relatives: string[] = ((item as any).diabetes_relatives as string[]) || [];
-                                      const toggle = (key: string) => {
-                                        const next = relatives.includes(key) ? relatives.filter(r => r !== key) : [...relatives, key];
-                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_relatives: next } as any } }));
-                                      };
-                                      const RELATIVES = [
-                                        { key: 'father', label: 'Padre' },
-                                        { key: 'mother', label: 'Madre' },
-                                        { key: 'sibling', label: 'Hermano(a)' },
-                                        { key: 'grandparent', label: 'Abuelo(a)' },
-                                        { key: 'uncle_aunt', label: 'Tío(a)' },
-                                        { key: 'cousin', label: 'Primo(a)' },
-                                        { key: 'child', label: 'Hijo(a)' },
-                                        { key: 'none', label: 'Ninguno' },
-                                      ];
-                                      return (
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          {RELATIVES.map(r => (
-                                            <button
-                                              key={r.key}
-                                              type="button"
-                                              onClick={() => toggle(r.key)}
-                                              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${relatives.includes(r.key) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
-                                            >
-                                              {r.label}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                  <Input
+                                    className="text-sm"
+                                    placeholder="Ej: Tipo 2, gestacional, prediabetes…"
+                                    value={(item as any).diabetes_type || ''}
+                                    onChange={e => {
+                                      const v = e.target.value;
+                                      setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
+                                    }}
+                                  />
                                 </div>
                               )}
-                              <Input placeholder="Fecha de diagnóstico, tratamiento..." className="text-sm" value={item.detail} onChange={e => {
-                                setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, detail: e.target.value } } }));
-                              }} />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Fecha de diagnóstico</Label>
+                                  <Input type="date" className="text-sm" value={(item as any).diagnosis_date || ''} onChange={e => {
+                                    setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diagnosis_date: e.target.value } as any } }));
+                                  }} />
+                                </div>
+                                <div>
+                                  <Label className="text-[11px] text-muted-foreground">Recordatorio de tratamiento</Label>
+                                  <Input placeholder="Medicamento, frecuencia, próxima dosis…" className="text-sm" value={(item as any).treatment_reminder || item.detail || ''} onChange={e => {
+                                    setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, treatment_reminder: e.target.value, detail: e.target.value } as any } }));
+                                  }} />
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -629,9 +654,10 @@ export default function MedicalRecord() {
                     <Button type="button" variant="outline" size="sm" className="text-xs gap-1 h-7" onClick={addSurgery}>+ Agregar</Button>
                   </div>
                   {data.surgeries.map((s, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 mb-2 items-end">
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_1fr_auto] gap-2 mb-2 items-end">
                       <Input placeholder="Procedimiento" value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
-                      <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm w-36" />
+                      <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm" />
+                      <Input placeholder="Complicaciones (si las hubo)" value={s.complications || ''} onChange={e => updateSurgery(i, 'complications' as any, e.target.value)} className="text-sm" />
                       <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)}>✕</Button>
                     </div>
                   ))}
@@ -737,16 +763,12 @@ export default function MedicalRecord() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div>
                                 <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
-                                <Select value={dbDetail.type || ''} onValueChange={v => setDbDetail({ type: v })}>
-                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="type1">Tipo 1</SelectItem>
-                                    <SelectItem value="type2">Tipo 2</SelectItem>
-                                    <SelectItem value="gestational">Gestacional</SelectItem>
-                                    <SelectItem value="prediabetes">Prediabetes</SelectItem>
-                                    <SelectItem value="unknown">No sé</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                <Input
+                                  className="h-9 text-xs"
+                                  placeholder="Ej: Tipo 2, gestacional, prediabetes…"
+                                  value={dbDetail.type || ''}
+                                  onChange={e => setDbDetail({ type: e.target.value })}
+                                />
                               </div>
                               <div>
                                 <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
@@ -806,18 +828,47 @@ export default function MedicalRecord() {
                         />
                       </div>
                       {val.active && (
-                        <Textarea
-                          placeholder={`${t('medical.familyDetailPrefix')} ${localizedLabel.toLowerCase()}...`}
-                          value={val.detail}
-                          onChange={e => {
-                            setData(prev => ({
-                              ...prev,
-                              extra_family: { ...prev.extra_family, [item.key]: { ...val, detail: e.target.value } },
-                            }));
-                          }}
-                          rows={2}
-                          className="text-sm"
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Qué familiar</Label>
+                            <Select
+                              value={val.relationship || ''}
+                              onValueChange={v => {
+                                setData(prev => ({
+                                  ...prev,
+                                  extra_family: { ...prev.extra_family, [item.key]: { ...val, relationship: v } },
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="father">Padre</SelectItem>
+                                <SelectItem value="mother">Madre</SelectItem>
+                                <SelectItem value="sibling">Hermano(a)</SelectItem>
+                                <SelectItem value="grandparent">Abuelo(a)</SelectItem>
+                                <SelectItem value="uncle_aunt">Tío(a)</SelectItem>
+                                <SelectItem value="cousin">Primo(a)</SelectItem>
+                                <SelectItem value="child">Hijo(a)</SelectItem>
+                                <SelectItem value="other">Otro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">Detalles</Label>
+                            <Textarea
+                              placeholder={`${t('medical.familyDetailPrefix')} ${localizedLabel.toLowerCase()}...`}
+                              value={val.detail}
+                              onChange={e => {
+                                setData(prev => ({
+                                  ...prev,
+                                  extra_family: { ...prev.extra_family, [item.key]: { ...val, detail: e.target.value } },
+                                }));
+                              }}
+                              rows={2}
+                              className="text-sm"
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
@@ -938,17 +989,24 @@ export default function MedicalRecord() {
                                     else update(sub.key, 'occasionally');
                                   }} />
                                 </div>
-                                {subActive && (
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Select value={data[sub.key]} onValueChange={v => update(sub.key, v)}>
-                                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
-                                      </SelectContent>
-                                    </Select>
-                                    <Input placeholder={sub.placeholder} value={data[sub.amountKey]} onChange={e => update(sub.amountKey, e.target.value)} className="h-8 text-xs" />
-                                  </div>
-                                )}
+                                {subActive && (() => {
+                                  let parsed: { amount?: string; started?: string } = {};
+                                  try { parsed = data[sub.amountKey] ? JSON.parse(data[sub.amountKey]) : {}; }
+                                  catch { parsed = { amount: data[sub.amountKey] }; }
+                                  const setParsed = (patch: Partial<typeof parsed>) => update(sub.amountKey, JSON.stringify({ ...parsed, ...patch }));
+                                  return (
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                      <Select value={data[sub.key]} onValueChange={v => update(sub.key, v)}>
+                                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          {FREQUENCY_OPTIONS.filter(o => o.value !== 'never').map(o => <SelectItem key={o.value} value={o.value}>{t(`medical.frequency.${o.value}`)}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select>
+                                      <Input placeholder={sub.placeholder} value={parsed.amount || ''} onChange={e => setParsed({ amount: e.target.value })} className="h-8 text-xs" />
+                                      <Input placeholder="Hace cuánto empezaste (ej: 5 años)" value={parsed.started || ''} onChange={e => setParsed({ started: e.target.value })} className="h-8 text-xs" />
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             );
                           })}

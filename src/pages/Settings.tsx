@@ -155,21 +155,24 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
-                <Button
-                  variant={language === 'es' ? 'default' : 'outline'}
-                  onClick={() => setLanguage('es')}
-                  className="flex-1"
-                >
-                  🇪🇸 {t('settings.spanish')}
-                </Button>
-                <Button
-                  variant={language === 'en' ? 'default' : 'outline'}
-                  onClick={() => setLanguage('en')}
-                  className="flex-1"
-                >
-                  🇺🇸 {t('settings.english')}
-                </Button>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {([
+                  { code: 'es', flag: '🇪🇸', key: 'settings.spanish' },
+                  { code: 'en', flag: '🇺🇸', key: 'settings.english' },
+                  { code: 'pt', flag: '🇵🇹', key: 'settings.portuguese' },
+                  { code: 'fr', flag: '🇫🇷', key: 'settings.french' },
+                  { code: 'it', flag: '🇮🇹', key: 'settings.italian' },
+                  { code: 'de', flag: '🇩🇪', key: 'settings.german' },
+                ] as const).map((l) => (
+                  <Button
+                    key={l.code}
+                    variant={language === l.code ? 'default' : 'outline'}
+                    onClick={() => setLanguage(l.code)}
+                    className="w-full"
+                  >
+                    {l.flag} {t(l.key)}
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { NotebookPen, Loader2, Trash2, Paperclip, X, FileText, ImageIcon } from 'lucide-react';
+import { NotebookPen, Loader2, Trash2, Paperclip, X, FileText, ImageIcon, Mail } from 'lucide-react';
+import { compressImageIfNeeded, withTimeout } from '@/lib/imageUpload';
 import { z } from 'zod';
 
 interface Attachment {
@@ -106,12 +107,15 @@ export function MyNotesWidget() {
       // 1) Upload archivos al bucket doctor-content/${doctorId}/notes/${ts}-${safeName}
       const ts = Date.now();
       const uploaded: Attachment[] = [];
-      for (const f of pending) {
+      for (const rawFile of pending) {
+        const f = await compressImageIfNeeded(rawFile);
         const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = `${doctorId}/notes/${ts}-${Math.random().toString(36).slice(2, 7)}-${safe}`;
-        const { error: upErr } = await supabase.storage
-          .from('doctor-content')
-          .upload(path, f, { contentType: f.type, upsert: false });
+        const { error: upErr } = await withTimeout(
+          supabase.storage.from('doctor-content').upload(path, f, { contentType: f.type, upsert: false }),
+          60_000,
+          `subida de ${f.name}`,
+        );
         if (upErr) throw upErr;
         uploaded.push({
           path,
@@ -150,6 +154,35 @@ export function MyNotesWidget() {
       else toast.error(`No se pudo guardar: ${err.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const emailNote = async (n: DoctorNote) => {
+    const to = prompt('Email destinatario (paciente, colega o tu propio correo):');
+    if (!to) return;
+    const trimmed = to.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Email inválido');
+      return;
+    }
+    try {
+      const subject = 'Nota clínica — Medical Masters';
+      const created = new Date(n.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+      const attachmentsList = (n.attachments && n.attachments.length > 0)
+        ? '\n\nAdjuntos referenciados:\n' + n.attachments.map(a => `• ${a.name}`).join('\n')
+        : '';
+      const body = `Nota guardada el ${created}\n\n${n.content}${attachmentsList}\n\n— Enviado desde Medical Masters`;
+      const { error } = await supabase.functions.invoke('send-doctor-note', {
+        body: { to: trimmed, subject, body, noteId: n.id },
+      });
+      if (error) throw error;
+      toast.success('Nota enviada por email');
+    } catch (err: any) {
+      // Fallback: open the user's mail client
+      const subject = encodeURIComponent('Nota clínica — Medical Masters');
+      const body = encodeURIComponent(`${n.content}\n\n— Medical Masters`);
+      window.location.href = `mailto:${trimmed}?subject=${subject}&body=${body}`;
+      toast.message('Abriendo tu cliente de correo (servicio de email no configurado).');
     }
   };
 
@@ -270,15 +303,27 @@ export function MyNotesWidget() {
                   {new Date(n.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
                 </p>
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => remove(n)}
-                aria-label="Eliminar nota"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-destructive" />
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => emailNote(n)}
+                  aria-label="Enviar nota por email"
+                  title="Enviar por email"
+                >
+                  <Mail className="w-3.5 h-3.5 text-primary" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => remove(n)}
+                  aria-label="Eliminar nota"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>

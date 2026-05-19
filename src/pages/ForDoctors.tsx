@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Stethoscope, DollarSign, Calendar, Video, MessageSquare, Users, TrendingUp, Shield, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Stethoscope, DollarSign, Calendar, Video, MessageSquare, Users, GraduationCap, Shield, CheckCircle } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
 const benefits = [
   {
     icon: DollarSign,
-    title: 'Monetiza tu Expertise',
-    description: 'Genera ingresos adicionales ofreciendo consultas, segundas opiniones y contenido educativo premium.',
+    title: 'Monetiza tu práctica',
+    description: 'Genera ingresos adicionales ofreciendo orientación médica, segundas opiniones y contenido educativo premium.',
   },
   {
     icon: Calendar,
@@ -29,9 +29,9 @@ const benefits = [
     description: 'Desarrolla tu marca personal y crea una base de pacientes y seguidores leales.',
   },
   {
-    icon: TrendingUp,
-    title: 'Analytics Detallados',
-    description: 'Accede a métricas de rendimiento, satisfacción de pacientes y tendencias de consulta.',
+    icon: GraduationCap,
+    title: 'Cursos y Congresos',
+    description: 'Accede a Medical Masters para cursos, congresos y educación médica continua.',
   },
 ];
 
@@ -57,7 +57,7 @@ export default function ForDoctors() {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Para Médicos</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Expande tu <span className="text-white">práctica médica</span>
+              Únete a la <span className="text-white">red global de médicos VIP</span>
             </h1>
             <p className="text-sm sm:text-lg text-slate-300 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               Únete a la plataforma líder de telemedicina y conecta con pacientes de todo el país mientras generas ingresos adicionales.
@@ -85,8 +85,9 @@ export default function ForDoctors() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center mb-3 sm:mb-4 shadow-md">
-                  <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary/15 via-primary/10 to-secondary/20 flex items-center justify-center mb-3 sm:mb-4 ring-1 ring-secondary/10">
+                  <div className="absolute inset-0 rounded-xl bg-secondary/20 blur-xl opacity-40" />
+                  <benefit.icon className="relative w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{benefit.title}</h3>
                 <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">{benefit.description}</p>
@@ -120,7 +121,7 @@ export default function ForDoctors() {
                 <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-light" />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">100% Verificado</h3>
                 <p className="text-white/85 text-xs sm:text-sm mb-4 sm:mb-6">
-                  Todos los médicos en nuestra plataforma son verificados a través de su cédula profesional con la SEP, garantizando confianza para los pacientes.
+                  Todos los médicos en nuestra plataforma son verificados a través de sus credenciales profesionales oficiales, garantizando confianza para los pacientes.
                 </p>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-light">
                   <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

@@ -42,7 +42,7 @@ function NotificationItem({
   notification: Notification;
   onMarkAsRead: () => void;
   onDelete: () => void;
-  language: 'es' | 'en';
+  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
 }) {
   const navigate = useNavigate();
 

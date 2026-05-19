@@ -49,6 +49,8 @@ export interface LiveConfig {
   chatPrice: number;
   chatHighlightSeconds: number;
   contentTarget: 'medical' | 'patients';
+  translateEnabled: boolean;
+  translateTargetLang: string;
 }
 
 function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
@@ -117,6 +119,8 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [chatMode, setChatMode] = useState<'free' | 'paid_only' | 'mixed'>('free');
   const [chatPrice, setChatPrice] = useState<number | ''>('');
   const [chatHighlightSeconds, setChatHighlightSeconds] = useState<number>(120);
+  const [translateEnabled, setTranslateEnabled] = useState(false);
+  const [translateTargetLang, setTranslateTargetLang] = useState<string>('en');
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
   const addTag = () => {
@@ -154,6 +158,8 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       chatPrice: Number(chatPrice) || 0,
       chatHighlightSeconds,
       contentTarget: contentTarget || 'patients',
+      translateEnabled,
+      translateTargetLang,
     });
   };
 
@@ -420,6 +426,39 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                   </button>
                 </Badge>
               ))}
+            </div>
+          )}
+        </section>
+
+        <div className="border-t border-border" />
+
+        {/* ── Section: Traductor en vivo ── */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between min-h-12">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-semibold">Traductor en vivo</Label>
+              <p className="text-xs text-muted-foreground">Subtítulos automáticos para asistentes en otro idioma</p>
+            </div>
+            <Switch checked={translateEnabled} onCheckedChange={setTranslateEnabled} />
+          </div>
+          {translateEnabled && (
+            <div>
+              <Label className="text-xs font-medium">Idioma destino por defecto</Label>
+              <select
+                value={translateTargetLang}
+                onChange={(e) => setTranslateTargetLang(e.target.value)}
+                className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="es">🇪🇸 Español</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="pt">🇵🇹 Português</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="de">🇩🇪 Deutsch</option>
+              </select>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Cada espectador puede sobrescribir su idioma desde el reproductor.
+              </p>
             </div>
           )}
         </section>

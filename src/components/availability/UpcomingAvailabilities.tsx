@@ -26,7 +26,7 @@ function AvailabilityCard({
   onClick,
 }: {
   availability: DoctorAvailability;
-  language: 'es' | 'en';
+  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
   isPremium?: boolean;
   onClick: () => void;
 }) {
@@ -100,7 +100,7 @@ function AvailabilityDetailDialog({
   onOpenChange,
 }: {
   availability: DoctorAvailability | null;
-  language: 'es' | 'en';
+  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
   isPremium?: boolean;
   open: boolean;
   onOpenChange: (v: boolean) => void;

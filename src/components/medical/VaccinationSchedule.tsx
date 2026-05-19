@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Syringe, Bell, BellOff } from 'lucide-react';
+import { Loader2, Syringe, Bell, BellOff, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   VACCINATION_SCHEME_MX,
@@ -191,6 +191,100 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
               Indica tu fecha de nacimiento en el historial clínico para personalizar las vacunas aplicables a tu edad.
             </div>
           )}
+
+          {/* Otras vacunas — agregar custom + recordatorio */}
+          <div className="rounded-lg border border-dashed border-border p-3 bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-1.5"><Plus className="w-3.5 h-3.5" /> Otra vacuna</p>
+                <p className="text-[11px] text-muted-foreground">Agrega vacunas fuera del esquema oficial con su fecha y recordatorio.</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const name = prompt('Nombre de la vacuna:');
+                  if (!name) return;
+                  const slug = `custom:${Date.now().toString(36)}:${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 32)}`;
+                  if (!user?.id) return;
+                  const { data, error } = await supabase
+                    .from('patient_vaccinations')
+                    .insert({
+                      patient_id: user.id,
+                      child_id: activeChildId === 'self' ? null : activeChildId,
+                      vaccine_key: slug,
+                      dose_number: 1,
+                      applied: false,
+                      application_date: null,
+                      lot: null,
+                      notes: name,
+                    })
+                    .select()
+                    .single();
+                  if (error) { toast.error('No se pudo agregar'); return; }
+                  setRows(prev => [...prev, data as PatientVaccinationRow]);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" /> Agregar
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {rows.filter(r => r.vaccine_key.startsWith('custom:') && (activeChildId === 'self' ? r.child_id === null : r.child_id === activeChildId)).map(r => (
+                <div key={r.id} className="grid grid-cols-12 gap-2 items-end bg-card rounded-md border border-border p-2">
+                  <div className="col-span-12 sm:col-span-4">
+                    <Label className="text-xs">Nombre</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={r.notes || ''}
+                      onChange={async e => {
+                        const v = e.target.value;
+                        setRows(prev => prev.map(x => x.id === r.id ? { ...x, notes: v } : x));
+                        await supabase.from('patient_vaccinations').update({ notes: v }).eq('id', r.id);
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-6 sm:col-span-3">
+                    <Label className="text-xs">Fecha</Label>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs"
+                      value={r.application_date || ''}
+                      onChange={async e => {
+                        const v = e.target.value || null;
+                        setRows(prev => prev.map(x => x.id === r.id ? { ...x, application_date: v, applied: !!v } : x));
+                        await supabase.from('patient_vaccinations').update({ application_date: v, applied: !!v }).eq('id', r.id);
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-6 sm:col-span-4">
+                    <Label className="text-xs">Lote</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      value={r.lot || ''}
+                      onChange={async e => {
+                        const v = e.target.value;
+                        setRows(prev => prev.map(x => x.id === r.id ? { ...x, lot: v } : x));
+                        await supabase.from('patient_vaccinations').update({ lot: v }).eq('id', r.id);
+                      }}
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-1 flex sm:justify-end">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive"
+                      onClick={async () => {
+                        await supabase.from('patient_vaccinations').delete().eq('id', r.id);
+                        setRows(prev => prev.filter(x => x.id !== r.id));
+                      }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="space-y-3">
             {applicableVaccines.map(v => (

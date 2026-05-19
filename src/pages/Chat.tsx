@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
+import { TriageChat } from '@/components/chat/TriageChat';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
@@ -361,20 +362,16 @@ export default function Chat() {
   if (role === 'patient' && !hasEntitlement) {
     return (
       <MainLayout>
-        <div className="container mx-auto px-4 py-12">
-          <Card className="max-w-lg mx-auto text-center p-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-premium/10 flex items-center justify-center">
-              <MessageSquare className="w-8 h-8 text-premium" />
-            </div>
-            <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('chat.activateChat')}</h2>
-            <p className="text-muted-foreground mb-6">
+        <div className="container mx-auto px-4 py-6 sm:py-10">
+          <div className="max-w-2xl mx-auto mb-4 text-center">
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mb-1">
+              {t('chat.activateChat')}
+            </h1>
+            <p className="text-sm text-muted-foreground">
               {t('chat.premiumService')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => navigate('/doctors')}>{t('chat.viewOptions')}</Button>
-              <Button variant="outline" onClick={() => navigate('/wallet')}>{t('chat.goToLives')}</Button>
-            </div>
-          </Card>
+          </div>
+          <TriageChat />
         </div>
       </MainLayout>
     );

@@ -273,18 +273,31 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setUploadProgress(0);
 
     try {
-      const fileExt = file.name.split('.').pop();
+      // Compress oversized phone images before upload and apply a hard timeout
+      // so a hung network doesn't lock the dialog forever.
+      const { compressImageIfNeeded, withTimeout } = await import('@/lib/imageUpload');
+      const fileToUpload = await compressImageIfNeeded(file);
+
+      const fileExt = fileToUpload.name.split('.').pop();
       const filePath = `${user.id}/history/${Date.now()}.${fileExt}`;
 
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min((prev || 0) + 10, 90));
       }, 200);
 
-      const { error: uploadError } = await supabase.storage
-        .from('medical-history')
-        .upload(filePath, file);
-
-      clearInterval(progressInterval);
+      let uploadError: any = null;
+      try {
+        const res = await withTimeout(
+          supabase.storage.from('medical-history').upload(filePath, fileToUpload),
+          90_000,
+          'subida del estudio',
+        );
+        uploadError = res.error;
+      } catch (e: any) {
+        uploadError = e;
+      } finally {
+        clearInterval(progressInterval);
+      }
 
       if (uploadError) throw uploadError;
 

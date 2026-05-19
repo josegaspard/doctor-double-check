@@ -30,7 +30,7 @@ interface CedulaAutoVerifyProps {
   userId: string;
   onVerified?: (verificationId: string, data: CedulaVerificationResult) => void;
   onClaimed?: () => void;
-  language?: 'es' | 'en';
+  language?: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
 }
 
 export function CedulaAutoVerify({ 

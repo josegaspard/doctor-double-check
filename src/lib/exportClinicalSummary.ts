@@ -12,7 +12,7 @@
 export interface ClinicalSummaryInput {
   patient: { name: string; email: string };
   data: any; // clinical record snapshot
-  language?: 'es' | 'en';
+  language?: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
 }
 
 const fmt = (d: Date) =>

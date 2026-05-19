@@ -130,13 +130,17 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
       // Create a unique filename
       const fileName = `${userId}/avatar-${Date.now()}.jpg`;
 
-      // Upload to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, croppedBlob, { 
+      // Upload to Supabase storage — wrap with timeout so the UI doesn't hang
+      // forever on slow/dead networks (frequent on phone uploads).
+      const { withTimeout } = await import('@/lib/imageUpload');
+      const { error: uploadError } = await withTimeout(
+        supabase.storage.from('avatars').upload(fileName, croppedBlob, {
           upsert: true,
-          contentType: 'image/jpeg'
-        });
+          contentType: 'image/jpeg',
+        }),
+        45_000,
+        'subida de avatar',
+      );
 
       if (uploadError) throw uploadError;
 

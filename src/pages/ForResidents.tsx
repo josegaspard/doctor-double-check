@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, Users, BookOpen, Video, MessageSquare, Award, Shield, CheckCircle, Microscope } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Users, BookOpen, Video, MessageSquare, Award, Shield, CheckCircle, Microscope, Share2, PlayCircle, Briefcase, UserPlus } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
 const benefits = [
@@ -32,6 +32,26 @@ const benefits = [
     icon: Award,
     title: 'Certificados',
     description: 'Obtén certificados de participación en sesiones clínicas y actividades académicas.',
+  },
+  {
+    icon: Share2,
+    title: 'Red Social de Residentes',
+    description: 'Comparte hallazgos, sigue colegas y mantente al día con la actividad de tu especialidad.',
+  },
+  {
+    icon: PlayCircle,
+    title: 'Tutoriales',
+    description: 'Videos paso a paso de procedimientos, exploración física y técnicas quirúrgicas.',
+  },
+  {
+    icon: Briefcase,
+    title: 'Fellowships e Internships',
+    description: 'Convocatorias activas de fellowships, rotaciones e internships nacionales e internacionales.',
+  },
+  {
+    icon: UserPlus,
+    title: 'Conocer',
+    description: 'Encuentra mentores, encuentra colegas — explora perfiles verificados por especialidad y hospital.',
   },
 ];
 
@@ -85,8 +105,9 @@ export default function ForResidents() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-3 sm:mb-4">
-                  <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/20 flex items-center justify-center mb-3 sm:mb-4 ring-1 ring-primary/10">
+                  <div className="absolute inset-0 rounded-xl bg-primary/20 blur-xl opacity-40" />
+                  <benefit.icon className="relative w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{benefit.title}</h3>
                 <p className="text-muted-foreground text-xs sm:text-sm">{benefit.description}</p>

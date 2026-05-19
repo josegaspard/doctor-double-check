@@ -214,7 +214,9 @@ export default function DoctorGoLive() {
           chat_mode: config.chatMode,
           chat_price: config.chatPrice,
           chat_highlight_seconds: config.chatHighlightSeconds,
-        })
+          translate_enabled: config.translateEnabled,
+          translate_target_lang: config.translateEnabled ? config.translateTargetLang : null,
+        } as any)
         .select()
         .single();
 

@@ -137,6 +137,7 @@ const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
 const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
+const Foro = React.lazy(() => import("./pages/Foro"));
 const MedicalSupplies = React.lazy(() => import("./pages/MedicalSupplies"));
 const AdminHospitals = React.lazy(() => import("./pages/AdminHospitals"));
 const AdminMarketplace = React.lazy(() => import("./pages/AdminMarketplace"));
@@ -234,6 +235,7 @@ const App = () => {
                       <Route path="/education" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
+                      <Route path="/foro" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><Foro /></AccessGuard>} />
                       <Route path="/hospital-locator" element={<HospitalLocator />} />
                       <Route path="/medical-supplies" element={<MedicalSupplies />} />
                       <Route path="/my-orders" element={<MyOrders />} />

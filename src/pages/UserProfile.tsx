@@ -505,12 +505,12 @@ export default function UserProfile() {
     }
   };
 
-  const handleLanguageChange = async (newLanguage: 'es' | 'en') => {
+  const handleLanguageChange = async (newLanguage: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de') => {
     setIsSavingLanguage(true);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ preferred_language: newLanguage })
+        .update({ preferred_language: newLanguage } as any)
         .eq('id', user.id);
 
       if (error) throw error;
@@ -1157,14 +1157,22 @@ export default function UserProfile() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="es">
-                      <span className="flex items-center gap-2">
-                        🇲🇽 Español
-                      </span>
+                      <span className="flex items-center gap-2">🇲🇽 Español</span>
                     </SelectItem>
                     <SelectItem value="en">
-                      <span className="flex items-center gap-2">
-                        🇺🇸 English
-                      </span>
+                      <span className="flex items-center gap-2">🇺🇸 English</span>
+                    </SelectItem>
+                    <SelectItem value="pt">
+                      <span className="flex items-center gap-2">🇵🇹 Português</span>
+                    </SelectItem>
+                    <SelectItem value="fr">
+                      <span className="flex items-center gap-2">🇫🇷 Français</span>
+                    </SelectItem>
+                    <SelectItem value="it">
+                      <span className="flex items-center gap-2">🇮🇹 Italiano</span>
+                    </SelectItem>
+                    <SelectItem value="de">
+                      <span className="flex items-center gap-2">🇩🇪 Deutsch</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>

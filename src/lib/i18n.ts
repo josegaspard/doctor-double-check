@@ -1,14 +1,19 @@
 import { es } from './i18n/es';
 import { en } from './i18n/en';
+import { pt } from './i18n/pt';
+import { fr } from './i18n/fr';
+import { it } from './i18n/it';
+import { de } from './i18n/de';
 
-// NOTE: PT and FR translation files (./i18n/pt, ./i18n/fr) are intentionally
-// kept on disk but excluded from the active SupportedLanguage union until those
-// markets are reactivated. Do not re-add without product approval.
-export type SupportedLanguage = 'es' | 'en';
+export type SupportedLanguage = 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
 
 export const translations = {
   es,
   en,
+  pt,
+  fr,
+  it,
+  de,
 } as const;
 
 export type TranslationKey = keyof typeof translations.es;

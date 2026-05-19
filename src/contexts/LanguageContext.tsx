@@ -12,21 +12,22 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const SUPPORTED: readonly SupportedLanguage[] = ['es', 'en', 'pt', 'fr', 'it', 'de'] as const;
+
+function normalize(value: string | null | undefined): SupportedLanguage {
+  if (!value) return 'es';
+  const v = value.slice(0, 2).toLowerCase();
+  return (SUPPORTED as readonly string[]).includes(v) ? (v as SupportedLanguage) : 'es';
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const authContext = useContext(AuthContext);
   const supabaseUser = authContext?.supabaseUser ?? null;
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
     const cached = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
-    if (cached === 'es' || cached === 'en') return cached;
-    // Legacy users with pt/fr stored get migrated back to ES (PT/FR retired).
-    if (cached === 'pt' || cached === 'fr') {
-      try { localStorage.setItem('preferred_language', 'es'); } catch {}
-      return 'es';
-    }
-    // Auto-detect from browser language
+    if (cached) return normalize(cached);
     if (typeof navigator !== 'undefined') {
-      const l = navigator.language?.slice(0, 2).toLowerCase();
-      if (l === 'en') return 'en';
+      return normalize(navigator.language);
     }
     return 'es';
   });
@@ -34,17 +35,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Load user's language preference on mount
   useEffect(() => {
     const loadLanguage = async () => {
-      // First check localStorage for cached preference
       const cached = localStorage.getItem('preferred_language');
-      if (cached === 'es' || cached === 'en') {
-        setLanguageState(cached as SupportedLanguage);
-      } else if (cached === 'pt' || cached === 'fr') {
-        // Migrate retired locales back to ES.
-        setLanguageState('es');
-        try { localStorage.setItem('preferred_language', 'es'); } catch {}
-      }
+      if (cached) setLanguageState(normalize(cached));
 
-      // If user is logged in, fetch from database
       if (supabaseUser?.id) {
         const { data } = await supabase
           .from('profiles')
@@ -53,14 +46,9 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           .single();
 
         if (data?.preferred_language) {
-          const raw = data.preferred_language;
-          const lang: SupportedLanguage = raw === 'en' ? 'en' : 'es';
+          const lang = normalize(data.preferred_language);
           setLanguageState(lang);
           localStorage.setItem('preferred_language', lang);
-          // Persist migration back to DB if the user had PT/FR stored.
-          if (raw !== 'es' && raw !== 'en' && supabaseUser?.id) {
-            supabase.from('profiles').update({ preferred_language: lang }).eq('id', supabaseUser.id).then(() => {});
-          }
         }
       }
     };
@@ -72,11 +60,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguageState(lang);
     localStorage.setItem('preferred_language', lang);
 
-    // If user is logged in, save to database
     if (supabaseUser?.id) {
       await supabase
         .from('profiles')
-        .update({ preferred_language: lang })
+        .update({ preferred_language: lang } as any)
         .eq('id', supabaseUser.id);
     }
   };
@@ -92,16 +79,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 // Fallback for cases where context is not yet available (e.g. HMR, lazy loading race)
+const fallbackLang = (): SupportedLanguage =>
+  normalize(typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null);
+
 const fallbackLanguage: LanguageContextType = {
-  language: (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage,
+  language: fallbackLang(),
   setLanguage: async () => {},
-  t: (path: string) => translate(
-    (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage,
-    path
-  ),
-  translations: getTranslations(
-    (typeof window !== 'undefined' && localStorage.getItem('preferred_language') === 'en' ? 'en' : 'es') as SupportedLanguage
-  ),
+  t: (path: string) => translate(fallbackLang(), path),
+  translations: getTranslations(fallbackLang()),
 };
 
 export function useLanguage() {

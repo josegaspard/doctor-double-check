@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   FileText, Loader2, Pencil, Check, X, ChevronDown, Heart, Pill, AlertTriangle, Phone, Ruler, Weight, Droplets, Users,
-  Plus, Trash2, Baby, Activity, Cigarette, Wine,
+  Plus, Trash2, Baby, Activity, Cigarette, Wine, Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -630,6 +630,33 @@ export function PatientClinicalHistoryCard() {
                 )}
               </div>
               <div className="flex gap-1">
+                {!adult && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    title="Duplicar mi historial a este hijo/a"
+                    onClick={async () => {
+                      if (!user?.id) return;
+                      if (!confirm(`¿Duplicar tu historial clínico al perfil de ${c.name}?`)) return;
+                      const { data: mine } = await supabase
+                        .from('patient_clinical_history')
+                        .select('*')
+                        .eq('patient_id', user.id)
+                        .is('child_id', null)
+                        .maybeSingle();
+                      if (!mine) { toast.error('No tienes un historial guardado todavía'); return; }
+                      const { id, created_at, updated_at, ...rest } = mine as any;
+                      const { error } = await supabase
+                        .from('patient_clinical_history')
+                        .upsert({ ...rest, patient_id: user.id, child_id: c.id }, { onConflict: 'patient_id,child_id' } as any);
+                      if (error) toast.error('No se pudo duplicar: ' + error.message);
+                      else toast.success(`Historial duplicado a ${c.name}`);
+                    }}
+                  >
+                    <Copy className="w-3 h-3 text-primary" />
+                  </Button>
+                )}
                 <Button type="button" size="icon" variant="ghost" onClick={() => openChildForm(c)}>
                   <Pencil className="w-3 h-3" />
                 </Button>

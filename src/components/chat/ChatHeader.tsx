@@ -198,16 +198,16 @@ export function ChatHeader({
         
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Video call button */}
+          {/* FaceTime / face-to-face video call */}
           {!isClosed && consultationId && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 text-primary hover:text-primary hover:bg-primary/10 rounded-full"
-              onClick={() => navigate(`/video-call?consultation=${consultationId}`)}
-              title="Videollamada"
+              size="sm"
+              className="h-9 rounded-full gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+              onClick={() => navigate(`/video-call?consultation=${consultationId}&mode=facetime`)}
+              title="FaceTime"
             >
-              <Video className="w-5 h-5" />
+              <Video className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-semibold">FaceTime</span>
             </Button>
           )}
 

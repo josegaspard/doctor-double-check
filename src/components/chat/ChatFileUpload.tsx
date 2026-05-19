@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { Paperclip, X, FileText, Loader2 } from 'lucide-react';
+import { compressImageIfNeeded, withTimeout } from '@/lib/imageUpload';
 
 interface ChatFileUploadProps {
   sessionId: string;
@@ -64,18 +65,23 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
       setUploadProgress(10);
 
       try {
+        // Downscale large camera shots so the upload doesn't hang.
+        const fileToUpload = await compressImageIfNeeded(selectedFile);
+
         const timestamp = Date.now();
-        const ext = selectedFile.name.split('.').pop();
+        const ext = fileToUpload.name.split('.').pop();
         const path = `chat/${sessionId}/${user.id}/${timestamp}.${ext}`;
 
         setUploadProgress(30);
 
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(path, selectedFile, {
+        const { error: uploadError } = await withTimeout(
+          supabase.storage.from('documents').upload(path, fileToUpload, {
             cacheControl: '3600',
             upsert: false,
-          });
+          }),
+          60_000,
+          'subida de archivo',
+        );
 
         if (uploadError) throw uploadError;
 
@@ -98,6 +104,7 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
         // Reset
         setSelectedFile(null);
         setPreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error: any) {
         console.error('Upload error:', error);
         toast.error(error.message || 'Error al subir archivo');

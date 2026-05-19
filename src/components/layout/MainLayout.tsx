@@ -79,26 +79,34 @@ interface NavItem {
   icon: React.ElementType;
   roles: string[];
   toggleKey?: string;
+  hidden?: boolean;
 }
 
 const navItems: NavItem[] = [
   // ===== Primary nav (first items shown on desktop top-bar) =====
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_content_medical' },
-  { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  // Contenido Premium oculto para visitors públicos por petición del cliente 2026-05-18.
+  { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['doctor', 'resident', 'admin'] },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
   // ===== Secondary nav (collapsed into "More" on desktop) =====
-  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
+  // Doctor "Más" order (client request 2026-05-18):
+  //   1. Mis Pacientes  2. Directorio Médico  3. Reuniones  4. Material Médico  5. Panel
+  //   Localizar Hospital queda oculto.
+  { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
+  // Directorio Médico oculto para visitors públicos por petición del cliente 2026-05-18.
+  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
+  { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
-  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
-  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'] },
-  { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
+  // Hidden per client request 2026-05-18 — page still reachable by direct URL.
+  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'], hidden: true },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
@@ -135,12 +143,11 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // visitor (not logged in)
+  // visitor (not logged in) — Contenido Premium y Directorio Médico ocultos
+  // por petición del cliente 2026-05-18; el visitor solo ve Lives + News.
   if (role === 'visitor' || !role) {
     return [
       ...common,
-      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
-      { label: t('nav.doctors') || 'Doctors', href: '/doctors', icon: Stethoscope },
       { label: t('nav.news'), href: '/news', icon: Calendar },
     ];
   }
@@ -281,6 +288,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
     return navItems.filter(item => {
+      if (item.hidden) return false;
       if (!item.roles.includes(effectiveRole)) return false;
       if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
       return true;

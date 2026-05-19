@@ -3,7 +3,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Stethoscope, ClipboardList } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Stethoscope, ClipboardList, Mail, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ConsultationSummary {
   doctor_summary: string | null;
@@ -19,6 +21,37 @@ interface Props {
 export function ConsultationSummaryCard({ consultationId }: Props) {
   const { t } = useLanguage();
   const [summary, setSummary] = useState<ConsultationSummary | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const sendByEmail = async () => {
+    if (!summary) return;
+    const to = prompt('Email destinatario:');
+    if (!to) return;
+    const trimmed = to.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error('Email inválido');
+      return;
+    }
+    const lines: string[] = [];
+    if (summary.doctor_summary) lines.push(`Resumen:\n${summary.doctor_summary}`);
+    if (summary.diagnosis) lines.push(`Diagnóstico:\n${summary.diagnosis}`);
+    if (summary.doctor_recommendations) lines.push(`Recomendaciones:\n${summary.doctor_recommendations}`);
+    const body = lines.join('\n\n');
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-doctor-note', {
+        body: { to: trimmed, subject: 'Resumen médico — Medical Masters', body, kind: 'summary' },
+      });
+      if (error) throw error;
+      toast.success('Resumen enviado por email');
+    } catch {
+      const subject = encodeURIComponent('Resumen médico — Medical Masters');
+      window.location.href = `mailto:${trimmed}?subject=${subject}&body=${encodeURIComponent(body)}`;
+      toast.message('Abriendo tu cliente de correo (servicio de email no configurado).');
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     if (!consultationId) return;
@@ -73,6 +106,12 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
             <p className="text-foreground">{summary.doctor_recommendations}</p>
           </div>
         )}
+        <div className="pt-2 flex justify-end">
+          <Button size="sm" variant="outline" onClick={sendByEmail} disabled={sending} className="gap-1.5">
+            {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+            Enviar por email
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

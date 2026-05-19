@@ -9,9 +9,6 @@ import iconConsultas from '@/assets/landing/icons/CONSULTAS.svg';
 import iconEducacion from '@/assets/landing/icons/EDUCACION.svg';
 import iconUsuarios from '@/assets/landing/icons/USUARIOS.svg';
 import iconRetransmision from '@/assets/landing/icons/RETRANSMISION.svg';
-import iconGlobal from '@/assets/landing/icons/GLOBAL.svg';
-import iconMedicos from '@/assets/landing/icons/MEDICOS.svg';
-import iconStream from '@/assets/landing/icons/STREAM.svg';
 import {
   ArrowRight,
   Star,
@@ -29,7 +26,6 @@ import {
   UserRound,
   Dna,
   Hospital,
-  Activity,
   Video,
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -75,7 +71,7 @@ export default function Landing() {
 
             <div className="hidden lg:flex items-center space-x-1">
               <div className={`flex items-center backdrop-blur-md rounded-full p-1 mr-6 transition-all duration-300 ${scrolled ? 'bg-gray-100 border-gray-200' : 'bg-white/10 border-white/20'} border`}>
-                <a href="#ecosistema" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Ecosistema</a>
+                <a href="#red-global" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Red Global</a>
                 <a href="#features" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Tecnología</a>
                 <a href="#workflow" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Proceso</a>
                 <a href="#reviews" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>Reseñas</a>
@@ -119,32 +115,7 @@ export default function Landing() {
         <div className="absolute inset-x-0 bottom-0 h-40 z-[1] bg-gradient-to-t from-[#0b1d45]/95 to-transparent" />
 
         <div className="container mx-auto px-5 sm:px-6 lg:px-12 relative z-10 h-full flex flex-col pt-16 sm:pt-20 lg:pt-24 pb-44 sm:pb-44 lg:pb-32">
-          {/* Top stats bar — visible md+ */}
-          <div className="hidden md:flex absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl">
-            <div className="flex items-center gap-2">
-              <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
-              <div className="leading-tight">
-                <p className="text-sm lg:text-base font-bold text-white">+120</p>
-                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">Países conectados</p>
-              </div>
-            </div>
-            <div className="w-px h-7 bg-white/15" />
-            <div className="flex items-center gap-2">
-              <img src={iconMedicos} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
-              <div className="leading-tight">
-                <p className="text-sm lg:text-base font-bold text-white">+50,000</p>
-                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">Médicos activos</p>
-              </div>
-            </div>
-            <div className="w-px h-7 bg-white/15" />
-            <div className="flex items-center gap-2">
-              <img src={iconStream} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
-              <div className="leading-tight">
-                <p className="text-sm lg:text-base font-bold text-white">Streaming</p>
-                <p className="text-[9px] lg:text-[10px] uppercase tracking-wider text-slate-300">en tiempo real</p>
-              </div>
-            </div>
-          </div>
+          {/* Stats bar removed per client request 2026-05-18 — sin estadísticas en el hero. */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10 items-start lg:items-center flex-1 min-h-0">
             {/* LEFT: copy + CTAs (kept narrower so floating cards have room beside it) */}
@@ -155,7 +126,7 @@ export default function Landing() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
                 </span>
                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">LIVE</span>
-                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">· Consultas y retransmisiones en tiempo real</span>
+                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">· Orientación médica y retransmisiones en tiempo real</span>
               </div>
 
               <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
@@ -164,7 +135,7 @@ export default function Landing() {
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 font-light leading-relaxed">
-                Consultas en vivo, formación médica y colaboración global en una única plataforma inteligente.
+                Orientación médica en vivo, formación médica y colaboración global en una única plataforma inteligente.
               </p>
               <p className="text-xs sm:text-sm text-slate-300/80 font-light leading-relaxed hidden lg:block">
                 Conectamos médicos, hospitales y conocimiento en todo el mundo. Desde una segunda opinión hasta retransmisiones quirúrgicas en directo.
@@ -187,29 +158,7 @@ export default function Landing() {
                 </button>
               </div>
 
-              {/* MOBILE-only stat cards 2x2 — clean, readable, doctor stays visible behind */}
-              <div className="grid grid-cols-2 gap-2.5 mt-3 md:hidden">
-                {[
-                  { img: iconGlobal, value: '+120', label: 'Países conectados' },
-                  { img: iconMedicos, value: '+50K', label: 'Médicos activos' },
-                  { img: iconStream, value: '1,248', label: 'Consultas hoy', trend: '+15%' },
-                  { img: iconRetransmision, value: 'LIVE', label: '3.2K viendo ahora', live: true },
-                ].map((s, i) => (
-                  <div key={i} className="relative bg-white/10 backdrop-blur-xl px-3 py-2.5 rounded-xl border border-white/15 shadow-xl flex items-center gap-2.5">
-                    <div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
-                      <img src={s.img} alt="" className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1">
-                        <p className="text-base font-bold text-white leading-none">{s.value}</p>
-                        {s.trend && <span className="text-[10px] font-bold text-emerald-300">{s.trend}</span>}
-                        {s.live && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
-                      </div>
-                      <p className="text-[10px] text-slate-300/85 mt-0.5 leading-tight">{s.label}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Mobile stat cards removed per client request 2026-05-18 — sin números/estadísticas. */}
             </div>
 
             {/* RIGHT column placeholder so the grid stays balanced. Cards live in the absolute layer below. */}
@@ -233,65 +182,14 @@ export default function Landing() {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center gap-1 mt-1.5 text-[10px] text-white/85">
-                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-medium">122 médicos conectados</span>
-              </div>
+              <p className="text-[10px] text-white/75 font-medium mt-1.5">Médicos en línea</p>
             </div>
 
-            {/* TOP RIGHT — LIVE doctor card */}
-            <div className="absolute top-24 lg:top-28 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[150px] lg:w-[170px]" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
-              <div className="aspect-video bg-gradient-to-br from-[#00768b] to-[#163a83] relative flex items-center justify-center">
-                <Stethoscope className="w-8 h-8 text-white/70" />
-                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />LIVE
-                </span>
-              </div>
-            </div>
+            {/* Right-side LIVE cards removed per client request 2026-05-18 —
+                cubrían la cara del doctor. La esencia "live" se mantiene en el
+                badge del eyebrow y en la fila inferior de features. */}
 
-            {/* MID RIGHT — Vital signs (further right edge) */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] lg:w-[170px]" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[11px] font-medium text-white/85">Signos Vitales</span>
-                <HeartPulse className="w-3 h-3 text-rose-300" />
-              </div>
-              <p className="text-[9px] text-slate-300/80 mb-0.5">En tiempo real</p>
-              <p className="text-xl font-bold text-white leading-none">72 <span className="text-[10px] font-normal text-slate-300/80">bpm</span></p>
-              <svg className="w-full h-5 text-rose-300 mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
-              </svg>
-            </div>
-
-            {/* BOTTOM RIGHT — Surgical Live */}
-            <div className="absolute bottom-32 lg:bottom-32 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[170px] lg:w-[190px]" style={{ animationDuration: '5.5s', animationDelay: '1.6s' }}>
-              <div className="aspect-[16/8] bg-gradient-to-br from-[#163a83] via-[#0b1d45] to-[#00768b] relative">
-                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />LIVE
-                </span>
-                <Activity className="absolute inset-0 m-auto w-7 h-7 text-white/40" />
-              </div>
-              <div className="p-2">
-                <p className="text-[10px] font-bold text-white leading-tight">Retransmisión Quirúrgica</p>
-                <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                  3.2K Espectadores
-                </p>
-              </div>
-            </div>
-
-            {/* BOTTOM LEFT-OF-DOCTOR — Activity Global. Same gap rules as Mosaic */}
-            <div className="absolute bottom-32 xl:bottom-36 left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '6.5s', animationDelay: '1.2s' }}>
-              <p className="text-[11px] font-medium text-white/85 mb-1.5">Actividad Global</p>
-              <div className="h-8 rounded bg-[#0b1d45]/40 mb-1.5 flex items-end justify-around px-1 gap-0.5">
-                {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
-                  <div key={i} className="w-0.5 lg:w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-              <div className="flex items-baseline justify-between">
-                <p className="text-[10px] text-slate-300/80">Consultas hoy</p>
-                <p className="text-xs font-bold text-white">1,248 <span className="text-[9px] text-emerald-300">+15%</span></p>
-              </div>
-            </div>
+            {/* "Actividad Global" floating card removed per client request 2026-05-18 — sin estadísticas. */}
           </div>
 
           {/* Bottom feature row - 4 cards */}
@@ -299,7 +197,7 @@ export default function Landing() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl lg:rounded-2xl p-2.5 sm:p-3 lg:p-4 shadow-2xl">
               {[
                 { icon: iconEducacion, title: 'Educación Médica', desc: 'Accede a cursos, webinars y contenidos de expertos líderes.' },
-                { icon: iconConsultas, title: 'Consultas en Línea', desc: 'Segundas opiniones y consultas especializadas en tiempo real.' },
+                { icon: iconConsultas, title: 'Orientación Médica en Línea', desc: 'Segundas opiniones y orientación médica especializada en tiempo real.' },
                 { icon: iconUsuarios, title: 'Red de Residentes', desc: 'Conecta, colabora y crece junto a miles de médicos residentes.' },
                 { icon: iconRetransmision, title: 'Retransmisiones Live', desc: 'Cirugías, eventos y conferencias en vivo desde cualquier parte.' },
               ].map((f, i) => (
@@ -340,11 +238,11 @@ export default function Landing() {
       {/* Main Content */}
       <main className="relative z-10 bg-slate-50">
         {/* Ecosystem Section */}
-        <section id="ecosistema" className="py-24 lg:py-32 relative overflow-hidden">
+        <section id="red-global" className="py-24 lg:py-32 relative overflow-hidden">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-4xl mx-auto mb-20">
               <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">El Nuevo Estándar</span>
-              <h2 className="text-4xl lg:text-5xl font-bold text-[#163a83] mb-6">Un sistema operativo para la salud moderna</h2>
+              <h2 className="text-4xl lg:text-5xl font-bold text-[#163a83] mb-6">Un sistema operativo para la salud</h2>
               <p className="text-xl text-slate-500 font-light leading-relaxed">
                 Eliminamos las barreras entre la tecnología y la atención humana. Nuestra infraestructura conecta <span className="font-bold text-[#163a83]">laboratorios</span>, <span className="font-bold text-[#163a83]">especialistas</span> y <span className="font-bold text-[#163a83]">pacientes</span> en un flujo continuo de información segura.
               </p>
@@ -358,9 +256,9 @@ export default function Landing() {
                   <div className="w-16 h-16 bg-[#163a83] rounded-2xl flex items-center justify-center text-white text-2xl mb-8 shadow-lg shadow-[#163a83]/30">
                     <Network className="w-7 h-7" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Un ecosistema, no una app</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Red Global de Médicos VIP</h3>
                   <p className="text-gray-500 leading-relaxed mb-6">
-                    Orientación médica por video, contenido premium grabado, recetas digitales con firma, vault clínico privado y directorio de hospitales — todo en una sola plataforma para doctores, residentes y pacientes en México.
+                    Orientación médica por video, contenido premium grabado, recetas digitales con firma y vault clínico privado — todo en una sola plataforma global para doctores, residentes y pacientes.
                   </p>
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
                     <div className="flex -space-x-3">
@@ -424,7 +322,6 @@ export default function Landing() {
         <section id="workflow" className="py-24 bg-white relative">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">Una plataforma, tres perfiles</span>
               <h2 className="text-4xl font-bold text-[#163a83] mb-4">Hecho para doctores, residentes y pacientes</h2>
               <p className="text-slate-600 leading-relaxed">
                 Desde una segunda opinión hasta retransmisiones quirúrgicas en directo: cada perfil entra a la misma red con las herramientas que necesita.
@@ -466,7 +363,7 @@ export default function Landing() {
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">Aprende y conecta con la red</h3>
                   <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                    Acceso reducido al ecosistema con 50% de descuento en lives y contenido premium. Networking formal con doctores verificados.
+                    Acceso reducido a la red global con 50% de descuento en lives y contenido premium. Networking formal con doctores verificados.
                   </p>
                   <ul className="space-y-2.5 text-sm text-gray-700">
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> 50% off en todo el contenido</li>
@@ -517,9 +414,9 @@ export default function Landing() {
               {[
                 { title: 'Orientación médica por video', desc: 'Sesiones 1:1 con grabación opcional, chat persistente 30 días y resumen clínico al cierre.', icon: <Video className="w-5 h-5" /> },
                 { title: 'Lives y Contenido Premium', desc: 'Transmite en vivo en HD con chat moderado y monetiza grabaciones por compra única o suscripción.', icon: <PlayCircle className="w-5 h-5" /> },
-                { title: 'Reuniones (Recetas digitales)', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
+                { title: 'Recetas digitales', desc: 'Recetas firmadas con cédula y QR de validación. Restringidas al país del paciente.', icon: <Check className="w-5 h-5" /> },
                 { title: 'Expediente clínico privado', desc: 'Pacientes guardan estudios y autorizan el acceso por tiempo limitado. Auditoría completa de accesos.', icon: <Lock className="w-5 h-5" /> },
-                { title: 'Directorio de hospitales', desc: 'Hospitales privados de México con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
+                { title: 'Directorio de hospitales', desc: 'Hospitales y clínicas privadas a nivel global con doctores relacionados, distancia y reseñas.', icon: <Hospital className="w-5 h-5" /> },
                 { title: 'Verificación médica', desc: 'Revisión de cédula profesional, identidad y permisos antes de aprobar al doctor.', icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
                 <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
@@ -599,7 +496,7 @@ export default function Landing() {
             </div>
 
             <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
-               Recetas restringidas al país del paciente. Residentes no pueden cobrar consultas. Pacientes no acceden al marketplace médico profesional.
+               Recetas restringidas al país del paciente. Residentes no pueden cobrar orientación médica. Pacientes no acceden al marketplace médico profesional.
             </p>
           </div>
         </section>
@@ -613,7 +510,7 @@ export default function Landing() {
 
           <div className="container mx-auto px-6 relative z-10 text-center">
             <h2 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
-              Medicina verificada, en México.
+              Medicina verificada, mundial.
             </h2>
             <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light">
                Doctores con credenciales verificadas, pacientes con expediente protegido y residentes conectados a la red. Todo en una sola plataforma.

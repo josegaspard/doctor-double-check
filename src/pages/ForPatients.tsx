@@ -1,31 +1,36 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Heart, MessageSquare, Video, FileText, Shield, Clock, Smartphone, Users, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Heart, MessageSquare, Video, FileText, Shield, Clock, Smartphone, Users, CheckCircle, Stethoscope, BookOpen } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 
 const benefits = [
   {
-    icon: MessageSquare,
-    title: 'Consultas 1:1',
-    description: 'Chatea directamente con especialistas certificados desde la comodidad de tu hogar.',
+    icon: Stethoscope,
+    title: 'Orientación Médica',
+    description: 'Obtén orientación médica con especialistas certificados desde la comodidad de tu hogar.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Sesiones de Casos Clínicos',
+    description: 'Accede a sesiones y discusiones de casos clínicos guiadas por médicos verificados.',
   },
   {
     icon: Video,
     title: 'Lives Educativos',
-    description: 'Accede a transmisiones en vivo de médicos expertos sobre diversos temas de salud.',
+    description: 'Transmisiones en vivo de médicos expertos sobre temas de salud que te importan.',
   },
   {
     icon: FileText,
     title: 'Segunda Opinión',
-    description: 'Obtén una segunda opinión médica para tomar decisiones informadas sobre tu salud.',
+    description: 'Una red global médica VIP para tomar decisiones informadas sobre tu salud.',
   },
   {
     icon: Shield,
     title: 'Médicos Verificados',
-    description: 'Todos nuestros médicos están verificados por la SEP con su cédula profesional.',
+    description: 'Todos nuestros médicos están verificados con su cédula profesional.',
   },
   {
     icon: Clock,
-    title: 'Disponibilidad 24/7',
+    title: 'Disponibilidad',
     description: 'Accede a la plataforma en cualquier momento, desde cualquier lugar.',
   },
   {
@@ -38,7 +43,7 @@ const benefits = [
 const howItWorks = [
   { step: 1, title: 'Regístrate', description: 'Crea tu cuenta en menos de 2 minutos' },
   { step: 2, title: 'Elige un médico', description: 'Explora perfiles de especialistas verificados' },
-  { step: 3, title: 'Inicia tu consulta', description: 'Conecta vía chat o videollamada' },
+  { step: 3, title: 'Inicia tu orientación', description: 'Conecta vía chat o videollamada' },
   { step: 4, title: 'Recibe seguimiento', description: 'Mantén comunicación continua' },
 ];
 
@@ -58,7 +63,7 @@ export default function ForPatients() {
               Tu salud, <span className="text-white">nuestra prioridad</span>
             </h1>
             <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
-              Accede a los mejores especialistas médicos desde cualquier lugar. Obtén consultas, segundas opiniones y contenido educativo de calidad.
+              Accede a los mejores especialistas médicos desde cualquier lugar. Obtén orientación médica, segundas opiniones y contenido educativo de calidad.
             </p>
             <Link 
               to="/app" 
@@ -83,8 +88,10 @@ export default function ForPatients() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {benefits.map((benefit, index) => (
               <div key={index} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center mb-3 sm:mb-4">
-                  <benefit.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                {/* Softened (difuminado) icon — pastel gradient with blur halo instead of solid dark navy */}
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-secondary/15 via-primary/10 to-secondary/20 flex items-center justify-center mb-3 sm:mb-4 ring-1 ring-secondary/10">
+                  <div className="absolute inset-0 rounded-xl bg-secondary/20 blur-xl opacity-40" />
+                  <benefit.icon className="relative w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{benefit.title}</h3>
                 <p className="text-muted-foreground text-xs sm:text-sm">{benefit.description}</p>
@@ -122,9 +129,9 @@ export default function ForPatients() {
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
               <div className="bg-card p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-lg border border-border order-2 md:order-1">
                 <Users className="w-10 h-10 sm:w-12 sm:h-12 text-secondary mb-3 sm:mb-4" />
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">+5,000 Médicos</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">Red Global Médica VIP</h3>
                 <p className="text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base">
-                  Accede a la red más grande de especialistas verificados en México.
+                  Accede a la red global más grande de especialistas verificados.
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
@@ -150,9 +157,9 @@ export default function ForPatients() {
                   Confía en los expertos
                 </h2>
                 <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
-                  Cada médico en nuestra plataforma pasa por un riguroso proceso de verificación. 
-                  Validamos su cédula profesional directamente con la SEP para garantizar que 
-                  solo recibas atención de profesionales certificados.
+                  Cada médico en nuestra plataforma pasa por un riguroso proceso de verificación de
+                  credenciales profesionales, para garantizar que solo recibas atención de
+                  profesionales certificados.
                 </p>
                 <Link
                   to="/doctors"
@@ -171,7 +178,7 @@ export default function ForPatients() {
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Cuida tu salud hoy</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
-            Regístrate gratis y accede a contenido educativo, lives y consultas con los mejores especialistas.
+            Regístrate gratis y accede a contenido educativo, lives y orientación médica con los mejores especialistas.
           </p>
           <Link 
             to="/app" 
