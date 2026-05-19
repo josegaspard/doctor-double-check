@@ -52,8 +52,11 @@
     <link rel="dns-prefetch" href="https://doctores.daily.co" />
     <link rel="dns-prefetch" href="https://s3.us-east-005.backblazeb2.com" />
 
-    <!-- Preload background image for instant render (modo imagen del app) -->
-    <link rel="preload" as="image" href="/app-bg.jpg" fetchpriority="high" />
+    <!-- Preload background image for instant render (modo imagen del app).
+         Sirve WebP a browsers que lo soportan (todos los modernos) y JPEG como
+         fallback. Cache-bust ?v=20260519 cuando se reemplaza el asset. -->
+    <link rel="preload" as="image" href="/app-bg.webp?v=20260519" type="image/webp" fetchpriority="high" />
+    <link rel="preload" as="image" href="/app-bg.jpg?v=20260519" type="image/jpeg" fetchpriority="low" />
 
     <!-- Fonts: self-hosted via @fontsource (bundled by Vite). No external CDN
          dependency — eliminates the SRI gap flagged in the OWASP review for
