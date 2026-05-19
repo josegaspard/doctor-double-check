@@ -129,27 +129,27 @@ export default function Enterprise() {
         </div>
       </section>
 
-      {/* Trusted By — industries we serve (genéricos, sin marcas reales) */}
-      <section className="py-12 sm:py-24 bg-muted/40">
+      {/* Trusted By — fondo brand teal (mismo que header/footer) */}
+      <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-lg sm:text-2xl font-bold text-center text-foreground mb-2 sm:mb-3">
+          <h2 className="text-lg sm:text-2xl font-bold text-center text-white mb-2 sm:mb-3">
             Industrias que confían en Medical Masters
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground text-center max-w-xl mx-auto mb-6 sm:mb-10">
+          <p className="text-xs sm:text-sm text-white/80 text-center max-w-xl mx-auto mb-6 sm:mb-10">
             Empresas de distintos sectores eligen nuestra plataforma para cuidar a sus colaboradores.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
             {trustedBy.map((item, index) => (
               <div
                 key={index}
-                className="flex flex-col items-center text-center gap-2 p-4 sm:p-5 rounded-xl bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all"
+                className="flex flex-col items-center text-center gap-2 p-4 sm:p-5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 shadow-sm hover:bg-white/15 hover:border-white/30 transition-all"
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-secondary to-primary flex items-center justify-center flex-shrink-0 shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0 ring-1 ring-white/20">
                   <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-foreground leading-tight">{item.label}</p>
-                  <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 leading-tight">{item.sector}</p>
+                  <p className="text-xs sm:text-sm font-bold text-white leading-tight">{item.label}</p>
+                  <p className="text-[10px] sm:text-[11px] text-white/80 mt-0.5 leading-tight">{item.sector}</p>
                 </div>
               </div>
             ))}
@@ -181,7 +181,7 @@ export default function Enterprise() {
             </div>
             
             {/* Pro */}
-            <div className="bg-gradient-to-br from-secondary to-primary p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
+            <div className="bg-[#00768b] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-secondary text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
                 POPULAR
               </div>
@@ -219,7 +219,7 @@ export default function Enterprise() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-gradient-to-br from-secondary to-primary">
+      <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para transformar la salud de tu empresa?</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

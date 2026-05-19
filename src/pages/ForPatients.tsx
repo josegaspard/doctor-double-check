@@ -122,48 +122,48 @@ export default function ForPatients() {
         </div>
       </section>
 
-      {/* Trust */}
-      <section className="py-12 sm:py-24 bg-muted/40">
+      {/* Trust — fondo brand teal (mismo que header/footer) */}
+      <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
-              <div className="bg-card p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-lg border border-border order-2 md:order-1">
-                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-secondary mb-3 sm:mb-4" />
-                <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">Red Global Médica VIP</h3>
-                <p className="text-muted-foreground mb-3 sm:mb-4 text-sm sm:text-base">
+              <div className="bg-white/10 backdrop-blur-sm p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-lg border border-white/15 order-2 md:order-1">
+                <Users className="w-10 h-10 sm:w-12 sm:h-12 text-white mb-3 sm:mb-4" />
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">Red Global Médica VIP</h3>
+                <p className="text-white/85 mb-3 sm:mb-4 text-sm sm:text-base">
                   Accede a la red global más grande de especialistas verificados.
                 </p>
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     Cardiólogos
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     Neurólogos
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     Oncólogos
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     Y muchos más...
                   </li>
                 </ul>
               </div>
               <div className="order-1 md:order-2">
-                <h2 className="text-xl sm:text-3xl font-bold text-foreground mb-3 sm:mb-4">
+                <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
                   Confía en los expertos
                 </h2>
-                <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base">
+                <p className="text-white/85 mb-4 sm:mb-6 text-sm sm:text-base">
                   Cada médico en nuestra plataforma pasa por un riguroso proceso de verificación de
                   credenciales profesionales, para garantizar que solo recibas atención de
                   profesionales certificados.
                 </p>
                 <Link
                   to="/doctors"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 text-sm sm:text-base shadow-md hover:shadow-lg transition-all"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-[#00768b] font-semibold hover:bg-white/90 text-sm sm:text-base shadow-md hover:shadow-lg transition-all"
                 >
                   Explorar médicos →
                 </Link>
@@ -174,7 +174,7 @@ export default function ForPatients() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-gradient-to-br from-secondary to-primary">
+      <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Cuida tu salud hoy</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

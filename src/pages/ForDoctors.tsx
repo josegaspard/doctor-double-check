@@ -117,8 +117,8 @@ export default function ForDoctors() {
                   ))}
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-secondary to-primary p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
-                <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-light" />
+              <div className="bg-[#00768b] p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
+                <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-white" />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">100% Verificado</h3>
                 <p className="text-white/85 text-xs sm:text-sm mb-4 sm:mb-6">
                   Todos los médicos en nuestra plataforma son verificados a través de sus credenciales profesionales oficiales, garantizando confianza para los pacientes.
@@ -134,7 +134,7 @@ export default function ForDoctors() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-gradient-to-br from-secondary to-primary">
+      <section className="py-12 sm:py-24 bg-[#00768b]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">¿Listo para comenzar?</h2>
           <p className="text-slate-300 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
