@@ -34,13 +34,13 @@
       "source": "/",
       "headers": [
         { "key": "X-Robots-Tag", "value": "index, follow, max-image-preview:large, max-snippet:-1" },
-        { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=600, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=600, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" }
       ]
     }
   ]

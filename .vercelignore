@@ -1,0 +1,35 @@
+# Test infra
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+vitest.config.*
+test-results/
+coverage/
+
+# Mobile (Capacitor)
+android/
+ios/
+capacitor.config.*
+
+# Local-only
+.env.local
+.env.*.local
+.vercel
+.idea
+.vscode
+.DS_Store
+*.log
+
+# Docs / planning
+*.md
+!README.md
+AUDIT_*.md
+DEPLOY_*.sh
+docs/
+migration-*/
+supabase/migrations/*.sql
+
+# Source maps
+**/*.map
