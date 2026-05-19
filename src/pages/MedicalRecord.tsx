@@ -599,17 +599,53 @@ export default function MedicalRecord() {
                           {item.active && (
                             <div className="ml-6 space-y-1.5">
                               {isDiabetes && (
-                                <div>
-                                  <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
-                                  <Input
-                                    className="text-sm"
-                                    placeholder="Ej: Tipo 2, gestacional, prediabetes…"
-                                    value={(item as any).diabetes_type || ''}
-                                    onChange={e => {
-                                      const v = e.target.value;
-                                      setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
-                                    }}
-                                  />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Tipo de diabetes</Label>
+                                    <Input
+                                      className="text-sm"
+                                      placeholder="Ej: Tipo 2, gestacional, prediabetes…"
+                                      value={(item as any).diabetes_type || ''}
+                                      onChange={e => {
+                                        const v = e.target.value;
+                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_type: v } as any } }));
+                                      }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className="text-[11px] text-muted-foreground">Parentesco familiar</Label>
+                                    {(() => {
+                                      const relatives: string[] = ((item as any).diabetes_relatives as string[]) || [];
+                                      const toggle = (key: string) => {
+                                        const next = relatives.includes(key) ? relatives.filter(r => r !== key) : [...relatives, key];
+                                        setData(prev => ({ ...prev, chronic_conditions_list: { ...prev.chronic_conditions_list, [condition]: { ...item, diabetes_relatives: next } as any } }));
+                                      };
+                                      const RELATIVES = [
+                                        { key: 'father', label: 'Padre' },
+                                        { key: 'mother', label: 'Madre' },
+                                        { key: 'sibling', label: 'Hermano(a)' },
+                                        { key: 'grandparent', label: 'Abuelo(a)' },
+                                        { key: 'uncle_aunt', label: 'Tío(a)' },
+                                        { key: 'cousin', label: 'Primo(a)' },
+                                        { key: 'child', label: 'Hijo(a)' },
+                                        { key: 'none', label: 'Ninguno' },
+                                      ];
+                                      return (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {RELATIVES.map(r => (
+                                            <button
+                                              key={r.key}
+                                              type="button"
+                                              onClick={() => toggle(r.key)}
+                                              className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${relatives.includes(r.key) ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+                                            >
+                                              {r.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
                               )}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
