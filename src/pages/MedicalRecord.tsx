@@ -433,7 +433,7 @@ export default function MedicalRecord() {
             <p className="text-xs sm:text-sm text-muted-foreground">{t('medicalRecordPage.header.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {role === 'patient' && hasRecord && (
+            {(role === 'patient' || role === 'doctor' || role === 'resident') && hasRecord && (
               <Button
                 onClick={() => exportClinicalSummary({
                   patient: { name: user?.name || t('medicalRecordPage.header.patientFallback'), email: user?.email || '' },
@@ -456,7 +456,7 @@ export default function MedicalRecord() {
           </div>
         </div>
 
-        {role === 'patient' && (
+        {(role === 'patient' || role === 'doctor' || role === 'resident') && (
           <div className="mb-3 sm:mb-4 flex items-start gap-2.5 p-3 sm:p-3.5 rounded-xl bg-primary text-primary-foreground shadow-md ring-1 ring-primary/40 text-xs sm:text-sm">
             <div className="w-7 h-7 rounded-lg bg-primary-foreground/15 flex items-center justify-center flex-shrink-0">
               <ShieldCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5" />

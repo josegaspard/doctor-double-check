@@ -849,11 +849,11 @@ export default function UserProfile() {
           </Card>
         </motion.div>
 
-        {/* Clinical History Card - Patient Only */}
-        {role === 'patient' && <PatientClinicalHistoryCard />}
+        {/* Clinical History Card - también visible para doctores/residentes (cada uno tiene su propio historial personal) */}
+        {(role === 'patient' || role === 'doctor' || role === 'resident') && <PatientClinicalHistoryCard />}
 
-        {/* Vaccination Schedule - Patient Only */}
-        {role === 'patient' && <VaccinationSchedule />}
+        {/* Vaccination Schedule - también visible para doctores/residentes */}
+        {(role === 'patient' || role === 'doctor' || role === 'resident') && <VaccinationSchedule />}
 
         {/* Professional Profile Card - Doctor */}
         {role === 'doctor' && doctorProfile && (

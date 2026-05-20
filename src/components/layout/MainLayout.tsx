@@ -104,7 +104,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient'] },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
   // Hidden per client request 2026-05-18 — page still reachable by direct URL.
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'], hidden: true },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
