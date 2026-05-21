@@ -24,8 +24,8 @@ export default function Contact() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
-    email: 'contacto@medicalmasters.com',
-    phone: '+52 55 1234 5678',
+    email: 'contacto@medical-masters.com',
+    phone: '',
     address: 'Ciudad de México, México',
     content: '',
   });
@@ -69,12 +69,21 @@ export default function Contact() {
 
     setIsSending(true);
     try {
-      // Simulate sending - in a real app this would call an edge function
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data, error } = await supabase.functions.invoke('submit-contact', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        },
+      });
+      if (error || (data && (data as { error?: string }).error)) {
+        throw new Error((data as { error?: string })?.error || error?.message || 'send failed');
+      }
       toast.success(language === 'es' ? 'Mensaje enviado correctamente' : 'Message sent successfully');
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al enviar el mensaje' : 'Error sending message');
+      toast.error(language === 'es' ? 'Error al enviar el mensaje. Intenta de nuevo.' : 'Error sending the message. Please try again.');
     } finally {
       setIsSending(false);
     }
@@ -109,19 +118,21 @@ export default function Contact() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {language === 'es' ? 'Teléfono' : 'Phone'}
-                  </p>
-                  <p className="text-xs sm:text-sm font-medium">{contactInfo.phone}</p>
-                </div>
-              </CardContent>
-            </Card>
+            {contactInfo.phone && (
+              <Card>
+                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {language === 'es' ? 'Teléfono' : 'Phone'}
+                    </p>
+                    <p className="text-xs sm:text-sm font-medium">{contactInfo.phone}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent className="p-3 sm:p-4 flex items-center gap-3">

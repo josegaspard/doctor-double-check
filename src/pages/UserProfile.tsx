@@ -1430,7 +1430,7 @@ export default function UserProfile() {
                     </>
                   )}
                   {role === 'resident' && (
-                    <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/groups')}>
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/resident-groups')}>
                       <Users className="w-4 h-4" />
                       {t('profile.groups')}
                     </Button>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { HelpCircle, MessageCircle, Mail, Phone, Book, Video, FileText, ChevronRight } from 'lucide-react';
+import { HelpCircle, MessageCircle, Mail, ChevronRight } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -11,12 +11,6 @@ export default function Help() {
     { question: t('help.faq2_q'), answer: t('help.faq2_a') },
     { question: t('help.faq3_q'), answer: t('help.faq3_a') },
     { question: t('help.faq4_q'), answer: t('help.faq4_a') },
-  ];
-
-  const resources = [
-    { icon: Book, title: t('help.userGuides'), description: t('help.learnFunctions'), link: '#' },
-    { icon: Video, title: t('help.videoTutorials'), description: t('help.stepByStep'), link: '#' },
-    { icon: FileText, title: t('help.documentation'), description: t('help.techInfo'), link: '#' },
   ];
 
   return (
@@ -44,7 +38,7 @@ export default function Help() {
       {/* Contact Options */}
       <section className="py-8 sm:py-12 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-6">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-6">
             <Link to="/contact" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-colors group">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
                 <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -56,26 +50,15 @@ export default function Help() {
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/60 group-hover:text-primary transition-colors" />
             </Link>
 
-            <a href="mailto:soporte@medicalplatform.com" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-secondary/5 border border-secondary/15 rounded-xl hover:bg-secondary/10 hover:border-secondary/30 transition-colors group">
+            <a href="mailto:soporte@medical-masters.com" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-secondary/5 border border-secondary/15 rounded-xl hover:bg-secondary/10 hover:border-secondary/30 transition-colors group">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-secondary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/25 transition-colors">
                 <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground text-sm sm:text-base">{t('help.email')}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground truncate">soporte@medical.com</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">soporte@medical-masters.com</p>
               </div>
               <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-secondary/60 group-hover:text-secondary transition-colors" />
-            </a>
-
-            <a href="tel:+525551234567" className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 bg-primary/5 border border-primary/15 rounded-xl hover:bg-primary/10 hover:border-primary/30 transition-colors group">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground text-sm sm:text-base">{t('help.phone')}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">+52 55 5123 4567</p>
-              </div>
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/60 group-hover:text-primary transition-colors" />
             </a>
           </div>
         </div>
@@ -102,31 +85,6 @@ export default function Help() {
                   {item.answer}
                 </div>
               </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Resources */}
-      <section className="py-12 sm:py-20 bg-card">
-        <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
-            {t('help.resources')}
-          </h2>
-
-          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
-            {resources.map((resource, index) => (
-              <a
-                key={index}
-                href={resource.link}
-                className="bg-primary/5 border border-primary/15 p-5 sm:p-6 rounded-2xl text-center hover:bg-primary/10 hover:border-primary/30 hover:-translate-y-1 transition-all"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-md">
-                  <resource.icon className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{resource.title}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">{resource.description}</p>
-              </a>
             ))}
           </div>
         </div>

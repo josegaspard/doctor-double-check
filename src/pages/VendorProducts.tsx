@@ -157,7 +157,7 @@ export default function VendorProducts() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p>{t('vendorProductsPage.notVendor.description')}</p>
-              <Button onClick={() => navigate('/vendor')}>{t('vendorProductsPage.notVendor.registerCta')}</Button>
+              <Button onClick={() => navigate('/vendor/dashboard')}>{t('vendorProductsPage.notVendor.registerCta')}</Button>
             </CardContent>
           </Card>
         </div>

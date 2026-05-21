@@ -151,7 +151,7 @@ export default function MedicalSupplies() {
         setShippingDialog(false);
         setPendingProduct(null);
         setShippingForm({ name: '', phone: '', city: '', state: '', zip: '', notes: '' });
-        navigate('/orders');
+        navigate('/my-orders');
       } else {
         throw new Error(data?.error || 'Wallet purchase failed');
       }

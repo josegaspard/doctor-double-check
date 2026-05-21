@@ -232,6 +232,7 @@ const App = () => {
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/medical-record" element={<MedicalRecord />} />
+                      <Route path="/vault" element={<Vault />} />
                       <Route path="/education" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
