@@ -34,7 +34,7 @@ const DEFAULT_FOOTER: FooterLinksData = {
     { label: 'Derechos ARCO', href: '/arco' },
     { label: 'Reportar', href: '/report-issue' },
   ],
-  copyright: '2025 Medical Masters. Todos los derechos reservados.',
+  copyright: '',
   show_status_badge: true,
 };
 

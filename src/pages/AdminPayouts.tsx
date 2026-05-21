@@ -401,6 +401,14 @@ export default function AdminPayouts() {
         }
       }
 
+      // El comprobante es OBLIGATORIO para pagos manuales (transferencia bancaria):
+      // el doctor siempre debe recibir su comprobante por correo.
+      if (payoutMethod === 'manual' && !receiptFile) {
+        toast.error('Debes adjuntar el comprobante de pago para registrar un pago manual.');
+        setIsProcessing(false);
+        return;
+      }
+
       // Upload receipt file via edge function (service role bypasses storage RLS)
       let receiptPath: string | null = null;
       if (payoutMethod === 'manual' && receiptFile) {
@@ -430,6 +438,10 @@ export default function AdminPayouts() {
         } catch (uploadErr: any) {
           console.error('Upload error:', uploadErr);
           toast.error(tt('adminPayoutsPage.toast.uploadError'));
+          // Si el comprobante no se pudo subir, abortamos: nunca se registra
+          // un pago manual sin su comprobante.
+          setIsProcessing(false);
+          return;
         }
       }
 
@@ -472,29 +484,33 @@ export default function AdminPayouts() {
             if (!payoutData?.success) throw new Error(payoutData?.error || 'Error processing manual payout');
           }
 
-          // Send email notification to doctor
-          try {
-            const { data: doctorProfile } = await supabase
-              .from('profiles')
-              .select('email, name')
-              .eq('id', doctor.user_id)
-              .single();
+          // Email al doctor SOLO para pagos manuales: el path Stripe
+          // (process-doctor-payouts) ya envía su propio correo — así se
+          // evita el doble email a los pagos por Stripe.
+          if (method === 'manual') {
+            try {
+              const { data: doctorProfile } = await supabase
+                .from('profiles')
+                .select('email, name')
+                .eq('id', doctor.user_id)
+                .single();
 
-            if (doctorProfile?.email) {
-              await supabase.functions.invoke('send-payout-email', {
-                body: {
-                  doctor_email: doctorProfile.email,
-                  doctor_name: doctorProfile.name,
-                  amount: getNetAmount(doctor.pending_earnings),
-                  method,
-                  reference: manualReference || undefined,
-                  notes: manualNotes || undefined,
-                  receipt_url: receiptPath || undefined,
-                },
-              });
+              if (doctorProfile?.email) {
+                await supabase.functions.invoke('send-payout-email', {
+                  body: {
+                    doctor_email: doctorProfile.email,
+                    doctor_name: doctorProfile.name,
+                    amount: getNetAmount(doctor.pending_earnings),
+                    method,
+                    reference: manualReference || undefined,
+                    notes: manualNotes || undefined,
+                    receipt_url: receiptPath || undefined,
+                  },
+                });
+              }
+            } catch (emailErr) {
+              console.error('Email notification failed:', emailErr);
             }
-          } catch (emailErr) {
-            console.error('Email notification failed:', emailErr);
           }
 
           successCount++;

@@ -109,10 +109,15 @@ export function UnifiedFooter({ variant }: Props) {
 
   const legalLinks = footerLinks.legal.map(translateLink);
 
-  // Copyright translated
+  // Copyright: el superadministrador puede sobrescribirlo desde /admin/site-settings
+  // (site_settings → footer_links.copyright). Si no lo definió, se usa el texto
+  // localizado con el año actual.
   const year = new Date().getFullYear();
   const lang = String(language);
-  const copyright = lang === 'es'
+  const adminCopyright = footerLinks.copyright?.trim();
+  const copyright = adminCopyright
+    ? adminCopyright
+    : lang === 'es'
     ? `${year} Medical Masters. Todos los derechos reservados.`
     : lang === 'pt'
     ? `${year} Medical Masters. Todos os direitos reservados.`
