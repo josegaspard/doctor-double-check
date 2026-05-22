@@ -1,5 +1,7 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
+import { generatePayoutReceiptPdf } from "../_shared/payout-receipt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -252,7 +254,7 @@ Deno.serve(async (req) => {
           },
         });
 
-        // FIX #15: Send email notification to doctor about payout
+        // FIX #15: notificar al doctor y ADJUNTAR SIEMPRE el comprobante PDF.
         try {
           const { data: doctorProfile } = await supabaseAdmin
             .from("profiles")
@@ -263,6 +265,23 @@ Deno.serve(async (req) => {
           if (doctorProfile?.email) {
             const resendKey = Deno.env.get("RESEND_API_KEY");
             if (resendKey) {
+              // Comprobante PDF. Si la generación falla, el correo se envía
+              // igual (sin adjunto): nunca bloquea el pago ya realizado.
+              let attachments: { filename: string; content: string }[] = [];
+              try {
+                const pdf = await generatePayoutReceiptPdf({
+                  doctorName: doctorProfile.name || "Doctor",
+                  amount: payoutAmount,
+                  currency: "MXN",
+                  method: "Stripe (transferencia a cuenta conectada)",
+                  reference: transfer.id,
+                  date: new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" }),
+                  payoutId: transfer.id,
+                });
+                attachments = [{ filename: "comprobante_pago.pdf", content: encodeBase64(pdf) }];
+              } catch (pdfErr) {
+                console.error("No se pudo generar el comprobante PDF:", pdfErr);
+              }
               await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: {
@@ -273,15 +292,16 @@ Deno.serve(async (req) => {
                   from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
                   to: [doctorProfile.email],
                   subject: "💰 Pago procesado - Medical Masters",
+                  attachments,
                   html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                       <h2>¡Hola ${doctorProfile.name || "Doctor"}!</h2>
-                      <p>Se ha procesado un pago a tu cuenta bancaria:</p>
+                      <p>Se ha procesado un pago a tu cuenta bancaria vía Stripe:</p>
                       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-                        <tr><td style="padding: 8px; border-bottom: 1px solid #eee;">Monto bruto:</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${grossAmount.toFixed(2)} MXN</td></tr>
-                        <tr><td style="padding: 8px; border-bottom: 1px solid #eee;">Comisión plataforma:</td><td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right; color: #e53e3e;">-$${(grossAmount - payoutAmount).toFixed(2)} MXN</td></tr>
-                        <tr><td style="padding: 8px; font-weight: bold;">Monto neto:</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #38a169;">$${payoutAmount.toFixed(2)} MXN</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Monto del pago:</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #38a169;">$${payoutAmount.toFixed(2)} MXN</td></tr>
+                        <tr><td style="padding: 8px; border-top: 1px solid #eee;">Referencia Stripe:</td><td style="padding: 8px; border-top: 1px solid #eee; text-align: right; font-size: 12px;">${transfer.id}</td></tr>
                       </table>
+                      <p>Adjuntamos tu <strong>comprobante de pago</strong> en PDF.</p>
                       <p>El depósito llegará a tu cuenta en 2-3 días hábiles.</p>
                       <p style="color: #718096; font-size: 12px;">Este es un correo automático de Medical Masters.</p>
                     </div>

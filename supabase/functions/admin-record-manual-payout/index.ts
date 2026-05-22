@@ -41,25 +41,28 @@ Deno.serve(async (req) => {
   const today = now.split('T')[0]
   const refStr = reference ? `manual_${reference}` : `manual_${Date.now()}`
 
-  // 1. Insert payout record
+  // 1. Descontar el saldo PRIMERO. process_doctor_payout bloquea la fila del
+  //    doctor (FOR UPDATE) y valida saldo suficiente — esto previene el doble
+  //    pago: una segunda llamada concurrente verá saldo 0 y fallará.
+  //    El registro del pago sólo se crea si el descuento tuvo éxito.
+  const { data: rpcData, error: rpcErr } = await db.rpc('process_doctor_payout', {
+    p_doctor_id: doctor_id,
+    p_payout_amount: net_amount,
+    p_gross_amount: gross_amount,
+  })
+  if (rpcErr || !rpcData?.success) {
+    return new Response(JSON.stringify({ error: rpcErr?.message || rpcData?.error || 'No se pudo procesar el pago' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // 2. Registrar el pago (ya con el saldo descontado).
   const { error: insErr } = await db.from('doctor_payouts').insert({
     doctor_id, amount: net_amount, status: 'paid', paid_at: now,
     period_start: today, period_end: today, stripe_transfer_id: refStr,
   })
   if (insErr) {
     return new Response(JSON.stringify({ error: insErr.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
-
-  // 2. RPC to deduct pending and add to total
-  const { data: rpcData, error: rpcErr } = await db.rpc('process_doctor_payout', {
-    p_doctor_id: doctor_id,
-    p_payout_amount: net_amount,
-    p_gross_amount: gross_amount,
-  })
-  if (rpcErr) {
-    return new Response(JSON.stringify({ error: rpcErr.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
