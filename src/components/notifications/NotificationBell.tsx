@@ -64,6 +64,8 @@ function NotificationItem({
         return '💰';
       case 'new_subscriber':
         return '🎉';
+      case 'payment_received':
+        return '💵';
       default:
         return '🔔';
     }
@@ -124,6 +126,10 @@ function NotificationItem({
       case 'new_subscriber':
         // Lleva al doctor a su panel de pacientes/suscriptores
         navigate('/doctor/dashboard');
+        break;
+      case 'payment_received':
+        // Wallet del doctor: panel de ganancias + payouts
+        navigate('/doctor/earnings');
         break;
       case 'system':
         // System notifications - check for URL in data
