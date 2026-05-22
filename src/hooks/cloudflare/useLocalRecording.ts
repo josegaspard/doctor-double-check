@@ -15,9 +15,11 @@ interface LocalRecordingState {
 
 /**
  * Hook para grabación local en el navegador como respaldo.
- * Usa MediaRecorder para capturar el stream mientras se transmite.
- * Utiliza un canvas intermedio para garantizar que los frames se graben
- * con la orientación correcta (fix para grabaciones verticales desde móvil).
+ * Graba el stream local DIRECTO con MediaRecorder.
+ * Sin canvas intermedio: el pipeline canvas rompía la grabación cuando
+ * Daily.co tomaba la cámara o cuando sourceVideo.play() fallaba silenciosamente
+ * (cliente perdiendo grabaciones — incidente 2026-05-22). El issue de orientación
+ * vertical en móvil se resuelve en post por Bunny (auto-rotate del transcode).
  */
 export function useLocalRecording() {
   const [state, setState] = useState<LocalRecordingState>({
@@ -37,29 +39,6 @@ export function useLocalRecording() {
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const stopPromiseResolveRef = useRef<(() => void) | null>(null);
 
-  // Canvas pipeline refs
-  const sourceVideoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const drawIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const cleanupCanvasPipeline = useCallback(() => {
-    if (drawIntervalRef.current) {
-      clearInterval(drawIntervalRef.current);
-      drawIntervalRef.current = null;
-    }
-    if (sourceVideoRef.current) {
-      sourceVideoRef.current.pause();
-      sourceVideoRef.current.srcObject = null;
-      sourceVideoRef.current.remove();
-      sourceVideoRef.current = null;
-    }
-    canvasRef.current = null;
-  }, []);
-
-  /**
-   * Inicia la grabación local del stream.
-   * Usa un canvas intermedio para capturar frames con orientación correcta.
-   */
   const startRecording = useCallback((stream: MediaStream) => {
     if (!stream) {
       console.warn('[LocalRecording] No stream provided');
@@ -69,20 +48,35 @@ export function useLocalRecording() {
     try {
       if (!window.MediaRecorder) {
         console.error('[LocalRecording] MediaRecorder not supported');
+        setState(prev => ({ ...prev, lastError: 'MediaRecorder not supported in this browser' }));
         return false;
       }
 
-      // Determinar el mejor formato soportado
-      const mimeTypes = [
-        'video/mp4',
-        'video/webm;codecs=h264,opus',
+      const videoTracks = stream.getVideoTracks();
+      const audioTracks = stream.getAudioTracks();
+      console.log('[LocalRecording] Stream tracks:', { video: videoTracks.length, audio: audioTracks.length });
+      if (videoTracks.length === 0) {
+        console.error('[LocalRecording] Stream has no video tracks');
+        setState(prev => ({ ...prev, lastError: 'No video track in stream' }));
+        return false;
+      }
+
+      // Cascada de MIME types. WebM/VP8 primero porque es el más compatible
+      // con MediaRecorder (Chrome/Firefox/Edge). Safari iOS 14.5+ ya soporta
+      // video/mp4 con H.264 nativo, pero Chrome MediaRecorder NO siempre acepta
+      // mp4 aunque isTypeSupported('video/mp4') diga true. WebM funciona en
+      // todos los browsers que tienen MediaRecorder.
+      const mimeCandidates = [
         'video/webm;codecs=vp9,opus',
         'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
         'video/webm',
+        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4',
       ];
 
       let selectedMimeType = '';
-      for (const mimeType of mimeTypes) {
+      for (const mimeType of mimeCandidates) {
         if (MediaRecorder.isTypeSupported(mimeType)) {
           selectedMimeType = mimeType;
           break;
@@ -91,118 +85,78 @@ export function useLocalRecording() {
 
       if (!selectedMimeType) {
         console.error('[LocalRecording] No supported MIME type found');
+        setState(prev => ({ ...prev, lastError: 'No supported MIME type for MediaRecorder' }));
         return false;
       }
 
-      console.log('[LocalRecording] Starting with MIME type:', selectedMimeType);
+      console.log('[LocalRecording] Starting MediaRecorder with MIME:', selectedMimeType);
 
-      // Limpiar chunks anteriores y canvas previo
       recordedChunksRef.current = [];
-      cleanupCanvasPipeline();
 
-      // Crear video oculto para renderizar el stream con orientación correcta del navegador
-      const sourceVideo = document.createElement('video');
-      sourceVideo.srcObject = stream;
-      sourceVideo.muted = true;
-      sourceVideo.playsInline = true;
-      sourceVideo.setAttribute('playsinline', 'true');
-      sourceVideo.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
-      document.body.appendChild(sourceVideo);
-      sourceVideoRef.current = sourceVideo;
-
-      // Cuando el video tenga metadatos, crear canvas y empezar a grabar
-      sourceVideo.onloadedmetadata = () => {
-        const w = sourceVideo.videoWidth || 640;
-        const h = sourceVideo.videoHeight || 480;
-
-        console.log('[LocalRecording] Source video dimensions:', w, 'x', h);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d')!;
-        canvasRef.current = canvas;
-
-        // Loop de dibujo: captura frames del video (ya orientados por el navegador)
-        // Usa setInterval para que siga funcionando en background
-        const drawLoop = setInterval(() => {
-          if (sourceVideo.readyState >= 2) {
-            ctx.drawImage(sourceVideo, 0, 0, w, h);
-          }
-        }, 1000 / 30);
-        drawIntervalRef.current = drawLoop;
-
-        // Crear stream del canvas + audio original
-        const recordStream = canvas.captureStream(30);
-        stream.getAudioTracks().forEach(t => {
-          recordStream.addTrack(t);
-        });
-
-        // Crear MediaRecorder con el stream del canvas (frames correctamente orientados)
-        const mediaRecorder = new MediaRecorder(recordStream, {
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, {
           mimeType: selectedMimeType,
-          videoBitsPerSecond: 2500000,
+          videoBitsPerSecond: 2_500_000,
+          audioBitsPerSecond: 128_000,
         });
+      } catch (ctorErr: any) {
+        // Algunos browsers rechazan bitrate hints. Reintenta sin ellos.
+        console.warn('[LocalRecording] MediaRecorder ctor failed with bitrates, retrying minimal:', ctorErr?.message);
+        mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+      }
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            recordedChunksRef.current.push(event.data);
-            console.log('[LocalRecording] Chunk received:', event.data.size, 'bytes');
-            setState(prev => ({
-              ...prev,
-              chunkCount: prev.chunkCount + 1,
-              bytesRecorded: prev.bytesRecorded + event.data.size,
-              hasRecording: true,
-            }));
-          }
-        };
-
-        mediaRecorder.onstop = () => {
-          console.log('[LocalRecording] Recording stopped, total chunks:', recordedChunksRef.current.length);
-          cleanupCanvasPipeline();
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+          console.log('[LocalRecording] Chunk:', event.data.size, 'bytes (total chunks:', recordedChunksRef.current.length + ')');
           setState(prev => ({
             ...prev,
-            isRecording: false,
-            hasRecording: recordedChunksRef.current.length > 0,
+            chunkCount: prev.chunkCount + 1,
+            bytesRecorded: prev.bytesRecorded + event.data.size,
+            hasRecording: true,
           }));
-
-          if (durationIntervalRef.current) {
-            clearInterval(durationIntervalRef.current);
-            durationIntervalRef.current = null;
-          }
-
-          if (stopPromiseResolveRef.current) {
-            stopPromiseResolveRef.current();
-            stopPromiseResolveRef.current = null;
-          }
-        };
-
-        mediaRecorder.onerror = (event: any) => {
-          const msg = event?.error?.message || event?.error?.name || 'MediaRecorder error';
-          console.error('[LocalRecording] Error:', event);
-          setState(prev => ({ ...prev, lastError: msg, isRecording: false }));
-          cleanupCanvasPipeline();
-          setState(prev => ({ ...prev, isRecording: false }));
-        };
-
-        // Iniciar grabación - capturar datos cada 5 segundos
-        mediaRecorder.start(5000);
-        mediaRecorderRef.current = mediaRecorder;
-        startTimeRef.current = Date.now();
-
-        // Actualizar duración cada segundo
-        durationIntervalRef.current = setInterval(() => {
-          const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-          setState(prev => ({ ...prev, recordingDuration: duration }));
-        }, 1000);
-
-        console.log('[LocalRecording] ✅ Recording started via canvas pipeline');
+        } else {
+          console.warn('[LocalRecording] Empty chunk received (size 0) — stream may have no frames');
+        }
       };
 
-      sourceVideo.play().catch(err => {
-        console.error('[LocalRecording] Failed to play source video:', err);
-        cleanupCanvasPipeline();
-      });
+      mediaRecorder.onstop = () => {
+        console.log('[LocalRecording] Stopped. Total chunks:', recordedChunksRef.current.length,
+          'bytes:', recordedChunksRef.current.reduce((a, b) => a + b.size, 0));
+        setState(prev => ({
+          ...prev,
+          isRecording: false,
+          hasRecording: recordedChunksRef.current.length > 0,
+        }));
+
+        if (durationIntervalRef.current) {
+          clearInterval(durationIntervalRef.current);
+          durationIntervalRef.current = null;
+        }
+
+        if (stopPromiseResolveRef.current) {
+          stopPromiseResolveRef.current();
+          stopPromiseResolveRef.current = null;
+        }
+      };
+
+      mediaRecorder.onerror = (event: any) => {
+        const msg = event?.error?.message || event?.error?.name || 'MediaRecorder error';
+        console.error('[LocalRecording] MediaRecorder error:', event);
+        setState(prev => ({ ...prev, lastError: msg }));
+      };
+
+      // timeslice: chunk cada 2s. Más chunks = menos pérdida si el browser
+      // mata el tab inesperadamente, y el resumer puede empezar a subir antes.
+      mediaRecorder.start(2000);
+      mediaRecorderRef.current = mediaRecorder;
+      startTimeRef.current = Date.now();
+
+      durationIntervalRef.current = setInterval(() => {
+        const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        setState(prev => ({ ...prev, recordingDuration: duration }));
+      }, 1000);
 
       setState(prev => ({
         ...prev,
@@ -214,14 +168,14 @@ export function useLocalRecording() {
         lastError: null,
       }));
 
+      console.log('[LocalRecording] ✅ Recording started (direct stream)');
       return true;
     } catch (error: any) {
       console.error('[LocalRecording] Failed to start:', error);
       setState(prev => ({ ...prev, lastError: error?.message || 'Failed to start MediaRecorder', isRecording: false }));
-      cleanupCanvasPipeline();
       return false;
     }
-  }, [cleanupCanvasPipeline]);
+  }, []);
 
   /**
    * Detiene la grabación local
@@ -237,14 +191,17 @@ export function useLocalRecording() {
       if (recorder && recorder.state !== 'inactive') {
         console.log('[LocalRecording] Stopping recording...');
         stopPromiseResolveRef.current = resolve;
+        // requestData fuerza flush del buffer actual ANTES de stop, así no
+        // perdemos el último chunk parcial (ej. live de 1.5s con timeslice 2s
+        // antes no entregaba nada).
+        try { recorder.requestData(); } catch { /* ignore */ }
         recorder.stop();
         return;
       }
 
-      cleanupCanvasPipeline();
       resolve();
     });
-  }, [cleanupCanvasPipeline]);
+  }, []);
 
   /**
    * Obtiene el blob de la grabación
@@ -452,7 +409,6 @@ export function useLocalRecording() {
    */
   const cleanup = useCallback(() => {
     stopRecording();
-    cleanupCanvasPipeline();
     recordedChunksRef.current = [];
     setState({
       isRecording: false,
@@ -460,8 +416,11 @@ export function useLocalRecording() {
       isUploading: false,
       uploadProgress: 0,
       recordingDuration: 0,
+      chunkCount: 0,
+      bytesRecorded: 0,
+      lastError: null,
     });
-  }, [stopRecording, cleanupCanvasPipeline]);
+  }, [stopRecording]);
 
   return {
     ...state,
