@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -21,6 +21,7 @@ import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCa
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
   Loader2, Save, FileText, Stethoscope, Download, ShieldCheck,
+  Check, CloudOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportClinicalSummary } from '@/lib/exportClinicalSummary';
@@ -225,6 +226,14 @@ export default function MedicalRecord() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasRecord, setHasRecord] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadDoneRef = useRef(false);
+  const hasRecordRef = useRef(false);
+  const dataRef = useRef<ClinicalData>(DEFAULT_DATA);
+  useEffect(() => { dataRef.current = data; }, [data]);
+  useEffect(() => { hasRecordRef.current = hasRecord; }, [hasRecord]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -332,61 +341,69 @@ export default function MedicalRecord() {
     setData(prev => ({ ...prev, surgeries: prev.surgeries.map((s, idx) => idx === i ? { ...s, [field]: value } : s) }));
   };
 
-  const handleSave = async () => {
-    if (!user?.id) return;
-    setIsSaving(true);
+  // Persiste el expediente. silent=true para auto-guardado (sin toast).
+  // Usa los refs para que el callback del setTimeout siempre vea el estado más
+  // reciente sin tener que recrearse cada vez que cambia `data` (lo cual
+  // reiniciaría el debounce en cada teclazo).
+  const persistData = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!user?.id) return { ok: false };
+    const silent = !!opts?.silent;
+    const d = dataRef.current;
+    const wasNew = !hasRecordRef.current;
+    if (silent) setAutoSaveStatus('saving');
+    else setIsSaving(true);
     try {
       const payload = {
         patient_id: user.id,
-        sex: data.sex || null,
-        date_of_birth: data.date_of_birth || null,
-        blood_type: data.blood_type || null,
-        height_cm: data.height_cm ? parseFloat(data.height_cm) : null,
-        weight_kg: data.weight_kg ? parseFloat(data.weight_kg) : null,
-        allergies: data.allergies || null,
-        chronic_conditions: JSON.stringify(data.chronic_conditions_list),
-        current_medications: JSON.stringify(data.medications),
-        previous_surgeries: JSON.stringify(data.surgeries),
-        emergency_contact_name: data.emergency_contact_name || null,
-        emergency_contact_phone: data.emergency_contact_phone || null,
-        family_diabetes: data.family_diabetes,
-        family_diabetes_detail: data.family_diabetes_detail || null,
-        family_hypertension: data.family_hypertension,
-        family_hypertension_detail: data.family_hypertension_detail || null,
-        family_cancer: data.family_cancer,
-        family_cancer_detail: data.family_cancer_detail || null,
-        family_heart_disease: data.family_heart_disease,
-        family_heart_disease_detail: data.family_heart_disease_detail || null,
-        family_mental_illness: data.family_mental_illness,
-        family_mental_illness_detail: data.family_mental_illness_detail || null,
-        family_other: data.family_other || null,
-        family_history: JSON.stringify(data.extra_family),
-        habit_alcohol: data.habit_alcohol,
-        habit_smoking: data.habit_smoking,
-        habit_vaping: data.habit_vaping,
-        habit_hookah: data.habit_hookah,
-        habit_drugs: data.habit_drugs,
-        habit_exercise: data.habit_exercise,
-        habit_alcohol_amount: data.habit_alcohol_amount || null,
-        habit_smoking_amount: data.habit_smoking_amount || null,
-        habit_vaping_amount: data.habit_vaping_amount || null,
-        habit_hookah_amount: data.habit_hookah_amount || null,
-        habit_drugs_amount: data.habit_drugs_amount || null,
-        habit_exercise_amount: data.habit_exercise_amount || null,
-        gyn_last_period: data.gyn_last_period || null,
-        gyn_pregnancies: parseInt(data.gyn_pregnancies) || 0,
-        gyn_births: parseInt(data.gyn_births) || 0,
-        gyn_cesareans: parseInt(data.gyn_cesareans) || 0,
-        gyn_abortions: parseInt(data.gyn_abortions) || 0,
-        gyn_contraceptive: data.gyn_contraceptive || null,
-        gyn_pap_result: data.gyn_pap_result || null,
-        vaccines: data.vaccines,
-        notes: data.notes || null,
+        sex: d.sex || null,
+        date_of_birth: d.date_of_birth || null,
+        blood_type: d.blood_type || null,
+        height_cm: d.height_cm ? parseFloat(d.height_cm) : null,
+        weight_kg: d.weight_kg ? parseFloat(d.weight_kg) : null,
+        allergies: d.allergies || null,
+        chronic_conditions: JSON.stringify(d.chronic_conditions_list),
+        current_medications: JSON.stringify(d.medications),
+        previous_surgeries: JSON.stringify(d.surgeries),
+        emergency_contact_name: d.emergency_contact_name || null,
+        emergency_contact_phone: d.emergency_contact_phone || null,
+        family_diabetes: d.family_diabetes,
+        family_diabetes_detail: d.family_diabetes_detail || null,
+        family_hypertension: d.family_hypertension,
+        family_hypertension_detail: d.family_hypertension_detail || null,
+        family_cancer: d.family_cancer,
+        family_cancer_detail: d.family_cancer_detail || null,
+        family_heart_disease: d.family_heart_disease,
+        family_heart_disease_detail: d.family_heart_disease_detail || null,
+        family_mental_illness: d.family_mental_illness,
+        family_mental_illness_detail: d.family_mental_illness_detail || null,
+        family_other: d.family_other || null,
+        family_history: JSON.stringify(d.extra_family),
+        habit_alcohol: d.habit_alcohol,
+        habit_smoking: d.habit_smoking,
+        habit_vaping: d.habit_vaping,
+        habit_hookah: d.habit_hookah,
+        habit_drugs: d.habit_drugs,
+        habit_exercise: d.habit_exercise,
+        habit_alcohol_amount: d.habit_alcohol_amount || null,
+        habit_smoking_amount: d.habit_smoking_amount || null,
+        habit_vaping_amount: d.habit_vaping_amount || null,
+        habit_hookah_amount: d.habit_hookah_amount || null,
+        habit_drugs_amount: d.habit_drugs_amount || null,
+        habit_exercise_amount: d.habit_exercise_amount || null,
+        gyn_last_period: d.gyn_last_period || null,
+        gyn_pregnancies: parseInt(d.gyn_pregnancies) || 0,
+        gyn_births: parseInt(d.gyn_births) || 0,
+        gyn_cesareans: parseInt(d.gyn_cesareans) || 0,
+        gyn_abortions: parseInt(d.gyn_abortions) || 0,
+        gyn_contraceptive: d.gyn_contraceptive || null,
+        gyn_pap_result: d.gyn_pap_result || null,
+        vaccines: d.vaccines,
+        notes: d.notes || null,
         updated_at: new Date().toISOString(),
       };
 
       let error;
-      if (hasRecord) {
+      if (hasRecordRef.current) {
         ({ error } = await supabase
           .from('patient_clinical_history')
           .update(payload as any)
@@ -395,18 +412,74 @@ export default function MedicalRecord() {
         ({ error } = await supabase
           .from('patient_clinical_history')
           .insert(payload as any));
-        if (!error) setHasRecord(true);
+        if (!error) {
+          setHasRecord(true);
+          hasRecordRef.current = true;
+        }
       }
 
       if (error) throw error;
-      toast.success(t('medicalRecordPage.toastSaveSuccess'));
+      setLastSavedAt(new Date());
+      if (silent) {
+        setAutoSaveStatus('saved');
+      } else {
+        toast.success(wasNew ? t('medicalRecordPage.toastSaveSuccess') : t('medicalRecordPage.toastSaveSuccess'));
+      }
+      return { ok: true };
     } catch (err) {
-      console.error(err);
-      toast.error(t('medicalRecordPage.toastSaveError'));
+      console.error('[MedicalRecord] persist failed:', err);
+      if (silent) setAutoSaveStatus('error');
+      else toast.error(t('medicalRecordPage.toastSaveError'));
+      return { ok: false };
     } finally {
-      setIsSaving(false);
+      if (silent) setIsSaving(false);
+      else setIsSaving(false);
     }
-  };
+  }, [user?.id, t]);
+
+  const handleSave = () => persistData({ silent: false });
+
+  // Auto-guardado: 1.5s después del último cambio el cliente persiste solo.
+  // Saltamos el primer render (la carga inicial setea `data` desde la DB y
+  // no debe volver a guardarse). El estado autoSaveStatus alimenta el chip
+  // del header para que el usuario vea "Guardando…" / "Guardado" sin spam
+  // de toasts.
+  useEffect(() => {
+    if (isLoading) return;
+    if (!initialLoadDoneRef.current) {
+      initialLoadDoneRef.current = true;
+      return;
+    }
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    setAutoSaveStatus('saving');
+    autosaveTimerRef.current = setTimeout(() => {
+      persistData({ silent: true });
+    }, 1500);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [data, isLoading, persistData]);
+
+  // Guardado final al salir de la página: el debounce de 1.5s puede no
+  // haber disparado todavía. visibilitychange (cuando el tab pasa a hidden)
+  // dispara un save sincrónico para no perder el último input.
+  useEffect(() => {
+    const flushOnHide = () => {
+      if (document.visibilityState === 'hidden' && initialLoadDoneRef.current) {
+        if (autosaveTimerRef.current) {
+          clearTimeout(autosaveTimerRef.current);
+          autosaveTimerRef.current = null;
+        }
+        persistData({ silent: true });
+      }
+    };
+    document.addEventListener('visibilitychange', flushOnHide);
+    window.addEventListener('pagehide', flushOnHide);
+    return () => {
+      document.removeEventListener('visibilitychange', flushOnHide);
+      window.removeEventListener('pagehide', flushOnHide);
+    };
+  }, [persistData]);
 
   if (!['patient', 'doctor', 'resident'].includes(role || '')) return <Navigate to="/lives" replace />;
 
@@ -431,6 +504,19 @@ export default function MedicalRecord() {
               <span className="truncate">{t('medicalRecordPage.header.title')}</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">{t('medicalRecordPage.header.subtitle')}</p>
+            {autoSaveStatus !== 'idle' && (
+              <div className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                {autoSaveStatus === 'saving' && (
+                  <><Loader2 className="w-3 h-3 animate-spin" /> {t('medicalRecordPage.autoSave.saving') || 'Guardando…'}</>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <><Check className="w-3 h-3 text-emerald-600" /> {t('medicalRecordPage.autoSave.saved') || 'Guardado'}{lastSavedAt ? ` · ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}</>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <><CloudOff className="w-3 h-3 text-destructive" /> {t('medicalRecordPage.autoSave.error') || 'No se pudo auto-guardar'}</>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {(role === 'patient' || role === 'doctor' || role === 'resident') && hasRecord && (
