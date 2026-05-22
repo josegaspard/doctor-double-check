@@ -178,3 +178,32 @@ drop trigger if exists trg_ledger_subscription on public.subscriptions;
 create trigger trg_ledger_subscription
   after insert on public.subscriptions
   for each row execute function public.fn_ledger_subscription();
+
+-- =========================================================================
+-- TRIGGER: ad_payments -> ledger (ingresos por publicidad, 100% plataforma)
+-- =========================================================================
+create or replace function public.fn_ledger_ad_payment()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status is distinct from 'paid' then return new; end if;
+  if exists (select 1 from public.accounting_ledger where transaction_group = new.id) then
+    return new;
+  end if;
+  perform public.fn_post_service_sale(
+    new.id, 'other', new.amount, 'MXN', 'Ingreso por publicidad',
+    jsonb_build_object('source', 'ad_payment', 'ad_payment_id', new.id, 'campaign_id', new.campaign_id)
+  );
+  return new;
+exception when others then
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_ledger_ad_payment on public.ad_payments;
+create trigger trg_ledger_ad_payment
+  after insert or update of status on public.ad_payments
+  for each row execute function public.fn_ledger_ad_payment();

@@ -16,6 +16,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  );
 
   try {
     const authHeader = req.headers.get("Authorization")!;
@@ -35,7 +39,7 @@ serve(async (req) => {
     if (!Number.isFinite(amount) || amount < 100 || amount > 1000000) {
       throw new Error("Amount must be between 100 and 1,000,000 MXN");
     }
-    const { data: campaign, error: campErr } = await supabase
+    const { data: campaign, error: campErr } = await supabaseAdmin
       .from("ad_campaigns")
       .select("advertiser_id, status")
       .eq("id", campaign_id)
@@ -83,11 +87,6 @@ serve(async (req) => {
     });
 
     // Create payment record
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
     await supabaseAdmin.from("ad_payments").insert({
       campaign_id,
       amount,

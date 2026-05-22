@@ -102,6 +102,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "marketplace_purchase" && session.payment_status === "paid") {
         await handleMarketplacePurchase(db, session);
       }
+      if (session.metadata?.type === "ad_campaign" && session.payment_status === "paid") {
+        await handleAdPurchaseCompleted(db, session);
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -128,7 +131,7 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "marketplace_purchase") {
         await handleMarketplaceCheckoutExpired(db, session);
       }
-      if (session.metadata?.type === "ad_purchase") {
+      if (session.metadata?.type === "ad_campaign") {
         await handleAdCheckoutExpired(db, session);
       }
     }
@@ -1215,6 +1218,25 @@ async function handleMarketplaceCheckoutExpired(db: ReturnType<typeof supabaseAd
 
 // Mark an abandoned ad_payment when its checkout session expires so we don't
 // keep stale "pending" rows forever and so we can clean them up later.
+// Ad checkout completado: confirma el pago (ad_payments -> paid, lo que el
+// trigger contable convierte en ingreso) y manda la campaña a revisión admin.
+async function handleAdPurchaseCompleted(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const campaignId = session.metadata?.campaign_id;
+  const { error: payErr } = await db
+    .from("ad_payments")
+    .update({ status: "paid" })
+    .eq("stripe_session_id", session.id)
+    .eq("status", "pending");
+  if (payErr) {
+    logStep("Error marking ad_payment as paid", { error: payErr.message, sessionId: session.id });
+    return;
+  }
+  if (campaignId) {
+    await db.from("ad_campaigns").update({ status: "pending_review" }).eq("id", campaignId);
+  }
+  logStep("ad_payment marked paid", { sessionId: session.id, campaignId });
+}
+
 async function handleAdCheckoutExpired(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
   const { error } = await db
     .from("ad_payments")
