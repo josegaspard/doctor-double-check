@@ -1,6 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Lock, Eye, Server, CheckCircle, Key, FileCheck } from 'lucide-react';
+import { Shield, Lock, Eye, Server, CheckCircle, Key, FileCheck, Loader2 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'dompurify';
 
 const securityFeatures = [
   {
@@ -43,6 +47,47 @@ const certifications = [
 ];
 
 export default function Security() {
+  // El superadministrador puede sobrescribir esta página desde
+  // /admin/site-settings (pestaña Páginas). Si no, se muestra el contenido
+  // por defecto de abajo.
+  const [customContent, setCustomContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from('site_settings').select('value').eq('id', 'security_policy').maybeSingle()
+      .then(({ data }) => {
+        const c = (data?.value as { content?: string } | null)?.content;
+        if (c && c.trim()) setCustomContent(c);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-[50vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (customContent) {
+    return (
+      <MainLayout>
+        <main className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-14 pb-8 sm:pb-12 max-w-3xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Seguridad</CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(customContent) }} />
+            </CardContent>
+          </Card>
+        </main>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       {/* Hero */}

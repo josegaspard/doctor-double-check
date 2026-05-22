@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,12 +19,23 @@ export default function ArcoRights() {
   const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [customContent, setCustomContent] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: '',
     email: '',
     request_type: 'access' as 'access' | 'rectification' | 'cancellation' | 'opposition',
     description: '',
   });
+
+  // Contenido informativo editable desde /admin/site-settings (pestaña Páginas).
+  // El formulario de solicitud ARCO se mantiene siempre.
+  useEffect(() => {
+    supabase.from('site_settings').select('value').eq('id', 'arco_policy').maybeSingle()
+      .then(({ data }) => {
+        const c = (data?.value as { content?: string } | null)?.content;
+        if (c && c.trim()) setCustomContent(c);
+      });
+  }, []);
 
   const arcoSchema = z.object({
     full_name: z.string().trim().min(2, t('arcoRightsPage.validation.nameTooShort')).max(200),
@@ -72,6 +84,14 @@ export default function ArcoRights() {
           className="text-sm text-muted-foreground mb-6"
           dangerouslySetInnerHTML={{ __html: t('arcoRightsPage.intro') }}
         />
+
+        {customContent && (
+          <Card className="mb-6">
+            <CardContent className="pt-6 prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(customContent) }} />
+            </CardContent>
+          </Card>
+        )}
 
         {submitted ? (
           <Card>

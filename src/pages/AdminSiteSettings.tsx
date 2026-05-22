@@ -93,6 +93,9 @@ export default function AdminSiteSettings() {
 
   const [termsContent, setTermsContent] = useState('');
   const [privacyContent, setPrivacyContent] = useState('');
+  const [securityContent, setSecurityContent] = useState('');
+  const [complianceContent, setComplianceContent] = useState('');
+  const [arcoContent, setArcoContent] = useState('');
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
     email: 'contacto@medicalmasters.com',
     phone: '+52 55 1234 5678',
@@ -184,6 +187,18 @@ export default function AdminSiteSettings() {
         if (privacyData?.value) {
           const privacy = privacyData.value as unknown as LegalContent;
           setPrivacyContent(privacy.content || '');
+        }
+
+        // Páginas legales adicionales (Seguridad / Cumplimiento / ARCO)
+        const { data: legalPages } = await supabase
+          .from('site_settings')
+          .select('id, value')
+          .in('id', ['security_policy', 'compliance_policy', 'arco_policy']);
+        for (const row of legalPages || []) {
+          const c = ((row.value as unknown as LegalContent)?.content) || '';
+          if (row.id === 'security_policy') setSecurityContent(c);
+          if (row.id === 'compliance_policy') setComplianceContent(c);
+          if (row.id === 'arco_policy') setArcoContent(c);
         }
 
         // Fetch contact info
@@ -303,6 +318,28 @@ export default function AdminSiteSettings() {
     } catch (error) {
       console.error('Error saving privacy:', error);
       toast.error(t('adminSiteSettingsPage.privacy.saveError'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Guarda una página legal opcional (Seguridad / Cumplimiento / ARCO).
+  // Si queda vacía, la página pública muestra su contenido por defecto.
+  const handleSaveLegalPage = async (id: string, content: string) => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id,
+          value: { content, lastUpdated: new Date().toISOString() },
+          updated_by: supabaseUser?.id,
+        });
+      if (error) throw error;
+      toast.success('Página actualizada');
+    } catch (error) {
+      console.error('Error saving legal page:', error);
+      toast.error('Error al guardar la página');
     } finally {
       setIsSaving(false);
     }
@@ -447,6 +484,10 @@ export default function AdminSiteSettings() {
               <TabsTrigger value="toggles" className="gap-2 text-xs">
                 <ToggleLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.toggles')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="gap-2 text-xs">
+                <FileText className="w-4 h-4" />
+                <span className="hidden sm:inline">Páginas</span>
               </TabsTrigger>
             </TabsList>
 
@@ -999,6 +1040,60 @@ export default function AdminSiteSettings() {
                     )}
                     {t('adminSiteSettingsPage.toggles.save')}
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Legal pages: Seguridad / Cumplimiento / ARCO */}
+            <TabsContent value="pages">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="w-5 h-5" />
+                    Páginas del footer
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Contenido de Seguridad, Cumplimiento y Derechos ARCO. Si dejas una sección
+                    vacía, la página pública muestra su contenido por defecto.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm">Seguridad</h3>
+                    <RichTextLegalEditor
+                      content={securityContent}
+                      onChange={setSecurityContent}
+                      placeholder="Contenido de la página de Seguridad…"
+                    />
+                    <Button onClick={() => handleSaveLegalPage('security_policy', securityContent)} disabled={isSaving} className="w-full">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Guardar Seguridad
+                    </Button>
+                  </div>
+                  <div className="space-y-3 border-t pt-6">
+                    <h3 className="font-semibold text-sm">Cumplimiento</h3>
+                    <RichTextLegalEditor
+                      content={complianceContent}
+                      onChange={setComplianceContent}
+                      placeholder="Contenido de la página de Cumplimiento…"
+                    />
+                    <Button onClick={() => handleSaveLegalPage('compliance_policy', complianceContent)} disabled={isSaving} className="w-full">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Guardar Cumplimiento
+                    </Button>
+                  </div>
+                  <div className="space-y-3 border-t pt-6">
+                    <h3 className="font-semibold text-sm">Derechos ARCO</h3>
+                    <RichTextLegalEditor
+                      content={arcoContent}
+                      onChange={setArcoContent}
+                      placeholder="Contenido de la página de Derechos ARCO…"
+                    />
+                    <Button onClick={() => handleSaveLegalPage('arco_policy', arcoContent)} disabled={isSaving} className="w-full">
+                      {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                      Guardar ARCO
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
