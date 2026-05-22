@@ -357,6 +357,32 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
   if (recording?.doctor_id) {
     // FIX #1: Use atomic credit function
     await creditDoctorEarningsAtomic(db, recording.doctor_id, amount, "recording", recordingId);
+
+    // Notificar al doctor: "te compraron contenido" — el frontend usa
+    // notification.type + data.recording_id para llevarlo a la grabación.
+    try {
+      const { data: rec } = await db
+        .from("recordings")
+        .select("title")
+        .eq("id", recordingId)
+        .maybeSingle();
+      const { data: buyerProfile } = await db
+        .from("profiles")
+        .select("name")
+        .eq("id", userId)
+        .maybeSingle();
+      const buyerName = buyerProfile?.name || "Un usuario";
+      const title = rec?.title || "tu grabación";
+      await db.from("notifications").insert({
+        user_id: recording.doctor_id,
+        type: "recording_purchase",
+        title: "Nueva compra de contenido",
+        message: `${buyerName} compró "${title}" por $${amount.toFixed(2)} MXN`,
+        data: { recording_id: recordingId, buyer_id: userId, amount },
+      });
+    } catch (e: any) {
+      logStep("Failed to notify doctor of purchase", { error: e.message });
+    }
   }
 }
 

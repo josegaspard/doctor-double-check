@@ -12,6 +12,8 @@ interface PatientInfo {
   name: string;
   avatarUrl?: string;
   lastInteraction: string;
+  source?: 'chat' | 'consultation' | 'subscriber';
+  tier?: 'free' | 'basic' | 'premium';
 }
 
 export function DoctorPatientsList() {
@@ -34,7 +36,13 @@ export function DoctorPatientsList() {
 
         if (!sessions) { setLoading(false); return; }
 
-        const patientMap = new Map<string, string>();
+        // patientMap registra ID → { lastInteraction, source, tier }. Si un
+        // mismo usuario aparece como chat y como suscriptor preferimos la
+        // marca de chat (interacción más cercana). Pero si solo es suscriptor,
+        // igual lo mostramos para que el doctor vea su audiencia completa.
+        type Entry = { lastInteraction: string; source: PatientInfo['source']; tier?: PatientInfo['tier'] };
+        const patientMap = new Map<string, Entry>();
+
         sessions.forEach(s => {
           let patientId: string | null = null;
           if (s.participant1_id === supabaseUser.id && s.participant2_type === 'patient') {
@@ -43,7 +51,7 @@ export function DoctorPatientsList() {
             patientId = s.participant1_id;
           }
           if (patientId && !patientMap.has(patientId)) {
-            patientMap.set(patientId, s.last_message_at || s.last_message_at || '');
+            patientMap.set(patientId, { lastInteraction: s.last_message_at || '', source: 'chat' });
           }
         });
 
@@ -56,7 +64,31 @@ export function DoctorPatientsList() {
 
         consults?.forEach(c => {
           if (!patientMap.has(c.patient_id)) {
-            patientMap.set(c.patient_id, c.started_at);
+            patientMap.set(c.patient_id, { lastInteraction: c.started_at, source: 'consultation' });
+          }
+        });
+
+        // Suscriptores: el doctor pidió ver TODOS sus seguidores como
+        // pacientes (free y de pago). Trigger DB ya envía notificación al
+        // nuevo seguidor; aquí los unimos al listado para visibilidad.
+        const { data: subs } = await supabase
+          .from('subscriptions')
+          .select('subscriber_id, tier, created_at')
+          .eq('creator_id', supabaseUser.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        subs?.forEach(s => {
+          if (!patientMap.has(s.subscriber_id)) {
+            patientMap.set(s.subscriber_id, {
+              lastInteraction: s.created_at,
+              source: 'subscriber',
+              tier: s.tier as PatientInfo['tier'],
+            });
+          } else {
+            // Si ya estaba como chat/consulta, anotar tier para badge
+            const existing = patientMap.get(s.subscriber_id)!;
+            existing.tier = s.tier as PatientInfo['tier'];
           }
         });
 
@@ -70,12 +102,17 @@ export function DoctorPatientsList() {
 
         const result: PatientInfo[] = (profiles || [])
           .filter(p => p.id)
-          .map(p => ({
-            id: p.id!,
-            name: p.name || 'Paciente',
-            avatarUrl: p.avatar_url || undefined,
-            lastInteraction: patientMap.get(p.id!) || '',
-          }))
+          .map(p => {
+            const entry = patientMap.get(p.id!)!;
+            return {
+              id: p.id!,
+              name: p.name || 'Paciente',
+              avatarUrl: p.avatar_url || undefined,
+              lastInteraction: entry.lastInteraction,
+              source: entry.source,
+              tier: entry.tier,
+            };
+          })
           .sort((a, b) => (b.lastInteraction || '').localeCompare(a.lastInteraction || ''));
 
         setPatients(result);
@@ -123,10 +160,21 @@ export function DoctorPatientsList() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{patient.name}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-medium text-sm truncate">{patient.name}</p>
+                  {patient.tier === 'premium' && (
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-semibold">★ Premium</span>
+                  )}
+                  {patient.tier === 'basic' && (
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">Básico</span>
+                  )}
+                  {patient.source === 'subscriber' && patient.tier === 'free' && (
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">Seguidor</span>
+                  )}
+                </div>
                 {patient.lastInteraction && (
                   <p className="text-xs text-muted-foreground">
-                    Último contacto: {formatDate(patient.lastInteraction)}
+                    {patient.source === 'subscriber' ? 'Suscrito desde' : 'Último contacto'}: {formatDate(patient.lastInteraction)}
                   </p>
                 )}
               </div>

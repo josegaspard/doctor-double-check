@@ -60,6 +60,10 @@ function NotificationItem({
         return '⭐';
       case 'rating_request':
         return '⭐';
+      case 'recording_purchase':
+        return '💰';
+      case 'new_subscriber':
+        return '🎉';
       default:
         return '🔔';
     }
@@ -108,6 +112,18 @@ function NotificationItem({
         break;
       case 'subscription_update':
         navigate('/settings');
+        break;
+      case 'recording_purchase':
+        // Lleva al doctor a su panel de grabaciones (la específica si tenemos ID)
+        if (data.recording_id || data.recordingId) {
+          navigate(`/recording/${data.recording_id || data.recordingId}`);
+        } else {
+          navigate('/doctor/recordings');
+        }
+        break;
+      case 'new_subscriber':
+        // Lleva al doctor a su panel de pacientes/suscriptores
+        navigate('/doctor/dashboard');
         break;
       case 'system':
         // System notifications - check for URL in data

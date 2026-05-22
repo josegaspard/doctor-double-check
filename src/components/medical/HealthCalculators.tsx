@@ -31,18 +31,24 @@ function BMICalculator() {
   const { t } = useLanguage();
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [result, setResult] = useState<{ bmi: number; range: typeof BMI_RANGES[0]; idealMin: number; idealMax: number } | null>(null);
 
-  const calculate = () => {
+  // Cálculo derivado en cada render — sin botón. Apenas el usuario completa
+  // altura y peso aparece el resultado, como espera cualquier app de salud
+  // moderna. El botón se queda como "Recalcular" puramente cosmético para
+  // accesibilidad / teclado.
+  const result = React.useMemo(() => {
     const h = parseFloat(height) / 100;
     const w = parseFloat(weight);
-    if (!h || !w || h <= 0) return;
+    if (!h || !w || h <= 0 || w <= 0) return null;
     const bmi = w / (h * h);
+    if (!isFinite(bmi)) return null;
     const range = BMI_RANGES.find(r => bmi >= r.min && bmi < r.max) || BMI_RANGES[7];
     const idealMin = Math.round(18.5 * h * h * 10) / 10;
     const idealMax = Math.round(24.9 * h * h * 10) / 10;
-    setResult({ bmi: Math.round(bmi * 10) / 10, range, idealMin, idealMax });
-  };
+    return { bmi: Math.round(bmi * 10) / 10, range, idealMin, idealMax };
+  }, [height, weight]);
+
+  const calculate = () => { /* no-op: cálculo es reactivo */ };
 
   const bmiPosition = result ? Math.min(Math.max(((result.bmi - 12) / 38) * 100, 0), 100) : 0;
 
@@ -573,21 +579,20 @@ function PediatricDosing() {
   const [dosePerKg, setDosePerKg] = useState('');
   const [frequency, setFrequency] = useState('8');
   const [concentration, setConcentration] = useState('');
-  const [result, setResult] = useState<{ dose: number; dailyDose: number; volume?: number } | null>(null);
 
-  const calculate = () => {
+  const result = React.useMemo(() => {
     const w = parseFloat(weight);
     const d = parseFloat(dosePerKg);
-    if (!w || !d) return;
-
+    if (!w || !d || w <= 0 || d <= 0) return null;
     const dose = Math.round(w * d * 10) / 10;
-    const freq = 24 / parseInt(frequency);
+    const freq = 24 / parseInt(frequency || '8');
     const dailyDose = Math.round(dose * freq * 10) / 10;
     const conc = parseFloat(concentration);
-    const volume = conc ? Math.round((dose / conc) * 10) / 10 : undefined;
+    const volume = conc && conc > 0 ? Math.round((dose / conc) * 10) / 10 : undefined;
+    return { dose, dailyDose, volume };
+  }, [weight, dosePerKg, frequency, concentration]);
 
-    setResult({ dose, dailyDose, volume });
-  };
+  const calculate = () => { /* no-op: reactivo */ };
 
   return (
     <Card>

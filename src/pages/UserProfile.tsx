@@ -70,6 +70,7 @@ const COUNTRY_CODES = [
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
+import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
 
@@ -848,6 +849,9 @@ export default function UserProfile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Doctores que sigues / suscripciones — los 3 roles pueden seguir doctores */}
+        {(role === 'patient' || role === 'doctor' || role === 'resident') && <MySubscribedDoctorsCard />}
 
         {/* Clinical History Card - también visible para doctores/residentes (cada uno tiene su propio historial personal) */}
         {(role === 'patient' || role === 'doctor' || role === 'resident') && <PatientClinicalHistoryCard />}

@@ -87,7 +87,10 @@ export default function Wallet() {
     }
   }, [searchParams, setSearchParams, refreshWallet, toast, t]);
 
-  if (role !== 'patient' && role !== 'resident') {
+  // Doctores también acceden a wallet: pueden cargar saldo para comprar
+  // contenido de colegas, pagar reuniones premium, etc. Sus ganancias siguen
+  // en /doctor/earnings (panel separado de payouts).
+  if (role !== 'patient' && role !== 'resident' && role !== 'doctor') {
     return <Navigate to="/lives" replace />;
   }
 
