@@ -36,6 +36,7 @@ import {
   ArrowLeft,
   ArrowRight,
   UserPlus,
+  X,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -468,11 +469,29 @@ export default function Doctors() {
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
             <Input
+              type="search"
+              name="doctors-search-q"
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="search"
+              data-1p-ignore
+              data-lpignore="true"
+              aria-label={t('inputs.searchDoctors')}
               placeholder={t('inputs.searchDoctors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary text-sm placeholder:text-muted-foreground"
+              className="pl-10 pr-10 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary text-sm text-foreground placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors z-10"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <Button
             variant={nearbyMode ? "default" : "outline"}
