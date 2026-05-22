@@ -762,18 +762,7 @@ export default function AdminPayouts() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-warning/10"><Clock className="w-5 h-5 text-warning" /></div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{tt('adminPayoutsPage.summary.grossPending')}</p>
-                      <p className="text-xl font-bold">{formatCurrency(totalPending)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
@@ -907,15 +896,9 @@ export default function AdminPayouts() {
                             )}
                           </div>
 
-                          <div className="text-right flex-shrink-0 space-y-1">
-                            <div>
-                              <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.gross')}</p>
-                              <p className="font-semibold">{formatCurrency(doctor.pending_earnings)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.net')}</p>
-                              <p className="font-bold text-success">{formatCurrency(getNetAmount(doctor.pending_earnings))}</p>
-                            </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.net')}</p>
+                            <p className="font-bold text-success">{formatCurrency(doctor.pending_earnings)}</p>
                           </div>
 
                           <div className="flex flex-col gap-1 flex-shrink-0">
@@ -1160,19 +1143,11 @@ export default function AdminPayouts() {
               {/* Summary */}
               {!payoutDialog.bulk && payoutDialog.doctor && (
                 <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.grossLabel')}</span>
-                    <span>{formatCurrency(payoutDialog.doctor.pending_earnings)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.commissionLabel')} ({settings.commission_percentage}%):</span>
-                    <span className="text-destructive">-{formatCurrency(payoutDialog.doctor.pending_earnings * settings.commission_percentage / 100)}</span>
-                  </div>
-                  <hr className="border-border" />
                   <div className="flex justify-between font-bold">
                     <span>{tt('adminPayoutsPage.dialog.netToPayLabel')}</span>
-                    <span className="text-success">{formatCurrency(getNetAmount(payoutDialog.doctor.pending_earnings))}</span>
+                    <span className="text-success">{formatCurrency(payoutDialog.doctor.pending_earnings)}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.dialog.commissionNote')}</p>
                 </div>
               )}
 
@@ -1182,15 +1157,11 @@ export default function AdminPayouts() {
                     <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.doctorsLabel')}</span>
                     <span>{selectedDoctors.size}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{tt('adminPayoutsPage.dialog.totalGrossLabel')}</span>
-                    <span>{formatCurrency(doctors.filter(d => selectedDoctors.has(d.user_id)).reduce((s, d) => s + d.pending_earnings, 0))}</span>
-                  </div>
-                  <hr className="border-border" />
                   <div className="flex justify-between font-bold">
                     <span>{tt('adminPayoutsPage.dialog.totalNetLabel')}</span>
-                    <span className="text-success">{formatCurrency(getNetAmount(doctors.filter(d => selectedDoctors.has(d.user_id)).reduce((s, d) => s + d.pending_earnings, 0)))}</span>
+                    <span className="text-success">{formatCurrency(doctors.filter(d => selectedDoctors.has(d.user_id)).reduce((s, d) => s + d.pending_earnings, 0))}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.dialog.commissionNote')}</p>
                 </div>
               )}
 
