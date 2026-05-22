@@ -345,10 +345,10 @@ export default function AdminPayouts() {
     }
   };
 
-  const getNetAmount = (gross: number) => {
-    const commission = gross * (settings.commission_percentage / 100);
-    return gross - commission;
-  };
+  // pending_earnings YA es neto: la comisión por-tipo se aplica al concretarse
+  // cada venta (ver credit_doctor_earnings + libro contable). El monto a pagar
+  // es el saldo neto tal cual.
+  const getNetAmount = (net: number) => net;
 
   const toggleDoctor = (userId: string) => {
     setSelectedDoctors(prev => {

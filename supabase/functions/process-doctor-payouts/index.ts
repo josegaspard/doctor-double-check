@@ -188,10 +188,10 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Calculate payout amount (after commission)
-        const commissionRate = payoutSettings.commission_percentage / 100;
+        // pending_earnings YA es neto: la comisión por-tipo se aplicó al
+        // concretarse cada venta. Se transfiere el saldo neto completo.
         const grossAmount = doctor.pending_earnings;
-        const payoutAmount = grossAmount * (1 - commissionRate);
+        const payoutAmount = grossAmount;
         const payoutAmountCents = Math.round(payoutAmount * 100);
 
         // Create transfer to connected account

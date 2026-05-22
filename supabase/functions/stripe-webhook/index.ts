@@ -557,10 +557,14 @@ async function creditDoctorEarningsAtomic(
 ) {
   logStep("Crediting doctor earnings (atomic)", { doctorId, amount, source });
 
-  // Use the atomic DB function instead of read-then-write
+  // Use the atomic DB function instead of read-then-write.
+  // Acredita el NETO: la comisión por-tipo se aplica aquí, al concretarse la
+  // venta. `source` (consultation/recording/subscription/live_chat_highlight)
+  // determina el % vía fn_commission_rate.
   const { data: newPending, error: rpcError } = await db.rpc("credit_doctor_earnings", {
     p_doctor_id: doctorId,
     p_amount: amount,
+    p_sale_type: source,
   });
 
   if (rpcError || newPending === -1) {
@@ -712,9 +716,12 @@ async function handleTransferUpdate(db: ReturnType<typeof supabaseAdmin>, transf
     if (doctorId) {
       const grossAmount = parseFloat(transfer.metadata?.gross_amount || "0");
       if (grossAmount > 0) {
+        // Reverso de un payout: se re-acredita en CRUDO lo que se había
+        // descontado (ya neto). No volver a aplicar comisión.
         await db.rpc("credit_doctor_earnings", {
           p_doctor_id: doctorId,
           p_amount: grossAmount,
+          p_apply_commission: false,
         });
 
         const { data: profile } = await db

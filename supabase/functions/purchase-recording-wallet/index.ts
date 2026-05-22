@@ -122,6 +122,7 @@ Deno.serve(async (req) => {
     const { data: newPending, error: rpcError } = await adminClient.rpc("credit_doctor_earnings", {
       p_doctor_id: doctorId,
       p_amount: amountToCredit,
+      p_sale_type: 'recording',
     });
 
     if (rpcError || newPending === -1) {
