@@ -416,7 +416,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                           <User className="w-5 h-5" />
                           {t('nav.profile')}
                         </Link>
-                        {(role === 'patient' || role === 'resident') && (
+                        {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                           <Link to="/wallet" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/wallet' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                             <Wallet className="w-5 h-5" />
                             {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
@@ -537,8 +537,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Notifications - hidden on mobile (in bottom nav) */}
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
               
-              {/* Wallet — superficie clara: usa clase semántica, sin variant outline */}
-              {(role === 'patient' || role === 'resident') && (
+              {/* Wallet — superficie clara: usa clase semántica, sin variant outline.
+                  Doctor también ve la wallet (puede cargar saldo y comprar contenido de colegas). */}
+              {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                 <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
                     <span className="app-header-control gap-1.5 px-2.5 font-semibold text-xs">
                     <Wallet className="w-3.5 h-3.5" />
@@ -579,7 +580,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <User className="w-4 h-4 mr-2" />
                       {t('nav.profile')}
                     </DropdownMenuItem>
-                    {(role === 'patient' || role === 'resident') && (
+                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                       <DropdownMenuItem onClick={() => navigate('/wallet')} className="py-3 text-sm">
                         <Wallet className="w-4 h-4 mr-2" />
                         {t('nav.wallet')}
@@ -791,7 +792,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span className="text-sm font-medium">{t('nav.myOrders')}</span>
                       </Link>
                     )}
-                    {(role === 'patient' || role === 'resident') && (
+                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                       <Link
                         to="/wallet"
                         onClick={() => setMoreSheetOpen(false)}
