@@ -81,36 +81,19 @@ export default function ReportIssue() {
     setIsSubmitting(true);
     try {
       const attachmentUrls = await uploadAttachments();
-      const { data: inserted, error } = await supabase.from('reports').insert({
-        reporter_id: user?.id || '00000000-0000-0000-0000-000000000000',
-        content_type: 'platform_report',
-        content_id: null,
-        reason: result.data.type,
-        subject: result.data.subject,
-        description: result.data.description,
-        contact_email: result.data.contactEmail || null,
-        attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : null,
-      } as any).select('id').single();
+      const { data, error } = await supabase.functions.invoke('submit-report', {
+        body: {
+          type: result.data.type,
+          subject: result.data.subject,
+          description: result.data.description,
+          contactEmail: result.data.contactEmail || null,
+          reporterId: user?.id || null,
+          attachmentUrls,
+        },
+      });
 
-      if (error) throw error;
-
-      // Notify admins (non-blocking)
-      try {
-        await supabase.functions.invoke('notify-admin', {
-          body: {
-            type: 'new_report',
-            data: {
-              reporterEmail: (user as any)?.email || result.data.contactEmail || 'anónimo',
-              reporterName: (user as any)?.name || 'anónimo',
-              reportType: result.data.type,
-              contentType: 'platform_report',
-              description: `${result.data.subject}\n\n${result.data.description}`,
-              reportId: (inserted as any)?.id || 'unknown',
-            },
-          },
-        });
-      } catch (notifyErr) {
-        console.warn('admin notify failed (non-blocking)', notifyErr);
+      if (error || (data && (data as any).error)) {
+        throw new Error(error?.message || (data as any)?.error || 'submit-report failed');
       }
 
       setSubmitted(true);
@@ -218,7 +201,13 @@ export default function ReportIssue() {
                   {attachments.map((file, i) => (
                     <div key={i} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-xs">
                       <span className="truncate max-w-[120px]">{file.name}</span>
-                      <button type="button" onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-foreground">
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label={t('report.removeAttachment')}
+                        title={t('report.removeAttachment')}
+                      >
                         <X className="w-3 h-3" />
                       </button>
                     </div>
@@ -243,6 +232,8 @@ export default function ReportIssue() {
                   multiple
                   onChange={handleFileSelect}
                   className="hidden"
+                  aria-label={t('report.attachFile')}
+                  title={t('report.attachFile')}
                 />
                 <p className="text-[11px] text-muted-foreground">{t('report.maxFiles')}</p>
               </div>

@@ -1307,6 +1307,7 @@ export const de = {
     emailLabel: 'Kontakt-E-Mail',
     attachments: 'Anhänge (optional)',
     attachFile: 'Bild oder Video anhängen',
+    removeAttachment: 'Anhang entfernen',
     maxFiles: 'Max. 5 Dateien, je 10 MB',
     filesTooLarge: 'Einige Dateien überschreiten 10 MB und wurden ignoriert',
     submitButton: 'Meldung senden',

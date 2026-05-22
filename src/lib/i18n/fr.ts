@@ -1307,6 +1307,7 @@ export const fr = {
     emailLabel: 'E-mail de contact',
     attachments: 'Pièces jointes (facultatif)',
     attachFile: 'Joindre une image ou une vidéo',
+    removeAttachment: 'Supprimer la pièce jointe',
     maxFiles: 'Max 5 fichiers, 10 Mo chacun',
     filesTooLarge: 'Certains fichiers dépassent 10 Mo et ont été ignorés',
     submitButton: 'Envoyer le signalement',

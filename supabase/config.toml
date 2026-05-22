@@ -71,6 +71,8 @@ project_id = "ouawwfqexfwuptlgoksr"
     verify_jwt = false
   [functions.submit-contact]
     verify_jwt = false
+  [functions.submit-report]
+    verify_jwt = false
   [functions.trigger-post-consultation-ratings]
     verify_jwt = false
   [functions.send-approval-email]
