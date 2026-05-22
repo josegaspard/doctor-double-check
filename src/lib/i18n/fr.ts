@@ -86,6 +86,13 @@ export const fr = {
     of: 'sur',
     doctor: 'Médecin',
     resident: 'Interne',
+    calculate: 'Calculer',
+    height: 'Taille (cm)',
+    weight: 'Poids (kg)',
+    age: 'Âge',
+    sex: 'Sexe',
+    male: 'Masculin',
+    female: 'Féminin',
   },
   // Inputs
   inputs: {
@@ -5173,15 +5180,6 @@ export const fr = {
         cta: 'Entrer dans le réseau',
       },
     },
-  },
-  common: {
-    calculate: 'Calculer',
-    height: 'Taille (cm)',
-    weight: 'Poids (kg)',
-    age: 'Âge',
-    sex: 'Sexe',
-    male: 'Masculin',
-    female: 'Féminin',
   },
   invoicePreviewModal: {
     title: 'Facture',

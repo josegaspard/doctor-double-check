@@ -86,6 +86,13 @@ export const de = {
     of: 'von',
     doctor: 'Arzt',
     resident: 'Assistenzarzt',
+    calculate: 'Berechnen',
+    height: 'Größe (cm)',
+    weight: 'Gewicht (kg)',
+    age: 'Alter',
+    sex: 'Geschlecht',
+    male: 'Männlich',
+    female: 'Weiblich',
   },
   // Inputs
   inputs: {
@@ -5173,15 +5180,6 @@ export const de = {
         cta: 'Netzwerk betreten',
       },
     },
-  },
-  common: {
-    calculate: 'Berechnen',
-    height: 'Größe (cm)',
-    weight: 'Gewicht (kg)',
-    age: 'Alter',
-    sex: 'Geschlecht',
-    male: 'Männlich',
-    female: 'Weiblich',
   },
   invoicePreviewModal: {
     title: 'Rechnung',

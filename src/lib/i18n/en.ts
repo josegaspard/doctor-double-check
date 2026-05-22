@@ -86,6 +86,13 @@ export const en = {
     of: 'of',
     doctor: 'Doctor',
     resident: 'Resident',
+    calculate: 'Calculate',
+    height: 'Height (cm)',
+    weight: 'Weight (kg)',
+    age: 'Age',
+    sex: 'Sex',
+    male: 'Male',
+    female: 'Female',
   },
   // Inputs
   inputs: {
@@ -5173,15 +5180,6 @@ export const en = {
         cta: 'Enter the network',
       },
     },
-  },
-  common: {
-    calculate: 'Calculate',
-    height: 'Height (cm)',
-    weight: 'Weight (kg)',
-    age: 'Age',
-    sex: 'Sex',
-    male: 'Male',
-    female: 'Female',
   },
   invoicePreviewModal: {
     title: 'Invoice',

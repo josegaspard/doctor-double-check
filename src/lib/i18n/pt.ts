@@ -86,6 +86,13 @@ export const pt = {
     of: 'de',
     doctor: 'Médico',
     resident: 'Residente',
+    calculate: 'Calcular',
+    height: 'Altura (cm)',
+    weight: 'Peso (kg)',
+    age: 'Idade',
+    sex: 'Sexo',
+    male: 'Masculino',
+    female: 'Feminino',
   },
   // Inputs
   inputs: {
@@ -5173,15 +5180,6 @@ export const pt = {
         cta: 'Entrar na rede',
       },
     },
-  },
-  common: {
-    calculate: 'Calcular',
-    height: 'Altura (cm)',
-    weight: 'Peso (kg)',
-    age: 'Idade',
-    sex: 'Sexo',
-    male: 'Masculino',
-    female: 'Feminino',
   },
   invoicePreviewModal: {
     title: 'Nota fiscal',

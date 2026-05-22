@@ -86,6 +86,13 @@ export const it = {
     of: 'di',
     doctor: 'Medico',
     resident: 'Specializzando',
+    calculate: 'Calcola',
+    height: 'Altezza (cm)',
+    weight: 'Peso (kg)',
+    age: 'Età',
+    sex: 'Sesso',
+    male: 'Maschio',
+    female: 'Femmina',
   },
   // Inputs
   inputs: {
@@ -5173,15 +5180,6 @@ export const it = {
         cta: 'Entra nella rete',
       },
     },
-  },
-  common: {
-    calculate: 'Calcola',
-    height: 'Altezza (cm)',
-    weight: 'Peso (kg)',
-    age: 'Età',
-    sex: 'Sesso',
-    male: 'Maschio',
-    female: 'Femmina',
   },
   invoicePreviewModal: {
     title: 'Fattura',
