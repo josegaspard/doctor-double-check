@@ -97,8 +97,10 @@ Deno.serve(async (req) => {
       stripeAccountId = await createNewAccount();
     }
 
-    // Create account link for onboarding
-    const origin = req.headers.get("origin") || "http://localhost:5173";
+    // Create account link for onboarding.
+    // Fallback to producción si no llega Origin (servidor-a-servidor, curl, etc.)
+    // En lugar de localhost que rompería un redirect real del doctor.
+    const origin = req.headers.get("origin") || Deno.env.get("APP_URL") || "https://medical-masters.com";
     let accountLink;
     try {
       accountLink = await stripe.accountLinks.create({

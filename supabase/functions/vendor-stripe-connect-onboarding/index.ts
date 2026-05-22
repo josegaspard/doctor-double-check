@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       stripeAccountId = await createNewAccount();
     }
 
-    const origin = req.headers.get("origin") || "http://localhost:5173";
+    const origin = req.headers.get("origin") || Deno.env.get("APP_URL") || "https://medical-masters.com";
     let accountLink;
     try {
       accountLink = await stripe.accountLinks.create({
