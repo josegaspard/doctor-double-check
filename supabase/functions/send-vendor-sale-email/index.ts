@@ -1,5 +1,6 @@
 // Llamado tras crear un order. Envía email al vendor con detalles de la venta.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,23 +36,34 @@ Deno.serve(async (req) => {
       .from("marketplace_products").select("name").eq("id", order.product_id).maybeSingle();
 
     const shipping = order.shipping_address || {};
-    const html = `
-      <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;color:#163a83">
-        <h2 style="color:#00768B">¡Nueva venta en Medical Masters! 🎉</h2>
-        <p>Recibiste un pedido nuevo:</p>
-        <table style="width:100%;border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:8px;border:1px solid #e5e7eb"><strong>Pedido</strong></td><td style="padding:8px;border:1px solid #e5e7eb">${order.id.slice(0,8).toUpperCase()}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #e5e7eb"><strong>Producto</strong></td><td style="padding:8px;border:1px solid #e5e7eb">${product?.name || "—"}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #e5e7eb"><strong>Cantidad</strong></td><td style="padding:8px;border:1px solid #e5e7eb">${order.quantity}</td></tr>
-          <tr><td style="padding:8px;border:1px solid #e5e7eb"><strong>Total</strong></td><td style="padding:8px;border:1px solid #e5e7eb">${order.total_amount} ${order.currency || "MXN"}</td></tr>
-        </table>
-        <h3>Dirección de envío</h3>
-        <p>${shipping.name || ""}<br>${shipping.line1 || ""} ${shipping.line2 || ""}<br>${shipping.city || ""}, ${shipping.state || ""} ${shipping.postal_code || ""}<br>${shipping.phone || ""}</p>
-        <p style="margin-top:24px">Ingresa a <a href="https://medical-masters.com/vendor/orders">/vendor/orders</a> para procesar el envío.</p>
-        <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0">
-        <p style="color:#6b7280;font-size:12px">Medical Masters Marketplace</p>
-      </div>
-    `;
+    const amountFmt = `$${Number(order.total_amount).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+    const currency = order.currency || "MXN";
+    const shippingAddr = [
+      shipping.name,
+      [shipping.line1, shipping.line2].filter(Boolean).join(" "),
+      [shipping.city, shipping.state, shipping.postal_code].filter(Boolean).join(", "),
+      shipping.phone,
+    ].filter(Boolean).join("<br>");
+    const html = renderEmail({
+      preheader: `Nueva venta: ${product?.name || "pedido"} — ${amountFmt} ${currency}`,
+      accent: "success",
+      eyebrow: "Nueva venta",
+      title: "Recibiste un pedido nuevo",
+      subtitle: "Procesa el envío desde tu panel de vendor.",
+      greeting: `Hola, ${vendor.name || "vendor"}`,
+      bodyHtml: `
+        ${bigAmount(amountFmt, currency)}
+        ${detailTable([
+          ["Pedido", `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;">${order.id.slice(0,8).toUpperCase()}</span>`],
+          ["Producto", product?.name || "—"],
+          ["Cantidad", String(order.quantity)],
+        ])}
+        <h3 style="margin:20px 0 8px;font-size:14px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:.4px;">Dirección de envío</h3>
+        <div style="padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;line-height:22px;color:#0f172a;">${shippingAddr || "<em>Sin dirección</em>"}</div>
+      `,
+      ctaText: "Procesar el envío",
+      ctaUrl: "https://medical-masters.com/vendor/orders",
+    });
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY no configurado");
@@ -62,7 +74,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: "Medical Masters <noreply@medical-masters.com>",
         to: [vendorEmail],
-        subject: `🎉 Nueva venta — ${product?.name || "Pedido"} — ${order.total_amount} ${order.currency || "MXN"}`,
+        subject: `Nueva venta: ${product?.name || "Pedido"} — ${amountFmt} ${currency}`,
         html,
       }),
     });

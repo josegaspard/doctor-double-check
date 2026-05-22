@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { renderEmail } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -134,61 +135,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
           from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
           to: [profile.email],
           subject,
-          html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
-              <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                <div style="background: linear-gradient(135deg, #0ea5e9, #0284c7); padding: 32px; text-align: center;">
-                  <div style="width: 64px; height: 64px; background: white; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-                    <span style="font-size: 32px;">${contentIcon}</span>
-                  </div>
-                  <h1 style="color: white; margin: 0; font-size: 24px;">Nuevo Contenido Disponible</h1>
-                </div>
-                <div style="padding: 32px;">
-                  <h2 style="color: #1e293b; margin-top: 0;">¡Hola, ${profile.name}!</h2>
-                  <p style="color: #64748b; font-size: 16px;">
-                    <strong>${doctorName}</strong> ha subido nuevo contenido que podría interesarte.
-                  </p>
-                  
-                  <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0; border-left: 4px solid #0ea5e9;">
-                    <h3 style="margin: 0 0 8px; color: #1e293b; font-size: 18px;">${contentTitle}</h3>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                      <span style="background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
-                        ${contentTypeLabel}
-                      </span>
-                      <span style="background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 20px; font-size: 13px;">
-                        ${category}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <p style="color: #64748b; font-size: 14px;">
-                    Accede ahora para ver este nuevo contenido educativo.
-                  </p>
-                  
-                  <div style="margin-top: 24px; text-align: center;">
-                    <a href="${appUrl}/doctor/${doctorId}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                      Ver Contenido
-                    </a>
-                  </div>
-                </div>
-                <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-                  <p style="margin: 0 0 8px;">Recibes este email porque sigues a ${doctorName}.</p>
-                  <p style="margin: 0 0 8px;">
-                    <a href="${unsubscribeUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de emails de contenido</a> · 
-                    <a href="${unsubscribeAllUrl}" style="color: #64748b; text-decoration: underline;">Desuscribirse de todos los emails</a>
-                  </p>
-                  <p style="margin: 0;">© 2026 Medical Masters. Todos los derechos reservados.</p>
-                </div>
+          html: renderEmail({
+            preheader: `${doctorName} publicó un nuevo ${contentTypeLabel.toLowerCase()}: ${contentTitle}`,
+            accent: "info",
+            eyebrow: "Nuevo contenido",
+            title: contentTitle,
+            subtitle: `${doctorName} publicó un nuevo ${contentTypeLabel.toLowerCase()}.`,
+            greeting: `Hola, ${profile.name}`,
+            bodyHtml: `
+              <div style="margin:6px 0 16px;">
+                <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:12px;padding:5px 10px;border-radius:999px;margin-right:6px;">${contentTypeLabel}</span>
+                <span style="display:inline-block;background:#f1f5f9;color:#475569;font-size:12px;padding:5px 10px;border-radius:999px;">${category}</span>
               </div>
-            </body>
-            </html>
-          `,
+              <p style="margin:8px 0 0;color:#475569;">Accede ahora para verlo en la plataforma.</p>
+            `,
+            ctaText: "Ver contenido",
+            ctaUrl: `${appUrl}/doctor/${doctorId}`,
+            appUrl,
+            secondaryNote: `Recibes este correo porque sigues a ${doctorName}.<br/>
+              <a href="${unsubscribeUrl}" style="color:#64748b;">Pausar notificaciones de contenido</a>
+              &nbsp;·&nbsp;
+              <a href="${unsubscribeAllUrl}" style="color:#64748b;">Cancelar todos los correos</a>`,
+          }),
         });
 
         // Log successful email to history

@@ -6,6 +6,7 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
+import { renderEmail, detailTable } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
@@ -87,40 +88,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const doctorName = doctor?.name || "tu médico";
 
     if (patient?.email) {
-      const subject = `✅ Cita confirmada con el Dr. ${doctorName}`;
-      const html = `
-        <!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head>
-        <body style="margin:0;background:#fff;font-family:Inter,Arial,sans-serif;">
-          <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
-            <div style="background:linear-gradient(135deg,#163a83,#00768b);padding:32px 24px;text-align:center;">
-              <img src="${APP_URL}/email-logo-white.png" width="180" alt="Medical Masters" style="margin:0 auto;" />
-            </div>
-            <div style="padding:32px 24px;color:#1e293b;">
-              <h1 style="margin:0 0 16px;font-size:22px;color:#163a83;">✅ Tu cita está confirmada</h1>
-              <p style="font-size:16px;line-height:1.6;">Hola ${patient.name || ""},</p>
-              <p style="font-size:16px;line-height:1.6;">
-                El <strong>Dr. ${doctorName}</strong> confirmó tu cita.
-              </p>
-              <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:16px 0;">
-                <p style="margin:0 0 6px;font-size:14px;color:#0c4a6e;"><strong>Fecha y hora</strong></p>
-                <p style="margin:0;font-size:14px;color:#0c4a6e;">${when}</p>
-                ${appt.reason ? `<p style="margin:8px 0 0;font-size:14px;color:#0c4a6e;"><strong>Motivo:</strong> ${appt.reason}</p>` : ""}
-              </div>
-              <div style="text-align:center;margin-top:24px;">
-                <a href="${APP_URL}/my-appointments" style="display:inline-block;background:#163a83;color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Ver mis citas</a>
-              </div>
-              <p style="font-size:13px;color:#64748b;margin-top:24px;text-align:center;">
-                Recibirás un recordatorio antes de la consulta. Si necesitas cancelar, hazlo desde Mis Citas con al menos 2 horas de anticipación.
-              </p>
-            </div>
-          </div>
-        </body></html>
-      `;
+      const rows: Array<[string, string]> = [
+        ["Médico", `Dr. ${doctorName}`],
+        ["Fecha y hora", when],
+      ];
+      if (appt.reason) rows.push(["Motivo", appt.reason]);
+
+      const html = renderEmail({
+        preheader: `Tu cita con el Dr. ${doctorName} está confirmada — ${when}`,
+        accent: "success",
+        eyebrow: "Cita confirmada",
+        title: "Tu cita está confirmada",
+        subtitle: `El Dr. ${doctorName} confirmó tu cita médica.`,
+        greeting: `Hola, ${patient.name || ""}`,
+        bodyHtml: `
+          ${detailTable(rows)}
+          <p style="margin:8px 0 0;color:#475569;font-size:14px;">Te enviaremos un recordatorio antes de la consulta. Si necesitas cancelar, hazlo desde Mis Citas con al menos 2 horas de anticipación.</p>
+        `,
+        ctaText: "Ver mis citas",
+        ctaUrl: `${APP_URL}/my-appointments`,
+        appUrl: APP_URL,
+      });
 
       await resend.emails.send({
         from: FROM_EMAIL,
         to: [patient.email],
-        subject,
+        subject: `Cita confirmada con el Dr. ${doctorName}`,
         html,
       });
     }

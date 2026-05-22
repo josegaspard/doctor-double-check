@@ -1,17 +1,16 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail, detailTable, bigAmount, infoCard, EmailAccent } from "../_shared/email-template.ts";
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-REFUND-EMAIL] ${step}${detailsStr}`);
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // SECURITY (2026-05-11 audit): admin JWT or x-cron-secret. Previously open Resend relay.
   try { await requireAdminOrCron(req); } catch (__e) {
     if (__e instanceof AuthError) return __e.toResponse();
     return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -20,94 +19,91 @@ Deno.serve(async (req) => {
   try {
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) throw new Error("RESEND_API_KEY not set");
+    const appUrl = "https://medical-masters.com";
 
     const { user_email, user_name, amount, refund_method, estimated_date } = await req.json();
-
     if (!user_email || !amount || !refund_method) {
       throw new Error("user_email, amount, and refund_method are required");
     }
 
-    logStep("Sending refund email", { user_email, refund_method, amount });
+    const isStripe        = refund_method === 'stripe';
+    const isBankTransfer  = refund_method === 'bank_transfer';
+    const isAwaitingBank  = refund_method === 'awaiting_bank_details';
+    const fmt = `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`;
 
-    const isStripe = refund_method === 'stripe';
-    const isBankTransfer = refund_method === 'bank_transfer';
-    const isAwaitingBank = refund_method === 'awaiting_bank_details';
-
-    const subject = isStripe
-      ? `✅ Reembolso procesado - $${amount.toLocaleString()} MXN`
-      : isBankTransfer
-        ? `🏦 Reembolso en proceso - $${amount.toLocaleString()} MXN`
-        : isAwaitingBank
-          ? `📋 Registra tu cuenta bancaria para recibir tu reembolso`
-          : `💰 Reembolso acreditado a tu billetera`;
-
-    let bodyContent = '';
+    let subject = "";
+    let eyebrow = "";
+    let title = "";
+    let subtitle = "";
+    let accent: EmailAccent = "success";
+    let bodyHtml = "";
+    let ctaText = "Ver mi billetera";
+    let ctaUrl = `${appUrl}/wallet`;
 
     if (isStripe) {
-      bodyContent = `
-        <p>Hola ${user_name || 'usuario'},</p>
-        <p>Tu reembolso por <strong>$${amount.toLocaleString()} MXN</strong> ha sido procesado exitosamente a través de Stripe.</p>
-        <p>El monto será reflejado en tu tarjeta/cuenta en un plazo de <strong>5-10 días hábiles</strong>, dependiendo de tu banco.</p>
-        <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin:16px 0;">
-          <p style="margin:0;color:#2e7d32;font-weight:600;">✅ Reembolso completado</p>
-          <p style="margin:4px 0 0;color:#2e7d32;">Monto: $${amount.toLocaleString()} MXN</p>
-        </div>
+      subject = `Reembolso procesado — ${fmt}`;
+      eyebrow = "Reembolso procesado";
+      title = "Tu reembolso fue procesado";
+      subtitle = "El monto se reflejará en tu tarjeta en 5–10 días hábiles.";
+      accent = "success";
+      bodyHtml = `
+        ${bigAmount(fmt, "")}
+        ${detailTable([["Método", "Stripe (tarjeta original)"], ["Plazo estimado", "5–10 días hábiles"]])}
       `;
     } else if (isBankTransfer) {
-      bodyContent = `
-        <p>Hola ${user_name || 'usuario'},</p>
-        <p>Tu reembolso por <strong>$${amount.toLocaleString()} MXN</strong> ha sido aprobado y se procesará por transferencia bancaria.</p>
-        <div style="background:#fff3e0;padding:16px;border-radius:8px;margin:16px 0;">
-          <p style="margin:0;color:#e65100;font-weight:600;">🏦 Transferencia bancaria en proceso</p>
-          <p style="margin:4px 0 0;color:#e65100;">Monto: $${amount.toLocaleString()} MXN</p>
-          ${estimated_date ? `<p style="margin:4px 0 0;color:#e65100;">Fecha estimada: ${estimated_date}</p>` : ''}
-          <p style="margin:4px 0 0;color:#e65100;">Plazo: Hasta 15 días hábiles</p>
-        </div>
-        <p>Recibirás una notificación cuando la transferencia haya sido completada.</p>
-      `;
+      subject = `Reembolso en proceso — ${fmt}`;
+      eyebrow = "Transferencia en proceso";
+      title = "Tu reembolso está en camino";
+      subtitle = "Se enviará por transferencia bancaria. Te avisamos al completarse.";
+      accent = "info";
+      const rows: Array<[string, string]> = [["Método", "Transferencia bancaria"], ["Plazo", "Hasta 15 días hábiles"]];
+      if (estimated_date) rows.push(["Fecha estimada", estimated_date]);
+      bodyHtml = `${bigAmount(fmt, "")}${detailTable(rows)}`;
     } else if (isAwaitingBank) {
-      bodyContent = `
-        <p>Hola ${user_name || 'usuario'},</p>
-        <p>Tu solicitud de reembolso por <strong>$${amount.toLocaleString()} MXN</strong> ha sido aprobada.</p>
-        <p>Para procesar tu reembolso, necesitamos que registres tu cuenta bancaria (CLABE) en la plataforma.</p>
-        <div style="background:#e3f2fd;padding:16px;border-radius:8px;margin:16px 0;">
-          <p style="margin:0;color:#1565c0;font-weight:600;">📋 Pasos a seguir:</p>
-          <ol style="margin:8px 0 0;color:#1565c0;padding-left:20px;">
-            <li>Ingresa a tu billetera en Medical Masters</li>
-            <li>Registra tu cuenta bancaria (CLABE de 18 dígitos)</li>
-            <li>Una vez registrada, procesaremos tu reembolso en un plazo de 15 días hábiles</li>
-          </ol>
-        </div>
+      subject = "Acción requerida: registra tu cuenta bancaria";
+      eyebrow = "Requiere acción";
+      title = "Necesitamos tus datos bancarios";
+      subtitle = "Tu reembolso fue aprobado. Falta registrar tu CLABE para procesarlo.";
+      accent = "warning";
+      ctaText = "Registrar cuenta bancaria";
+      ctaUrl = `${appUrl}/wallet`;
+      bodyHtml = `
+        ${bigAmount(fmt, "")}
+        ${infoCard({
+          title: "Pasos a seguir",
+          accent: "info",
+          html: `
+            <ol style="margin:6px 0 0;padding-left:22px;">
+              <li>Ingresa a tu billetera en Medical Masters</li>
+              <li>Registra tu cuenta bancaria (CLABE de 18 dígitos)</li>
+              <li>Procesaremos tu reembolso en hasta 15 días hábiles</li>
+            </ol>`,
+        })}
       `;
     } else {
-      bodyContent = `
-        <p>Hola ${user_name || 'usuario'},</p>
-        <p>Tu reembolso por <strong>$${amount.toLocaleString()} MXN</strong> ha sido acreditado a tu billetera de Medical Masters.</p>
-        <div style="background:#e8f5e9;padding:16px;border-radius:8px;margin:16px 0;">
-          <p style="margin:0;color:#2e7d32;font-weight:600;">💰 Saldo acreditado</p>
-          <p style="margin:4px 0 0;color:#2e7d32;">Monto: $${amount.toLocaleString()} MXN</p>
-        </div>
-        <p>Puedes usar tu saldo para consultas, contenido y más servicios en la plataforma.</p>
+      subject = `Saldo acreditado a tu billetera — ${fmt}`;
+      eyebrow = "Saldo acreditado";
+      title = "Recibiste tu reembolso";
+      subtitle = "El monto ya está disponible en tu billetera Medical Masters.";
+      accent = "success";
+      bodyHtml = `
+        ${bigAmount(fmt, "")}
+        <p style="margin:8px 0 0;">Puedes usar tu saldo para consultas, contenido premium y demás servicios de la plataforma.</p>
       `;
     }
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <body style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#333;">
-        <div style="text-align:center;margin-bottom:24px;">
-          <h1 style="color:#163a83;font-size:24px;margin:0;">Medical Masters</h1>
-          <p style="color:#666;font-size:14px;margin:4px 0 0;">Plataforma Médica</p>
-        </div>
-        ${bodyContent}
-        <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-        <p style="color:#999;font-size:12px;text-align:center;">
-          Este correo fue enviado automáticamente por Medical Masters.<br/>
-          Si tienes dudas, contacta a nuestro equipo de soporte.
-        </p>
-      </body>
-      </html>
-    `;
+    const html = renderEmail({
+      preheader: `${title} — ${fmt}`,
+      accent,
+      eyebrow,
+      title,
+      subtitle,
+      greeting: `Hola, ${user_name || 'usuario'}`,
+      bodyHtml,
+      ctaText,
+      ctaUrl,
+      appUrl,
+    });
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -125,8 +121,6 @@ Deno.serve(async (req) => {
       logStep("Resend error", { status: res.status, body: err });
       throw new Error(`Email send failed: ${err}`);
     }
-
-    logStep("Email sent successfully", { user_email, refund_method });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

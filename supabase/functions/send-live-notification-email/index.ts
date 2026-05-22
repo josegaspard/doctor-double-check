@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireUserJWT, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { renderEmail } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -115,62 +116,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const unsubscribeLiveToken = generateUnsubscribeToken(profile.id, doctorId, 'live');
       const unsubscribeAllToken = generateUnsubscribeToken(profile.id, doctorId, 'all');
 
-      const subject = `🔴 ¡${doctorName} está en vivo ahora!`;
+      const subject = `${doctorName} está en vivo ahora`;
       const subscriberName = profile.name || "Suscriptor";
 
-      const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 16px 16px 0 0; padding: 32px; text-align: center;">
-      <div style="font-size: 48px; margin-bottom: 16px;">🔴</div>
-      <h1 style="color: white; margin: 0; font-size: 28px;">¡En Vivo Ahora!</h1>
-    </div>
-    
-    <div style="background: white; padding: 32px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-      <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
-        Hola <strong>${subscriberName}</strong>,
-      </p>
-      
-      <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-        <strong>${doctorName}</strong> acaba de iniciar una transmisión en vivo:
-      </p>
-      
-      <div style="background: linear-gradient(135deg, #fef2f2, #fee2e2); border-radius: 12px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #ef4444;">
-        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 20px;">${title || 'Transmisión en vivo'}</h2>
-        ${description ? `<p style="color: #64748b; margin: 0; font-size: 14px;">${description}</p>` : ''}
-      </div>
-      
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${appUrl}/live/${liveId}" style="display: inline-block; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
-          Ver Transmisión en Vivo
-        </a>
-      </div>
-      
-      <p style="color: #94a3b8; font-size: 13px; text-align: center; margin-top: 32px;">
-        ¡No te lo pierdas! Los lives son una oportunidad única para aprender en tiempo real.
-      </p>
-    </div>
-    
-    <div style="text-align: center; padding: 24px;">
-      <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-        Recibiste este email porque sigues a ${doctorName} en Medical Masters.
-      </p>
-      <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-        <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeLiveToken}" style="color: #64748b;">Desuscribirse de notificaciones de lives</a>
-        &nbsp;|&nbsp;
-        <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeAllToken}" style="color: #64748b;">Desuscribirse de todos los emails</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-      `;
+      const html = renderEmail({
+        preheader: `${doctorName} inició una transmisión en vivo: ${title || 'Transmisión'}`,
+        accent: "danger",
+        eyebrow: "En vivo ahora",
+        title: `${doctorName} está en vivo`,
+        subtitle: title || 'Acaba de iniciar una transmisión.',
+        greeting: `Hola, ${subscriberName}`,
+        bodyHtml: `
+          <div style="margin:8px 0 16px;padding:18px 18px;background:#fef2f2;border-left:4px solid #ef4444;border-radius:10px;">
+            <h2 style="margin:0 0 6px;font-size:18px;color:#0f172a;">${title || 'Transmisión en vivo'}</h2>
+            ${description ? `<p style="margin:0;font-size:14px;color:#475569;line-height:22px;">${description}</p>` : ""}
+          </div>
+          <p style="margin:0;font-size:14px;color:#475569;">Los lives son en tiempo real — no se pueden ver después si no estás conectado.</p>
+        `,
+        ctaText: "Entrar a la transmisión",
+        ctaUrl: `${appUrl}/live/${liveId}`,
+        appUrl,
+        secondaryNote: `Recibes este correo porque sigues a ${doctorName}.<br/>
+          <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeLiveToken}" style="color:#64748b;">Pausar notificaciones de lives</a>
+          &nbsp;·&nbsp;
+          <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeAllToken}" style="color:#64748b;">Cancelar todos los correos</a>`,
+      });
 
       try {
         await resend.emails.send({

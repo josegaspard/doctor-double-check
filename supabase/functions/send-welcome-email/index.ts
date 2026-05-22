@@ -1,6 +1,8 @@
 import { Resend } from "npm:resend@2.0.0";
 
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail, infoCard } from "../_shared/email-template.ts";
+
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface WelcomeEmailRequest {
@@ -10,11 +12,8 @@ interface WelcomeEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // SECURITY (2026-05-11 audit): admin JWT or x-cron-secret. Previously open Resend relay.
   try { await requireAdminOrCron(req); } catch (__e) {
     if (__e instanceof AuthError) return __e.toResponse();
     return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -24,87 +23,73 @@ const handler = async (req: Request): Promise<Response> => {
     const appUrl = "https://medical-masters.com";
     const { email, name, role }: WelcomeEmailRequest = await req.json();
 
-    const roleMessages = {
-      patient: {
-        subject: "¡Bienvenido a Medical Masters!",
-        greeting: "Estamos felices de tenerte con nosotros",
-        content: `
-          <p>Ahora puedes:</p>
-          <ul>
-            <li>Ver transmisiones en vivo de médicos especialistas</li>
-            <li>Acceder a grabaciones educativas</li>
-            <li>Subir tu historial médico de forma segura</li>
-            <li>Consultar con médicos verificados</li>
-          </ul>
-          <div style="background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
-            <p style="color: #92400e; font-weight: 600; margin: 0 0 8px;">💰 Configura tu método de pago</p>
-            <p style="color: #92400e; margin: 0; font-size: 14px;">
-              Para acceder a contenido premium, suscripciones y consultas médicas, necesitarás recargar saldo en tu wallet. 
-              Ve a <strong>Wallet</strong> en la plataforma para agregar fondos de forma segura con tarjeta de crédito o débito.
-            </p>
-          </div>
-        `,
-      },
-      doctor: {
-        subject: "Solicitud de registro recibida - Medical Masters",
-        greeting: "Tu solicitud está siendo revisada",
-        content: `
-          <p>Hemos recibido tu solicitud de registro como médico.</p>
-          <p>Nuestro equipo está revisando tu documentación y te notificaremos cuando tu cuenta sea aprobada.</p>
-          <p>El proceso de verificación toma entre 24-48 horas hábiles.</p>
-        `,
-      },
-      resident: {
-        subject: "Solicitud de registro recibida - Medical Masters",
-        greeting: "Tu solicitud está siendo revisada",
-        content: `
-          <p>Hemos recibido tu solicitud de registro como residente médico.</p>
-          <p>Nuestro equipo está revisando tu documentación y te notificaremos cuando tu cuenta sea aprobada.</p>
-          <p>Recuerda que como residente tendrás acceso a descuentos especiales del 50% en contenido.</p>
-        `,
-      },
-    };
+    let subject: string;
+    let html: string;
 
-    const message = roleMessages[role] || roleMessages.patient;
+    if (role === 'patient') {
+      subject = "Bienvenido a Medical Masters";
+      html = renderEmail({
+        preheader: "Tu cuenta está activa. Empieza a usar la plataforma.",
+        accent: "info",
+        eyebrow: "Cuenta activa",
+        title: "Bienvenido a Medical Masters",
+        subtitle: "Telemedicina certificada, sin filas y con tus expedientes siempre a la mano.",
+        greeting: `Hola, ${name}`,
+        bodyHtml: `
+          ${infoCard({
+            title: "Ya puedes",
+            accent: "info",
+            html: `
+              <ul style="margin:6px 0 0;padding-left:22px;">
+                <li>Ver transmisiones en vivo de médicos especialistas</li>
+                <li>Acceder a grabaciones educativas</li>
+                <li>Subir tu historial médico de forma segura</li>
+                <li>Consultar con médicos verificados</li>
+              </ul>`,
+          })}
+          ${infoCard({
+            title: "Configura tu método de pago",
+            accent: "warning",
+            html: `<p style="margin:0;">Para acceder a contenido premium, suscripciones y consultas, recarga saldo en tu <strong>Wallet</strong> desde la plataforma con tarjeta de crédito o débito.</p>`,
+          })}
+        `,
+        ctaText: "Ir a la plataforma",
+        ctaUrl: appUrl,
+        appUrl,
+      });
+    } else {
+      // doctor o resident: solicitud recibida, en revisión
+      subject = "Recibimos tu solicitud — Medical Masters";
+      const isDoctor = role === 'doctor';
+      html = renderEmail({
+        preheader: "Tu solicitud está siendo revisada por nuestro equipo.",
+        accent: "neutral",
+        eyebrow: "En revisión",
+        title: "Recibimos tu solicitud",
+        subtitle: `Tu cuenta como ${isDoctor ? 'médico' : 'residente'} está en revisión. Te avisamos por correo cuando se apruebe.`,
+        greeting: `Hola, ${name}`,
+        bodyHtml: `
+          <p style="margin:0 0 12px;">Nuestro equipo está verificando tu documentación. El proceso suele tomar <strong>24–48 horas hábiles</strong>.</p>
+          ${!isDoctor ? `
+          ${infoCard({
+            title: "Beneficio para residentes",
+            accent: "success",
+            html: `<p style="margin:0;">Una vez aprobada tu cuenta, tendrás <strong>50% de descuento</strong> en todo el contenido educativo premium.</p>`,
+          })}` : ""}
+          <p style="margin:8px 0 0;color:#475569;font-size:14px;">Si tarda más de 48h o necesitas adelantar tu verificación, escríbenos desde el centro de ayuda.</p>
+        `,
+        ctaText: "Ver estado de mi cuenta",
+        ctaUrl: appUrl,
+        appUrl,
+      });
+    }
 
     const emailResponse = await resend.emails.send({
       from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
       to: [email],
-      subject: message.subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <div style="background: linear-gradient(135deg, #0ea5e9, #6366f1); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">Medical Masters</h1>
-            </div>
-            <div style="padding: 32px;">
-              <h2 style="color: #1e293b; margin-top: 0;">Hola, ${name}!</h2>
-              <p style="color: #64748b; font-size: 16px;">${message.greeting}</p>
-              <div style="color: #334155;">
-                ${message.content}
-              </div>
-              <div style="margin-top: 24px; text-align: center;">
-                <a href="${appUrl}" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Ir a la plataforma
-                </a>
-              </div>
-            </div>
-            <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-              <p style="margin: 0;">© 2026 Medical Masters. Todos los derechos reservados.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject,
+      html,
     });
-
-    console.log("Welcome email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,

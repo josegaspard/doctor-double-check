@@ -9,6 +9,7 @@
 
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { renderEmail, detailTable } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,30 +90,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && adminEmails.length > 0) {
       const resend = new Resend(resendKey);
+      const escapedMsg = message
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br>");
       await resend.emails.send({
         from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>",
         to: adminEmails,
         reply_to: email,
-        subject: `📨 Nuevo mensaje de contacto: ${subject}`,
-        html: `
-          <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:0 auto;color:#1e293b;">
-            <div style="background:linear-gradient(135deg,#163a83,#00768b);padding:24px;text-align:center;">
-              <img src="${APP_URL}/email-logo-white.png" width="170" alt="Medical Masters" />
-            </div>
-            <div style="padding:28px 24px;">
-              <h1 style="font-size:20px;color:#163a83;margin:0 0 16px;">Nuevo mensaje de contacto</h1>
-              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;">
-                <p style="margin:4px 0;"><strong>Nombre:</strong> ${name}</p>
-                <p style="margin:4px 0;"><strong>Correo:</strong> ${email}</p>
-                <p style="margin:4px 0;"><strong>Asunto:</strong> ${subject}</p>
-                <p style="margin:12px 0 4px;"><strong>Mensaje:</strong></p>
-                <p style="margin:0;background:#fff;padding:12px;border-radius:6px;border:1px solid #e2e8f0;white-space:pre-wrap;">${message}</p>
-              </div>
-              <div style="margin-top:20px;text-align:center;">
-                <a href="${APP_URL}/admin/reports" style="display:inline-block;background:#163a83;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;text-decoration:none;">Ver en el panel</a>
-              </div>
-            </div>
-          </div>`,
+        subject: `Contacto: ${subject}`,
+        html: renderEmail({
+          preheader: `Nuevo mensaje de contacto de ${name}`,
+          accent: "info",
+          eyebrow: "Nuevo contacto",
+          title: subject,
+          subtitle: "Mensaje recibido desde el formulario de contacto del sitio.",
+          bodyHtml: `
+            ${detailTable([["Nombre", name], ["Correo", `<a href="mailto:${email}" style="color:#00768b;text-decoration:none;">${email}</a>`]])}
+            <div style="margin:12px 0 0;padding:16px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;line-height:22px;color:#0f172a;white-space:pre-wrap;">${escapedMsg}</div>
+          `,
+          ctaText: "Ver en el panel",
+          ctaUrl: `${APP_URL}/admin/reports`,
+          appUrl: APP_URL,
+        }),
       });
     }
   } catch (notifyErr) {

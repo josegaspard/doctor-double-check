@@ -1,9 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail, EmailAccent } from "../_shared/email-template.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
-
 
 interface VerificationEmailRequest {
   user_id: string;
@@ -13,61 +13,71 @@ interface VerificationEmailRequest {
 }
 
 const getEmailContent = (status: string, name: string) => {
-  const statusMessages: Record<string, { subject: string; title: string; message: string }> = {
+  const map: Record<string, { subject: string; eyebrow: string; title: string; subtitle: string; message: string; accent: EmailAccent; cta: string }> = {
     pending: {
       subject: "Verificación de identidad recibida",
-      title: "¡Hemos recibido tu documentación!",
-      message: "Tu solicitud de verificación de identidad ha sido recibida y está siendo procesada. Te notificaremos cuando tengamos una actualización.",
+      eyebrow: "Recibido",
+      title: "Recibimos tu documentación",
+      subtitle: "Tu solicitud de verificación está en cola.",
+      message: "Tu solicitud de verificación de identidad fue recibida y está siendo procesada. Te avisaremos por correo cuando tengamos una actualización.",
+      accent: "info",
+      cta: "Ver estado",
     },
     in_progress: {
       subject: "Verificación de identidad en proceso",
+      eyebrow: "En revisión",
       title: "Tu verificación está siendo revisada",
-      message: "Nuestro equipo está revisando tu documentación. Este proceso puede tomar entre 24 y 48 horas.",
+      subtitle: "Nuestro equipo está validando tu documentación.",
+      message: "Este proceso puede tomar entre 24 y 48 horas hábiles. Te avisaremos por correo cuando esté listo.",
+      accent: "info",
+      cta: "Ver estado",
     },
     verified: {
-      subject: "¡Identidad verificada exitosamente!",
-      title: "¡Felicidades! Tu identidad ha sido verificada",
-      message: "Tu cuenta ahora está verificada. Ya puedes acceder a todas las funcionalidades de la plataforma.",
+      subject: "Identidad verificada — Medical Masters",
+      eyebrow: "Verificado",
+      title: "Tu identidad fue verificada",
+      subtitle: "Ya tienes acceso completo a la plataforma.",
+      message: "Tu cuenta ahora está verificada. Puedes usar todas las funcionalidades, incluyendo consultas con médicos, contenido premium y expediente seguro.",
+      accent: "success",
+      cta: "Ir a la plataforma",
     },
     failed: {
-      subject: "Verificación de identidad rechazada",
+      subject: "Verificación de identidad: requiere atención",
+      eyebrow: "Requiere atención",
       title: "No pudimos verificar tu identidad",
-      message: "Lamentablemente, no pudimos verificar tu identidad con la documentación proporcionada. Por favor, intenta nuevamente asegurándote de que las imágenes sean claras y legibles.",
+      subtitle: "Necesitamos que envíes la documentación nuevamente.",
+      message: "Las imágenes que recibimos no fueron suficientes. Por favor reintenta asegurándote de que sean claras, legibles y muestren el documento completo sin reflejos.",
+      accent: "warning",
+      cta: "Reintentar verificación",
     },
     expired: {
       subject: "Verificación de identidad expirada",
-      title: "Tu verificación ha expirado",
-      message: "Tu verificación de identidad ha expirado. Por favor, inicia el proceso nuevamente para mantener tu cuenta verificada.",
+      eyebrow: "Expirado",
+      title: "Tu verificación expiró",
+      subtitle: "Reactiva tu cuenta iniciando el proceso nuevamente.",
+      message: "Por seguridad, tu verificación de identidad expiró. Reanúdala desde la plataforma para mantener tu cuenta verificada.",
+      accent: "warning",
+      cta: "Reiniciar verificación",
     },
   };
 
-  const content = statusMessages[status] || statusMessages.pending;
+  const c = map[status] || map.pending;
+  const appUrl = "https://medical-masters.com";
 
   return {
-    subject: content.subject,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Medical Masters</h1>
-          </div>
-          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none;">
-            <h2 style="color: #1e293b; margin-top: 0;">${content.title}</h2>
-            <p style="color: #475569;">Hola ${name},</p>
-            <p style="color: #475569;">${content.message}</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 0;">
-              Este es un correo automático, por favor no respondas a este mensaje.
-            </p>
-          </div>
-        </body>
-      </html>
-    `,
+    subject: c.subject,
+    html: renderEmail({
+      preheader: c.subtitle,
+      accent: c.accent,
+      eyebrow: c.eyebrow,
+      title: c.title,
+      subtitle: c.subtitle,
+      greeting: `Hola, ${name}`,
+      bodyHtml: `<p style="margin:0;">${c.message}</p>`,
+      ctaText: c.cta,
+      ctaUrl: `${appUrl}/verify-identity`,
+      appUrl,
+    }),
   };
 };
 

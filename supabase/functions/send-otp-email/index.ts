@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { renderEmail, infoCard } from "../_shared/email-template.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SMS_API_KEY = Deno.env.get("SMS_API_KEY");
@@ -223,22 +224,28 @@ Deno.serve(async (req) => {
 
     // Send email
     if (shouldEmail && patientEmail && RESEND_API_KEY) {
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Medical Masters</h1>
-          </div>
-          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none;">
-            <h2 style="color: #1e293b; margin-top: 0;">🔐 Código de acceso a tu expediente</h2>
-            <p style="color: #475569;">Hola ${patientName},</p>
-            <p style="color: #475569;"><strong>${doctorName}</strong> está solicitando acceso a tu expediente médico. Si estás de acuerdo, comparte el siguiente código:</p>
-            <div style="background: #0ea5e9; color: white; font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; border-radius: 8px; margin: 20px 0;">${otpCode}</div>
-            <p style="color: #ef4444; font-weight: 600; text-align: center;">⏱️ Este código expira en 2 minutos</p>
-            <p style="color: #475569; font-size: 14px;">Si no reconoces esta solicitud, ignora este correo. No compartas este código con nadie más.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 0;">Este es un correo automático, por favor no respondas a este mensaje.</p>
-          </div>
-        </body></html>`;
+      const html = renderEmail({
+        preheader: `Código de acceso a tu expediente: ${otpCode} (expira en 2 minutos)`,
+        accent: "warning",
+        eyebrow: "Acceso a expediente",
+        title: "Confirma el acceso a tu expediente",
+        subtitle: `${doctorName} solicita ver tu expediente médico. Comparte el código solo si autorizas el acceso.`,
+        greeting: `Hola, ${patientName}`,
+        bodyHtml: `
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:16px 0;background:linear-gradient(135deg,#163a83 0%,#00768b 100%);border-radius:12px;">
+            <tr><td align="center" style="padding:22px 16px;">
+              <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.78);font-weight:600;">Código</div>
+              <div style="margin-top:6px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:36px;font-weight:700;color:#ffffff;letter-spacing:0.4em;">${otpCode}</div>
+              <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.78);">Expira en 2 minutos</div>
+            </td></tr>
+          </table>
+          ${infoCard({
+            accent: "warning",
+            html: `<p style="margin:0;">Si no reconoces esta solicitud, <strong>no compartas el código</strong> e ignora este correo.</p>`,
+          })}
+        `,
+        showFooter: true,
+      });
 
       const emailResp = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -246,7 +253,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
           to: [patientEmail],
-          subject: `🔐 Código de acceso a tu expediente médico: ${otpCode}`,
+          subject: `Código de acceso: ${otpCode}`,
           html,
         }),
       });

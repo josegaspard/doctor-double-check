@@ -1,6 +1,8 @@
 import { Resend } from "npm:resend@2.0.0";
 
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
+
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface PurchaseEmailRequest {
@@ -16,11 +18,8 @@ interface PurchaseEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // SECURITY (2026-05-11 audit): admin JWT or x-cron-secret. Previously open Resend relay.
   try { await requireAdminOrCron(req); } catch (__e) {
     if (__e instanceof AuthError) return __e.toResponse();
     return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -32,91 +31,59 @@ const handler = async (req: Request): Promise<Response> => {
 
     const formattedAmount = new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: currency,
+      currency,
     }).format(amount);
 
-    let subject = '';
-    let headerBg = '';
-    let headerIcon = '';
-    let headerTitle = '';
-    let bodyContent = '';
+    let subject = "";
+    let eyebrow = "";
+    let title = "";
+    let subtitle = "";
+    const rows: Array<[string, string]> = [["Producto", productName]];
+    if (orderId) rows.push(["Pedido", `#${orderId}`]);
+    if (shippingCity) rows.push(["Envío a", shippingCity]);
 
     if (type === 'shipped') {
-      subject = `Tu pedido ha sido enviado - ${productName} | Medical Masters`;
-      headerBg = 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
-      headerIcon = '📦';
-      headerTitle = '¡Tu Pedido fue Enviado!';
-      bodyContent = `
-        <p style="color: #64748b; font-size: 16px;">Tu pedido está en camino.</p>
-        ${trackingNumber ? `
-        <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
-          <h3 style="margin: 0 0 8px; color: #1e293b; font-size: 14px;">Número de rastreo</h3>
-          <p style="margin: 0; font-size: 18px; font-weight: 700; color: #8b5cf6; font-family: monospace;">${trackingNumber}</p>
-        </div>` : ''}
-      `;
+      subject = `Tu pedido fue enviado: ${productName}`;
+      eyebrow = "Pedido enviado";
+      title = "Tu pedido está en camino";
+      subtitle = "Te avisamos cuando esté entregado.";
+      if (trackingNumber) rows.push(["Guía", `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;">${trackingNumber}</span>`]);
     } else if (type === 'delivered') {
-      subject = `Tu pedido ha sido entregado - ${productName} | Medical Masters`;
-      headerBg = 'linear-gradient(135deg, #10b981, #059669)';
-      headerIcon = '🎉';
-      headerTitle = '¡Pedido Entregado!';
-      bodyContent = `<p style="color: #64748b; font-size: 16px;">Tu pedido ha sido entregado exitosamente.</p>`;
+      subject = `Pedido entregado: ${productName}`;
+      eyebrow = "Entregado";
+      title = "Tu pedido fue entregado";
+      subtitle = "Gracias por tu compra en Medical Masters.";
     } else {
-      subject = `Compra exitosa - ${productName} | Medical Masters`;
-      headerBg = 'linear-gradient(135deg, #10b981, #059669)';
-      headerIcon = '✓';
-      headerTitle = '¡Compra Exitosa!';
-      bodyContent = `
-        <p style="color: #64748b; font-size: 16px;">Tu compra ha sido procesada correctamente.</p>
-        ${shippingCity ? `<p style="color: #64748b; font-size: 14px;">📍 Envío a: <strong>${shippingCity}</strong></p>` : ''}
-      `;
+      subject = `Compra exitosa: ${productName}`;
+      eyebrow = "Compra exitosa";
+      title = "Recibimos tu pago";
+      subtitle = "Tu compra se procesó correctamente.";
     }
+
+    const accent = type === 'shipped' ? 'info' : 'success';
+
+    const html = renderEmail({
+      preheader: `${title} — ${formattedAmount}`,
+      accent,
+      eyebrow,
+      title,
+      subtitle,
+      greeting: `Hola, ${name}`,
+      bodyHtml: `
+        ${bigAmount(formattedAmount, "")}
+        ${detailTable(rows)}
+      `,
+      ctaText: "Ver mis pedidos",
+      ctaUrl: `${appUrl}/my-orders`,
+      appUrl,
+    });
 
     const emailResponse = await resend.emails.send({
       from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
       to: [email],
       subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
-          <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <div style="background: ${headerBg}; padding: 32px; text-align: center;">
-              <div style="width: 64px; height: 64px; background: white; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 32px;">${headerIcon}</span>
-              </div>
-              <h1 style="color: white; margin: 0; font-size: 24px;">${headerTitle}</h1>
-            </div>
-            <div style="padding: 32px;">
-              <h2 style="color: #1e293b; margin-top: 0;">Hola, ${name}!</h2>
-              ${bodyContent}
-              <div style="background: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                <h3 style="margin: 0 0 12px; color: #1e293b; font-size: 14px; text-transform: uppercase;">Detalle</h3>
-                <div style="margin-bottom: 8px;">
-                  <span style="color: #64748b;">Producto:</span>
-                  <span style="color: #1e293b; font-weight: 600; float: right;">${productName}</span>
-                </div>
-                <div style="clear:both;">
-                  <span style="color: #64748b;">Monto:</span>
-                  <span style="color: #10b981; font-weight: 700; font-size: 18px; float: right;">${formattedAmount}</span>
-                </div>
-              </div>
-              <div style="margin-top: 24px; text-align: center;">
-                <a href="${appUrl}/my-orders" style="display: inline-block; background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Ver mis pedidos
-                </a>
-              </div>
-            </div>
-            <div style="background: #f1f5f9; padding: 16px; text-align: center; color: #64748b; font-size: 12px;">
-              <p style="margin: 0;">© 2026 Medical Masters. Todos los derechos reservados.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html,
     });
-
-    console.log("Purchase email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,

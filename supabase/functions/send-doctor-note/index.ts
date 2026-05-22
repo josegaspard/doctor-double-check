@@ -1,6 +1,7 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -49,15 +50,17 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const html = `
-      <div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1f2937">
-        <h2 style="margin:0 0 12px;color:#163a83">${kind === 'invoice' ? 'Factura / Resumen médico' : kind === 'summary' ? 'Resumen médico' : 'Nota clínica'}</h2>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;white-space:pre-wrap;font-size:14px;line-height:1.55">${
-          body.replace(/[<>]/g, (c) => c === '<' ? '&lt;' : '&gt;')
-        }</div>
-        <p style="font-size:11px;color:#64748b;margin-top:16px">Enviado por un médico verificado a través de Medical Masters.</p>
-      </div>
-    `;
+    const kindTitle = kind === 'invoice' ? 'Factura / Resumen médico' : kind === 'summary' ? 'Resumen médico' : 'Nota clínica';
+    const safeBody = body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    const html = renderEmail({
+      preheader: `${kindTitle} enviada por tu médico vía Medical Masters`,
+      accent: "info",
+      eyebrow: kindTitle,
+      title: kindTitle,
+      subtitle: "Documento enviado por un médico verificado a través de Medical Masters.",
+      bodyHtml: `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:18px;white-space:pre-wrap;font-size:14px;line-height:22px;color:#0f172a;">${safeBody}</div>`,
+      appUrl: "https://medical-masters.com",
+    });
 
     const { error } = await resend.emails.send({
       from: 'Medical Masters <no-reply@medical-masters.com>',

@@ -13,6 +13,7 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUserOrService, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
+import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
@@ -51,110 +52,99 @@ interface NewPurchasePayload {
 }
 
 function buildEmail(type: NotifyType, data: any): { subject: string; html: string } {
-  const header = `
-    <div style="background: linear-gradient(135deg, #163a83, #00768b); padding: 32px 24px; text-align: center;">
-      <img src="${APP_URL}/email-logo-white.png" width="180" alt="Medical Masters" style="margin: 0 auto;" />
-    </div>
-  `;
-  const wrapBody = (title: string, body: string, ctaUrl: string, ctaLabel: string) => `
-    <!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head>
-    <body style="margin:0;background:#ffffff;font-family:Inter,Arial,sans-serif;">
-      <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
-        ${header}
-        <div style="padding:32px 24px;color:#1e293b;">
-          <h1 style="margin:0 0 16px;font-size:24px;color:#163a83;">${title}</h1>
-          ${body}
-          <div style="margin-top:24px;text-align:center;">
-            <a href="${ctaUrl}" style="display:inline-block;background:#163a83;color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">${ctaLabel}</a>
-          </div>
-          <hr style="margin:32px 0;border:0;border-top:1px solid #e2e8f0;" />
-          <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Notificación automática de Medical Masters · ${new Date().toLocaleDateString("es-MX")}</p>
-        </div>
-      </div>
-    </body></html>
-  `;
-
   if (type === "doctor_signup") {
     const p = data as DoctorSignupPayload;
     return {
-      subject: `🩺 Nuevo médico pendiente de verificación: ${p.userName}`,
-      html: wrapBody(
-        "Nuevo médico registrado",
-        `
-          <p style="font-size:16px;line-height:1.6;">Un nuevo profesional completó su onboarding y está pendiente de verificación.</p>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
-            <p style="margin:4px 0;"><strong>Nombre:</strong> ${p.userName}</p>
-            <p style="margin:4px 0;"><strong>Correo:</strong> ${p.userEmail}</p>
-            <p style="margin:4px 0;"><strong>Especialidad:</strong> ${p.specialty || "—"}</p>
-            <p style="margin:4px 0;"><strong>Cédula profesional:</strong> ${p.license || "(pendiente)"}</p>
-          </div>
-        `,
-        `${APP_URL}/admin/doctors`,
-        "Revisar en panel admin",
-      ),
+      subject: `Nuevo médico pendiente: ${p.userName}`,
+      html: renderEmail({
+        preheader: `Nuevo médico esperando verificación: ${p.userName}`,
+        accent: "info",
+        eyebrow: "Nuevo médico",
+        title: "Médico pendiente de verificación",
+        subtitle: "Un nuevo profesional completó su onboarding.",
+        bodyHtml: detailTable([
+          ["Nombre", p.userName],
+          ["Correo", `<a href="mailto:${p.userEmail}" style="color:#00768b;text-decoration:none;">${p.userEmail}</a>`],
+          ["Especialidad", p.specialty || "—"],
+          ["Cédula", p.license || "(pendiente)"],
+        ]),
+        ctaText: "Revisar en el panel",
+        ctaUrl: `${APP_URL}/admin/doctors`,
+        appUrl: APP_URL,
+      }),
     };
   }
   if (type === "resident_signup") {
     const p = data as ResidentSignupPayload;
     return {
-      subject: `🎓 Nuevo residente pendiente de verificación: ${p.userName}`,
-      html: wrapBody(
-        "Nuevo residente registrado",
-        `
-          <p style="font-size:16px;line-height:1.6;">Un residente completó su onboarding y está pendiente de verificación.</p>
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;">
-            <p style="margin:4px 0;"><strong>Nombre:</strong> ${p.userName}</p>
-            <p style="margin:4px 0;"><strong>Correo:</strong> ${p.userEmail}</p>
-            <p style="margin:4px 0;"><strong>Institución:</strong> ${p.institution || "—"}</p>
-            <p style="margin:4px 0;"><strong>Especialidad:</strong> ${p.specialty || "—"}</p>
-            <p style="margin:4px 0;"><strong>Año de residencia:</strong> ${p.year}</p>
-          </div>
-        `,
-        `${APP_URL}/admin/residents`,
-        "Revisar en panel admin",
-      ),
+      subject: `Nuevo residente pendiente: ${p.userName}`,
+      html: renderEmail({
+        preheader: `Nuevo residente esperando verificación: ${p.userName}`,
+        accent: "info",
+        eyebrow: "Nuevo residente",
+        title: "Residente pendiente de verificación",
+        subtitle: "Un residente completó su onboarding.",
+        bodyHtml: detailTable([
+          ["Nombre", p.userName],
+          ["Correo", `<a href="mailto:${p.userEmail}" style="color:#00768b;text-decoration:none;">${p.userEmail}</a>`],
+          ["Institución", p.institution || "—"],
+          ["Especialidad", p.specialty || "—"],
+          ["Año", String(p.year)],
+        ]),
+        ctaText: "Revisar en el panel",
+        ctaUrl: `${APP_URL}/admin/residents`,
+        appUrl: APP_URL,
+      }),
     };
   }
   if (type === "new_report") {
     const p = data as NewReportPayload;
+    const safeDesc = (p.description || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
     return {
-      subject: `🚨 Nueva denuncia (${p.reportType}) de ${p.reporterName}`,
-      html: wrapBody(
-        "Nueva denuncia recibida",
-        `
-          <p style="font-size:16px;line-height:1.6;">Un usuario reportó un problema en la plataforma.</p>
-          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin:16px 0;">
-            <p style="margin:4px 0;"><strong>Tipo:</strong> ${p.reportType}</p>
-            ${p.contentType ? `<p style="margin:4px 0;"><strong>Sobre:</strong> ${p.contentType}</p>` : ""}
-            <p style="margin:4px 0;"><strong>Reportado por:</strong> ${p.reporterName} (${p.reporterEmail})</p>
-            <p style="margin:12px 0 4px;"><strong>Descripción:</strong></p>
-            <p style="margin:0;background:#fff;padding:12px;border-radius:6px;border:1px solid #fecaca;white-space:pre-wrap;">${p.description.replace(/[<>]/g, "")}</p>
-          </div>
+      subject: `Denuncia (${p.reportType}) de ${p.reporterName}`,
+      html: renderEmail({
+        preheader: `Denuncia (${p.reportType}) recibida`,
+        accent: "danger",
+        eyebrow: `Denuncia · ${p.reportType}`,
+        title: "Nueva denuncia recibida",
+        subtitle: "Un usuario reportó un problema en la plataforma.",
+        bodyHtml: `
+          ${detailTable([
+            ["Tipo", p.reportType],
+            ...(p.contentType ? [["Sobre", p.contentType] as [string,string]] : []),
+            ["Reportado por", `${p.reporterName} <a href="mailto:${p.reporterEmail}" style="color:#00768b;text-decoration:none;">(${p.reporterEmail})</a>`],
+          ])}
+          <div style="margin:12px 0 0;padding:16px 18px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;font-size:14px;line-height:22px;color:#7f1d1d;white-space:pre-wrap;">${safeDesc}</div>
         `,
-        `${APP_URL}/admin/reports`,
-        "Ver denuncia",
-      ),
+        ctaText: "Ver denuncia",
+        ctaUrl: `${APP_URL}/admin/reports`,
+        appUrl: APP_URL,
+      }),
     };
   }
   if (type === "new_purchase") {
     const p = data as NewPurchasePayload;
     const formattedAmount = new Intl.NumberFormat("es-MX", { style: "currency", currency: p.currency || "MXN" }).format(p.amount);
     return {
-      subject: `💰 Nueva venta: ${formattedAmount} – ${p.productName}`,
-      html: wrapBody(
-        "Nueva compra confirmada",
-        `
-          <p style="font-size:16px;line-height:1.6;">Se completó una compra en el marketplace.</p>
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:16px 0;">
-            <p style="margin:4px 0;"><strong>Producto:</strong> ${p.productName}</p>
-            <p style="margin:4px 0;"><strong>Monto:</strong> ${formattedAmount}</p>
-            <p style="margin:4px 0;"><strong>Comprador:</strong> ${p.buyerName} (${p.buyerEmail})</p>
-            <p style="margin:4px 0;"><strong>ID de orden:</strong> <code>${p.orderId}</code></p>
-          </div>
+      subject: `Nueva venta: ${formattedAmount} — ${p.productName}`,
+      html: renderEmail({
+        preheader: `${p.productName} — ${formattedAmount}`,
+        accent: "success",
+        eyebrow: "Nueva venta",
+        title: "Nueva compra confirmada",
+        subtitle: `Compra completada en el marketplace.`,
+        bodyHtml: `
+          ${bigAmount(formattedAmount, "")}
+          ${detailTable([
+            ["Producto", p.productName],
+            ["Comprador", `${p.buyerName} <a href="mailto:${p.buyerEmail}" style="color:#00768b;text-decoration:none;">(${p.buyerEmail})</a>`],
+            ["Orden", `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;">${p.orderId}</span>`],
+          ])}
         `,
-        `${APP_URL}/admin/marketplace`,
-        "Ver orden",
-      ),
+        ctaText: "Ver orden",
+        ctaUrl: `${APP_URL}/admin/marketplace`,
+        appUrl: APP_URL,
+      }),
     };
   }
   throw new Error(`Unknown notification type: ${type}`);

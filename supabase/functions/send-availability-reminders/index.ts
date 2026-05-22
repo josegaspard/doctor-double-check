@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { renderEmail } from "../_shared/email-template.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
@@ -112,68 +113,27 @@ Deno.serve(async (req: Request) => {
           const unsubscribeAllToken = generateUnsubscribeToken(profile.id, availability.doctor_id, 'all');
           const subscriberName = profile.name || "Suscriptor";
 
-          const subject = `${typeIcon} Recordatorio: ${availability.title} en menos de 1 hora`;
+          const subject = `Recordatorio: ${availability.title} en menos de 1 hora`;
 
-          const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 16px 16px 0 0; padding: 32px; text-align: center;">
-      <div style="font-size: 48px; margin-bottom: 16px;">⏰</div>
-      <h1 style="color: white; margin: 0; font-size: 28px;">¡Recordatorio!</h1>
-    </div>
-    
-    <div style="background: white; padding: 32px; border-radius: 0 0 16px 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
-      <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
-        Hola <strong>${subscriberName}</strong>,
-      </p>
-      
-      <p style="color: #334155; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-        <strong>${doctorName}</strong> tiene un evento programado que comienza en menos de 1 hora:
-      </p>
-      
-      <div style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-radius: 12px; padding: 24px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <span style="font-size: 24px;">${typeIcon}</span>
-          <span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">${typeLabel}</span>
-        </div>
-        <h2 style="color: #1e293b; margin: 0 0 8px; font-size: 20px;">${availability.title}</h2>
-        ${availability.description ? `<p style="color: #64748b; margin: 0 0 12px; font-size: 14px;">${availability.description}</p>` : ''}
-        <p style="color: #92400e; margin: 0; font-size: 14px; font-weight: 600;">
-          📅 ${dateString} a las ${timeString}
-        </p>
-      </div>
-      
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${appUrl}/lives" style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
-          Ver Próximos Eventos
-        </a>
-      </div>
-      
-      <p style="color: #94a3b8; font-size: 13px; text-align: center; margin-top: 32px;">
-        ¡No te lo pierdas! Prepárate para participar.
-      </p>
-    </div>
-    
-    <div style="text-align: center; padding: 24px;">
-      <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-        Recibiste este email porque sigues a ${doctorName} en Medical Masters.
-      </p>
-      <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-        <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeToken}" style="color: #64748b;">Desuscribirse de recordatorios</a>
-        &nbsp;|&nbsp;
-        <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeAllToken}" style="color: #64748b;">Desuscribirse de todos los emails</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-          `;
+          const html = renderEmail({
+            preheader: `${doctorName}: ${availability.title} — ${dateString} a las ${timeString}`,
+            accent: "warning",
+            eyebrow: `${typeLabel} · En menos de 1 hora`,
+            title: availability.title,
+            subtitle: `${doctorName} · ${dateString} a las ${timeString}`,
+            greeting: `Hola, ${subscriberName}`,
+            bodyHtml: `
+              ${availability.description ? `<p style="margin:0 0 14px;color:#475569;">${availability.description}</p>` : ""}
+              <p style="margin:0;color:#475569;">Prepárate para conectarte unos minutos antes.</p>
+            `,
+            ctaText: "Ver próximos eventos",
+            ctaUrl: `${appUrl}/lives`,
+            appUrl,
+            secondaryNote: `Recibes este correo porque sigues a ${doctorName}.<br/>
+              <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeToken}" style="color:#64748b;">Pausar recordatorios</a>
+              &nbsp;·&nbsp;
+              <a href="${baseUrl}/unsubscribe-email?token=${unsubscribeAllToken}" style="color:#64748b;">Cancelar todos los correos</a>`,
+          });
 
           try {
             const emailResponse = await fetch('https://api.resend.com/emails', {

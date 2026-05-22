@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 import { generatePayoutReceiptPdf } from "../_shared/payout-receipt.ts";
+import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -291,21 +292,26 @@ Deno.serve(async (req) => {
                 body: JSON.stringify({
                   from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
                   to: [doctorProfile.email],
-                  subject: "💰 Pago procesado - Medical Masters",
+                  subject: `Pago procesado — $${payoutAmount.toFixed(2)} MXN`,
                   attachments,
-                  html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                      <h2>¡Hola ${doctorProfile.name || "Doctor"}!</h2>
-                      <p>Se ha procesado un pago a tu cuenta bancaria vía Stripe:</p>
-                      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-                        <tr><td style="padding: 8px; font-weight: bold;">Monto del pago:</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #38a169;">$${payoutAmount.toFixed(2)} MXN</td></tr>
-                        <tr><td style="padding: 8px; border-top: 1px solid #eee;">Referencia Stripe:</td><td style="padding: 8px; border-top: 1px solid #eee; text-align: right; font-size: 12px;">${transfer.id}</td></tr>
-                      </table>
-                      <p>Adjuntamos tu <strong>comprobante de pago</strong> en PDF.</p>
-                      <p>El depósito llegará a tu cuenta en 2-3 días hábiles.</p>
-                      <p style="color: #718096; font-size: 12px;">Este es un correo automático de Medical Masters.</p>
-                    </div>
-                  `,
+                  html: renderEmail({
+                    preheader: `Pago procesado a tu cuenta vía Stripe Connect: $${payoutAmount.toFixed(2)} MXN`,
+                    accent: "success",
+                    eyebrow: "Pago procesado",
+                    title: "Recibiste un pago",
+                    subtitle: "Se transfirió a tu cuenta bancaria vía Stripe Connect. Adjuntamos tu comprobante en PDF.",
+                    greeting: `Hola, ${doctorProfile.name || "Doctor"}`,
+                    bodyHtml: `
+                      ${bigAmount(`$${payoutAmount.toFixed(2)}`, "MXN")}
+                      ${detailTable([
+                        ["Método", "Stripe Connect"],
+                        ["Referencia", `<span style="font-family:ui-monospace,Menlo,Consolas,monospace;">${transfer.id}</span>`],
+                        ["Llegada estimada", "2–3 días hábiles"],
+                      ])}
+                    `,
+                    ctaText: "Ver mis pagos",
+                    ctaUrl: "https://medical-masters.com/doctor/payouts",
+                  }),
                 }),
               });
               console.log(`Payout email sent to ${doctorProfile.email}`);

@@ -5,6 +5,7 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
+import { renderEmail } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
@@ -78,36 +79,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const subject = `📞 Llamada perdida del Dr. ${doctor?.name || "tu médico"}`;
-    const html = `
-      <!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/></head>
-      <body style="margin:0;background:#fff;font-family:Inter,Arial,sans-serif;">
-        <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
-          <div style="background:linear-gradient(135deg,#163a83,#00768b);padding:32px 24px;text-align:center;">
-            <img src="${APP_URL}/email-logo-white.png" width="180" alt="Medical Masters" style="margin:0 auto;" />
-          </div>
-          <div style="padding:32px 24px;color:#1e293b;">
-            <h1 style="margin:0 0 16px;font-size:22px;color:#163a83;">📞 Tuviste una llamada perdida</h1>
-            <p style="font-size:16px;line-height:1.6;">Hola ${patient.name || ""},</p>
-            <p style="font-size:16px;line-height:1.6;">
-              El <strong>Dr. ${doctor?.name || "tu médico"}</strong> intentó iniciar una videoconsulta contigo pero no respondiste a tiempo.
-            </p>
-            <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:16px 0;">
-              <p style="margin:0;font-size:14px;color:#0c4a6e;">
-                Puedes responder por chat ahora mismo o esperar a que el médico te contacte de nuevo.
-              </p>
-            </div>
-            <div style="text-align:center;margin-top:24px;">
-              <a href="${APP_URL}/chat" style="display:inline-block;background:#163a83;color:#fff;padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;">Abrir chat con el médico</a>
-            </div>
-            <hr style="margin:32px 0;border:0;border-top:1px solid #e2e8f0;" />
-            <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">
-              ${new Date().toLocaleDateString("es-MX", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          </div>
-        </div>
-      </body></html>
-    `;
+    const docName = doctor?.name || "tu médico";
+    const subject = `Llamada perdida del Dr. ${docName}`;
+    const html = renderEmail({
+      preheader: `El Dr. ${docName} intentó iniciar una videoconsulta contigo`,
+      accent: "warning",
+      eyebrow: "Llamada perdida",
+      title: "Tuviste una llamada perdida",
+      subtitle: `El Dr. ${docName} intentó iniciar una videoconsulta contigo pero no respondiste a tiempo.`,
+      greeting: `Hola, ${patient.name || ""}`,
+      bodyHtml: `
+        <p style="margin:0 0 12px;">Puedes responder por chat ahora mismo o esperar a que el médico te contacte de nuevo.</p>
+      `,
+      ctaText: "Abrir chat con el médico",
+      ctaUrl: `${APP_URL}/chat`,
+      appUrl: APP_URL,
+    });
 
     await resend.emails.send({
       from: FROM_EMAIL,
