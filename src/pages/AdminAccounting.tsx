@@ -21,10 +21,13 @@ interface SummaryRow {
 }
 
 const ACCOUNT_LABELS_ES: Record<string, string> = {
-  cash_stripe: 'Efectivo entrante (Stripe)',
-  revenue_gross: 'Ingreso bruto',
+  cash_in: 'Efectivo entrante (telemedicina)',
+  cash_stripe: 'Efectivo entrante (Stripe / marketplace)',
+  revenue_gross: 'Ingreso bruto marketplace',
   revenue_platform: 'Comisión plataforma (ingreso)',
+  liability_doctor_payable: 'Adeudo a doctores',
   liability_vendor_payable: 'Adeudo a vendors',
+  liability_user_wallet: 'Saldo de usuarios (wallets)',
   expense_stripe_fee: 'Gastos comisiones Stripe',
   tax_iva_payable: 'IVA por pagar',
   shipping_collected: 'Envío recaudado',
@@ -67,10 +70,14 @@ export default function AdminAccounting() {
   const get = (acct: string) => summary.find(s => s.account === acct);
   const balance = (acct: string) => Number(get(acct)?.balance || 0);
 
-  const cashIn = balance('cash_stripe'); // debit positive = entrada
-  const platformRevenue = -balance('revenue_platform'); // credit accounts → balance negativo
-  const grossRevenue = -balance('revenue_gross');
+  // Cuentas de efectivo (débito positivo = entrada). cash_in = telemedicina,
+  // cash_stripe = marketplace; el panel suma ambas para la vista de plataforma.
+  const cashIn = balance('cash_stripe') + balance('cash_in');
+  // Cuentas de ingreso/pasivo son 'credit' → su balance es negativo; se invierte.
+  const platformRevenue = -balance('revenue_platform'); // comisión total (telemedicina + marketplace)
+  const doctorPayable = -balance('liability_doctor_payable');
   const vendorPayable = -balance('liability_vendor_payable');
+  const userWalletLiability = -balance('liability_user_wallet');
   const stripeFee = balance('expense_stripe_fee');
   const refundExpense = balance('refund_expense');
   const ivaPayable = -balance('tax_iva_payable');
@@ -115,7 +122,7 @@ export default function AdminAccounting() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">{es ? 'Contabilidad' : 'Accounting'}</h1>
-              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Estado financiero del marketplace en tiempo real' : 'Real-time marketplace P&L'}</p>
+              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Estado financiero de toda la plataforma en tiempo real — consultas, grabaciones, suscripciones, marketplace y recargas' : 'Real-time platform-wide P&L'}</p>
             </div>
           </div>
         </div>
@@ -142,16 +149,16 @@ export default function AdminAccounting() {
         </Card>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <KpiCard label={es ? 'Ingreso bruto' : 'Gross revenue'} value={fmt(grossRevenue)} icon={DollarSign} tone="primary" />
-          <KpiCard label={es ? 'Comisión plataforma' : 'Platform fee'} value={fmt(platformRevenue)} icon={TrendingUp} tone="success" />
-          <KpiCard label={es ? 'Adeudo a vendors' : 'Vendor payable'} value={fmt(vendorPayable)} icon={Wallet} tone="warning" />
+          <KpiCard label={es ? 'Comisión plataforma' : 'Platform revenue'} value={fmt(platformRevenue)} icon={TrendingUp} tone="success" />
           <KpiCard label={es ? 'Neto plataforma' : 'Net platform'} value={fmt(netPlatform)} icon={Receipt} tone={netPlatform >= 0 ? 'success' : 'destructive'} />
+          <KpiCard label={es ? 'Adeudo a doctores' : 'Doctor payable'} value={fmt(doctorPayable)} icon={Wallet} tone="warning" />
+          <KpiCard label={es ? 'Adeudo a vendors' : 'Vendor payable'} value={fmt(vendorPayable)} icon={Wallet} tone="warning" />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <KpiCard label={es ? 'Gastos Stripe' : 'Stripe fees'} value={fmt(stripeFee)} icon={CreditCard} tone="muted" />
-          <KpiCard label={es ? 'Devoluciones' : 'Refunds'} value={fmt(refundExpense)} icon={AlertTriangle} tone="destructive" />
           <KpiCard label={es ? 'IVA por pagar' : 'VAT payable'} value={fmt(ivaPayable)} icon={FileText} tone="warning" />
+          <KpiCard label={es ? 'Saldo usuarios (wallets)' : 'User wallet balance'} value={fmt(userWalletLiability)} icon={Wallet} tone="muted" />
+          <KpiCard label={es ? 'Devoluciones' : 'Refunds'} value={fmt(refundExpense)} icon={AlertTriangle} tone="destructive" />
           <KpiCard label={es ? 'Efectivo entrante' : 'Cash in'} value={fmt(cashIn)} icon={DollarSign} tone="primary" />
         </div>
 
