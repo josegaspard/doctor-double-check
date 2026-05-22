@@ -366,7 +366,7 @@ export default function RecordingPlayer() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/recordings')} className="hidden sm:inline-flex mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/recordings')} className="hidden sm:inline-flex mb-3 sm:mb-4 h-8 text-xs sm:text-sm hover:bg-transparent hover:text-foreground">
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           {t('recordingPlayerPage.backToRecordings')}
         </Button>
