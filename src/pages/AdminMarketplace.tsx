@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse, Star, EyeOff, Eye as EyeIcon, Percent } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
 export default function AdminMarketplace() {
   const navigate = useNavigate();
@@ -48,28 +49,36 @@ export default function AdminMarketplace() {
         </div>
 
         <Tabs defaultValue="products">
-          <TabsList className="w-full grid grid-cols-4 sm:grid-cols-11 mb-4 h-auto">
+          <TabsList className={`w-full grid grid-cols-4 ${FEATURE_FLAGS.marketplaceVendors ? 'sm:grid-cols-12' : 'sm:grid-cols-8'} mb-4 h-auto`}>
             <TabsTrigger value="products" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Package className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.products')}</span></TabsTrigger>
-            <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.vendors')}</span></TabsTrigger>
+            <TabsTrigger value="brands" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.brands')}</span></TabsTrigger>
+            {FEATURE_FLAGS.marketplaceVendors && (
+              <TabsTrigger value="vendors" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Store className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.vendors')}</span></TabsTrigger>
+            )}
             <TabsTrigger value="categories" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Tag className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.categories')}</span></TabsTrigger>
             <TabsTrigger value="orders" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ShoppingCart className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.orders')}</span></TabsTrigger>
             <TabsTrigger value="sales" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><TrendingUp className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.sales')}</span></TabsTrigger>
             <TabsTrigger value="refunds" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><RotateCcw className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.refunds')}</span></TabsTrigger>
-            <TabsTrigger value="disputes" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.disputes')}</span></TabsTrigger>
-            <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.payouts')}</span></TabsTrigger>
+            {FEATURE_FLAGS.marketplaceVendors && (
+              <TabsTrigger value="disputes" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.disputes')}</span></TabsTrigger>
+            )}
+            {FEATURE_FLAGS.marketplaceVendors && (
+              <TabsTrigger value="payouts" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><CreditCard className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.payouts')}</span></TabsTrigger>
+            )}
             <TabsTrigger value="stock" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Warehouse className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.stock')}</span></TabsTrigger>
             <TabsTrigger value="audit" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><ClipboardList className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.audit')}</span></TabsTrigger>
             <TabsTrigger value="reviews" className="text-[10px] sm:text-xs gap-1 px-1.5 py-1.5"><Star className="w-3 h-3" /><span className="hidden sm:inline">{t('adminMarketplacePage.tabs.reviews')}</span></TabsTrigger>
           </TabsList>
 
           <TabsContent value="products"><ProductsTab es={es} /></TabsContent>
-          <TabsContent value="vendors"><VendorsTab es={es} /></TabsContent>
+          <TabsContent value="brands"><BrandsTab es={es} /></TabsContent>
+          {FEATURE_FLAGS.marketplaceVendors && <TabsContent value="vendors"><VendorsTab es={es} /></TabsContent>}
           <TabsContent value="categories"><CategoriesTab es={es} /></TabsContent>
           <TabsContent value="orders"><OrdersTab es={es} /></TabsContent>
           <TabsContent value="sales"><SalesTab es={es} /></TabsContent>
           <TabsContent value="refunds"><RefundsTab es={es} /></TabsContent>
-          <TabsContent value="disputes"><DisputesTab es={es} /></TabsContent>
-          <TabsContent value="payouts"><PayoutsTab es={es} /></TabsContent>
+          {FEATURE_FLAGS.marketplaceVendors && <TabsContent value="disputes"><DisputesTab es={es} /></TabsContent>}
+          {FEATURE_FLAGS.marketplaceVendors && <TabsContent value="payouts"><PayoutsTab es={es} /></TabsContent>}
           <TabsContent value="stock"><StockTab es={es} /></TabsContent>
           <TabsContent value="audit"><AuditTab es={es} /></TabsContent>
           <TabsContent value="reviews"><ReviewsTab es={es} /></TabsContent>
@@ -80,34 +89,55 @@ export default function AdminMarketplace() {
 }
 
 /* =================== PRODUCTS TAB =================== */
-function ProductsTab({ es: _es }: { es: boolean }) {
+function ProductsTab({ es }: { es: boolean }) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<any[]>([]);
-  const [vendors, setVendors] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', vendor_id: '', image_url: '', stock: '0', is_active: true });
+  const [form, setForm] = useState({ name: '', description: '', category: '', price: '', brand_id: '', image_url: '', stock: '0', is_active: true });
   const [saving, setSaving] = useState(false);
+  const [brandDialogOpen, setBrandDialogOpen] = useState(false);
+  const [newBrand, setNewBrand] = useState({ name: '', description: '', logo_url: '' });
+  const [savingBrand, setSavingBrand] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
-    const [{ data: p }, { data: v }] = await Promise.all([
-      supabase.from('marketplace_products').select('*, marketplace_vendors(name)').order('created_at', { ascending: false }),
-      supabase.from('marketplace_vendors').select('id, name').eq('status', 'approved'),
+    const [{ data: p }, { data: b }] = await Promise.all([
+      supabase.from('marketplace_products').select('*, marketplace_brands(name)').order('created_at', { ascending: false }),
+      (supabase as any).from('marketplace_brands').select('id, name').eq('is_active', true).order('name'),
     ]);
-    setProducts((p as any[]) || []); setVendors((v as any[]) || []); setLoading(false);
+    setProducts((p as any[]) || []); setBrands((b as any[]) || []); setLoading(false);
   };
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    if (!form.name || !form.vendor_id) { toast.error(t('adminMarketplacePage.common.nameAndVendorRequired')); return; }
+    if (!form.name) { toast.error(t('adminMarketplacePage.common.nameRequired')); return; }
     setSaving(true);
-    const payload = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: form.vendor_id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
-    if (editingId) await supabase.from('marketplace_products').update(payload as any).eq('id', editingId);
-    else await supabase.from('marketplace_products').insert(payload as any);
+    const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, brand_id: form.brand_id || null, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
+    if (editingId) await supabase.from('marketplace_products').update(payload).eq('id', editingId);
+    else await supabase.from('marketplace_products').insert(payload);
     setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
+  };
+
+  const handleCreateBrand = async () => {
+    if (!newBrand.name.trim()) { toast.error(t('adminMarketplacePage.brands.nameRequired')); return; }
+    setSavingBrand(true);
+    const { data, error } = await (supabase as any).from('marketplace_brands').insert({
+      name: newBrand.name.trim(),
+      description: newBrand.description.trim() || null,
+      logo_url: newBrand.logo_url.trim() || null,
+      is_active: true,
+    }).select('id, name').single();
+    setSavingBrand(false);
+    if (error) { toast.error(error.message); return; }
+    setBrands(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+    setForm(f => ({ ...f, brand_id: data.id }));
+    setNewBrand({ name: '', description: '', logo_url: '' });
+    setBrandDialogOpen(false);
+    toast.success(t('adminMarketplacePage.brands.created'));
   };
 
   const handleDelete = async (id: string) => {
@@ -125,7 +155,7 @@ function ProductsTab({ es: _es }: { es: boolean }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder={t('adminMarketplacePage.common.searchProduct')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', category: '', price: '', vendor_id: '', image_url: '', stock: '0', is_active: true }); setDialogOpen(true); }} className="gap-1.5">
+        <Button onClick={() => { setEditingId(null); setForm({ name: '', description: '', category: '', price: '', brand_id: '', image_url: '', stock: '0', is_active: true }); setDialogOpen(true); }} className="gap-1.5">
           <Plus className="w-4 h-4" /> {t('adminMarketplacePage.common.add')}
         </Button>
       </div>
@@ -136,10 +166,12 @@ function ProductsTab({ es: _es }: { es: boolean }) {
               {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{(p as any).marketplace_vendors?.name} · ${p.price} MXN · Stock: {p.stock}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(p as any).marketplace_brands?.name ? `${(p as any).marketplace_brands.name} · ` : ''}${p.price} MXN · Stock: {p.stock}
+                </p>
               </div>
               <Badge variant={p.is_active ? 'default' : 'secondary'} className="text-[10px]">{p.is_active ? t('adminMarketplacePage.common.active') : t('adminMarketplacePage.common.inactive')}</Badge>
-              <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), vendor_id: p.vendor_id, image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), brand_id: p.brand_id || '', image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </CardContent></Card>
           ))}
@@ -152,10 +184,23 @@ function ProductsTab({ es: _es }: { es: boolean }) {
           <div className="space-y-3">
             <div><Label>{t('adminMarketplacePage.common.name')} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
             <div><Label>{t('adminMarketplacePage.common.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
-            <div><Label>{t('adminMarketplacePage.common.vendor')} *</Label>
-              <Select value={form.vendor_id} onValueChange={v => setForm(f => ({ ...f, vendor_id: v }))}>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label>{t('adminMarketplacePage.common.brand')}</Label>
+                <button
+                  type="button"
+                  onClick={() => setBrandDialogOpen(true)}
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> {t('adminMarketplacePage.brands.createNew')}
+                </button>
+              </div>
+              <Select value={form.brand_id || '__none__'} onValueChange={v => setForm(f => ({ ...f, brand_id: v === '__none__' ? '' : v }))}>
                 <SelectTrigger><SelectValue placeholder={t('adminMarketplacePage.common.select')} /></SelectTrigger>
-                <SelectContent>{vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  <SelectItem value="__none__">{es ? 'Sin marca' : 'No brand'}</SelectItem>
+                  {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -164,6 +209,129 @@ function ProductsTab({ es: _es }: { es: boolean }) {
             </div>
             <div><Label>{t('adminMarketplacePage.common.category')}</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
             <div><Label>{t('adminMarketplacePage.common.imageUrl')}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
+            <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('adminMarketplacePage.common.active')}</Label></div>
+            <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inline create-brand dialog */}
+      <Dialog open={brandDialogOpen} onOpenChange={setBrandDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t('adminMarketplacePage.brands.newBrand')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{t('adminMarketplacePage.common.name')} *</Label><Input value={newBrand.name} onChange={e => setNewBrand(b => ({ ...b, name: e.target.value }))} autoFocus /></div>
+            <div><Label>{t('adminMarketplacePage.common.description')}</Label><Textarea value={newBrand.description} onChange={e => setNewBrand(b => ({ ...b, description: e.target.value }))} rows={2} /></div>
+            <div><Label>{t('adminMarketplacePage.brands.logoUrl')}</Label><Input value={newBrand.logo_url} onChange={e => setNewBrand(b => ({ ...b, logo_url: e.target.value }))} placeholder="https://..." /></div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setBrandDialogOpen(false)} className="flex-1">{t('common.cancel')}</Button>
+              <Button onClick={handleCreateBrand} disabled={savingBrand} className="flex-1">
+                {savingBrand ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* =================== BRANDS TAB =================== */
+function BrandsTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
+  const [brands, setBrands] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: '', description: '', logo_url: '', is_active: true });
+  const [saving, setSaving] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    const { data } = await (supabase as any).from('marketplace_brands').select('*').order('created_at', { ascending: false });
+    setBrands((data as any[]) || []);
+    setLoading(false);
+  };
+  useEffect(() => { fetchData(); }, []);
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { toast.error(t('adminMarketplacePage.brands.nameRequired')); return; }
+    setSaving(true);
+    const payload: any = {
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      logo_url: form.logo_url.trim() || null,
+      is_active: form.is_active,
+    };
+    let res;
+    if (editingId) {
+      res = await (supabase as any).from('marketplace_brands').update(payload).eq('id', editingId);
+    } else {
+      res = await (supabase as any).from('marketplace_brands').insert(payload);
+    }
+    setSaving(false);
+    if (res.error) { toast.error(res.error.message); return; }
+    setDialogOpen(false);
+    fetchData();
+    toast.success(t('adminMarketplacePage.common.saved'));
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm(t('adminMarketplacePage.brands.confirmDelete'))) return;
+    const { error } = await (supabase as any).from('marketplace_brands').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    fetchData(); toast.success(t('adminMarketplacePage.common.deleted'));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold">{es ? 'Marcas registradas' : 'Registered brands'}</h3>
+        <Button
+          onClick={() => { setEditingId(null); setForm({ name: '', description: '', logo_url: '', is_active: true }); setDialogOpen(true); }}
+          className="gap-1.5"
+        >
+          <Plus className="w-4 h-4" /> {t('adminMarketplacePage.brands.newBrand')}
+        </Button>
+      </div>
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+      ) : brands.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
+          {t('adminMarketplacePage.brands.empty')}
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-2">
+          {brands.map(b => (
+            <Card key={b.id}><CardContent className="p-3 flex items-center gap-3">
+              {b.logo_url
+                ? <img src={b.logo_url} alt={b.name} className="w-12 h-12 rounded-lg object-cover bg-muted" />
+                : <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center"><Tag className="w-5 h-5 text-primary" /></div>
+              }
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{b.name}</p>
+                {b.description && <p className="text-xs text-muted-foreground line-clamp-1">{b.description}</p>}
+              </div>
+              <Badge variant={b.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                {b.is_active ? t('adminMarketplacePage.common.active') : t('adminMarketplacePage.common.inactive')}
+              </Badge>
+              <Button variant="ghost" size="icon" onClick={() => {
+                setEditingId(b.id);
+                setForm({ name: b.name, description: b.description || '', logo_url: b.logo_url || '', is_active: b.is_active });
+                setDialogOpen(true);
+              }}><Pencil className="w-4 h-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+            </CardContent></Card>
+          ))}
+        </div>
+      )}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingId ? t('adminMarketplacePage.brands.editBrand') : t('adminMarketplacePage.brands.newBrand')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{t('adminMarketplacePage.common.name')} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} autoFocus /></div>
+            <div><Label>{t('adminMarketplacePage.common.description')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} /></div>
+            <div><Label>{t('adminMarketplacePage.brands.logoUrl')}</Label><Input value={form.logo_url} onChange={e => setForm(f => ({ ...f, logo_url: e.target.value }))} placeholder="https://..." /></div>
             <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} /><Label>{t('adminMarketplacePage.common.active')}</Label></div>
             <Button onClick={handleSave} disabled={saving} className="w-full">{saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('adminMarketplacePage.common.save')}</Button>
           </div>

@@ -4074,6 +4074,7 @@ export const en = {
     subtitle: 'Manage products, vendors, categories, orders and sales',
     tabs: {
       products: 'Products',
+      brands: 'Brands',
       vendors: 'Vendors',
       categories: 'Cats',
       orders: 'Orders',
@@ -4087,6 +4088,7 @@ export const en = {
     },
     common: {
       nameAndVendorRequired: 'Name and vendor required',
+      nameRequired: 'Name required',
       saved: 'Saved',
       confirmDelete: 'Delete?',
       deleted: 'Deleted',
@@ -4100,11 +4102,22 @@ export const en = {
       name: 'Name',
       description: 'Description',
       vendor: 'Vendor',
+      brand: 'Brand',
       select: 'Select',
       pricemxn: 'Price (MXN)',
       category: 'Category',
       imageUrl: 'Image URL',
       save: 'Save',
+    },
+    brands: {
+      newBrand: 'New brand',
+      editBrand: 'Edit brand',
+      createNew: 'Create brand',
+      nameRequired: 'Brand name required',
+      logoUrl: 'Logo URL (optional)',
+      created: 'Brand created',
+      confirmDelete: 'Delete this brand? Linked products will be left without a brand.',
+      empty: 'No brands yet. Create the first one with the button above.',
     },
     vendors: {
       nameRequired: 'Name required',

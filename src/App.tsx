@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useBackgroundUploadResumer } from "@/hooks/useBackgroundUploadResumer";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { FEATURE_FLAGS } from "@/lib/featureFlags";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
@@ -253,7 +254,7 @@ const App = () => {
                       <Route path="/admin/content-moderation" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminContentModeration /></AccessGuard>} />
                       <Route path="/book/:doctorId" element={<BookAppointment />} />
                       <Route path="/my-appointments" element={<MyAppointments />} />
-                      <Route path="/vendor/products" element={<VendorProducts />} />
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<VendorProducts />} />}
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
                       <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
                       <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
@@ -297,9 +298,9 @@ const App = () => {
                       <Route path="/admin/hospitals" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminHospitals /></AccessGuard>} />
                       <Route path="/admin/marketplace" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplace /></AccessGuard>} />
                       <Route path="/admin/accounting" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAccounting /></AccessGuard>} />
-                      <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />
-                      <Route path="/vendor/earnings" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorEarnings /></AccessGuard>} />
-                      <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/earnings" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorEarnings /></AccessGuard>} />}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/dashboard" element={<VendorDashboard />} />}
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />
                       <Route path="/psychology" element={<PsychologyDirectory />} />

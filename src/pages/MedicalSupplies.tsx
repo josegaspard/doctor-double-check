@@ -16,9 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sparkles, SlidersHorizontal, X, ArrowUpDown, ClipboardList, Wallet, CreditCard } from 'lucide-react';
+import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sparkles, SlidersHorizontal, X, ArrowUpDown, ClipboardList, Wallet, CreditCard, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
+import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
 type SortMode = 'featured' | 'price_asc' | 'price_desc' | 'name' | 'newest';
 
@@ -52,12 +53,17 @@ export default function MedicalSupplies() {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
-      const [{ data: p }, { data: c }, { data: v }] = await Promise.all([
-        supabase.from('marketplace_products').select('*, marketplace_vendors(name, logo_url, website, phone, location)').eq('is_active', true).order('created_at', { ascending: false }),
+      const [{ data: p }, { data: c }, vRes] = await Promise.all([
+        supabase.from('marketplace_products')
+          .select('*, marketplace_vendors(name, logo_url, website, phone, location), marketplace_brands(id, name, logo_url, description)')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false }),
         supabase.from('marketplace_categories').select('*').eq('is_active', true).order('sort_order'),
-        supabase.from('marketplace_vendors').select('*').eq('status', 'approved').order('name'),
+        FEATURE_FLAGS.marketplaceVendors
+          ? supabase.from('marketplace_vendors').select('*').eq('status', 'approved').order('name')
+          : Promise.resolve({ data: [] } as any),
       ]);
-      setProducts(p || []); setCategories(c || []); setVendors(v || []); setLoading(false);
+      setProducts(p || []); setCategories(c || []); setVendors((vRes as any).data || []); setLoading(false);
     };
     fetchAll();
   }, []);
@@ -203,19 +209,22 @@ export default function MedicalSupplies() {
         </Select>
       </div>
 
-      <hr className="border-border/50" />
-
-      {/* Vendor */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.vendor')}</p>
-        <Select value={filterVendor} onValueChange={setFilterVendor}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalSuppliesPage.filters.allMasc')} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('medicalSuppliesPage.filters.allMasc')}</SelectItem>
-            {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+      {FEATURE_FLAGS.marketplaceVendors && (
+        <>
+          <hr className="border-border/50" />
+          {/* Vendor */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('medicalSuppliesPage.filters.vendor')}</p>
+            <Select value={filterVendor} onValueChange={setFilterVendor}>
+              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalSuppliesPage.filters.allMasc')} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('medicalSuppliesPage.filters.allMasc')}</SelectItem>
+                {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
 
       <hr className="border-border/50" />
 
@@ -286,18 +295,24 @@ export default function MedicalSupplies() {
           </div>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" />{products.length} {t('medicalSuppliesPage.hero.productsCount')}</span>
-            <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5" />{vendors.length} {t('medicalSuppliesPage.hero.vendorsCount')}</span>
+            {FEATURE_FLAGS.marketplaceVendors && (
+              <span className="flex items-center gap-1"><Store className="w-3.5 h-3.5" />{vendors.length} {t('medicalSuppliesPage.hero.vendorsCount')}</span>
+            )}
           </div>
           <div className="mt-4 flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{t('medicalSuppliesPage.hero.sellHereCta')}</Button>
+            {FEATURE_FLAGS.marketplaceVendors && (
+              <Button variant="outline" size="sm" onClick={() => navigate('/vendor/dashboard')} className="text-xs gap-1"><Store className="w-3.5 h-3.5" />{t('medicalSuppliesPage.hero.sellHereCta')}</Button>
+            )}
             {user && <Button variant="default" size="sm" onClick={() => navigate('/my-orders')} className="text-xs gap-1"><ClipboardList className="w-3.5 h-3.5" />{t('medicalSuppliesPage.hero.myOrders')}</Button>}
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4">
-          <Button variant={tab === 'products' ? 'default' : 'outline'} size="sm" onClick={() => setTab('products')} className="gap-1.5"><Package className="w-4 h-4" />{t('medicalSuppliesPage.tabs.products')}</Button>
-          <Button variant={tab === 'vendors' ? 'default' : 'outline'} size="sm" onClick={() => setTab('vendors')} className="gap-1.5"><Store className="w-4 h-4" />{t('medicalSuppliesPage.tabs.vendors')}</Button>
-        </div>
+        {FEATURE_FLAGS.marketplaceVendors && (
+          <div className="flex gap-2 mb-4">
+            <Button variant={tab === 'products' ? 'default' : 'outline'} size="sm" onClick={() => setTab('products')} className="gap-1.5"><Package className="w-4 h-4" />{t('medicalSuppliesPage.tabs.products')}</Button>
+            <Button variant={tab === 'vendors' ? 'default' : 'outline'} size="sm" onClick={() => setTab('vendors')} className="gap-1.5"><Store className="w-4 h-4" />{t('medicalSuppliesPage.tabs.vendors')}</Button>
+          </div>
+        )}
 
         {tab === 'products' && (
           <>
@@ -369,7 +384,9 @@ export default function MedicalSupplies() {
                           </div>
                           <CardContent className="p-3">
                             <p className="font-medium text-xs sm:text-sm line-clamp-2 mb-1 min-h-[2rem]">{p.name}</p>
-                            <p className="text-[10px] text-muted-foreground mb-2 truncate">{p.marketplace_vendors?.name}</p>
+                            <p className="text-[10px] text-muted-foreground mb-2 truncate inline-flex items-center gap-1">
+                              {p.marketplace_brands?.name ? (<><Tag className="w-2.5 h-2.5" />{p.marketplace_brands.name}</>) : (FEATURE_FLAGS.marketplaceVendors && p.marketplace_vendors?.name) || ''}
+                            </p>
                             <div className="flex items-end justify-between">
                               <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[9px] text-muted-foreground">{p.currency}</p></div>
                               <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{t('medicalSuppliesPage.product.buy')}</Button>
@@ -386,7 +403,7 @@ export default function MedicalSupplies() {
           </>
         )}
 
-        {tab === 'vendors' && (
+        {FEATURE_FLAGS.marketplaceVendors && tab === 'vendors' && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {vendors.map(v => (
               <Card key={v.id} className="hover:shadow-lg transition-shadow">
@@ -415,10 +432,21 @@ export default function MedicalSupplies() {
               {featuredIds.has(selectedProduct.id) && <Badge className="bg-warning text-warning text-[10px] gap-1 w-fit mb-2"><Sparkles className="w-3 h-3" /> {es ? featuredMap[selectedProduct.id]?.label_es : featuredMap[selectedProduct.id]?.label_en}</Badge>}
               {selectedProduct.description && <p className="text-sm text-muted-foreground mb-3">{selectedProduct.description}</p>}
               {selectedProduct.category && <Badge variant="outline" className="mb-3">{selectedProduct.category}</Badge>}
-              <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                <div className="flex items-center gap-2 mb-1"><Store className="w-4 h-4 text-primary" /><span className="font-medium text-sm">{selectedProduct.marketplace_vendors?.name}</span></div>
-                {selectedProduct.marketplace_vendors?.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{selectedProduct.marketplace_vendors.location}</p>}
-              </div>
+              {(selectedProduct.marketplace_brands?.name || (FEATURE_FLAGS.marketplaceVendors && selectedProduct.marketplace_vendors?.name)) && (
+                <div className="bg-muted/50 rounded-lg p-3 mb-3">
+                  {selectedProduct.marketplace_brands?.name ? (
+                    <div className="flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-primary" />
+                      <span className="font-medium text-sm">{selectedProduct.marketplace_brands.name}</span>
+                    </div>
+                  ) : FEATURE_FLAGS.marketplaceVendors && (
+                    <>
+                      <div className="flex items-center gap-2 mb-1"><Store className="w-4 h-4 text-primary" /><span className="font-medium text-sm">{selectedProduct.marketplace_vendors?.name}</span></div>
+                      {selectedProduct.marketplace_vendors?.location && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{selectedProduct.marketplace_vendors.location}</p>}
+                    </>
+                  )}
+                </div>
+              )}
               <div className="flex items-end justify-between mb-3">
                 <div><p className="text-2xl font-bold text-primary">${selectedProduct.price.toLocaleString()}</p><p className="text-xs text-muted-foreground">{selectedProduct.currency}</p></div>
                 <p className="text-xs text-muted-foreground">Stock: {selectedProduct.stock}</p>
