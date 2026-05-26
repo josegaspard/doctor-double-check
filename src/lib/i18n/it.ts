@@ -6268,15 +6268,11 @@ export const it = {
         cancel: 'Annulla',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Verifica in attesa',
-        pendingVerificationDesc: 'Il tuo profilo è in revisione da parte del nostro team. Nel frattempo puoi completare le tue informazioni. Ti avviseremo via email quando il tuo account sarà approvato.',
-        underReview: 'In revisione',
-        estimatedTime: 'Tempo stimato: 24-48 ore',
-        bookAppointment: 'Prenota appuntamento',
-      },
-    },
+    pendingVerificationTitle: 'Verifica in attesa',
+    pendingVerificationDesc: 'Il tuo profilo è in revisione da parte del nostro team. Nel frattempo puoi completare le tue informazioni. Ti avviseremo via email quando il tuo account sarà approvato.',
+    underReview: 'In revisione',
+    estimatedTime: 'Tempo stimato: 24-48 ore',
+    bookAppointment: 'Prenota appuntamento',
   },
   doubleCheckFlow: {
     title: 'Second Opinion',

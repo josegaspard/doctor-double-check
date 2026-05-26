@@ -6269,15 +6269,11 @@ export const en = {
         cancel: 'Cancel',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Verification pending',
-        pendingVerificationDesc: 'Your profile is being reviewed by our team. In the meantime you can complete your information. We will notify you by email when your account is approved.',
-        underReview: 'Under review',
-        estimatedTime: 'Estimated time: 24-48 hours',
-        bookAppointment: 'Book appointment',
-      },
-    },
+    pendingVerificationTitle: 'Verification pending',
+    pendingVerificationDesc: 'Your profile is being reviewed by our team. In the meantime you can complete your information. We will notify you by email when your account is approved.',
+    underReview: 'Under review',
+    estimatedTime: 'Estimated time: 24-48 hours',
+    bookAppointment: 'Book appointment',
   },
   doubleCheckFlow: {
     title: 'Double Check',

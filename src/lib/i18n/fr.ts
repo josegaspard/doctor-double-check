@@ -6268,15 +6268,11 @@ export const fr = {
         cancel: 'Annuler',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Vérification en attente',
-        pendingVerificationDesc: "Votre profil est en cours d'examen par notre équipe. Vous pouvez compléter vos informations en attendant. Nous vous préviendrons par e-mail dès que votre compte sera approuvé.",
-        underReview: "En cours d'examen",
-        estimatedTime: 'Délai estimé : 24 à 48 heures',
-        bookAppointment: 'Prendre rendez-vous',
-      },
-    },
+    pendingVerificationTitle: 'Vérification en attente',
+    pendingVerificationDesc: "Votre profil est en cours d'examen par notre équipe. Vous pouvez compléter vos informations en attendant. Nous vous préviendrons par e-mail dès que votre compte sera approuvé.",
+    underReview: "En cours d'examen",
+    estimatedTime: 'Délai estimé : 24 à 48 heures',
+    bookAppointment: 'Prendre rendez-vous',
   },
   doubleCheckFlow: {
     title: 'Deuxième avis',

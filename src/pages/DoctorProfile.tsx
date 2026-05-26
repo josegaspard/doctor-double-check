@@ -231,8 +231,8 @@ export default function DoctorProfile() {
         } catch (notifyError) {
           console.error('Error notifying doctor:', notifyError);
         }
-        
-        navigate('/chat');
+
+        navigate(`/chat?session=${result.session.id}`);
         toast.success(`${t('doctorProfile.chatStarted')} ${doctor.name}`);
       } else {
         toast.error(result.error || t('doctorProfile.chatError'));
@@ -435,7 +435,7 @@ export default function DoctorProfile() {
         {/* Live Indicator Banner */}
         {activeLive && (
           <Card
-            className="mb-4 border-2 border-destructive bg-white shadow-lg shadow-destructive/20 cursor-pointer hover:bg-destructive/5 transition-colors"
+            className="mb-4 border-2 border-destructive bg-white shadow-lg shadow-destructive/20 cursor-pointer"
             onClick={() => navigate(`/live/${activeLive.id}`)}
           >
             <CardContent className="p-4">

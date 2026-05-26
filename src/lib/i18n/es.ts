@@ -6269,15 +6269,11 @@ export const es = {
         cancel: 'Cancelar',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Verificación pendiente',
-        pendingVerificationDesc: 'Tu perfil está siendo revisado por nuestro equipo. Mientras tanto, puedes completar tu información. Te notificaremos por email cuando tu cuenta sea aprobada.',
-        underReview: 'En revisión',
-        estimatedTime: 'Tiempo estimado: 24-48 horas',
-        bookAppointment: 'Reservar cita',
-      },
-    },
+    pendingVerificationTitle: 'Verificación pendiente',
+    pendingVerificationDesc: 'Tu perfil está siendo revisado por nuestro equipo. Mientras tanto, puedes completar tu información. Te notificaremos por email cuando tu cuenta sea aprobada.',
+    underReview: 'En revisión',
+    estimatedTime: 'Tiempo estimado: 24-48 horas',
+    bookAppointment: 'Reservar cita',
   },
   doubleCheckFlow: {
     title: 'Segunda Opinión',

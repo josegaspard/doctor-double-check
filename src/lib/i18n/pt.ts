@@ -6268,15 +6268,11 @@ export const pt = {
         cancel: 'Cancelar',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Verificação pendente',
-        pendingVerificationDesc: 'Seu perfil está em revisão pela nossa equipe. Enquanto isso, você pode completar suas informações. Avisaremos por e-mail quando sua conta for aprovada.',
-        underReview: 'Em revisão',
-        estimatedTime: 'Tempo estimado: 24-48 horas',
-        bookAppointment: 'Agendar consulta',
-      },
-    },
+    pendingVerificationTitle: 'Verificação pendente',
+    pendingVerificationDesc: 'Seu perfil está em revisão pela nossa equipe. Enquanto isso, você pode completar suas informações. Avisaremos por e-mail quando sua conta for aprovada.',
+    underReview: 'Em revisão',
+    estimatedTime: 'Tempo estimado: 24-48 horas',
+    bookAppointment: 'Agendar consulta',
   },
   doubleCheckFlow: {
     title: 'Segunda Opinião',

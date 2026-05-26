@@ -6268,15 +6268,11 @@ export const de = {
         cancel: 'Abbrechen',
       },
     },
-    new: {
-      doctorProfilePage: {
-        pendingVerificationTitle: 'Verifizierung ausstehend',
-        pendingVerificationDesc: 'Ihr Profil wird von unserem Team geprüft. In der Zwischenzeit können Sie Ihre Informationen vervollständigen. Wir benachrichtigen Sie per E-Mail, sobald Ihr Konto freigegeben ist.',
-        underReview: 'In Prüfung',
-        estimatedTime: 'Geschätzte Zeit: 24–48 Stunden',
-        bookAppointment: 'Termin buchen',
-      },
-    },
+    pendingVerificationTitle: 'Verifizierung ausstehend',
+    pendingVerificationDesc: 'Ihr Profil wird von unserem Team geprüft. In der Zwischenzeit können Sie Ihre Informationen vervollständigen. Wir benachrichtigen Sie per E-Mail, sobald Ihr Konto freigegeben ist.',
+    underReview: 'In Prüfung',
+    estimatedTime: 'Geschätzte Zeit: 24–48 Stunden',
+    bookAppointment: 'Termin buchen',
   },
   doubleCheckFlow: {
     title: 'Zweitmeinung',

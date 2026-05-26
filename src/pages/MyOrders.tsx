@@ -210,7 +210,7 @@ export default function MyOrders() {
 
         {/* Filters */}
         {orders.length > 0 && (
-          <div className="mb-4 space-y-3">
+          <div className="mb-4 rounded-xl bg-card border border-border shadow-sm p-3 sm:p-4 space-y-3">
             {/* Status tabs */}
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
               {STATUS_FILTERS.map(s => {
