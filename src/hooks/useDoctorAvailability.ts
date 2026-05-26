@@ -95,6 +95,7 @@ export function useDoctorAvailability() {
             status: a.status as AvailabilityStatus,
             notificationsSent: a.notifications_sent,
             reminderSent: a.reminder_sent ?? false,
+            extraInvitees: ((a as any).extra_invitees ?? []) as string[],
             createdAt: new Date(a.created_at),
           }))
         );
@@ -244,11 +245,12 @@ export function useDoctorAvailability() {
       .update({ notifications_sent: true })
       .eq('id', id);
 
-    if (target.extraInvitees.length > 0) {
+    const invitees = target.extraInvitees ?? [];
+    if (invitees.length > 0) {
       supabase.functions.invoke('send-availability-invite', {
         body: {
           availability_id: id,
-          recipients: target.extraInvitees,
+          recipients: invitees,
           action: 'moved',
           old_scheduled_at: oldDate.toISOString(),
         },
@@ -256,7 +258,7 @@ export function useDoctorAvailability() {
     }
 
     await fetchAvailabilities();
-    return { success: true, notified: notifyCount, invitees: target.extraInvitees.length };
+    return { success: true, notified: notifyCount, invitees: invitees.length };
   };
 
   const confirmAvailability = async (id: string) => {

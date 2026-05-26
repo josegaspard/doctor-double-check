@@ -197,7 +197,7 @@ export default function DoctorAvailabilityPage() {
       title: target.title,
       oldDate: result.oldDate ?? target.scheduledAt,
       newDate: result.newDate ?? newDate,
-      inviteesCount: target.extraInvitees.length,
+      inviteesCount: target.extraInvitees?.length ?? 0,
     });
   };
 
@@ -494,14 +494,14 @@ export default function DoctorAvailabilityPage() {
                         {language === 'es' ? 'Recordatorio enviado' : 'Reminder sent'}
                       </div>
                     )}
-                    {selectedEvent.extraInvitees.length > 0 && (
+                    {(selectedEvent.extraInvitees?.length ?? 0) > 0 && (
                       <div className="rounded-lg border border-primary/25 bg-primary/5 p-2.5">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1.5 flex items-center gap-1.5">
                           <Send className="w-3 h-3" />
-                          {language === 'es' ? 'Invitados extra' : 'Extra invitees'} ({selectedEvent.extraInvitees.length})
+                          {language === 'es' ? 'Invitados extra' : 'Extra invitees'} ({selectedEvent.extraInvitees!.length})
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {selectedEvent.extraInvitees.map(email => (
+                          {selectedEvent.extraInvitees!.map(email => (
                             <span key={email} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{email}</span>
                           ))}
                         </div>
