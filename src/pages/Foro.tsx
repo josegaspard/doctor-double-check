@@ -52,7 +52,7 @@ const cards: ForoCard[] = [
     descriptionKey: 'foroPage.cards.events.description',
     ctaKey: 'foroPage.cards.events.cta',
     icon: Megaphone,
-    to: '/news',
+    to: '/eventos',
     tone: 'event',
   },
   {

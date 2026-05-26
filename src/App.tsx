@@ -117,6 +117,7 @@ const Enterprise = React.lazy(() => import("./pages/Enterprise"));
 const ContentGallery = React.lazy(() => import("./pages/ContentGallery"));
 const Notifications = React.lazy(() => import("./pages/Notifications"));
 const MedicalNews = React.lazy(() => import("./pages/MedicalNews"));
+const Eventos = React.lazy(() => import("./pages/Eventos"));
 const NewsArticle = React.lazy(() => import("./pages/NewsArticle"));
 const VideoCall = React.lazy(() => import("./pages/VideoCall"));
 const AdminCredentials = React.lazy(() => import("./pages/AdminCredentials"));
@@ -286,6 +287,8 @@ const App = () => {
                       <Route path="/notifications" element={<Notifications />} />
                       <Route path="/news" element={<MedicalNews />} />
                       <Route path="/news/:slug" element={<NewsArticle />} />
+                      <Route path="/eventos" element={<Eventos />} />
+                      <Route path="/events" element={<Eventos />} />
                       <Route path="/video-call" element={<VideoCall />} />
                       <Route path="/prescriptions" element={<Prescriptions />} />
                       <Route path="/prescriptions/new" element={<CreatePrescription />} />
