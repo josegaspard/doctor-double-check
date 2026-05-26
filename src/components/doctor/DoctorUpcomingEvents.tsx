@@ -64,7 +64,7 @@ export default function DoctorUpcomingEvents({ doctorId }: Props) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <Megaphone className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-          {language === 'es' ? 'Eventos y convocatorias' : 'Events & calls'}
+          {t('eventos.profileBlock.title')}
           <Badge variant="outline" className="text-[10px] h-5 ml-1">{events.length}</Badge>
         </CardTitle>
       </CardHeader>
@@ -82,7 +82,7 @@ export default function DoctorUpcomingEvents({ doctorId }: Props) {
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
                   <Badge variant="outline" className="text-[10px] h-5 capitalize">{typeLabel(e.event_type)}</Badge>
                   {e.is_online ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"><Globe className="w-3 h-3" /> Online</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"><Globe className="w-3 h-3" /> {t('eventos.online')}</span>
                   ) : e.location ? (
                     <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground truncate"><MapPin className="w-3 h-3" /> {e.location}</span>
                   ) : null}
@@ -93,7 +93,7 @@ export default function DoctorUpcomingEvents({ doctorId }: Props) {
                 <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 flex-shrink-0" asChild>
                   <a href={e.registration_url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-3 h-3" />
-                    {language === 'es' ? 'Inscribirse' : 'Register'}
+                    {t('eventos.profileBlock.register')}
                   </a>
                 </Button>
               )}
@@ -101,7 +101,7 @@ export default function DoctorUpcomingEvents({ doctorId }: Props) {
           );
         })}
         <Button variant="ghost" size="sm" onClick={() => navigate('/eventos')} className="w-full justify-center gap-1.5 text-xs">
-          {language === 'es' ? 'Ver todos los eventos' : 'See all events'} <ArrowRight className="w-3 h-3" />
+          {t('eventos.profileBlock.seeAll')} <ArrowRight className="w-3 h-3" />
         </Button>
       </CardContent>
     </Card>

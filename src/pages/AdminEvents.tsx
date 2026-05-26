@@ -109,15 +109,15 @@ export default function AdminEvents() {
       .update({ is_published: !e.is_published })
       .eq('id', e.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(!e.is_published ? (language === 'es' ? 'Evento publicado' : 'Event published') : (language === 'es' ? 'Evento ocultado' : 'Event hidden'));
+    toast.success(!e.is_published ? t('eventos.admin.published') : t('eventos.admin.hidden'));
     fetchAll();
   };
 
   const remove = async (e: AdminEvent) => {
-    if (!window.confirm(language === 'es' ? `¿Eliminar permanentemente "${e.title}"?` : `Delete "${e.title}" permanently?`)) return;
+    if (!window.confirm(t('eventos.admin.confirmDelete').replace('{title}', e.title))) return;
     const { error } = await (supabase as any).from('foro_events').delete().eq('id', e.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(language === 'es' ? 'Evento eliminado' : 'Event deleted');
+    toast.success(t('eventos.admin.deleted'));
     fetchAll();
   };
 
@@ -126,7 +126,7 @@ export default function AdminEvents() {
       <MainLayout>
         <div className="container mx-auto px-4 py-10 max-w-md">
           <Card><CardContent className="p-6 text-center text-sm">
-            {language === 'es' ? 'Acceso solo para administradores.' : 'Admin access only.'}
+            {t('eventos.admin.adminOnly')}
           </CardContent></Card>
         </div>
       </MainLayout>
@@ -137,7 +137,7 @@ export default function AdminEvents() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 gap-1.5">
-          <ArrowLeft className="w-4 h-4" /> {language === 'es' ? 'Volver al panel' : 'Back to admin'}
+          <ArrowLeft className="w-4 h-4" /> {t('eventos.admin.back')}
         </Button>
 
         <div className="mb-5 rounded-2xl bg-card border border-border shadow-sm p-4 sm:p-5">
@@ -147,12 +147,10 @@ export default function AdminEvents() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-card-foreground">
-                {language === 'es' ? 'Moderación de eventos' : 'Event moderation'}
+                {t('eventos.admin.title')}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {language === 'es'
-                  ? 'Revisa los eventos publicados por doctores aprobados. Puedes ocultarlos o eliminarlos.'
-                  : 'Review events published by approved doctors. Hide or delete them.'}
+                {t('eventos.admin.subtitle')}
               </p>
             </div>
           </div>
@@ -161,7 +159,7 @@ export default function AdminEvents() {
             <Input
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder={language === 'es' ? 'Buscar por título, descripción o doctor…' : 'Search by title, description or doctor…'}
+              placeholder={t('eventos.admin.search')}
               className="pl-8 h-9"
             />
           </div>
@@ -169,9 +167,9 @@ export default function AdminEvents() {
 
         <Tabs value={tab} onValueChange={(v: any) => setTab(v)} className="mb-4">
           <TabsList className="grid grid-cols-3 w-full sm:w-fit">
-            <TabsTrigger value="upcoming">{language === 'es' ? 'Próximos' : 'Upcoming'}</TabsTrigger>
-            <TabsTrigger value="past">{language === 'es' ? 'Pasados' : 'Past'}</TabsTrigger>
-            <TabsTrigger value="unpublished">{language === 'es' ? 'Ocultos' : 'Hidden'}</TabsTrigger>
+            <TabsTrigger value="upcoming">{t('eventos.admin.tabUpcoming')}</TabsTrigger>
+            <TabsTrigger value="past">{t('eventos.admin.tabPast')}</TabsTrigger>
+            <TabsTrigger value="unpublished">{t('eventos.admin.tabHidden')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4">
@@ -179,13 +177,13 @@ export default function AdminEvents() {
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
             ) : filtered.length === 0 ? (
               <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
-                {language === 'es' ? 'No hay eventos.' : 'No events.'}
+                {t('eventos.admin.empty')}
               </CardContent></Card>
             ) : (
               <div className="space-y-2.5">
                 {filtered.map(e => {
                   const doc = doctors[e.created_by];
-                  const docName = doc?.name || (language === 'es' ? 'Doctor desconocido' : 'Unknown doctor');
+                  const docName = doc?.name || t('eventos.admin.unknownDoctor');
                   const start = new Date(e.event_date);
                   return (
                     <Card key={e.id} className="overflow-hidden">
@@ -198,7 +196,7 @@ export default function AdminEvents() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <Badge variant="outline" className="text-[10px] h-5 capitalize">{e.event_type}</Badge>
-                              {!e.is_published && <Badge variant="secondary" className="text-[10px] h-5">{language === 'es' ? 'Oculto' : 'Hidden'}</Badge>}
+                              {!e.is_published && <Badge variant="secondary" className="text-[10px] h-5">{t('eventos.admin.hiddenBadge')}</Badge>}
                               <button type="button" onClick={() => navigate(`/doctor/${e.created_by}`)} className="text-[11px] text-primary hover:underline truncate">{docName}</button>
                               {doc?.status && doc.status !== 'approved' && (
                                 <Badge variant="destructive" className="text-[10px] h-5">{doc.status}</Badge>
@@ -207,7 +205,7 @@ export default function AdminEvents() {
                             <p className="font-semibold text-sm mt-1 line-clamp-2">{e.title}</p>
                             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{e.description}</p>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground mt-1.5">
-                              <span>{format(start, language === 'es' ? "d MMM yyyy · HH:mm" : 'MMM d, yyyy · HH:mm', { locale })}</span>
+                              <span>{format(start, language === 'en' ? 'MMM d, yyyy · HH:mm' : "d MMM yyyy · HH:mm", { locale })}</span>
                               {e.is_online ? (
                                 <span className="inline-flex items-center gap-1"><Globe className="w-3 h-3" />Online</span>
                               ) : e.location ? (
@@ -219,16 +217,16 @@ export default function AdminEvents() {
                           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                             {e.registration_url && (
                               <Button size="sm" variant="ghost" className="h-7 text-[11px] gap-1 px-2" asChild>
-                                <a href={e.registration_url} target="_blank" rel="noopener noreferrer" aria-label={language === 'es' ? 'Abrir enlace de registro' : 'Open registration link'}>
+                                <a href={e.registration_url} target="_blank" rel="noopener noreferrer" aria-label={t('eventos.admin.openRegistration')}>
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               </Button>
                             )}
                             <Button size="sm" variant="outline" className="h-7 text-[11px] gap-1 px-2" onClick={() => togglePublish(e)}>
-                              {e.is_published ? <><EyeOff className="w-3 h-3" /> {language === 'es' ? 'Ocultar' : 'Hide'}</> : <><Eye className="w-3 h-3" /> {language === 'es' ? 'Publicar' : 'Publish'}</>}
+                              {e.is_published ? <><EyeOff className="w-3 h-3" /> {t('eventos.admin.hide')}</> : <><Eye className="w-3 h-3" /> {t('eventos.admin.publish')}</>}
                             </Button>
                             <Button size="sm" variant="ghost" className="h-7 text-[11px] gap-1 px-2 text-destructive hover:text-destructive" onClick={() => remove(e)}>
-                              <Trash2 className="w-3 h-3" /> {language === 'es' ? 'Eliminar' : 'Delete'}
+                              <Trash2 className="w-3 h-3" /> {t('eventos.admin.delete')}
                             </Button>
                           </div>
                         </div>

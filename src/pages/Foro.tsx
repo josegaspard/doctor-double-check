@@ -209,7 +209,7 @@ export default function Foro() {
             </div>
             <div className="rounded-lg bg-amber-500/10 backdrop-blur p-2 sm:p-3 text-center border border-amber-500/30">
               <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-300">{loading ? '…' : stats.events}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Eventos próximos' : 'Upcoming events'}</p>
+              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('eventos.foroBlock.statLabel')}</p>
             </div>
           </div>
         </header>
@@ -298,10 +298,10 @@ export default function Foro() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-300" />
-                {language === 'es' ? 'Próximos eventos y convocatorias' : 'Upcoming events & calls'}
+                {t('eventos.foroBlock.title')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/eventos')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {language === 'es' ? 'Ver todos' : 'See all'} <ArrowRight className="w-3 h-3" />
+                {t('eventos.foroBlock.seeAll')} <ArrowRight className="w-3 h-3" />
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

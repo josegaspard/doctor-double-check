@@ -79,7 +79,6 @@ const HREF_I18N_MAP: Record<string, string> = {
   '/arco': 'landingFooter.arco',
   '/report-issue': 'landingFooter.report',
   '/advertising': 'ads.advertising',
-  '/eventos': 'landingFooter.events',
 };
 
 export function UnifiedFooter({ variant }: Props) {
@@ -103,12 +102,9 @@ export function UnifiedFooter({ variant }: Props) {
     : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
   const platformLinks = platformLinksRaw.map(translateLink);
 
-  const baseResources = footerLinks.resources.some(l => l.href === '/eventos')
-    ? footerLinks.resources
-    : [{ label: 'Eventos y convocatorias', href: '/eventos' }, ...footerLinks.resources];
   const resourcesLinksRaw = adConfig.is_active
-    ? [...baseResources, { label: t('ads.advertising'), href: '/advertising' }]
-    : baseResources;
+    ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
+    : footerLinks.resources;
   const resourcesLinks = resourcesLinksRaw.map(translateLink);
 
   const legalLinks = footerLinks.legal.map(translateLink);
