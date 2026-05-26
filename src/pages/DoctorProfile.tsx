@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import DoctorReviews from '@/components/doctor/DoctorReviews';
+import DoctorUpcomingEvents from '@/components/doctor/DoctorUpcomingEvents';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -743,9 +744,12 @@ export default function DoctorProfile() {
           isOwner={user?.id === doctor.id} 
         />
 
+        {/* Upcoming events organized by this doctor */}
+        <DoctorUpcomingEvents doctorId={doctor.id} />
+
         {/* Patient Reviews */}
-        <DoctorReviews 
-          doctorId={doctor.id} 
+        <DoctorReviews
+          doctorId={doctor.id}
           onRatingCalculated={(avg) => setDoctor(prev => prev ? { ...prev, rating: avg } : prev)}
         />
 

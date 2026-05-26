@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag, Users } from 'lucide-react';
+import { Radio, Upload, UserCircle, Newspaper, MessageSquare, ShoppingBag, Users, Megaphone } from 'lucide-react';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -45,6 +45,15 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       requiresApproval: false,
       onClick: () => navigate(`/doctor/${userId}`),
       buttonLabel: t('doctorQuickActions.myProfile.buttonLabel'),
+    },
+    {
+      title: t('doctorQuickActions.publishEvent.title'),
+      description: t('doctorQuickActions.publishEvent.description'),
+      icon: Megaphone,
+      color: 'warning',
+      requiresApproval: true,
+      onClick: () => navigate('/eventos?new=1'),
+      buttonLabel: t('doctorQuickActions.publishEvent.buttonLabel'),
     },
     ...(canPublishNews ? [{
       title: t('doctorQuickActions.uploadCommunityContent.title'),

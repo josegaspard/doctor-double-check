@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,6 +96,7 @@ const DEFAULT_FORM = {
 
 export default function Eventos() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, supabaseUser, role } = useAuth();
   const { t, language } = useLanguage();
   const locale = language === 'es' ? esLocale : enUS;
@@ -134,6 +135,18 @@ export default function Eventos() {
   };
 
   useEffect(() => { fetchEvents(); }, []);
+
+  // Auto-open create dialog when navigated with ?new=1 (and user can publish)
+  useEffect(() => {
+    if (searchParams.get('new') === '1' && canPublish) {
+      setEditingId(null);
+      setForm({ ...DEFAULT_FORM });
+      setCreateOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('new');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, canPublish, setSearchParams]);
 
   const filtered = useMemo(() => {
     const now = Date.now();
@@ -193,13 +206,31 @@ export default function Eventos() {
       is_published: true,
     };
     const res = editingId
-      ? await (supabase as any).from('foro_events').update(payload).eq('id', editingId)
-      : await (supabase as any).from('foro_events').insert(payload);
+      ? await (supabase as any).from('foro_events').update(payload).eq('id', editingId).select('id').maybeSingle()
+      : await (supabase as any).from('foro_events').insert(payload).select('id').maybeSingle();
     setSaving(false);
     if (res.error) {
       toast.error(res.error.message || t('eventos.form.saveError'));
       return;
     }
+
+    // Cuando se publica un evento nuevo (no edición), notificamos a los
+    // suscriptores del doctor. Falla silenciosa: el evento ya quedó publicado.
+    if (!editingId) {
+      try {
+        const typeLabel = t(EVENT_TYPE_KEY[form.event_type]) || form.event_type;
+        await (supabase as any).rpc('notify_subscribers', {
+          p_doctor_id: supabaseUser.id,
+          p_notification_type: 'new_content',
+          p_title: `📣 ${typeLabel}: ${form.title.trim()}`,
+          p_message: `${format(new Date(form.event_date), language === 'es' ? "d 'de' MMM 'a las' HH:mm" : "MMM d 'at' HH:mm", { locale })}${form.is_online ? ' · Online' : (form.location.trim() ? ` · ${form.location.trim()}` : '')}`,
+          p_data: { event_id: (res.data as any)?.id, event_type: form.event_type, deeplink: '/eventos' },
+        });
+      } catch (e) {
+        console.warn('notify_subscribers failed (event published OK)', e);
+      }
+    }
+
     toast.success(editingId ? t('eventos.form.updated') : t('eventos.form.created'));
     setCreateOpen(false);
     setForm({ ...DEFAULT_FORM });

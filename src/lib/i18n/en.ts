@@ -1365,6 +1365,7 @@ export const en = {
     forPatients: 'For Patients',
     enterprise: 'Enterprise',
     resources: 'Resources',
+    events: 'Events & calls',
     successStories: 'Success Stories',
     help: 'Help',
     contact: 'Contact',
@@ -4729,6 +4730,11 @@ export const en = {
       title: 'My Professional Profile',
       description: 'Edit your education, certifications and experience',
       buttonLabel: 'View and edit profile',
+    },
+    publishEvent: {
+      title: 'Publish event',
+      description: 'Create a congress, fellowship or call visible to the whole community',
+      buttonLabel: 'New event',
     },
     uploadCommunityContent: {
       title: 'Upload Content',

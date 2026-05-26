@@ -122,6 +122,7 @@ const NewsArticle = React.lazy(() => import("./pages/NewsArticle"));
 const VideoCall = React.lazy(() => import("./pages/VideoCall"));
 const AdminCredentials = React.lazy(() => import("./pages/AdminCredentials"));
 const AdminNews = React.lazy(() => import("./pages/AdminNews"));
+const AdminEvents = React.lazy(() => import("./pages/AdminEvents"));
 const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
 const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail"));
@@ -263,6 +264,7 @@ const App = () => {
                       <Route path="/admin/invoices" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminInvoiceReview /></AccessGuard>} />
                       <Route path="/admin/credentials" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCredentials /></AccessGuard>} />
                       <Route path="/admin/news" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />
+                      <Route path="/admin/events" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminEvents /></AccessGuard>} />
                       <Route path="/admin/ranks" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRanks /></AccessGuard>} />
                       <Route path="/doctor/news" element={<AdminNews />} />
                       <Route path="/verification-pending" element={<VerificationPending />} />

@@ -1365,6 +1365,7 @@ export const es = {
     forPatients: 'Para Pacientes',
     enterprise: 'Empresas',
     resources: 'Recursos',
+    events: 'Eventos y convocatorias',
     successStories: 'Casos de Éxito',
     help: 'Ayuda',
     contact: 'Contacto',
@@ -4729,6 +4730,11 @@ export const es = {
       title: 'Mi Perfil Profesional',
       description: 'Edita tu educación, certificaciones y experiencia',
       buttonLabel: 'Ver y editar perfil',
+    },
+    publishEvent: {
+      title: 'Publicar evento',
+      description: 'Crea un congreso, fellowship o convocatoria visible para toda la comunidad',
+      buttonLabel: 'Nuevo evento',
     },
     uploadCommunityContent: {
       title: 'Subir Contenido',

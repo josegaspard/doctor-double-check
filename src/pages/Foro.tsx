@@ -104,6 +104,16 @@ interface UpcomingMeeting {
   scheduled_at: string;
 }
 
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  event_type: string;
+  event_date: string;
+  is_online: boolean;
+  location: string | null;
+  organizer: string | null;
+}
+
 export default function Foro() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
@@ -111,7 +121,8 @@ export default function Foro() {
 
   const [livesNow, setLivesNow] = useState<LiveNow[]>([]);
   const [upcoming, setUpcoming] = useState<UpcomingMeeting[]>([]);
-  const [stats, setStats] = useState({ doctors: 0, liveNow: 0, upcoming: 0 });
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [stats, setStats] = useState({ doctors: 0, liveNow: 0, upcoming: 0, events: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -119,23 +130,33 @@ export default function Foro() {
       setLoading(true);
       const nowIso = new Date().toISOString();
       const client = supabase as any;
-      const [livesRes, meetingsRes, doctorsRes, liveCountRes, upcomingRes] = await Promise.all([
+      const [livesRes, meetingsRes, doctorsRes, liveCountRes, upcomingRes, eventsRes, eventsCountRes] = await Promise.all([
         client.from('lives').select('id,title,specialty,viewer_count,thumbnail_url').eq('status', 'live').eq('is_broadcasting', true).order('viewer_count', { ascending: false }).limit(3),
         client.from('clinical_sessions').select('id,title,specialty,meeting_type,scheduled_at').eq('is_public', true).gt('scheduled_at', nowIso).order('scheduled_at', { ascending: true }).limit(4),
         client.from('doctor_profiles').select('user_id', { count: 'exact', head: true }).eq('status', 'approved'),
         client.from('lives').select('id', { count: 'exact', head: true }).eq('status', 'live').eq('is_broadcasting', true),
         client.from('clinical_sessions').select('id', { count: 'exact', head: true }).eq('is_public', true).gt('scheduled_at', nowIso),
+        client.from('foro_events').select('id,title,event_type,event_date,is_online,location,organizer').eq('is_published', true).gte('event_date', nowIso).order('event_date', { ascending: true }).limit(3),
+        client.from('foro_events').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('event_date', nowIso),
       ]);
       setLivesNow((livesRes.data || []) as LiveNow[]);
       setUpcoming((meetingsRes.data || []) as UpcomingMeeting[]);
+      setUpcomingEvents((eventsRes.data || []) as UpcomingEvent[]);
       setStats({
         doctors: doctorsRes.count || 0,
         liveNow: liveCountRes.count || 0,
         upcoming: upcomingRes.count || 0,
+        events: eventsCountRes.count || 0,
       });
       setLoading(false);
     })();
   }, []);
+
+  const eventTypeLabel = (type: string) => {
+    const key = `eventos.types.${type}`;
+    const tr = t(key);
+    return tr && tr !== key ? tr : type;
+  };
 
   const meetingTypeLabel = (type: string | null) => {
     switch (type) {
@@ -170,7 +191,7 @@ export default function Foro() {
           </div>
 
           {/* Stats reales del foro */}
-          <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
               <p className="text-lg sm:text-2xl font-bold text-[#163a83] dark:text-cyan-200">{loading ? '…' : stats.doctors}</p>
               <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Doctores activos' : 'Active doctors'}</p>
@@ -185,6 +206,10 @@ export default function Foro() {
             <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
               <p className="text-lg sm:text-2xl font-bold text-emerald-700 dark:text-emerald-300">{loading ? '…' : stats.upcoming}</p>
               <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Próximas sesiones' : 'Upcoming'}</p>
+            </div>
+            <div className="rounded-lg bg-amber-500/10 backdrop-blur p-2 sm:p-3 text-center border border-amber-500/30">
+              <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-300">{loading ? '…' : stats.events}</p>
+              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Eventos próximos' : 'Upcoming events'}</p>
             </div>
           </div>
         </header>
@@ -259,6 +284,42 @@ export default function Foro() {
                         {m.specialty && <span className="text-[10px] text-muted-foreground">{m.specialty}</span>}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-1">{format(new Date(m.scheduled_at), 'EEEE d MMM · HH:mm', { locale })}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Próximos eventos publicados por doctores verificados */}
+        {upcomingEvents.length > 0 && (
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-300" />
+                {language === 'es' ? 'Próximos eventos y convocatorias' : 'Upcoming events & calls'}
+              </h2>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/eventos')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
+                {language === 'es' ? 'Ver todos' : 'See all'} <ArrowRight className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {upcomingEvents.map((e) => (
+                <Card key={e.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eventos')}>
+                  <CardContent className="p-3 sm:p-4 flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-amber-500/15 border border-amber-500/30 flex flex-col items-center justify-center flex-shrink-0">
+                      <p className="text-[10px] uppercase text-amber-700 dark:text-amber-300 font-semibold leading-none">{format(new Date(e.event_date), 'MMM', { locale })}</p>
+                      <p className="text-lg font-bold text-amber-700 dark:text-amber-300 leading-none mt-0.5">{format(new Date(e.event_date), 'd')}</p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm line-clamp-2 leading-snug">{e.title}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <Badge variant="outline" className="text-[10px] h-5 capitalize">{eventTypeLabel(e.event_type)}</Badge>
+                        {e.is_online && <span className="text-[10px] text-muted-foreground">{language === 'es' ? 'Online' : 'Online'}</span>}
+                        {!e.is_online && e.location && <span className="text-[10px] text-muted-foreground truncate">{e.location}</span>}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">{format(new Date(e.event_date), 'EEEE d MMM · HH:mm', { locale })}</p>
                     </div>
                   </CardContent>
                 </Card>
