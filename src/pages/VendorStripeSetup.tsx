@@ -55,7 +55,7 @@ export default function VendorStripeSetup() {
   if (!vendor) return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate('/')} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver' : 'Back'}
         </Button>
         <Card><CardContent className="p-6 text-center">
@@ -71,7 +71,7 @@ export default function VendorStripeSetup() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/vendor/dashboard')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate('/vendor/dashboard')} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back'}
         </Button>
 

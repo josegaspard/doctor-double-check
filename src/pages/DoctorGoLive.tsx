@@ -396,7 +396,7 @@ export default function DoctorGoLive() {
 
       setEndingStage('saving');
       await supabase.from('lives').update({
-        status: 'ended', ended_at: new Date().toISOString(),
+        status: 'ended', is_broadcasting: false, ended_at: new Date().toISOString(),
       }).eq('id', liveData.id);
 
       // Background save: upload recording if doctor chose to save
@@ -486,7 +486,7 @@ export default function DoctorGoLive() {
       localRecording.cleanup();
       try {
         await supabase.from('lives').update({
-          status: 'ended', ended_at: new Date().toISOString(),
+          status: 'ended', is_broadcasting: false, ended_at: new Date().toISOString(),
         }).eq('id', liveData.id);
       } catch {}
       clearActiveLiveSession();
@@ -586,7 +586,7 @@ export default function DoctorGoLive() {
     <MainLayout>
       {isCreating && <StartingLiveOverlay stage={creatingStage} onCancel={handleCancelCreating} />}
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorGoLivePage.back')}
         </Button>
         <div className="mb-6 text-center">

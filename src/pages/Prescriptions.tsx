@@ -100,7 +100,7 @@ export default function Prescriptions() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6">
           <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="hidden sm:flex flex-shrink-0">
+            <Button variant="back" size="icon" onClick={() => navigate(-1)} className="hidden sm:flex flex-shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-3 min-w-0">

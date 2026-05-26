@@ -453,7 +453,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         // Clean up stuck lives
         await supabase
           .from('lives')
-          .update({ status: 'ended', ended_at: new Date().toISOString() })
+          .update({ status: 'ended', is_broadcasting: false, ended_at: new Date().toISOString() })
           .in('id', stuckLives.map(l => l.id));
         
         console.log(`Cleaned up ${stuckLives.length} stuck lives`);
@@ -714,7 +714,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       // Update live status in DB
       const { error } = await supabase
         .from('lives')
-        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .update({ status: 'ended', is_broadcasting: false, ended_at: new Date().toISOString() })
         .eq('id', liveId)
         .eq('doctor_id', user.id);
 

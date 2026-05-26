@@ -192,7 +192,7 @@ export default function BookAppointment() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
-        <Button variant="ghost" size="sm" className="gap-1.5 mb-3" onClick={() => navigate(-1)}>
+        <Button variant="back" size="sm" className="gap-1.5 mb-3" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" /> {t('bookAppointment.back')}
         </Button>
 

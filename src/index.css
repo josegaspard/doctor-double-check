@@ -1225,9 +1225,25 @@
   header *,
   [role="dialog"] *,
   [role="menu"] *,
-  [data-radix-popper-content-wrapper] *
+  [data-radix-popper-content-wrapper] *,
+  [class*="bg-card"],
+  [class*="bg-popover"],
+  [class*="bg-background"],
+  [class*="bg-muted"],
+  [class*="bg-white"],
+  [class*="bg-light"],
+  input,
+  textarea
 )) {
   color: #ffffff !important;
+}
+
+/* Inputs sobre app-bg-image: fondo claro → texto SIEMPRE oscuro y legible */
+.app-bg-image :is(input, textarea):where([class*="bg-white"], [class*="bg-card"], [class*="bg-background"], [class*="bg-popover"], [class*="bg-muted"]) {
+  color: hsl(220, 71%, 15%) !important;
+}
+.app-bg-image :is(input, textarea):where([class*="bg-white"], [class*="bg-card"], [class*="bg-background"], [class*="bg-popover"], [class*="bg-muted"])::placeholder {
+  color: hsl(220, 10%, 55%) !important;
 }
 
 /* ---------- 7. text-primary suelto → cyan claro ---------- */
@@ -1249,8 +1265,9 @@
   color: #AED3D9 !important;
 }
 
-/* ---------- 8. Iconos sueltos en main (NO dentro de botones/enlaces) ---------- */
-.app-bg-image > main svg:not(:where(
+/* ---------- 8. Iconos sueltos en main (NO dentro de botones/enlaces) ----------
+   Respeta SVGs que ya traen su propia clase text-* (ej. icono de input search con text-slate-500). */
+.app-bg-image > main svg:not([class*="text-"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
@@ -1414,25 +1431,33 @@
   color: #ffffff !important;
 }
 
-/* ---------- 11. Inputs / textareas / selects sueltos ---------- */
-.app-bg-image > main input:not([type="checkbox"]):not([type="radio"]):not(:where(
+/* ---------- 11. Inputs / textareas / selects sueltos ----------
+   Solo aplica a inputs SIN background propio (sin bg-white/bg-card/bg-background/bg-popover/bg-muted).
+   Si el input tiene su propia clase de fondo claro, esta regla NO debe pisarla (sería blanco-sobre-blanco). */
+.app-bg-image > main input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-white"]):not([class*="bg-card"]):not([class*="bg-popover"]):not([class*="bg-background"]):not([class*="bg-muted"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
+  [class*="bg-white"] *,
+  [class*="bg-muted"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )),
-.app-bg-image > main textarea:not(:where(
+.app-bg-image > main textarea:not([class*="bg-white"]):not([class*="bg-card"]):not([class*="bg-popover"]):not([class*="bg-background"]):not([class*="bg-muted"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
+  [class*="bg-white"] *,
+  [class*="bg-muted"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )),
-.app-bg-image > main select:not(:where(
+.app-bg-image > main select:not([class*="bg-white"]):not([class*="bg-card"]):not([class*="bg-popover"]):not([class*="bg-background"]):not([class*="bg-muted"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
+  [class*="bg-white"] *,
+  [class*="bg-muted"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) {
@@ -1440,21 +1465,38 @@
   border-color: rgba(255, 255, 255, 0.22) !important;
   color: #ffffff !important;
 }
-.app-bg-image > main input:not(:where(
+.app-bg-image > main input:not([class*="bg-white"]):not([class*="bg-card"]):not([class*="bg-popover"]):not([class*="bg-background"]):not([class*="bg-muted"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
+  [class*="bg-white"] *,
+  [class*="bg-muted"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 ))::placeholder,
-.app-bg-image > main textarea:not(:where(
+.app-bg-image > main textarea:not([class*="bg-white"]):not([class*="bg-card"]):not([class*="bg-popover"]):not([class*="bg-background"]):not([class*="bg-muted"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
+  [class*="bg-white"] *,
+  [class*="bg-muted"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 ))::placeholder {
   color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Inputs/textareas CON su propia clase de fondo claro (bg-white/bg-card/etc) sobre app-bg-image:
+   forzar fondo blanco real + texto oscuro + placeholder gris. Gana por especificidad y por orden. */
+.app-bg-image > main input:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"]),
+.app-bg-image > main textarea:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"]),
+.app-bg-image > main select:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"]) {
+  background-color: #ffffff !important;
+  color: hsl(220, 71%, 15%) !important;
+}
+.app-bg-image > main input:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"])::placeholder,
+.app-bg-image > main textarea:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"])::placeholder {
+  color: hsl(220, 10%, 55%) !important;
 }
 
 /* ---------- 12. Tabs sueltas ---------- */

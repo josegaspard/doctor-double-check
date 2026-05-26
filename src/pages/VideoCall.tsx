@@ -695,7 +695,7 @@ export default function VideoCall() {
     <MainLayout>
       <div className="container mx-auto px-4 py-4 max-w-6xl">
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="back" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('videoCall.back')}
           </Button>

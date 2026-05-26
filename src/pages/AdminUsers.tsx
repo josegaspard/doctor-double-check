@@ -141,7 +141,7 @@ export default function AdminUsers() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
-        <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> {t('admin.backToAdmin') || 'Volver al panel'}
         </Button>
         <div className="mb-4 sm:mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">

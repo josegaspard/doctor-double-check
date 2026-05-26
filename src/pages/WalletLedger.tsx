@@ -120,7 +120,7 @@ export default function WalletLedger() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <div className="flex items-center gap-2 mb-4 sm:mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/wallet')} className="gap-1">
+          <Button variant="back" size="sm" onClick={() => navigate('/wallet')} className="gap-1">
             <ArrowLeft className="w-4 h-4" /> Wallet
           </Button>
           <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">

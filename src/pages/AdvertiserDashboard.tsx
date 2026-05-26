@@ -453,7 +453,7 @@ export default function AdvertiserDashboard() {
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
           {/* Header */}
           <div className="flex items-center gap-3 mb-5">
-            <Button variant="ghost" size="icon" onClick={() => setSelectedCampaign(null)}>
+            <Button variant="back" size="icon" onClick={() => setSelectedCampaign(null)}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1 min-w-0">
@@ -638,7 +638,7 @@ export default function AdvertiserDashboard() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/advertising')}>
+          <Button variant="back" size="icon" onClick={() => navigate('/advertising')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">

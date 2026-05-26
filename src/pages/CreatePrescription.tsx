@@ -53,7 +53,7 @@ export default function CreatePrescription() {
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-3xl">
         <div className="flex items-center gap-3 mb-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="back" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="font-heading text-xl font-bold">

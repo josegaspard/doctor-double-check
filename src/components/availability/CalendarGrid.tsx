@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, isSameMonth, isToday,
+  eachDayOfInterval, format, isSameMonth, isToday, isSameDay,
   addDays,
 } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -21,6 +21,16 @@ interface CalendarGridProps {
   isManaging?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  /**
+   * Optional drag-and-drop handler. If provided, events become draggable on
+   * sm+ screens and day cells become drop targets. mobile uses tap-to-edit.
+   */
+  onMoveEvent?: (availabilityId: string, newDate: Date) => void;
+  /**
+   * Subset of availability IDs the current user is allowed to drag.
+   * If undefined, all events are draggable (back-compat).
+   */
+  draggableIds?: Set<string>;
 }
 
 const typeConfig = {
@@ -29,12 +39,18 @@ const typeConfig = {
   office_hours: { color: 'bg-success', text: 'text-white', icon: Clock, label: 'Disponible' },
 };
 
-function EventChip({ availability, onClick, isManaging, isSelected, onToggleSelect }: {
+function EventChip({
+  availability, onClick, isManaging, isSelected, onToggleSelect,
+  isDraggable, onDragStart, onDragEnd,
+}: {
   availability: DoctorAvailability;
   onClick: () => void;
   isManaging?: boolean;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
+  isDraggable?: boolean;
+  onDragStart?: (id: string) => void;
+  onDragEnd?: () => void;
 }) {
   const config = typeConfig[availability.type] || typeConfig.office_hours;
   const Icon = config.icon;
@@ -49,13 +65,31 @@ function EventChip({ availability, onClick, isManaging, isSelected, onToggleSele
     }
   };
 
+  const dragHandlers = isDraggable
+    ? {
+        draggable: true,
+        onDragStart: (e: React.DragEvent) => {
+          e.stopPropagation();
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', availability.id);
+          onDragStart?.(availability.id);
+        },
+        onDragEnd: (e: React.DragEvent) => {
+          e.stopPropagation();
+          onDragEnd?.();
+        },
+      }
+    : {};
+
   return (
     <button
       onClick={handleClick}
+      {...dragHandlers}
       className={cn(
         'w-full text-left rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold truncate flex items-center gap-1 transition-all hover:opacity-90 shadow-sm',
         config.color, config.text,
         isCancelled && 'opacity-40 line-through',
+        isDraggable && 'cursor-grab active:cursor-grabbing',
         isManaging && 'ring-2 ring-offset-1 ring-offset-transparent',
         isManaging && isSelected && 'ring-white',
         isManaging && !isSelected && 'ring-white/40',
@@ -85,13 +119,15 @@ function EventChip({ availability, onClick, isManaging, isSelected, onToggleSele
  *   invisibles. Las celdas tienen un panel oscuro translúcido para máxima
  *   legibilidad de los números.
  */
-function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect }: Omit<CalendarGridProps, 'viewMode'>) {
+function MonthView({ currentDate, availabilities, language, onDayClick, onEventClick, isManaging, selectedIds, onToggleSelect, onMoveEvent, draggableIds }: Omit<CalendarGridProps, 'viewMode'>) {
   const locale = language === 'es' ? es : enUS;
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
 
   const eventsByDay = useMemo(() => {
     const map = new Map<string, DoctorAvailability[]>();
@@ -125,15 +161,48 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
           const dayEvents = eventsByDay.get(key) || [];
           const inMonth = isSameMonth(day, currentDate);
           const today = isToday(day);
+          const isDropTarget = dropTargetKey === key && draggingId !== null;
+          const draggingEvent = draggingId ? availabilities.find(a => a.id === draggingId) : null;
+          const isSameDayAsSource = draggingEvent ? isSameDay(draggingEvent.scheduledAt, day) : false;
+
+          const dropHandlers = onMoveEvent
+            ? {
+                onDragOver: (e: React.DragEvent) => {
+                  if (!draggingId) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = isSameDayAsSource ? 'none' : 'move';
+                  if (dropTargetKey !== key && !isSameDayAsSource) setDropTargetKey(key);
+                },
+                onDragLeave: (e: React.DragEvent) => {
+                  const related = e.relatedTarget as Node | null;
+                  if (related && (e.currentTarget as Node).contains(related)) return;
+                  if (dropTargetKey === key) setDropTargetKey(null);
+                },
+                onDrop: (e: React.DragEvent) => {
+                  e.preventDefault();
+                  const id = e.dataTransfer.getData('text/plain') || draggingId;
+                  setDropTargetKey(null);
+                  setDraggingId(null);
+                  if (!id) return;
+                  const evt = availabilities.find(a => a.id === id);
+                  if (!evt) return;
+                  if (isSameDay(evt.scheduledAt, day)) return;
+                  onMoveEvent(id, day);
+                },
+              }
+            : {};
 
           return (
             <div
               key={key}
               onClick={() => onDayClick(day)}
+              {...dropHandlers}
               className={cn(
                 'min-h-[80px] sm:min-h-[100px] mm-calendar-cell p-1 cursor-pointer transition-colors',
                 !inMonth && 'mm-calendar-cell-out',
                 idx % 7 === 0 && 'mm-calendar-cell-first',
+                isDropTarget && !isSameDayAsSource && 'ring-2 ring-inset ring-white/80 bg-white/10',
+                isSameDayAsSource && draggingId && 'opacity-60',
               )}
             >
               <div className={cn(
@@ -145,9 +214,22 @@ function MonthView({ currentDate, availabilities, language, onDayClick, onEventC
                 {format(day, 'd')}
               </div>
               <div className="space-y-0.5">
-                {dayEvents.slice(0, 3).map(event => (
-                  <EventChip key={event.id} availability={event} onClick={() => onEventClick(event)} isManaging={isManaging} isSelected={selectedIds?.has(event.id)} onToggleSelect={onToggleSelect} />
-                ))}
+                {dayEvents.slice(0, 3).map(event => {
+                  const draggable = onMoveEvent !== undefined && (draggableIds ? draggableIds.has(event.id) : true) && event.status !== 'cancelled';
+                  return (
+                    <EventChip
+                      key={event.id}
+                      availability={event}
+                      onClick={() => onEventClick(event)}
+                      isManaging={isManaging}
+                      isSelected={selectedIds?.has(event.id)}
+                      onToggleSelect={onToggleSelect}
+                      isDraggable={draggable && !isManaging}
+                      onDragStart={(id) => setDraggingId(id)}
+                      onDragEnd={() => { setDraggingId(null); setDropTargetKey(null); }}
+                    />
+                  );
+                })}
                 {dayEvents.length > 3 && (
                   <p className="text-[10px] text-white/75 pl-1.5 font-medium">+{dayEvents.length - 3}</p>
                 )}

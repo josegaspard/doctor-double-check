@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -14,17 +13,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Lock, 
-  Wallet, 
-  Clock, 
+import {
+  Lock,
+  Wallet,
+  Clock,
   PlayCircle,
   AlertCircle,
   CheckCircle,
   Loader2,
   CreditCard,
-  ExternalLink,
   Crown,
   Zap,
   ShieldCheck,
@@ -51,11 +48,9 @@ export default function PaywallModal({
   balance,
 }: PaywallModalProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useLanguage();
   const { purchaseWithWallet, isPurchasing: walletIsPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
-  const [isStripeProcessing, setIsStripeProcessing] = useState(false);
 
   const isPurchasing = externalIsPurchasing || walletIsPurchasing;
 
@@ -75,30 +70,6 @@ export default function PaywallModal({
     return `${hours}h ${mins}m`;
   };
 
-  const handleStripeCheckout = async () => {
-    setIsStripeProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-recording-checkout', {
-        body: { recordingId: recording.id },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast({
-        title: t('common.error'),
-        description: error.message || t('paywall.checkoutError'),
-        variant: 'destructive',
-      });
-    } finally {
-      setIsStripeProcessing(false);
-    }
-  };
-
   const handleWalletPurchase = async () => {
     if (recording) {
       const result = await purchaseWithWallet(recording.id);
@@ -109,13 +80,12 @@ export default function PaywallModal({
     }
   };
 
-  const walletDeficit = effectivePrice - balance;
+  const walletDeficit = Math.max(0, effectivePrice - balance);
 
-  // Primary = wallet when can afford, card otherwise
   const PrimaryAction = canAfford ? (
-    <Button 
-      onClick={handleWalletPurchase} 
-      disabled={isPurchasing} 
+    <Button
+      onClick={handleWalletPurchase}
+      disabled={isPurchasing}
       className="w-full h-12 gap-2 text-base"
       variant="default"
     >
@@ -129,83 +99,32 @@ export default function PaywallModal({
       )}
     </Button>
   ) : (
-    <Button 
-      onClick={handleStripeCheckout} 
-      disabled={isStripeProcessing}
+    <Button
+      onClick={() => { onClose(); navigate('/wallet'); }}
       className="w-full h-12 gap-2 text-base"
       variant="default"
     >
-      {isStripeProcessing ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <>
-          <CreditCard className="w-4 h-4" />
-          {t('paywall.payWithCard')} — ${effectivePrice.toFixed(0)} MXN
-          <ExternalLink className="w-3 h-3 ml-1" />
-        </>
-      )}
+      <CreditCard className="w-4 h-4" />
+      {t('paywall.rechargeWallet')}
     </Button>
   );
 
   const SecondarySection = canAfford ? (
-    <>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">{t('paywall.orUseWallet')}</span>
-        </div>
-      </div>
-      <Button 
-        onClick={handleStripeCheckout} 
-        disabled={isStripeProcessing}
-        className="w-full gap-2"
-        variant="outline"
-      >
-        {isStripeProcessing ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <>
-            <CreditCard className="w-4 h-4" />
-            {t('paywall.payWithCard')}
-            <ExternalLink className="w-3 h-3 ml-1" />
-          </>
-        )}
-      </Button>
-      <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1.5">
-        <Wallet className="w-3 h-3" />
-        {t('paywall.walletBalance')}: <span className="font-semibold text-foreground">${balance.toLocaleString()} MXN</span>
-      </p>
-    </>
+    <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1.5">
+      <Wallet className="w-3 h-3" />
+      {t('paywall.walletBalance')}: <span className="font-semibold text-foreground">${balance.toLocaleString()} MXN</span>
+    </p>
   ) : (
-    <>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">{t('paywall.orUseWallet')}</span>
-        </div>
+    <div className="flex items-start gap-2.5 p-3 bg-warning/10 rounded-lg border border-warning/30">
+      <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+      <div className="text-sm space-y-1">
+        <p className="font-medium text-foreground">{t('paywall.insufficientBalance')}</p>
+        <p className="text-muted-foreground text-xs">
+          {t('paywall.youHave')} <span className="font-semibold text-foreground">${balance.toLocaleString()}</span> — {t('paywall.needMore')} <span className="font-semibold text-foreground">${walletDeficit.toLocaleString()}</span> {t('paywall.more')}
+        </p>
+        <p className="text-muted-foreground text-[11px] pt-0.5">{t('recordingPaywall.walletOnlyNotice')}</p>
       </div>
-      <div className="flex items-start gap-2.5 p-3 bg-muted rounded-lg border border-border">
-        <AlertCircle className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />
-        <div className="text-sm space-y-1">
-          <p className="font-medium text-foreground">{t('paywall.insufficientBalance')}</p>
-          <p className="text-muted-foreground text-xs">
-            {t('paywall.youHave')} <span className="font-semibold text-foreground">${balance.toLocaleString()}</span> — {t('paywall.needMore')} <span className="font-semibold text-foreground">${walletDeficit.toLocaleString()}</span> {t('paywall.more')}
-          </p>
-        </div>
-      </div>
-      <Button 
-        onClick={() => { onClose(); navigate('/wallet'); }} 
-        className="w-full gap-2"
-        variant="outline"
-      >
-        <Wallet className="w-4 h-4" />
-        {t('paywall.rechargeWallet')}
-      </Button>
-    </>
+    </div>
   );
 
   return (

@@ -135,7 +135,7 @@ export default function AdminRanks() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
+          <Button variant="back" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
             <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <div className="flex-1 min-w-0">

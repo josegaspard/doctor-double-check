@@ -17,6 +17,7 @@ export interface DoctorAvailability {
   status: AvailabilityStatus;
   notificationsSent: boolean;
   reminderSent: boolean;
+  extraInvitees: string[];
   createdAt: Date;
 }
 
@@ -72,6 +73,7 @@ export function useDoctorAvailability() {
           status: a.status as AvailabilityStatus,
           notificationsSent: a.notifications_sent,
           reminderSent: a.reminder_sent ?? false,
+          extraInvitees: ((a as any).extra_invitees ?? []) as string[],
           createdAt: new Date(a.created_at),
         }))
       );
@@ -112,8 +114,11 @@ export function useDoctorAvailability() {
     scheduledAt: Date;
     durationMinutes: number;
     type: AvailabilityType;
+    extraInvitees?: string[];
   }) => {
     if (!supabaseUser?.id) return { success: false, error: 'Not authenticated' };
+
+    const invitees = (data.extraInvitees ?? []).map(e => e.trim().toLowerCase()).filter(Boolean);
 
     const { data: newAvail, error } = await supabase
       .from('doctor_availability')
@@ -124,8 +129,9 @@ export function useDoctorAvailability() {
         scheduled_at: data.scheduledAt.toISOString(),
         duration_minutes: data.durationMinutes,
         type: data.type,
-        status: 'scheduled',
-      })
+        status: 'confirmed',
+        extra_invitees: invitees,
+      } as any)
       .select()
       .single();
 
@@ -133,7 +139,6 @@ export function useDoctorAvailability() {
       return { success: false, error: error.message };
     }
 
-    // *** CRITICAL FIX: Auto-notify subscribers when availability is created ***
     try {
       const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
         p_doctor_id: supabaseUser.id,
@@ -143,7 +148,6 @@ export function useDoctorAvailability() {
         p_data: { availability_id: newAvail?.id, type: data.type },
       });
 
-      // Mark as notifications sent
       if (newAvail?.id) {
         await supabase
           .from('doctor_availability')
@@ -151,10 +155,19 @@ export function useDoctorAvailability() {
           .eq('id', newAvail.id);
       }
 
+      if (invitees.length > 0 && newAvail?.id) {
+        supabase.functions.invoke('send-availability-invite', {
+          body: {
+            availability_id: newAvail.id,
+            recipients: invitees,
+            action: 'new',
+          },
+        }).catch(err => console.warn('send-availability-invite failed (non-fatal):', err));
+      }
+
       console.log(`Notified ${notifyCount} subscribers about new availability`);
     } catch (notifyError) {
       console.error('Failed to notify subscribers:', notifyError);
-      // Non-critical - continue
     }
 
     await fetchAvailabilities();
@@ -171,6 +184,7 @@ export function useDoctorAvailability() {
     if (updates.durationMinutes) dbUpdates.duration_minutes = updates.durationMinutes;
     if (updates.type) dbUpdates.type = updates.type;
     if (updates.status) dbUpdates.status = updates.status;
+    if (updates.extraInvitees) dbUpdates.extra_invitees = updates.extraInvitees.map(e => e.trim().toLowerCase()).filter(Boolean);
 
     const { error } = await supabase
       .from('doctor_availability')
@@ -184,6 +198,65 @@ export function useDoctorAvailability() {
 
     await fetchAvailabilities();
     return { success: true };
+  };
+
+  const moveAvailability = async (id: string, newDate: Date) => {
+    if (!supabaseUser?.id) return { success: false, error: 'Not authenticated' };
+    const target = myAvailabilities.find(a => a.id === id);
+    if (!target) return { success: false, error: 'Availability not found' };
+
+    const next = new Date(target.scheduledAt);
+    next.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+
+    const { error } = await supabase
+      .from('doctor_availability')
+      .update({
+        scheduled_at: next.toISOString(),
+        notifications_sent: false,
+        reminder_sent: false,
+      })
+      .eq('id', id)
+      .eq('doctor_id', supabaseUser.id);
+
+    if (error) return { success: false, error: error.message, oldDate: target.scheduledAt, newDate: next };
+    await fetchAvailabilities();
+    return { success: true, oldDate: target.scheduledAt, newDate: next };
+  };
+
+  const notifyDateChange = async (id: string, oldDate: Date, newDate: Date) => {
+    if (!supabaseUser?.id) return { success: false, error: 'Not authenticated' };
+    const target = myAvailabilities.find(a => a.id === id);
+    if (!target) return { success: false, error: 'Availability not found' };
+
+    const fmt = (d: Date) => `${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    const message = `"${target.title}" cambió de ${fmt(oldDate)} a ${fmt(newDate)}.`;
+
+    const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
+      p_doctor_id: supabaseUser.id,
+      p_notification_type: target.type === 'live' ? 'doctor_live' : 'doctor_availability',
+      p_title: `📅 Cambio de fecha: ${target.title}`,
+      p_message: message,
+      p_data: { availability_id: id, type: target.type, action: 'moved' },
+    });
+
+    await supabase
+      .from('doctor_availability')
+      .update({ notifications_sent: true })
+      .eq('id', id);
+
+    if (target.extraInvitees.length > 0) {
+      supabase.functions.invoke('send-availability-invite', {
+        body: {
+          availability_id: id,
+          recipients: target.extraInvitees,
+          action: 'moved',
+          old_scheduled_at: oldDate.toISOString(),
+        },
+      }).catch(err => console.warn('send-availability-invite failed (non-fatal):', err));
+    }
+
+    await fetchAvailabilities();
+    return { success: true, notified: notifyCount, invitees: target.extraInvitees.length };
   };
 
   const confirmAvailability = async (id: string) => {
@@ -249,6 +322,8 @@ export function useDoctorAvailability() {
     isLoading,
     createAvailability,
     updateAvailability,
+    moveAvailability,
+    notifyDateChange,
     confirmAvailability,
     cancelAvailability,
     notifySubscribers,

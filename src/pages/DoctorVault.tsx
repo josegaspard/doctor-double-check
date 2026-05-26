@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Folder, FileText, Image, ArrowLeft, Lock, User, Users,
   Calendar, Eye, KeyRound, ShieldCheck, DollarSign, Mail, UserPlus,
+  Crown, Star, ArrowRight,
 } from 'lucide-react';
 import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { VaultFile } from '@/contexts/VaultContext';
@@ -27,6 +28,17 @@ interface PatientPaymentSummary {
   lastPaymentAt: string | null;
 }
 
+interface SubscriberSummary {
+  subscriber_id: string;
+  name: string | null;
+  avatar_url: string | null;
+  email: string | null;
+  tier: 'free' | 'basic' | 'premium';
+  price_paid: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function DoctorVault() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,6 +51,8 @@ export default function DoctorVault() {
   const [autoOpenHandled, setAutoOpenHandled] = useState(false);
   const [paymentsByPatient, setPaymentsByPatient] = useState<Record<string, PatientPaymentSummary>>({});
   const [showAddPatient, setShowAddPatient] = useState(false);
+  const [subscribers, setSubscribers] = useState<SubscriberSummary[]>([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(true);
 
   const accessibleFiles = getAccessibleFiles(user?.id || '');
 
@@ -59,6 +73,23 @@ export default function DoctorVault() {
   useEffect(() => {
     if (role && role !== 'doctor') navigate('/lives');
   }, [role, navigate]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      setSubscribersLoading(true);
+      const { data } = await supabase.rpc('get_my_subscribers' as any);
+      setSubscribers((data || []) as SubscriberSummary[]);
+      setSubscribersLoading(false);
+    })();
+  }, [user?.id]);
+
+  const activeSubs = subscribers.filter(s => s.is_active);
+  const premiumSubs = activeSubs.filter(s => s.tier === 'premium');
+  const basicSubs = activeSubs.filter(s => s.tier === 'basic');
+  const freeSubs = activeSubs.filter(s => s.tier === 'free');
+  const paidSubs = [...premiumSubs, ...basicSubs];
+  const monthlyRecurring = paidSubs.reduce((s, x) => s + Number(x.price_paid || 0), 0);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -130,7 +161,7 @@ export default function DoctorVault() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/doctor/dashboard')} className="hidden sm:inline-flex mb-4">
+        <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="hidden sm:inline-flex mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('doctorVaultPage.backToPanel')}
         </Button>
@@ -150,6 +181,90 @@ export default function DoctorVault() {
             {t('doctorVaultPage.addPatient')}
           </Button>
         </div>
+
+        {/* Mis suscriptores — destacado arriba */}
+        <Card className="mb-4 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-warning/5">
+          <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-5">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
+              <Crown className="w-4 h-4 sm:w-5 sm:h-5 text-warning flex-shrink-0" />
+              <span className="font-bold">Mis suscriptores de pago</span>
+              <Badge variant="outline" className="ml-auto text-[10px] sm:text-xs">
+                {subscribersLoading ? '…' : `${paidSubs.length} de pago`}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-5">
+            {subscribersLoading ? (
+              <p className="text-xs text-muted-foreground py-2">Cargando…</p>
+            ) : activeSubs.length === 0 ? (
+              <p className="text-xs sm:text-sm text-muted-foreground py-2">Aún no tienes suscriptores. Comparte tu perfil para que pacientes y colegas se suscriban.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="bg-warning/10 rounded-lg p-2 text-center">
+                    <Crown className="w-3.5 h-3.5 text-warning mx-auto mb-0.5" />
+                    <p className="text-base sm:text-lg font-bold text-warning">{premiumSubs.length}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Premium</p>
+                  </div>
+                  <div className="bg-secondary/10 rounded-lg p-2 text-center">
+                    <Star className="w-3.5 h-3.5 text-secondary mx-auto mb-0.5" />
+                    <p className="text-base sm:text-lg font-bold text-secondary">{basicSubs.length}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Básico</p>
+                  </div>
+                  <div className="bg-muted/40 rounded-lg p-2 text-center">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground mx-auto mb-0.5" />
+                    <p className="text-base sm:text-lg font-bold text-foreground">{freeSubs.length}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Gratis</p>
+                  </div>
+                </div>
+
+                {monthlyRecurring > 0 && (
+                  <div className="flex items-baseline justify-between gap-2 mb-3 p-2 sm:p-2.5 bg-success/10 rounded-lg border border-success/20">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground font-medium">Ingreso recurrente mensual</span>
+                    <span className="flex items-center gap-1 text-base sm:text-lg font-bold text-success">
+                      <DollarSign className="w-4 h-4" />
+                      <PriceDisplay amount={monthlyRecurring} />
+                    </span>
+                  </div>
+                )}
+
+                {paidSubs.length > 0 && (
+                  <div className="space-y-1.5 mb-3">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Últimos suscriptores de pago</p>
+                    {paidSubs.slice(0, 4).map((s) => (
+                      <div key={s.subscriber_id} className="flex items-center gap-2 p-2 bg-background/70 rounded-md border border-border/50">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          {s.avatar_url ? (
+                            <img src={s.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-semibold text-primary">{(s.name || s.email || '?').slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs sm:text-sm font-medium truncate">{s.name || s.email || 'Suscriptor'}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {s.tier === 'premium' ? 'Premium' : 'Básico'} · ${Number(s.price_paid).toLocaleString('es-MX')} MXN/mes
+                          </p>
+                        </div>
+                        {s.tier === 'premium' && <Crown className="w-3.5 h-3.5 text-warning flex-shrink-0" />}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1.5 mt-1"
+              onClick={() => navigate('/doctor/subscribers')}
+            >
+              Ver todos los suscriptores
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Info Banner */}
         <Card className="mb-6 bg-info/10 border-info/30">

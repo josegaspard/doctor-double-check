@@ -81,10 +81,10 @@ export default function SubscribersList() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <Button
-          variant="ghost"
+          variant="back"
           size="sm"
           onClick={() => navigate(-1)}
-          className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white"
+          className="mb-3 -ml-2 text-white hover:text-white"
         >
           <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver' : 'Back'}
         </Button>

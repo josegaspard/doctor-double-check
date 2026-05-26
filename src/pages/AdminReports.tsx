@@ -192,7 +192,7 @@ export default function AdminReports() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         {/* Header */}
         <div className="mb-4 sm:mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="mb-3 hidden sm:inline-flex">
+          <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 hidden sm:inline-flex">
             <ArrowLeft className="w-4 h-4 mr-1" />
             {t('adminReports.backToAdmin')}
           </Button>

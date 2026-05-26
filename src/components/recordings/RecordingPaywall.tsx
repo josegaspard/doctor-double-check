@@ -54,7 +54,7 @@ export function RecordingPaywall({
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { balance, canAfford } = useWallet();
-  const { purchaseWithWallet, purchaseWithStripe, refresh } = usePurchases();
+  const { purchaseWithWallet, refresh } = usePurchases();
   const [txStatus, setTxStatus] = useState<PaywallTxStatus>('idle');
   const [txError, setTxError] = useState<string | null>(null);
 
@@ -91,23 +91,6 @@ export function RecordingPaywall({
       }
     } catch (e: any) {
       setTxError(e?.message || t('recordingPaywall.errors.unexpected'));
-      setTxStatus('failed');
-    }
-  };
-
-  const handleStripe = async () => {
-    setTxStatus('initiated');
-    setTxError(null);
-    try {
-      const res = await purchaseWithStripe(recordingId);
-      if (res.success && res.url) {
-        window.location.href = res.url;
-        return;
-      }
-      setTxError(res.error || t('recordingPaywall.errors.checkoutFailed'));
-      setTxStatus('failed');
-    } catch (e: any) {
-      setTxError(e?.message || t('recordingPaywall.errors.checkoutStartError'));
       setTxStatus('failed');
     }
   };
@@ -155,7 +138,7 @@ export function RecordingPaywall({
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl">
       {onBack && (
-        <Button variant="ghost" size="sm" onClick={onBack} className="mb-3 h-8 text-xs sm:text-sm">
+        <Button variant="back" size="sm" onClick={onBack} className="mb-3 h-8 text-xs sm:text-sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
           {t('recordingPaywall.back')}
         </Button>
@@ -236,24 +219,23 @@ export function RecordingPaywall({
             </Button>
 
             {!affordable && (
-              <Button
-                variant="ghost"
-                className="w-full h-9 text-xs"
-                onClick={() => navigate('/wallet')}
-              >
-                {t('recordingPaywall.topUpWallet')}
-              </Button>
+              <div className="space-y-2 pt-1">
+                <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/30">
+                  <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-foreground/90 leading-snug">
+                    {t('recordingPaywall.walletOnlyNotice')}
+                  </p>
+                </div>
+                <Button
+                  variant="default"
+                  className="w-full h-11 gap-2"
+                  onClick={() => navigate('/wallet')}
+                >
+                  <CreditCard className="w-4 h-4" />
+                  {t('recordingPaywall.topUpWallet')}
+                </Button>
+              </div>
             )}
-
-            <Button
-              variant="outline"
-              className="w-full h-11 gap-2"
-              onClick={handleStripe}
-              disabled={isProcessing}
-            >
-              <CreditCard className="w-4 h-4" />
-              {t('recordingPaywall.payWithCard')}
-            </Button>
           </div>
 
           <p className="text-[11px] text-center text-muted-foreground">

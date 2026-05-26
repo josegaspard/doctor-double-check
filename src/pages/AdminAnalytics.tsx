@@ -259,7 +259,7 @@ export default function AdminAnalytics() {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
+            <Button variant="back" size="icon" onClick={() => navigate('/admin')} className="flex-shrink-0 h-9 w-9">
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <div className="min-w-0 flex-1">

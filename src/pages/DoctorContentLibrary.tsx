@@ -236,7 +236,7 @@ export default function DoctorContentLibrary() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> Volver
         </Button>
         {/* Header */}
@@ -299,8 +299,13 @@ export default function DoctorContentLibrary() {
 
         {/* Manage bar */}
         {isManaging && (
-          <div className="flex items-center justify-between gap-2 mb-4 p-2 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground">{t('manage.selectHint')}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 sm:p-4 rounded-xl bg-card border border-primary/30 shadow-md ring-1 ring-primary/10">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-card-foreground">{t('manage.selectHint')}</p>
+            </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={toggleSelectAll}>
                 {selectedIds.size === filteredContents.length ? t('manage.deselectAll') : t('manage.selectAll')}

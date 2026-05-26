@@ -164,7 +164,7 @@ export default function PrescriptionDetail() {
       <div className="container mx-auto px-4 py-6 max-w-3xl">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/prescriptions')}>
+          <Button variant="back" size="icon" onClick={() => navigate('/prescriptions')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">

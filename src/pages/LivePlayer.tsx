@@ -460,7 +460,7 @@ export default function LivePlayer() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 max-w-6xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/lives')} className="hidden sm:inline-flex mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
+        <Button variant="back" size="sm" onClick={() => navigate('/lives')} className="hidden sm:inline-flex mb-3 sm:mb-4 h-8 text-xs sm:text-sm">
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
           {t('livePlayer.backToLives')}
         </Button>

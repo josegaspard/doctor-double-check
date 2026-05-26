@@ -467,7 +467,7 @@ export default function Doctors() {
         {/* Search bar — bg sólido sobre app-bg teal, no transparent que se mezcla */}
         <div className="flex gap-2 mb-3">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none z-10" />
             <Input
               type="search"
               name="doctors-search-q"
@@ -480,14 +480,14 @@ export default function Doctors() {
               placeholder={t('inputs.searchDoctors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary text-sm text-foreground placeholder:text-muted-foreground/70 [&::-webkit-search-cancel-button]:appearance-none"
+              className="pl-10 pr-10 h-11 !bg-white border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary text-sm !text-slate-900 placeholder:!text-slate-400 [&::-webkit-search-cancel-button]:appearance-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Limpiar búsqueda"
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors z-10"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors z-10"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

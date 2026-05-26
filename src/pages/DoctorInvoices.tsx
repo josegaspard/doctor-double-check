@@ -266,7 +266,7 @@ export default function DoctorInvoices() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
         <Button
-          variant="ghost"
+          variant="back"
           size="sm"
           onClick={() => navigate('/doctor/dashboard')}
           className="mb-4 gap-2 hidden sm:inline-flex"

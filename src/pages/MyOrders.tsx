@@ -18,12 +18,53 @@ import { Label } from '@/components/ui/label';
 const STATUS_CONFIG = {
   // Badge style: fondo tintado + texto sólido + borde para que SE VEA en cards blancos.
   // Antes con bg-X text-X (mismo color) el texto era invisible.
-  pending:   { label_es: 'Pendiente', label_en: 'Pending',   icon: Clock,        color: 'bg-warning/15 text-warning border-warning/40',                  dotColor: 'bg-warning' },
-  paid:      { label_es: 'Pagado',    label_en: 'Paid',      icon: CheckCircle2, color: 'bg-primary/15 text-primary border-primary/40',                  dotColor: 'bg-primary' },
-  shipped:   { label_es: 'Enviado',   label_en: 'Shipped',   icon: Truck,        color: 'bg-secondary/15 text-secondary border-secondary/40',            dotColor: 'bg-secondary' },
-  delivered: { label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, color: 'bg-accent/15 text-accent border-accent/40',                     dotColor: 'bg-accent' },
-  cancelled: { label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle,      color: 'bg-destructive/15 text-destructive border-destructive/40',     dotColor: 'bg-destructive' },
+  pending:   {
+    label_es: 'Pendiente', label_en: 'Pending', icon: Clock, dotColor: 'bg-warning',
+    color: 'bg-warning/15 text-warning border-warning/40',
+    pillIdle:   'bg-warning/10 text-warning border-warning/30 hover:bg-warning/20 hover:border-warning/50',
+    pillActive: 'bg-warning text-warning-foreground border-warning shadow-sm shadow-warning/30',
+    countIdle:  'bg-warning/20 text-warning',
+    countActive:'bg-warning-foreground/25 text-warning-foreground',
+  },
+  paid:      {
+    label_es: 'Pagado', label_en: 'Paid', icon: CheckCircle2, dotColor: 'bg-primary',
+    color: 'bg-primary/15 text-primary border-primary/40',
+    pillIdle:   'bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:border-primary/50',
+    pillActive: 'bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/30',
+    countIdle:  'bg-primary/20 text-primary',
+    countActive:'bg-primary-foreground/25 text-primary-foreground',
+  },
+  shipped:   {
+    label_es: 'Enviado', label_en: 'Shipped', icon: Truck, dotColor: 'bg-secondary',
+    color: 'bg-secondary/15 text-secondary border-secondary/40',
+    pillIdle:   'bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20 hover:border-secondary/50',
+    pillActive: 'bg-secondary text-secondary-foreground border-secondary shadow-sm shadow-secondary/30',
+    countIdle:  'bg-secondary/20 text-secondary',
+    countActive:'bg-secondary-foreground/25 text-secondary-foreground',
+  },
+  delivered: {
+    label_es: 'Entregado', label_en: 'Delivered', icon: CheckCircle2, dotColor: 'bg-success',
+    color: 'bg-success/15 text-success border-success/40',
+    pillIdle:   'bg-success/10 text-success border-success/30 hover:bg-success/20 hover:border-success/50',
+    pillActive: 'bg-success text-success-foreground border-success shadow-sm shadow-success/30',
+    countIdle:  'bg-success/20 text-success',
+    countActive:'bg-success-foreground/25 text-success-foreground',
+  },
+  cancelled: {
+    label_es: 'Cancelado', label_en: 'Cancelled', icon: XCircle, dotColor: 'bg-destructive',
+    color: 'bg-destructive/15 text-destructive border-destructive/40',
+    pillIdle:   'bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20 hover:border-destructive/50',
+    pillActive: 'bg-destructive text-destructive-foreground border-destructive shadow-sm shadow-destructive/30',
+    countIdle:  'bg-destructive/20 text-destructive',
+    countActive:'bg-destructive-foreground/25 text-destructive-foreground',
+  },
 };
+
+// Pill style for the "Todos / All" filter (neutral, uses card surface + foreground)
+const ALL_PILL_IDLE   = 'bg-card text-card-foreground border-border hover:border-foreground/30 hover:bg-muted';
+const ALL_PILL_ACTIVE = 'bg-foreground text-background border-foreground shadow-sm';
+const ALL_COUNT_IDLE  = 'bg-muted text-muted-foreground';
+const ALL_COUNT_ACTIVE= 'bg-background/20 text-background';
 
 const TIMELINE_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
 const STATUS_FILTERS = ['all', 'pending', 'paid', 'shipped', 'delivered', 'cancelled'];
@@ -176,32 +217,36 @@ export default function MyOrders() {
                 const sc = s === 'all' ? null : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG];
                 const count = s === 'all' ? orders.length : orders.filter(o => o.status === s).length;
                 const active = statusFilter === s;
+                const PillIcon = sc?.icon;
+                const pillCls = s === 'all'
+                  ? (active ? ALL_PILL_ACTIVE : ALL_PILL_IDLE)
+                  : (active ? sc!.pillActive : sc!.pillIdle);
+                const countCls = s === 'all'
+                  ? (active ? ALL_COUNT_ACTIVE : ALL_COUNT_IDLE)
+                  : (active ? sc!.countActive : sc!.countIdle);
                 return (
                   <button
                     key={s}
+                    type="button"
                     onClick={() => setStatusFilter(s)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 border ${
-                      active
-                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                        : 'bg-white text-secondary border-secondary/30 hover:bg-secondary/10'
-                    }`}
+                    aria-pressed={active ? 'true' : 'false'}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring/60 active:scale-[0.98] ${pillCls}`}
                   >
-                    {s === 'all' ? (es ? 'Todos' : 'All') : (es ? sc!.label_es : sc!.label_en)}
-                    <span className={`min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center ${
-                      active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-secondary/15 text-secondary'
-                    }`}>{count}</span>
+                    {PillIcon && <PillIcon className="w-3.5 h-3.5" />}
+                    <span>{s === 'all' ? (es ? 'Todos' : 'All') : (es ? sc!.label_es : sc!.label_en)}</span>
+                    <span className={`min-w-[20px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors ${countCls}`}>{count}</span>
                   </button>
                 );
               })}
             </div>
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder={es ? 'Buscar por producto...' : 'Search by product...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-9 h-10 text-sm bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground"
+                className="pl-9 h-10 text-sm bg-card border border-border shadow-sm hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-colors placeholder:text-muted-foreground"
               />
             </div>
           </div>

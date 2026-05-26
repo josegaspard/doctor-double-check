@@ -77,7 +77,7 @@ export default function DoctorDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:bg-white/10 hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
           <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
         </Button>
         <DoctorDashboardHeader

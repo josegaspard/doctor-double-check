@@ -29,7 +29,9 @@ import {
 } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
+import { EarningsCard } from '@/components/doctor/EarningsCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingCart, Banknote } from 'lucide-react';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
 const MIN_TOPUP_AMOUNT = 50;
@@ -136,10 +138,45 @@ export default function Wallet() {
           {t('wallet.title')}
         </h1>
 
+        {/* Doctor-only: separación clara entre Ganancias (cobrar) vs Saldo (gastar) */}
+        {role === 'doctor' && (
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl bg-card border border-border shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/25">
+                <div className="w-8 h-8 rounded-lg bg-success/15 flex items-center justify-center flex-shrink-0">
+                  <Banknote className="w-4 h-4 text-success" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-card-foreground">Ganancias por cobrar</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">Lo que generas como doctor (consultas, suscripciones, contenido). Se transfiere a tu banco.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/25">
+                <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                  <ShoppingCart className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-card-foreground">Saldo wallet (para gastar)</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">Lo que cargas con tarjeta para comprar contenido premium, suscribirte a colegas o pedir segundas opiniones.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Doctor-only: Card de Ganancias (pending earnings) — link a /doctor/earnings */}
+        {role === 'doctor' && (
+          <div className="mb-4 sm:mb-6">
+            <EarningsCard />
+          </div>
+        )}
+
         {/* Balance Card — full width hero (gradient primary → secondary) */}
         <Card className="bg-gradient-to-br from-primary via-primary to-secondary text-primary-foreground relative overflow-hidden mb-4 sm:mb-6 shadow-xl shadow-primary/30 border-0">
           <CardContent className="p-5 sm:p-8">
-            <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1 font-medium">{t('wallet.balance')}</p>
+            <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1 font-medium">
+              {role === 'doctor' ? 'Saldo wallet (para gastar)' : t('wallet.balance')}
+            </p>
             <motion.p
               key={balance}
               initial={{ scale: 1 }}

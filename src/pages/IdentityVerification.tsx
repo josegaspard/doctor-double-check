@@ -264,35 +264,35 @@ export default function IdentityVerification() {
   const getStatusConfig = (status: VerificationStatus) => {
     const configs = {
       pending: {
-        icon: Clock, color: 'text-warning', bg: 'bg-warning/10', badge: 'warning' as const,
+        icon: Clock, color: 'text-warning', bg: 'bg-warning/15', ring: 'ring-warning/30', stripe: 'before:bg-warning', badge: 'warning' as const,
         title: language === 'es' ? 'Verificación en proceso' : 'Verification in progress',
-        description: language === 'es' 
+        description: language === 'es'
           ? 'Estamos revisando tus documentos. Este proceso puede tomar 24-48 horas.'
           : 'We are reviewing your documents. This process may take 24-48 hours.',
       },
       in_progress: {
-        icon: Clock, color: 'text-info', bg: 'bg-info/10', badge: 'info' as const,
+        icon: Clock, color: 'text-info', bg: 'bg-info/15', ring: 'ring-info/30', stripe: 'before:bg-info', badge: 'info' as const,
         title: language === 'es' ? 'Verificación en curso' : 'Verification in progress',
         description: language === 'es'
           ? 'Tu verificación biométrica está siendo procesada automáticamente.'
           : 'Your biometric verification is being processed automatically.',
       },
       verified: {
-        icon: CheckCircle, color: 'text-success', bg: 'bg-success/10', badge: 'success' as const,
+        icon: CheckCircle, color: 'text-success', bg: 'bg-success/15', ring: 'ring-success/30', stripe: 'before:bg-success', badge: 'success' as const,
         title: language === 'es' ? 'Identidad verificada' : 'Identity verified',
         description: language === 'es'
           ? 'Tu identidad ha sido verificada exitosamente.'
           : 'Your identity has been successfully verified.',
       },
       failed: {
-        icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', badge: 'destructive' as const,
+        icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/15', ring: 'ring-destructive/30', stripe: 'before:bg-destructive', badge: 'destructive' as const,
         title: language === 'es' ? 'Verificación rechazada' : 'Verification rejected',
         description: language === 'es'
           ? 'Tu solicitud fue rechazada. Por favor, intenta nuevamente.'
           : 'Your request was rejected. Please try again.',
       },
       expired: {
-        icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted', badge: 'secondary' as const,
+        icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted', ring: 'ring-border', stripe: 'before:bg-muted-foreground/40', badge: 'secondary' as const,
         title: language === 'es' ? 'Verificación expirada' : 'Verification expired',
         description: language === 'es'
           ? 'Tu verificación ha expirado. Por favor, verifica nuevamente.'
@@ -328,7 +328,7 @@ export default function IdentityVerification() {
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/profile')} className="hidden sm:flex">
+          <Button variant="back" size="icon" onClick={() => navigate('/profile')} className="hidden sm:flex">
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -345,14 +345,16 @@ export default function IdentityVerification() {
 
         {/* Current Status */}
         {verification && statusConfig && (
-          <Card className={`mb-6 border-2 ${statusConfig.bg}`}>
-            <CardContent className="p-4 sm:p-6">
+          <Card
+            className={`mb-6 relative overflow-hidden bg-card border border-border shadow-md ring-1 ${statusConfig.ring} before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-1.5 ${statusConfig.stripe}`}
+          >
+            <CardContent className="p-4 sm:p-6 pl-5 sm:pl-7">
               <div className="flex items-start gap-3 sm:gap-4">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${statusConfig.bg} flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${statusConfig.bg} flex items-center justify-center flex-shrink-0`}>
                   <statusConfig.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${statusConfig.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm sm:text-base">{statusConfig.title}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base text-card-foreground">{statusConfig.title}</h3>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-2">
                     <Badge variant={statusConfig.badge} className="text-[10px] sm:text-xs">
                       {verification.status === 'pending' && (language === 'es' ? 'Pendiente' : 'Pending')}
@@ -362,7 +364,7 @@ export default function IdentityVerification() {
                       {verification.status === 'expired' && (language === 'es' ? 'Expirado' : 'Expired')}
                     </Badge>
                     {verification.provider === 'veriff' && (
-                      <Badge variant="outline" className="text-[10px] sm:text-xs">
+                      <Badge variant="outline" className="text-[10px] sm:text-xs bg-card">
                         <Fingerprint className="w-3 h-3 mr-1" />
                         Veriff
                       </Badge>

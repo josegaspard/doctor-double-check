@@ -275,7 +275,7 @@ export default function AdminNews() {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-6 max-w-4xl">
-          <Button variant="ghost" className="mb-4 gap-2 hidden sm:inline-flex" onClick={() => { setIsCreating(false); setEditingItem(null); }}>
+          <Button variant="back" className="mb-4 gap-2 hidden sm:inline-flex" onClick={() => { setIsCreating(false); setEditingItem(null); }}>
             <ArrowLeft className="w-4 h-4" /> {t('adminNews.back')}
           </Button>
           <Card>
@@ -312,7 +312,7 @@ export default function AdminNews() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-6 max-w-5xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate(role === 'admin' ? '/admin' : '/news')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground hidden sm:inline-flex">
+        <Button variant="back" size="sm" onClick={() => navigate(role === 'admin' ? '/admin' : '/news')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground hidden sm:inline-flex">
           <ArrowLeft className="w-4 h-4 mr-1" />
           {role === 'admin' ? t('adminNews.backToAdmin') : t('adminNews.backToNews')}
         </Button>

@@ -76,6 +76,8 @@ export default function DoctorAvailabilityPage() {
     cancelAvailability,
     notifySubscribers,
     deleteAvailabilities,
+    moveAvailability,
+    notifyDateChange,
   } = useDoctorAvailability();
   const { subscriberCount } = useSubscriptions();
 
@@ -90,12 +92,22 @@ export default function DoctorAvailabilityPage() {
     date: new Date(),
     time: '10:00',
     duration: 60,
+    invitees: [] as string[],
   });
+  const [inviteeInput, setInviteeInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{
+    id: string;
+    title: string;
+    oldDate: Date;
+    newDate: Date;
+    inviteesCount: number;
+  } | null>(null);
+  const [isNotifyingMove, setIsNotifyingMove] = useState(false);
 
   if (isAuthLoading) {
     return (
@@ -141,9 +153,72 @@ export default function DoctorAvailabilityPage() {
 
   // Day click → open create dialog with that date
   const handleDayClick = (date: Date) => {
-    setFormData(prev => ({ ...prev, date, title: '', description: '', type: 'live', time: '10:00', duration: 60 }));
+    setFormData(prev => ({ ...prev, date, title: '', description: '', type: 'live', time: '10:00', duration: 60, invitees: [] }));
+    setInviteeInput('');
     setSelectedEvent(null);
     setIsDialogOpen(true);
+  };
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const commitInviteeInput = () => {
+    const raw = inviteeInput.trim().replace(/[;,]+$/, '');
+    if (!raw) return;
+    const parts = raw.split(/[\s,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    setFormData(prev => {
+      const next = new Set(prev.invitees);
+      let added = false;
+      for (const p of parts) {
+        if (!EMAIL_RE.test(p)) {
+          toast({ title: t('common.error'), description: `${p}: ${language === 'es' ? 'no es un correo válido' : 'is not a valid email'}`, variant: 'destructive' });
+          continue;
+        }
+        if (!next.has(p)) { next.add(p); added = true; }
+      }
+      return added ? { ...prev, invitees: Array.from(next) } : prev;
+    });
+    setInviteeInput('');
+  };
+
+  const removeInvitee = (email: string) => {
+    setFormData(prev => ({ ...prev, invitees: prev.invitees.filter(e => e !== email) }));
+  };
+
+  const handleMoveEvent = async (id: string, newDate: Date) => {
+    const target = myAvailabilities.find(a => a.id === id);
+    if (!target) return;
+    const result = await moveAvailability(id, newDate);
+    if (!result.success) {
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
+      return;
+    }
+    setPendingMove({
+      id,
+      title: target.title,
+      oldDate: result.oldDate ?? target.scheduledAt,
+      newDate: result.newDate ?? newDate,
+      inviteesCount: target.extraInvitees.length,
+    });
+  };
+
+  const handleConfirmNotifyMove = async () => {
+    if (!pendingMove) return;
+    setIsNotifyingMove(true);
+    const result = await notifyDateChange(pendingMove.id, pendingMove.oldDate, pendingMove.newDate);
+    setIsNotifyingMove(false);
+    if (result.success) {
+      const subs = result.notified ?? 0;
+      const invs = result.invitees ?? 0;
+      toast({
+        title: language === 'es' ? 'Cambio notificado' : 'Change notified',
+        description: language === 'es'
+          ? `${subs} suscriptor${subs === 1 ? '' : 'es'}${invs ? ` · ${invs} invitado${invs === 1 ? '' : 's'}` : ''}`
+          : `${subs} subscriber${subs === 1 ? '' : 's'}${invs ? ` · ${invs} invitee${invs === 1 ? '' : 's'}` : ''}`,
+      });
+    } else {
+      toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
+    }
+    setPendingMove(null);
   };
 
   // Event click → show detail dialog
@@ -167,13 +242,15 @@ export default function DoctorAvailabilityPage() {
       type: formData.type,
       scheduledAt,
       durationMinutes: formData.duration,
+      extraInvitees: formData.invitees,
     });
     setIsSubmitting(false);
 
     if (result.success) {
       toast({ title: t('common.success'), description: language === 'es' ? 'Disponibilidad programada' : 'Availability scheduled' });
       setIsDialogOpen(false);
-      setFormData({ title: '', description: '', type: 'live', date: new Date(), time: '10:00', duration: 60 });
+      setFormData({ title: '', description: '', type: 'live', date: new Date(), time: '10:00', duration: 60, invitees: [] });
+      setInviteeInput('');
     } else {
       toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
     }
@@ -260,7 +337,7 @@ export default function DoctorAvailabilityPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/lives')} className="hidden sm:flex h-9 w-9 flex-shrink-0">
+            <Button variant="back" size="icon" onClick={() => navigate('/lives')} className="hidden sm:flex h-9 w-9 flex-shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
@@ -329,8 +406,13 @@ export default function DoctorAvailabilityPage() {
 
         {/* Manage bar */}
         {isManaging && (
-          <div className="flex items-center justify-between gap-2 mb-4 p-3 bg-muted/50 rounded-lg border border-border">
-            <p className="text-xs text-muted-foreground">{t('manage.selectHint')}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 sm:p-4 rounded-xl bg-card border border-primary/30 shadow-md ring-1 ring-primary/10">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-card-foreground">{t('manage.selectHint')}</p>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="destructive"
@@ -363,6 +445,7 @@ export default function DoctorAvailabilityPage() {
             isManaging={isManaging}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
+            onMoveEvent={handleMoveEvent}
           />
         )}
 
@@ -400,15 +483,28 @@ export default function DoctorAvailabilityPage() {
                       <p className="text-sm text-muted-foreground">{selectedEvent.description}</p>
                     )}
                     {selectedEvent.notificationsSent && (
-                      <div className="flex items-center gap-1 text-xs text-success">
+                      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 w-fit">
                         <Send className="h-3 w-3" />
-                        {language === 'es' ? 'Notificaciones enviadas' : 'Notifications sent'}
+                        {language === 'es' ? 'Notificaciones enviadas a suscriptores' : 'Notifications sent to subscribers'}
                       </div>
                     )}
                     {selectedEvent.reminderSent && (
-                      <div className="flex items-center gap-1 text-xs text-primary">
+                      <div className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary bg-secondary/10 border border-secondary/25 rounded-full px-2.5 py-1 w-fit">
                         <Bell className="h-3 w-3" />
                         {language === 'es' ? 'Recordatorio enviado' : 'Reminder sent'}
+                      </div>
+                    )}
+                    {selectedEvent.extraInvitees.length > 0 && (
+                      <div className="rounded-lg border border-primary/25 bg-primary/5 p-2.5">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1.5 flex items-center gap-1.5">
+                          <Send className="w-3 h-3" />
+                          {language === 'es' ? 'Invitados extra' : 'Extra invitees'} ({selectedEvent.extraInvitees.length})
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedEvent.extraInvitees.map(email => (
+                            <span key={email} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{email}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -424,15 +520,13 @@ export default function DoctorAvailabilityPage() {
                     {!isPast && selectedEvent.status !== 'cancelled' && selectedEvent.status !== 'completed' && (
                       <div className="flex flex-col sm:flex-row gap-2">
                         {selectedEvent.status === 'scheduled' && (
-                          <>
-                            <Button size="sm" onClick={() => handleConfirm(selectedEvent.id)}>
-                              <CheckCircle className="h-4 w-4 mr-1" /> {t('common.confirm')}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleCancel(selectedEvent.id)}>
-                              <XCircle className="h-4 w-4 mr-1" /> {t('common.cancel')}
-                            </Button>
-                          </>
+                          <Button size="sm" onClick={() => handleConfirm(selectedEvent.id)}>
+                            <CheckCircle className="h-4 w-4 mr-1" /> {t('common.confirm')}
+                          </Button>
                         )}
+                        <Button size="sm" variant="outline" onClick={() => handleCancel(selectedEvent.id)}>
+                          <XCircle className="h-4 w-4 mr-1" /> {t('common.cancel')}
+                        </Button>
                         {!selectedEvent.notificationsSent && (
                           <Button size="sm" variant="secondary" onClick={() => handleNotify(selectedEvent.id)}>
                             <Bell className="h-4 w-4 mr-1" /> {language === 'es' ? 'Notificar' : 'Notify'}
@@ -564,6 +658,58 @@ export default function DoctorAvailabilityPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Extra invitees (emails) */}
+              <div className="space-y-1.5">
+                <Label htmlFor="invitees" className="text-xs sm:text-sm flex items-center gap-1.5">
+                  {language === 'es' ? 'Invitados extra (opcional)' : 'Extra invitees (optional)'}
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    {language === 'es' ? '— se suman a tus suscriptores' : '— added to your subscribers'}
+                  </span>
+                </Label>
+                <Input
+                  id="invitees"
+                  type="email"
+                  inputMode="email"
+                  placeholder={language === 'es' ? 'correo@ejemplo.com (Enter o coma)' : 'email@example.com (Enter or comma)'}
+                  value={inviteeInput}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/[,;\s]$/.test(v)) { setInviteeInput(v); setTimeout(commitInviteeInput, 0); }
+                    else setInviteeInput(v);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+                      e.preventDefault();
+                      commitInviteeInput();
+                    } else if (e.key === 'Backspace' && !inviteeInput && formData.invitees.length > 0) {
+                      removeInvitee(formData.invitees[formData.invitees.length - 1]);
+                    }
+                  }}
+                  onBlur={commitInviteeInput}
+                  className="h-9 sm:h-10 text-xs sm:text-sm"
+                />
+                {formData.invitees.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {formData.invitees.map(email => (
+                      <span
+                        key={email}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-[11px] font-medium"
+                      >
+                        {email}
+                        <button
+                          type="button"
+                          onClick={() => removeInvitee(email)}
+                          className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                          aria-label={language === 'es' ? `Quitar ${email}` : `Remove ${email}`}
+                        >
+                          <XCircle className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
@@ -639,6 +785,59 @@ export default function DoctorAvailabilityPage() {
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 {language === 'es' ? 'Eliminar' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Move → notify confirmation */}
+        <AlertDialog open={!!pendingMove} onOpenChange={(o) => !o && !isNotifyingMove && setPendingMove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {language === 'es' ? 'Fecha actualizada' : 'Date updated'}
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    {language === 'es' ? 'Moviste' : 'You moved'}{' '}
+                    <span className="font-semibold text-foreground">"{pendingMove?.title}"</span>
+                  </p>
+                  {pendingMove && (
+                    <div className="rounded-lg bg-muted/60 border border-border p-3 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">{language === 'es' ? 'Antes' : 'Before'}</span>
+                        <span className="font-medium text-foreground line-through">
+                          {format(pendingMove.oldDate, language === 'es' ? "EEE d MMM, HH:mm" : 'EEE MMM d, HH:mm', { locale: language === 'es' ? es : enUS })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">{language === 'es' ? 'Ahora' : 'Now'}</span>
+                        <span className="font-semibold text-primary">
+                          {format(pendingMove.newDate, language === 'es' ? "EEE d MMM, HH:mm" : 'EEE MMM d, HH:mm', { locale: language === 'es' ? es : enUS })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-muted-foreground">
+                    {language === 'es'
+                      ? `¿Avisar a tus ${subscriberCount} suscriptor${subscriberCount === 1 ? '' : 'es'}${pendingMove?.inviteesCount ? ` y ${pendingMove.inviteesCount} invitado${pendingMove.inviteesCount === 1 ? '' : 's'} extra` : ''} del cambio?`
+                      : `Notify your ${subscriberCount} subscriber${subscriberCount === 1 ? '' : 's'}${pendingMove?.inviteesCount ? ` and ${pendingMove.inviteesCount} extra invitee${pendingMove.inviteesCount === 1 ? '' : 's'}` : ''} of the change?`}
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isNotifyingMove}>
+                {language === 'es' ? 'Solo guardar' : 'Just save'}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); handleConfirmNotifyMove(); }}
+                disabled={isNotifyingMove}
+                className="gap-1.5"
+              >
+                {isNotifyingMove ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {language === 'es' ? 'Sí, notificar' : 'Yes, notify'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

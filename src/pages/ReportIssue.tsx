@@ -127,7 +127,7 @@ export default function ReportIssue() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-lg">
-        <Button variant="ghost" size="sm" className="hidden sm:inline-flex mb-4 gap-1.5" onClick={() => navigate(-1)}>
+        <Button variant="back" size="sm" className="hidden sm:inline-flex mb-4 gap-1.5" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" />
           {t('report.back')}
         </Button>

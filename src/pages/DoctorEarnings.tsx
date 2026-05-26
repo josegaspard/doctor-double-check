@@ -241,7 +241,7 @@ export default function DoctorEarnings() {
         {/* Header */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <Button
-            variant="ghost"
+            variant="back"
             size="icon"
             onClick={() => navigate('/doctor/dashboard')}
             className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"

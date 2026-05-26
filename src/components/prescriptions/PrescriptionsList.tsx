@@ -239,7 +239,12 @@ export function PrescriptionsList() {
       )}
 
       {isManaging && (
-        <p className="text-xs text-muted-foreground px-1">{t('manage.selectHint')}</p>
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-card border border-primary/30 shadow-sm ring-1 ring-primary/10">
+          <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <Trash2 className="w-4 h-4 text-primary" />
+          </div>
+          <p className="text-xs sm:text-sm font-medium text-card-foreground">{t('manage.selectHint')}</p>
+        </div>
       )}
 
       {prescriptions.map(rx => (
