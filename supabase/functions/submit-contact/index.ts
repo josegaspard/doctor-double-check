@@ -78,14 +78,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // 2. Best-effort: email the admins. Never block the success response on this.
   try {
-    const { data: admins } = await supabase
+    // 2 pasos: traer user_id de admins, luego sus emails (no hay FK directa
+    // user_roles->profiles, el embed profiles:profiles(email) daba HTTP 400).
+    const { data: adminRoles } = await supabase
       .from("user_roles")
-      .select("profiles:profiles(email)")
+      .select("user_id")
       .eq("role", "admin");
 
-    const adminEmails = (admins ?? [])
-      .map((row: any) => row?.profiles?.email)
-      .filter((e: any) => typeof e === "string" && e.includes("@"));
+    const adminIds = (adminRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
+    let adminEmails: string[] = [];
+    if (adminIds.length > 0) {
+      const { data: adminProfiles } = await supabase
+        .from("profiles")
+        .select("email")
+        .in("id", adminIds);
+      adminEmails = (adminProfiles ?? [])
+        .map((row: any) => row?.email)
+        .filter((e: any) => typeof e === "string" && e.includes("@"));
+    }
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (resendKey && adminEmails.length > 0) {

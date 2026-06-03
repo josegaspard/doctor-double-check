@@ -194,9 +194,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: admins, error: adminsError } = await supabase
+    // 2 pasos: no hay FK directa user_roles->profiles (el embed daba HTTP 400).
+    const { data: adminRoles, error: adminsError } = await supabase
       .from("user_roles")
-      .select("user_id, profiles:profiles(email)")
+      .select("user_id")
       .eq("role", "admin");
 
     if (adminsError) {
@@ -204,9 +205,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ error: "admin lookup failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const adminEmails = (admins ?? [])
-      .map((row: any) => row?.profiles?.email)
-      .filter((e: any) => typeof e === "string" && e.includes("@"));
+    const adminIds = (adminRoles ?? []).map((r: any) => r.user_id).filter(Boolean);
+    let adminEmails: string[] = [];
+    if (adminIds.length > 0) {
+      const { data: adminProfiles } = await supabase
+        .from("profiles")
+        .select("email")
+        .in("id", adminIds);
+      adminEmails = (adminProfiles ?? [])
+        .map((row: any) => row?.email)
+        .filter((e: any) => typeof e === "string" && e.includes("@"));
+    }
 
     if (adminEmails.length === 0) {
       console.warn("No admin emails found, skipping notification", { type });

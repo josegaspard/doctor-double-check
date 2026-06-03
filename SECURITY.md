@@ -111,12 +111,18 @@ confirmar **todos** estos puntos antes de mergear:
 - ⚠️ Nota: la API key Resend en credenciales locales está obsoleta (otra cuenta) — no sirve
       para tests locales; usar siempre la de los secrets de Supabase.
 
-### Bug abierto: notificación por correo a admins rota (2026-06-03)
-- `submit-contact` y `notify-admin` arman el lookup de admins como
-  `GET /rest/v1/user_roles?select=profiles:profiles(email)&role=eq.admin` → **HTTP 400**
-  (no hay FK directa `user_roles`→`profiles`). Resultado: `adminEmails` vacío y el correo
-  a admins **nunca se envía** (el mensaje sí se guarda en `reports`).
-- [ ] Fix: consulta en 2 pasos (traer `user_id` con `role=admin`, luego `profiles?id=in.(…)`).
+### Notificación por correo a admins — ARREGLADO 2026-06-03
+- `submit-contact`, `submit-report` y `notify-admin` armaban el lookup como
+  `select=profiles:profiles(email)` → **HTTP 400** (no hay FK directa `user_roles`→`profiles`),
+  dejando `adminEmails` vacío → el correo a admins nunca salía.
+- [x] **Fix aplicado y verificado**: consulta en 2 pasos (`user_roles?select=user_id&role=eq.admin`
+  → `profiles?select=email&id=in.(…)`). Logs en vivo: ambas queries **200**, 3 admins resueltos.
+
+### Higiene de respuestas (2026-06-03)
+- [x] 12 funciones que devolvían **500** ante `Authorization` faltante ahora devuelven **401**
+  limpio (early return, sin filtrar mensaje de error). No cambia el flujo autenticado.
+- [x] `customer-portal` y `admin-refund` migradas de `Access-Control-Allow-Origin: *` a
+  `corsHeadersFor` (allowlist). Verificado: Origin no-permitido recibe la canónica, no `*`.
 
 ---
 

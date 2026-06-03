@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     );
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const token = authHeader.replace("Bearer ", "");
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
