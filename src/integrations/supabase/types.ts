@@ -10,10 +10,97 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      accounting_ledger: {
+        Row: {
+          account: string
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          dispute_id: string | null
+          entry_type: string
+          id: string
+          metadata: Json
+          order_id: string | null
+          payout_id: string | null
+          refund_id: string | null
+          transaction_group: string
+          vendor_id: string | null
+        }
+        Insert: {
+          account: string
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          dispute_id?: string | null
+          entry_type: string
+          id?: string
+          metadata?: Json
+          order_id?: string | null
+          payout_id?: string | null
+          refund_id?: string | null
+          transaction_group: string
+          vendor_id?: string | null
+        }
+        Update: {
+          account?: string
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          dispute_id?: string | null
+          entry_type?: string
+          id?: string
+          metadata?: Json
+          order_id?: string | null
+          payout_id?: string | null
+          refund_id?: string | null
+          transaction_group?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_ledger_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "order_disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_ledger_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_ledger_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "order_refunds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_ledger_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_campaigns: {
         Row: {
           advertiser_id: string
@@ -300,6 +387,101 @@ export type Database = {
           width?: number
         }
         Relationships: []
+      }
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          amount: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          reason: string | null
+          target_resource_id: string | null
+          target_resource_type: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          target_resource_id?: string | null
+          target_resource_type?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      appointments: {
+        Row: {
+          availability_id: string | null
+          cancellation_reason: string | null
+          created_at: string
+          daily_room_url: string | null
+          doctor_id: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          patient_id: string
+          reason: string | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          availability_id?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          daily_room_url?: string | null
+          doctor_id: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          patient_id: string
+          reason?: string | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          availability_id?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          daily_room_url?: string | null
+          doctor_id?: string
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          reason?: string | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_availability_id_fkey"
+            columns: ["availability_id"]
+            isOneToOne: false
+            referencedRelation: "doctor_availability"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       arco_requests: {
         Row: {
@@ -706,6 +888,7 @@ export type Database = {
           daily_room_url: string | null
           description: string | null
           id: string
+          is_public: boolean
           max_participants: number | null
           meeting_notes: string | null
           meeting_summary: string | null
@@ -715,6 +898,8 @@ export type Database = {
           specialty: string
           status: Database["public"]["Enums"]["clinical_session_status"]
           title: string
+          translate_enabled: boolean
+          translate_target_lang: string | null
           updated_at: string
         }
         Insert: {
@@ -724,6 +909,7 @@ export type Database = {
           daily_room_url?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean
           max_participants?: number | null
           meeting_notes?: string | null
           meeting_summary?: string | null
@@ -733,6 +919,8 @@ export type Database = {
           specialty: string
           status?: Database["public"]["Enums"]["clinical_session_status"]
           title: string
+          translate_enabled?: boolean
+          translate_target_lang?: string | null
           updated_at?: string
         }
         Update: {
@@ -742,6 +930,7 @@ export type Database = {
           daily_room_url?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean
           max_participants?: number | null
           meeting_notes?: string | null
           meeting_summary?: string | null
@@ -751,6 +940,8 @@ export type Database = {
           specialty?: string
           status?: Database["public"]["Enums"]["clinical_session_status"]
           title?: string
+          translate_enabled?: boolean
+          translate_target_lang?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -885,6 +1076,7 @@ export type Database = {
           description: string | null
           doctor_id: string
           duration_minutes: number
+          extra_invitees: string[]
           id: string
           notifications_sent: boolean
           reminder_sent: boolean
@@ -899,6 +1091,7 @@ export type Database = {
           description?: string | null
           doctor_id: string
           duration_minutes?: number
+          extra_invitees?: string[]
           id?: string
           notifications_sent?: boolean
           reminder_sent?: boolean
@@ -913,6 +1106,7 @@ export type Database = {
           description?: string | null
           doctor_id?: string
           duration_minutes?: number
+          extra_invitees?: string[]
           id?: string
           notifications_sent?: boolean
           reminder_sent?: boolean
@@ -1044,6 +1238,10 @@ export type Database = {
           is_masterclass: boolean | null
           is_public: boolean
           masterclass_sessions: Json | null
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_note: string | null
+          moderation_status: Database["public"]["Enums"]["content_moderation_status"]
           price: number | null
           thumbnail_url: string | null
           title: string
@@ -1061,6 +1259,10 @@ export type Database = {
           is_masterclass?: boolean | null
           is_public?: boolean
           masterclass_sessions?: Json | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_note?: string | null
+          moderation_status?: Database["public"]["Enums"]["content_moderation_status"]
           price?: number | null
           thumbnail_url?: string | null
           title: string
@@ -1078,6 +1280,10 @@ export type Database = {
           is_masterclass?: boolean | null
           is_public?: boolean
           masterclass_sessions?: Json | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_note?: string | null
+          moderation_status?: Database["public"]["Enums"]["content_moderation_status"]
           price?: number | null
           thumbnail_url?: string | null
           title?: string
@@ -1247,6 +1453,7 @@ export type Database = {
       }
       doctor_notes: {
         Row: {
+          attachments: Json
           content: string
           created_at: string
           doctor_id: string
@@ -1257,6 +1464,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachments?: Json
           content: string
           created_at?: string
           doctor_id: string
@@ -1267,6 +1475,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachments?: Json
           content?: string
           created_at?: string
           doctor_id?: string
@@ -1289,13 +1498,6 @@ export type Database = {
             columns: ["doctor_id"]
             isOneToOne: false
             referencedRelation: "profiles_public"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "doctor_notes_external_patient_id_fkey"
-            columns: ["external_patient_id"]
-            isOneToOne: false
-            referencedRelation: "external_patients"
             referencedColumns: ["id"]
           },
           {
@@ -1371,40 +1573,46 @@ export type Database = {
         Row: {
           available_for_clinical_sessions: boolean
           available_for_double_check: boolean
+          available_now: boolean | null
+          available_until: string | null
           badge_override: string | null
           bio: string | null
           can_publish_news: boolean
-          cedula_especialidad: string | null
-          cedula_especialidad_rejection_reason: string | null
-          cedula_especialidad_status: string | null
           cedula_profesional: string | null
           cedula_rejection_reason: string | null
           cedula_status:
             | Database["public"]["Enums"]["verification_status"]
             | null
           cedula_verification_id: string | null
+          city: string | null
           cofepris_permit: string | null
           cofepris_rejection_reason: string | null
           cofepris_status:
             | Database["public"]["Enums"]["verification_status"]
             | null
           consultation_fee: number
+          continent: string | null
+          country: string | null
+          country_code: string | null
           created_at: string
           followers_count: number
           id: string
+          latitude: number | null
           license: string
           location: string | null
+          longitude: number | null
           numero_consejo: string | null
           office_days: string[] | null
           office_hours_end: string | null
           office_hours_start: string | null
           payouts_enabled: boolean | null
           pending_earnings: number | null
+          practice_hospital: string | null
           rank_override: string | null
           rating: number
-          secondary_specialties: string[] | null
           signature_url: string | null
           specialty: string
+          state: string | null
           status: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id: string | null
           total_consultations: number
@@ -1412,45 +1620,50 @@ export type Database = {
           university: string | null
           updated_at: string
           user_id: string
-          workplaces: Json | null
         }
         Insert: {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
+          available_now?: boolean | null
+          available_until?: string | null
           badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
-          cedula_especialidad?: string | null
-          cedula_especialidad_rejection_reason?: string | null
-          cedula_especialidad_status?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
           cedula_verification_id?: string | null
+          city?: string | null
           cofepris_permit?: string | null
           cofepris_rejection_reason?: string | null
           cofepris_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
           consultation_fee?: number
+          continent?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           followers_count?: number
           id?: string
+          latitude?: number | null
           license: string
           location?: string | null
+          longitude?: number | null
           numero_consejo?: string | null
           office_days?: string[] | null
           office_hours_end?: string | null
           office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
+          practice_hospital?: string | null
           rank_override?: string | null
           rating?: number
-          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty: string
+          state?: string | null
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null
           total_consultations?: number
@@ -1458,45 +1671,50 @@ export type Database = {
           university?: string | null
           updated_at?: string
           user_id: string
-          workplaces?: Json | null
         }
         Update: {
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
+          available_now?: boolean | null
+          available_until?: string | null
           badge_override?: string | null
           bio?: string | null
           can_publish_news?: boolean
-          cedula_especialidad?: string | null
-          cedula_especialidad_rejection_reason?: string | null
-          cedula_especialidad_status?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
           cedula_verification_id?: string | null
+          city?: string | null
           cofepris_permit?: string | null
           cofepris_rejection_reason?: string | null
           cofepris_status?:
             | Database["public"]["Enums"]["verification_status"]
             | null
           consultation_fee?: number
+          continent?: string | null
+          country?: string | null
+          country_code?: string | null
           created_at?: string
           followers_count?: number
           id?: string
+          latitude?: number | null
           license?: string
           location?: string | null
+          longitude?: number | null
           numero_consejo?: string | null
           office_days?: string[] | null
           office_hours_end?: string | null
           office_hours_start?: string | null
           payouts_enabled?: boolean | null
           pending_earnings?: number | null
+          practice_hospital?: string | null
           rank_override?: string | null
           rating?: number
-          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty?: string
+          state?: string | null
           status?: Database["public"]["Enums"]["doctor_status"]
           stripe_account_id?: string | null
           total_consultations?: number
@@ -1504,7 +1722,6 @@ export type Database = {
           university?: string | null
           updated_at?: string
           user_id?: string
-          workplaces?: Json | null
         }
         Relationships: [
           {
@@ -1715,6 +1932,27 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates_cache: {
+        Row: {
+          base_currency: string
+          rate: number
+          target_currency: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency: string
+          rate: number
+          target_currency: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          rate?: number
+          target_currency?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expediente_otp: {
         Row: {
           created_at: string
@@ -1750,8 +1988,8 @@ export type Database = {
           created_at: string
           doctor_id: string
           email: string | null
+          full_name: string
           id: string
-          name: string
           notes: string | null
           phone: string | null
           updated_at: string
@@ -1760,8 +1998,8 @@ export type Database = {
           created_at?: string
           doctor_id: string
           email?: string | null
+          full_name: string
           id?: string
-          name: string
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -1770,8 +2008,8 @@ export type Database = {
           created_at?: string
           doctor_id?: string
           email?: string | null
+          full_name?: string
           id?: string
-          name?: string
           notes?: string | null
           phone?: string | null
           updated_at?: string
@@ -1882,6 +2120,45 @@ export type Database = {
         }
         Relationships: []
       }
+      file_access_log: {
+        Row: {
+          action: string
+          bucket: string | null
+          created_at: string
+          error: string | null
+          file_id: string
+          file_type: string | null
+          id: string
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string
+          bucket?: string | null
+          created_at?: string
+          error?: string | null
+          file_id: string
+          file_type?: string | null
+          id?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          bucket?: string | null
+          created_at?: string
+          error?: string | null
+          file_id?: string
+          file_type?: string | null
+          id?: string
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       followers: {
         Row: {
           created_at: string
@@ -1900,6 +2177,60 @@ export type Database = {
           followed_id?: string
           follower_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      foro_events: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          end_date: string | null
+          event_date: string
+          event_type: string
+          id: string
+          image_url: string | null
+          is_online: boolean
+          is_published: boolean
+          location: string | null
+          organizer: string | null
+          registration_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          end_date?: string | null
+          event_date: string
+          event_type?: string
+          id?: string
+          image_url?: string | null
+          is_online?: boolean
+          is_published?: boolean
+          location?: string | null
+          organizer?: string | null
+          registration_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          end_date?: string | null
+          event_date?: string
+          event_type?: string
+          id?: string
+          image_url?: string | null
+          is_online?: boolean
+          is_published?: boolean
+          location?: string | null
+          organizer?: string | null
+          registration_url?: string | null
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1975,17 +2306,24 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "hospital_doctors_hospital_id_fkey"
-            columns: ["hospital_id"]
+            foreignKeyName: "hospital_doctors_doctor_id_fkey"
+            columns: ["doctor_id"]
             isOneToOne: false
-            referencedRelation: "hospitals"
+            referencedRelation: "doctor_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "hospital_doctors_doctor_id_fkey"
             columns: ["doctor_id"]
             isOneToOne: false
-            referencedRelation: "doctor_profiles"
+            referencedRelation: "doctor_profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_doctors_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
             referencedColumns: ["id"]
           },
         ]
@@ -2326,6 +2664,7 @@ export type Database = {
           doctor_id: string
           ended_at: string | null
           id: string
+          is_broadcasting: boolean
           likes_count: number
           location: string | null
           max_paid_chats: number | null
@@ -2334,13 +2673,14 @@ export type Database = {
           peak_viewers: number
           questions_count: number
           recording_price: number | null
-          scheduled_at: string | null
           specialty: string
           started_at: string
           status: Database["public"]["Enums"]["live_status"]
           tags: string[] | null
           thumbnail_url: string | null
           title: string
+          translate_enabled: boolean
+          translate_target_lang: string | null
           viewer_count: number
         }
         Insert: {
@@ -2353,6 +2693,7 @@ export type Database = {
           doctor_id: string
           ended_at?: string | null
           id?: string
+          is_broadcasting?: boolean
           likes_count?: number
           location?: string | null
           max_paid_chats?: number | null
@@ -2361,13 +2702,14 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
-          scheduled_at?: string | null
           specialty: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
           tags?: string[] | null
           thumbnail_url?: string | null
           title: string
+          translate_enabled?: boolean
+          translate_target_lang?: string | null
           viewer_count?: number
         }
         Update: {
@@ -2380,6 +2722,7 @@ export type Database = {
           doctor_id?: string
           ended_at?: string | null
           id?: string
+          is_broadcasting?: boolean
           likes_count?: number
           location?: string | null
           max_paid_chats?: number | null
@@ -2388,14 +2731,84 @@ export type Database = {
           peak_viewers?: number
           questions_count?: number
           recording_price?: number | null
-          scheduled_at?: string | null
           specialty?: string
           started_at?: string
           status?: Database["public"]["Enums"]["live_status"]
           tags?: string[] | null
           thumbnail_url?: string | null
           title?: string
+          translate_enabled?: boolean
+          translate_target_lang?: string | null
           viewer_count?: number
+        }
+        Relationships: []
+      }
+      marketplace_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          diff: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          diff?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      marketplace_brands: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          slug: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          slug?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2429,78 +2842,135 @@ export type Database = {
       marketplace_orders: {
         Row: {
           buyer_id: string
+          cancelled_at: string | null
+          cancelled_by: string | null
+          courier_name: string | null
           created_at: string
+          currency: string
           delivered_at: string | null
           delivery_fee: number | null
+          dispute_status: string
+          earning_recorded: boolean
           estimated_delivery: string | null
+          fulfillment_log: Json
           id: string
           paid_at: string | null
+          platform_fee: number | null
           product_id: string | null
           quantity: number
+          refund_status: string
+          refunded_amount: number
           shipped_at: string | null
+          shipped_by: string | null
           shipping_address: Json | null
           shipping_city: string | null
+          shipping_cost: number
           shipping_name: string | null
           shipping_notes: string | null
           shipping_phone: string | null
           shipping_state: string | null
+          shipping_status: string
           shipping_zip: string | null
           status: string
+          stripe_fee: number | null
+          stripe_payment_intent_id: string | null
           stripe_session_id: string | null
+          subtotal: number | null
+          tax_amount: number
           total_amount: number
           tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           vendor_id: string | null
+          vendor_net: number | null
         }
         Insert: {
           buyer_id: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          courier_name?: string | null
           created_at?: string
+          currency?: string
           delivered_at?: string | null
           delivery_fee?: number | null
+          dispute_status?: string
+          earning_recorded?: boolean
           estimated_delivery?: string | null
+          fulfillment_log?: Json
           id?: string
           paid_at?: string | null
+          platform_fee?: number | null
           product_id?: string | null
           quantity?: number
+          refund_status?: string
+          refunded_amount?: number
           shipped_at?: string | null
+          shipped_by?: string | null
           shipping_address?: Json | null
           shipping_city?: string | null
+          shipping_cost?: number
           shipping_name?: string | null
           shipping_notes?: string | null
           shipping_phone?: string | null
           shipping_state?: string | null
+          shipping_status?: string
           shipping_zip?: string | null
           status?: string
+          stripe_fee?: number | null
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          subtotal?: number | null
+          tax_amount?: number
           total_amount?: number
           tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vendor_id?: string | null
+          vendor_net?: number | null
         }
         Update: {
           buyer_id?: string
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          courier_name?: string | null
           created_at?: string
+          currency?: string
           delivered_at?: string | null
           delivery_fee?: number | null
+          dispute_status?: string
+          earning_recorded?: boolean
           estimated_delivery?: string | null
+          fulfillment_log?: Json
           id?: string
           paid_at?: string | null
+          platform_fee?: number | null
           product_id?: string | null
           quantity?: number
+          refund_status?: string
+          refunded_amount?: number
           shipped_at?: string | null
+          shipped_by?: string | null
           shipping_address?: Json | null
           shipping_city?: string | null
+          shipping_cost?: number
           shipping_name?: string | null
           shipping_notes?: string | null
           shipping_phone?: string | null
           shipping_state?: string | null
+          shipping_status?: string
           shipping_zip?: string | null
           status?: string
+          stripe_fee?: number | null
+          stripe_payment_intent_id?: string | null
           stripe_session_id?: string | null
+          subtotal?: number | null
+          tax_amount?: number
           total_amount?: number
           tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           vendor_id?: string | null
+          vendor_net?: number | null
         }
         Relationships: [
           {
@@ -2521,6 +2991,7 @@ export type Database = {
       }
       marketplace_products: {
         Row: {
+          brand_id: string | null
           category: string | null
           category_id: string | null
           created_at: string
@@ -2531,13 +3002,19 @@ export type Database = {
           images: Json | null
           is_active: boolean
           is_featured: boolean
+          low_stock_threshold: number
           name: string
           price: number
+          sku: string | null
           stock: number
+          total_sold: number
+          track_stock: boolean
           updated_at: string
-          vendor_id: string
+          vendor_id: string | null
+          weight_grams: number | null
         }
         Insert: {
+          brand_id?: string | null
           category?: string | null
           category_id?: string | null
           created_at?: string
@@ -2548,13 +3025,19 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_featured?: boolean
+          low_stock_threshold?: number
           name: string
           price?: number
+          sku?: string | null
           stock?: number
+          total_sold?: number
+          track_stock?: boolean
           updated_at?: string
-          vendor_id: string
+          vendor_id?: string | null
+          weight_grams?: number | null
         }
         Update: {
+          brand_id?: string | null
           category?: string | null
           category_id?: string | null
           created_at?: string
@@ -2565,13 +3048,25 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_featured?: boolean
+          low_stock_threshold?: number
           name?: string
           price?: number
+          sku?: string | null
           stock?: number
+          total_sold?: number
+          track_stock?: boolean
           updated_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
+          weight_grams?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "marketplace_products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "marketplace_products_category_id_fkey"
             columns: ["category_id"]
@@ -2590,40 +3085,70 @@ export type Database = {
       }
       marketplace_vendors: {
         Row: {
+          commission_rate: number
           created_at: string
           description: string | null
           id: string
+          iva_rate: number
+          legal_name: string | null
           location: string | null
           logo_url: string | null
           name: string
+          notes: string | null
+          payout_email: string | null
           phone: string | null
           status: string
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean
+          stripe_details_submitted: boolean
+          stripe_payouts_enabled: boolean
+          tax_id: string | null
           updated_at: string
           user_id: string | null
           website: string | null
         }
         Insert: {
+          commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
+          iva_rate?: number
+          legal_name?: string | null
           location?: string | null
           logo_url?: string | null
           name: string
+          notes?: string | null
+          payout_email?: string | null
           phone?: string | null
           status?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
+          tax_id?: string | null
           updated_at?: string
           user_id?: string | null
           website?: string | null
         }
         Update: {
+          commission_rate?: number
           created_at?: string
           description?: string | null
           id?: string
+          iva_rate?: number
+          legal_name?: string | null
           location?: string | null
           logo_url?: string | null
           name?: string
+          notes?: string | null
+          payout_email?: string | null
           phone?: string | null
           status?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
+          stripe_details_submitted?: boolean
+          stripe_payouts_enabled?: boolean
+          tax_id?: string | null
           updated_at?: string
           user_id?: string | null
           website?: string | null
@@ -2944,6 +3469,127 @@ export type Database = {
         }
         Relationships: []
       }
+      order_disputes: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          evidence_due_by: string | null
+          evidence_submitted_at: string | null
+          id: string
+          order_id: string | null
+          raw: Json
+          reason: string | null
+          status: string
+          stripe_charge_id: string | null
+          stripe_dispute_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          evidence_due_by?: string | null
+          evidence_submitted_at?: string | null
+          id?: string
+          order_id?: string | null
+          raw?: Json
+          reason?: string | null
+          status: string
+          stripe_charge_id?: string | null
+          stripe_dispute_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          evidence_due_by?: string | null
+          evidence_submitted_at?: string | null
+          id?: string
+          order_id?: string | null
+          raw?: Json
+          reason?: string | null
+          status?: string
+          stripe_charge_id?: string | null
+          stripe_dispute_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_refunds: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          approved_by: string | null
+          created_at: string
+          currency: string
+          customer_evidence: Json | null
+          id: string
+          order_id: string
+          reason: string
+          reason_category: string
+          refunded_at: string | null
+          rejection_reason: string | null
+          requested_by: string | null
+          reviewed_at: string | null
+          status: string
+          stripe_refund_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          customer_evidence?: Json | null
+          id?: string
+          order_id: string
+          reason: string
+          reason_category?: string
+          refunded_at?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          customer_evidence?: Json | null
+          id?: string
+          order_id?: string
+          reason?: string
+          reason_category?: string
+          refunded_at?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          reviewed_at?: string | null
+          status?: string
+          stripe_refund_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_clinical_history: {
         Row: {
           allergies: string | null
@@ -2959,6 +3605,8 @@ export type Database = {
           family_cancer_detail: string | null
           family_diabetes: boolean | null
           family_diabetes_detail: string | null
+          family_diabetes_relatives: string[] | null
+          family_diabetes_type: string | null
           family_heart_disease: boolean | null
           family_heart_disease_detail: string | null
           family_history: string | null
@@ -2975,11 +3623,17 @@ export type Database = {
           gyn_pap_result: string | null
           gyn_pregnancies: number | null
           habit_alcohol: string | null
+          habit_alcohol_amount: string | null
           habit_drugs: string | null
+          habit_drugs_amount: string | null
           habit_exercise: string | null
+          habit_exercise_amount: string | null
           habit_hookah: string | null
+          habit_hookah_amount: string | null
           habit_smoking: string | null
+          habit_smoking_amount: string | null
           habit_vaping: string | null
+          habit_vaping_amount: string | null
           height_cm: number | null
           id: string
           notes: string | null
@@ -3004,6 +3658,8 @@ export type Database = {
           family_cancer_detail?: string | null
           family_diabetes?: boolean | null
           family_diabetes_detail?: string | null
+          family_diabetes_relatives?: string[] | null
+          family_diabetes_type?: string | null
           family_heart_disease?: boolean | null
           family_heart_disease_detail?: string | null
           family_history?: string | null
@@ -3020,11 +3676,17 @@ export type Database = {
           gyn_pap_result?: string | null
           gyn_pregnancies?: number | null
           habit_alcohol?: string | null
+          habit_alcohol_amount?: string | null
           habit_drugs?: string | null
+          habit_drugs_amount?: string | null
           habit_exercise?: string | null
+          habit_exercise_amount?: string | null
           habit_hookah?: string | null
+          habit_hookah_amount?: string | null
           habit_smoking?: string | null
+          habit_smoking_amount?: string | null
           habit_vaping?: string | null
+          habit_vaping_amount?: string | null
           height_cm?: number | null
           id?: string
           notes?: string | null
@@ -3049,6 +3711,8 @@ export type Database = {
           family_cancer_detail?: string | null
           family_diabetes?: boolean | null
           family_diabetes_detail?: string | null
+          family_diabetes_relatives?: string[] | null
+          family_diabetes_type?: string | null
           family_heart_disease?: boolean | null
           family_heart_disease_detail?: string | null
           family_history?: string | null
@@ -3065,11 +3729,17 @@ export type Database = {
           gyn_pap_result?: string | null
           gyn_pregnancies?: number | null
           habit_alcohol?: string | null
+          habit_alcohol_amount?: string | null
           habit_drugs?: string | null
+          habit_drugs_amount?: string | null
           habit_exercise?: string | null
+          habit_exercise_amount?: string | null
           habit_hookah?: string | null
+          habit_hookah_amount?: string | null
           habit_smoking?: string | null
+          habit_smoking_amount?: string | null
           habit_vaping?: string | null
+          habit_vaping_amount?: string | null
           height_cm?: number | null
           id?: string
           notes?: string | null
@@ -3301,6 +3971,69 @@ export type Database = {
           },
         ]
       }
+      product_reviews: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_hidden: boolean
+          order_id: string | null
+          product_id: string
+          rating: number
+          reviewer_id: string
+          title: string | null
+          updated_at: string
+          vendor_reply: string | null
+          vendor_reply_at: string | null
+          verified_purchase: boolean
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          order_id?: string | null
+          product_id: string
+          rating: number
+          reviewer_id: string
+          title?: string | null
+          updated_at?: string
+          vendor_reply?: string | null
+          vendor_reply_at?: string | null
+          verified_purchase?: boolean
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          reviewer_id?: string
+          title?: string | null
+          updated_at?: string
+          vendor_reply?: string | null
+          vendor_reply_at?: string | null
+          verified_purchase?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3314,6 +4047,7 @@ export type Database = {
           name: string
           onboarding_completed: boolean
           phone: string | null
+          preferred_currency: string | null
           preferred_language: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes: number
           storage_used_bytes: number
@@ -3333,6 +4067,7 @@ export type Database = {
           name: string
           onboarding_completed?: boolean
           phone?: string | null
+          preferred_currency?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes?: number
           storage_used_bytes?: number
@@ -3352,6 +4087,7 @@ export type Database = {
           name?: string
           onboarding_completed?: boolean
           phone?: string | null
+          preferred_currency?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
           storage_limit_bytes?: number
           storage_used_bytes?: number
@@ -3401,6 +4137,13 @@ export type Database = {
             referencedRelation: "recordings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "purchases_recording_id_fkey"
+            columns: ["recording_id"]
+            isOneToOne: false
+            referencedRelation: "recordings_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       push_subscriptions: {
@@ -3433,8 +4176,31 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: string
+          key: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: string
+          key: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: string
+          key?: string
+        }
+        Relationships: []
+      }
       recordings: {
         Row: {
+          bunny_status: string | null
+          bunny_video_id: string | null
           created_at: string
           description: string | null
           doctor_id: string
@@ -3450,6 +4216,8 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          bunny_status?: string | null
+          bunny_video_id?: string | null
           created_at?: string
           description?: string | null
           doctor_id: string
@@ -3465,6 +4233,8 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          bunny_status?: string | null
+          bunny_video_id?: string | null
           created_at?: string
           description?: string | null
           doctor_id?: string
@@ -3807,6 +4577,47 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_tracking_events: {
+        Row: {
+          description: string | null
+          id: string
+          location: string | null
+          occurred_at: string
+          order_id: string
+          raw: Json | null
+          source: string
+          status: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          location?: string | null
+          occurred_at?: string
+          order_id: string
+          raw?: Json | null
+          source?: string
+          status: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          location?: string | null
+          occurred_at?: string
+          order_id?: string
+          raw?: Json | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_tracking_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           id: string
@@ -3825,6 +4636,33 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      stripe_webhook_events: {
+        Row: {
+          error: string | null
+          event_id: string
+          event_type: string
+          processed_at: string | null
+          received_at: string
+          status: string
+        }
+        Insert: {
+          error?: string | null
+          event_id: string
+          event_type: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+        }
+        Update: {
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          processed_at?: string | null
+          received_at?: string
+          status?: string
         }
         Relationships: []
       }
@@ -3997,7 +4835,7 @@ export type Database = {
           file_id: string | null
           id: string
           metadata: Json | null
-          patient_id: string
+          patient_id: string | null
         }
         Insert: {
           action: string
@@ -4006,7 +4844,7 @@ export type Database = {
           file_id?: string | null
           id?: string
           metadata?: Json | null
-          patient_id: string
+          patient_id?: string | null
         }
         Update: {
           action?: string
@@ -4015,7 +4853,7 @@ export type Database = {
           file_id?: string | null
           id?: string
           metadata?: Json | null
-          patient_id?: string
+          patient_id?: string | null
         }
         Relationships: [
           {
@@ -4070,6 +4908,144 @@ export type Database = {
             columns: ["medical_history_id"]
             isOneToOne: false
             referencedRelation: "medical_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_earnings: {
+        Row: {
+          available_at: string | null
+          commission_rate: number
+          created_at: string
+          currency: string
+          gross_amount: number
+          id: string
+          net_amount: number
+          order_id: string
+          payout_id: string | null
+          platform_fee: number
+          status: string
+          stripe_fee: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          available_at?: string | null
+          commission_rate: number
+          created_at?: string
+          currency?: string
+          gross_amount: number
+          id?: string
+          net_amount: number
+          order_id: string
+          payout_id?: string | null
+          platform_fee: number
+          status?: string
+          stripe_fee?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          available_at?: string | null
+          commission_rate?: number
+          created_at?: string
+          currency?: string
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          order_id?: string
+          payout_id?: string | null
+          platform_fee?: number
+          status?: string
+          stripe_fee?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_earnings_payout_fk"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_earnings_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_payouts: {
+        Row: {
+          currency: string
+          earnings_count: number
+          failed_at: string | null
+          failure_reason: string | null
+          id: string
+          initiated_at: string
+          initiated_by: string | null
+          metadata: Json
+          notes: string | null
+          paid_at: string | null
+          receipt_url: string | null
+          status: string
+          stripe_payout_id: string | null
+          stripe_transfer_id: string | null
+          total_amount: number
+          vendor_id: string
+        }
+        Insert: {
+          currency?: string
+          earnings_count?: number
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          initiated_at?: string
+          initiated_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          paid_at?: string | null
+          receipt_url?: string | null
+          status?: string
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+          total_amount: number
+          vendor_id: string
+        }
+        Update: {
+          currency?: string
+          earnings_count?: number
+          failed_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          initiated_at?: string
+          initiated_by?: string | null
+          metadata?: Json
+          notes?: string | null
+          paid_at?: string | null
+          receipt_url?: string | null
+          status?: string
+          stripe_payout_id?: string | null
+          stripe_transfer_id?: string | null
+          total_amount?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_payouts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -4318,6 +5294,62 @@ export type Database = {
         }
         Relationships: []
       }
+      recordings_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          doctor_id: string | null
+          duration: number | null
+          id: string | null
+          is_free: boolean | null
+          live_id: string | null
+          peak_viewers: number | null
+          price: number | null
+          specialty: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          doctor_id?: string | null
+          duration?: number | null
+          id?: string | null
+          is_free?: never
+          live_id?: string | null
+          peak_viewers?: number | null
+          price?: number | null
+          specialty?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          doctor_id?: string | null
+          duration?: number | null
+          id?: string | null
+          is_free?: never
+          live_id?: string | null
+          peak_viewers?: number | null
+          price?: number | null
+          specialty?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recordings_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "lives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resident_profiles_public: {
         Row: {
           created_at: string | null
@@ -4356,8 +5388,36 @@ export type Database = {
       }
     }
     Functions: {
+      book_live_consultation: {
+        Args: {
+          p_amount: number
+          p_doctor_id: string
+          p_live_id?: string
+          p_patient_name?: string
+        }
+        Returns: Json
+      }
+      check_and_record_rate_limit: {
+        Args: {
+          p_bucket: string
+          p_key: string
+          p_max: number
+          p_window_seconds: number
+        }
+        Returns: boolean
+      }
+      claim_cedula_atomic: {
+        Args: { p_verification_id: string }
+        Returns: Json
+      }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
       credit_doctor_earnings: {
-        Args: { p_amount: number; p_doctor_id: string }
+        Args: {
+          p_amount: number
+          p_apply_commission?: boolean
+          p_doctor_id: string
+          p_sale_type?: string
+        }
         Returns: number
       }
       credit_wallet_balance: {
@@ -4371,6 +5431,27 @@ export type Database = {
       decrement_viewer_count: {
         Args: { p_live_id: string }
         Returns: undefined
+      }
+      fn_commission_rate: { Args: { p_kind: string }; Returns: number }
+      fn_post_service_sale: {
+        Args: {
+          p_currency: string
+          p_desc: string
+          p_gross: number
+          p_group: string
+          p_kind: string
+          p_meta: Json
+        }
+        Returns: undefined
+      }
+      get_accounting_summary: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          account: string
+          balance: number
+          total_credit: number
+          total_debit: number
+        }[]
       }
       get_chat_session_details: {
         Args: { p_session_id: string }
@@ -4510,6 +5591,20 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_vendor_payout_balance: {
+        Args: { p_vendor_id?: string }
+        Returns: {
+          available_amount: number
+          available_count: number
+          payouts_enabled: boolean
+          pending_amount: number
+          pending_count: number
+          stripe_account_id: string
+          total_paid: number
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4541,6 +5636,7 @@ export type Database = {
         }
         Returns: string
       }
+      mark_live_broadcasting: { Args: { p_live_id: string }; Returns: boolean }
       notify_subscribers: {
         Args: {
           p_data?: Json
@@ -4563,12 +5659,24 @@ export type Database = {
         }
         Returns: Json
       }
+      process_double_check_purchase: {
+        Args: { p_amount: number; p_description: string; p_doctor_id: string }
+        Returns: Json
+      }
       process_wallet_purchase: {
         Args: { p_amount: number; p_description: string; p_metadata?: Json }
         Returns: Json
       }
       process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
       redeem_referral_code: { Args: { p_code: string }; Returns: Json }
+      request_consultation_refund: {
+        Args: { p_consultation_id: string }
+        Returns: Json
+      }
+      restore_marketplace_stock: {
+        Args: { p_product_id: string; p_quantity: number }
+        Returns: undefined
+      }
       search_doctors_public: {
         Args: { p_limit?: number; p_term: string }
         Returns: {
@@ -4618,6 +5726,7 @@ export type Database = {
         | "completed"
         | "cancelled"
       content_audience: "all" | "patients" | "professionals" | "subscribers"
+      content_moderation_status: "pending" | "approved" | "rejected"
       content_type: "video" | "pdf" | "image" | "presentation"
       doctor_status: "pending" | "approved" | "rejected"
       identity_verification_status:
@@ -4626,12 +5735,7 @@ export type Database = {
         | "verified"
         | "failed"
         | "expired"
-      live_status:
-        | "live"
-        | "ended"
-        | "processing_recording"
-        | "recording_ready"
-        | "scheduled"
+      live_status: "live" | "ended" | "processing_recording" | "recording_ready"
       notification_type:
         | "doctor_live"
         | "doctor_availability"
@@ -4641,8 +5745,11 @@ export type Database = {
         | "system"
         | "rating_request"
         | "video_call"
+        | "recording_purchase"
+        | "new_subscriber"
+        | "payment_received"
       subscription_tier: "free" | "basic" | "premium"
-      supported_language: "es" | "en"
+      supported_language: "es" | "en" | "pt" | "fr"
       transaction_status: "initiated" | "paid" | "failed"
       transaction_type:
         | "topup"
@@ -4791,6 +5898,7 @@ export const Constants = {
         "cancelled",
       ],
       content_audience: ["all", "patients", "professionals", "subscribers"],
+      content_moderation_status: ["pending", "approved", "rejected"],
       content_type: ["video", "pdf", "image", "presentation"],
       doctor_status: ["pending", "approved", "rejected"],
       identity_verification_status: [
@@ -4800,13 +5908,7 @@ export const Constants = {
         "failed",
         "expired",
       ],
-      live_status: [
-        "live",
-        "ended",
-        "processing_recording",
-        "recording_ready",
-        "scheduled",
-      ],
+      live_status: ["live", "ended", "processing_recording", "recording_ready"],
       notification_type: [
         "doctor_live",
         "doctor_availability",
@@ -4816,9 +5918,12 @@ export const Constants = {
         "system",
         "rating_request",
         "video_call",
+        "recording_purchase",
+        "new_subscriber",
+        "payment_received",
       ],
       subscription_tier: ["free", "basic", "premium"],
-      supported_language: ["es", "en"],
+      supported_language: ["es", "en", "pt", "fr"],
       transaction_status: ["initiated", "paid", "failed"],
       transaction_type: [
         "topup",

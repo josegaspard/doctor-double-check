@@ -34,6 +34,7 @@ import { ChatSession } from '@/contexts/ChatContext';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface SessionDisplayInfo {
   name: string;
@@ -74,6 +75,7 @@ export function ChatHeader({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { toggles } = useSiteToggles();
 
   const getOtherUserId = () => {
     if (!user) return null;
@@ -198,8 +200,8 @@ export function ChatHeader({
         
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* FaceTime / face-to-face video call */}
-          {!isClosed && consultationId && (
+          {/* FaceTime / face-to-face video call — solo si el super admin tiene activadas las videollamadas */}
+          {!isClosed && consultationId && toggles.enable_video_calls && (
             <Button
               size="sm"
               className="h-9 rounded-full gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
