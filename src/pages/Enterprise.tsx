@@ -133,7 +133,7 @@ export default function Enterprise() {
       </section>
 
       {/* Trusted By — fondo brand teal (mismo que header/footer) */}
-      <section className="py-12 sm:py-24 bg-[#00768b]">
+      <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-lg sm:text-2xl font-bold text-center text-white mb-2 sm:mb-3">
             {t('enterprisePage.trustedBySection.title')}
@@ -184,7 +184,7 @@ export default function Enterprise() {
             </div>
 
             {/* Pro */}
-            <div className="bg-[#00768b] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
+            <div className="bg-[#227787] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-secondary text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
                 {t('enterprisePage.plansSection.pro.badge')}
               </div>
@@ -222,7 +222,7 @@ export default function Enterprise() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-[#00768b]">
+      <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('enterprisePage.cta.title')}</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

@@ -10,6 +10,11 @@ export interface SiteToggles {
   live_chat_free: boolean;
   show_transaction_history: boolean;
   app_background: AppBackgroundMode;
+  // Funciones activables/desactivables desde el admin (estilo "publicidad").
+  // Por defecto DESACTIVADAS (2026-06-02, petición del cliente).
+  enable_patient_chat: boolean;
+  enable_prescriptions: boolean;
+  enable_video_calls: boolean;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -19,6 +24,9 @@ const DEFAULT_TOGGLES: SiteToggles = {
   live_chat_free: true,
   show_transaction_history: false,
   app_background: 'image',
+  enable_patient_chat: false,
+  enable_prescriptions: false,
+  enable_video_calls: false,
 };
 
 let cachedToggles: SiteToggles | null = null;

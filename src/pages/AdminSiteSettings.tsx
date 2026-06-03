@@ -140,6 +140,9 @@ export default function AdminSiteSettings() {
     live_chat_free: true,
     show_transaction_history: false,
     app_background: 'image',
+    enable_patient_chat: false,
+    enable_prescriptions: false,
+    enable_video_calls: false,
   });
 
   useEffect(() => {
@@ -999,6 +1002,9 @@ export default function AdminSiteSettings() {
                   </div>
 
                   {[
+                    { key: 'enable_patient_chat' as const, label: 'Chat doctor ↔ paciente', desc: 'Activa el chat directo entre médico y paciente. Si está apagado, la función queda temporalmente no disponible en toda la web.' },
+                    { key: 'enable_prescriptions' as const, label: 'Recetas médicas', desc: 'Activa la generación y gestión de recetas. Si está apagado, queda temporalmente no disponible en toda la web.' },
+                    { key: 'enable_video_calls' as const, label: 'Videollamadas con pacientes', desc: 'Activa las videollamadas directas con pacientes. Si está apagado, queda temporalmente no disponible en toda la web.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
                     { key: 'show_prescriptions' as const, label: t('adminSiteSettingsPage.toggles.items.prescriptions.label'), desc: t('adminSiteSettingsPage.toggles.items.prescriptions.desc') },

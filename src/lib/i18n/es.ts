@@ -3325,6 +3325,15 @@ export const es = {
       ctaPrimary: 'Acceder a la Plataforma',
       ctaSecondary: 'Ver Demo en Vivo',
       doctorsOnline: 'Médicos en línea',
+      countriesConnected: 'Países conectados',
+      activeDoctors: 'Médicos activos',
+      streaming: 'Streaming',
+      streamingSub: 'en tiempo real',
+      vitalSigns: 'Signos Vitales',
+      realTime: 'En tiempo real',
+      globalActivity: 'Actividad Global',
+      surgicalLive: 'Retransmisión Quirúrgica',
+      watchingNow: 'En directo',
     },
     heroFeatures: {
       education: {

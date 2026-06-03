@@ -85,7 +85,7 @@ const triggerConfetti = () => {
   const end = Date.now() + duration;
 
   // Brand palette confetti: navy + teal + lavanda + mint
-  const colors = ['#163a83', '#00768b', '#00879f', '#839ed5', '#aed3d9'];
+  const colors = ['#163a83', '#227787', '#00879f', '#839ed5', '#aed3d9'];
 
   const frame = () => {
     confetti({

@@ -82,7 +82,7 @@ const cards: ForoCard[] = [
 ];
 
 const TONE_CLASSES: Record<ForoCard['tone'], string> = {
-  doctor:   'from-[#163a83]/15 to-[#00768b]/10 text-[#163a83]',
+  doctor:   'from-[#163a83]/15 to-[#227787]/10 text-[#163a83]',
   resident: 'from-emerald-500/15 to-emerald-700/10 text-emerald-700',
   event:    'from-amber-500/15 to-amber-700/10 text-amber-700',
   live:     'from-rose-500/15 to-rose-700/10 text-rose-700',

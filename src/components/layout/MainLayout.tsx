@@ -285,17 +285,32 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }, 0);
   }, [getSessionsByUser]);
 
+  // Funciones activables/desactivables desde el admin (estilo "publicidad").
+  // Si el toggle está apagado: ocultamos su entrada de nav (la ruta además
+  // muestra "temporalmente no disponible").
+  const disabledHrefs = useMemo(() => {
+    const s = new Set<string>();
+    if (!toggles.enable_patient_chat) s.add('/chat');
+    if (!toggles.enable_prescriptions) s.add('/prescriptions');
+    if (!toggles.enable_video_calls) s.add('/video-call');
+    return s;
+  }, [toggles]);
+
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
     return navItems.filter(item => {
       if (item.hidden) return false;
+      if (disabledHrefs.has(item.href)) return false;
       if (!item.roles.includes(effectiveRole)) return false;
       if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
       return true;
     });
-  }, [role, toggles]);
+  }, [role, toggles, disabledHrefs]);
 
-  const bottomTabs = useMemo(() => getBottomTabs(role, t), [role, t]);
+  const bottomTabs = useMemo(
+    () => getBottomTabs(role, t).filter(tab => !disabledHrefs.has(tab.href)),
+    [role, t, disabledHrefs]
+  );
   
   const moreNavItems = useMemo(() => {
     const bottomTabHrefs = bottomTabs.map(tab => tab.href);

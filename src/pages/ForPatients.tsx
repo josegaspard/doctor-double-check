@@ -126,7 +126,7 @@ export default function ForPatients() {
       </section>
 
       {/* Trust — fondo brand teal (mismo que header/footer) */}
-      <section className="py-12 sm:py-24 bg-[#00768b]">
+      <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
@@ -164,7 +164,7 @@ export default function ForPatients() {
                 </p>
                 <Link
                   to="/doctors"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-[#00768b] font-semibold hover:bg-white/90 text-sm sm:text-base shadow-md hover:shadow-lg transition-all"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-[#227787] font-semibold hover:bg-white/90 text-sm sm:text-base shadow-md hover:shadow-lg transition-all"
                 >
                   {t('forPatientsPage.trust.exploreDoctorsCta')}
                 </Link>
@@ -175,7 +175,7 @@ export default function ForPatients() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-[#00768b]">
+      <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('forPatientsPage.cta.heading')}</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

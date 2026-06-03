@@ -26,12 +26,12 @@ export function SplashScreen({ onFinish }: { onFinish: () => void }) {
   return (
     <div
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-opacity duration-500 ${fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-      style={{ background: 'linear-gradient(135deg, #00768b 0%, #00768b 50%, #AED3D9 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #227787 0%, #227787 50%, #AED3D9 100%)' }}
     >
       {/* Floating background blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/[0.03] blur-3xl animate-pulse" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#00768b]/20 blur-3xl" style={{ animation: 'pulse 3s ease-in-out infinite' }} />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#227787]/20 blur-3xl" style={{ animation: 'pulse 3s ease-in-out infinite' }} />
         <div className="absolute top-1/4 right-1/4 w-48 h-48 rounded-full bg-[#163a83]/30 blur-2xl" style={{ animation: 'pulse 4s ease-in-out infinite 1s' }} />
         
         {/* Dot pattern overlay */}
@@ -81,7 +81,7 @@ export function SplashScreen({ onFinish }: { onFinish: () => void }) {
             className="h-full rounded-full transition-all duration-100 ease-out"
             style={{
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, #aed3d9, #00768b)',
+              background: 'linear-gradient(90deg, #aed3d9, #227787)',
             }}
           />
         </div>

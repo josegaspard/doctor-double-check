@@ -169,7 +169,7 @@ export default function ForResidents() {
                   ))}
                 </ul>
               </div>
-              <div className="bg-[#00768b] p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
+              <div className="bg-[#227787] p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
                 <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-white" />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">{t('forResidentsPage.features.academicCard.title')}</h3>
                 <p className="text-white/85 text-xs sm:text-sm mb-4 sm:mb-6">
@@ -186,7 +186,7 @@ export default function ForResidents() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 sm:py-24 bg-[#00768b]">
+      <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('forResidentsPage.cta.heading')}</h2>
           <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">

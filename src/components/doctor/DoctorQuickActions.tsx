@@ -73,7 +73,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       onClick: () => navigate('/my-orders'),
       buttonLabel: t('doctorQuickActions.myOrders.buttonLabel'),
     },
-    {
+    ...(toggles.enable_patient_chat ? [{
       title: t('doctorQuickActions.consultations.title'),
       description: t('doctorQuickActions.consultations.description'),
       icon: MessageSquare,
@@ -81,7 +81,7 @@ export function DoctorQuickActions({ isApproved, userId, canPublishNews }: Props
       requiresApproval: false,
       onClick: () => navigate('/chat'),
       buttonLabel: t('doctorQuickActions.consultations.buttonLabel'),
-    },
+    }] : []),
     {
       title: t('doctorQuickActions.subscribers.title'),
       description: t('doctorQuickActions.subscribers.description'),

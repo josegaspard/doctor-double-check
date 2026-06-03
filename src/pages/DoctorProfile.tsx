@@ -727,7 +727,7 @@ export default function DoctorProfile() {
               { num: 3, Icon: MessageSquare, title: t('doctorProfile.step3Title'), desc: t('doctorProfile.step3Desc') },
             ].map(({ num, Icon, title, desc }) => (
               <div key={num} className="flex flex-col items-center text-center px-2 md:px-4">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#163a83] to-[#00768b] flex items-center justify-center text-white font-bold text-sm mb-2 shadow-md">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#163a83] to-[#227787] flex items-center justify-center text-white font-bold text-sm mb-2 shadow-md">
                   {num}
                 </div>
                 <Icon className="w-5 h-5 text-[#163a83] mb-2" />

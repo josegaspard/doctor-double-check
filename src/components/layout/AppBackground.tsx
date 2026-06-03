@@ -26,7 +26,7 @@ interface AppBackgroundProps {
 
 /**
  * Wrapper único que aplica el fondo global de la app:
- * - Modo "image" (default): Blue Lagoon `#00768b` como fallback inmediato
+ * - Modo "image" (default): Blue Lagoon `#227787` como fallback inmediato
  *   + brandbook gradient (Blue Lagoon → Uranus con marca M) + overlay Metallic Blue
  *   que oscurece la mitad clara del gradient para mantener contraste AA con
  *   tipografía blanca en chrome/hero.
@@ -52,11 +52,20 @@ export const AppBackground = React.forwardRef<HTMLDivElement, AppBackgroundProps
           useImageBackground
             ? {
                 // Fallback Blue Lagoon (tono dominante del brandbook) — cero flash blanco
-                backgroundColor: '#00768b',
+                backgroundColor: '#227787',
                 // image-set: WebP primero (modern), JPEG fallback (cualquier browser).
                 // Se incluye también backgroundImage simple por si el navegador
                 // ignora image-set sin prefijo (muy raro hoy).
-                backgroundImage: `image-set(url("${BG_WEBP}") type("image/webp"), url("${BG_JPG}") type("image/jpeg")), url("${BG_URL}")`,
+                // DIFUMINADO header↔body (cliente 2026-06-03): en vez de un velo
+                // blanco plano, la franja superior del body arranca en el MISMO teal
+                // Blue Lagoon del header (hsl 189 60% 33%) y se desvanece hacia la
+                // imagen del globo. Como el header también es un degradado teal→
+                // translúcido, la unión header/body se lee como UN solo color que se
+                // va difuminando, sin línea de corte. Cierre inferior con una sombra
+                // navy muy suave para emparejar con el footer transparente.
+                // (background-attachment: fixed → los degradados quedan anclados al
+                // viewport, así la franja teal vive siempre justo bajo el header.)
+                backgroundImage: `linear-gradient(to bottom, hsl(189 60% 33%) 0, hsl(189 60% 33%) 3.25rem, hsl(189 60% 33% / 0.6) 9rem, hsla(189 60% 33% / 0) 22rem), linear-gradient(to top, hsl(189 60% 33% / 0.55) 0, hsl(189 60% 33% / 0.28) 9rem, hsla(189 60% 33% / 0) 20rem), image-set(url("${BG_WEBP}") type("image/webp"), url("${BG_JPG}") type("image/jpeg")), url("${BG_URL}")`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 // attachment se controla por CSS (fixed en desktop, scroll en móvil)

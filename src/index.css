@@ -19,7 +19,7 @@
   :root {
     /* ============================================================
        MEDICAL MASTERS — BRANDBOOK 2026
-       PRIMARIOS: Blue Lagoon #00768B · Uranus #AED3D9
+       PRIMARIOS: Blue Lagoon #227787 · Uranus #AED3D9
        SECUNDARIOS: Metallic Blue #163A83 · Comfort Blue #839ED5
        Lógica de contraste:
          · BG/cards blancos → texto Metallic Blue (foreground)
@@ -28,31 +28,31 @@
          · Acentos suaves / pills → Uranus, Comfort Blue
        ============================================================ */
 
-    /* Primary — Blue Lagoon #00768B (color principal de marca) */
-    --primary: 189 100% 27%;
+    /* Primary — Blue Lagoon #227787 (color principal de marca) */
+    --primary: 189 60% 33%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary — Metallic Blue #163A83 (soporte profundo) */
-    --secondary: 220 71% 30%;
+    --secondary: 220 42% 33%;
     --secondary-foreground: 0 0% 100%;
 
     /* Background — blanco puro para máximo contraste con tipografía Metallic Blue */
     --background: 0 0% 100%;
-    --foreground: 220 71% 30%;
+    --foreground: 220 42% 33%;
 
     /* Cards — superficie casi blanca con tinte teal mínimo */
     --card: 187 40% 98%;
-    --card-foreground: 220 71% 30%;
+    --card-foreground: 220 42% 33%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 71% 30%;
+    --popover-foreground: 220 42% 33%;
 
     /* Muted — Uranus diluido como fondo neutral suave */
-    --muted: 187 45% 95%;
-    --muted-foreground: 220 40% 38%;
+    --muted: 187 30% 95%;
+    --muted-foreground: 220 26% 44%;
 
-    /* Accent — Comfort Blue #839ED5 (acento periwinkle del brandbook) */
-    --accent: 220 50% 67%;
+    /* Accent — Comfort Blue #839ED5 (acento periwinkle del brandbook, suavizado) */
+    --accent: 220 36% 72%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive */
@@ -68,7 +68,7 @@
     --warning-foreground: 0 0% 100%;
 
     /* Info — Blue Lagoon (mismo tono que primary, mensajes informativos) */
-    --info: 189 100% 27%;
+    --info: 189 60% 33%;
     --info-foreground: 0 0% 100%;
 
     /* Premium gold */
@@ -80,44 +80,44 @@
     --live-foreground: 0 0% 100%;
 
     /* Verified — Blue Lagoon (insignia médico verificado en color marca) */
-    --verified: 189 100% 27%;
+    --verified: 189 60% 33%;
     --verified-foreground: 0 0% 100%;
 
-    /* Light — Uranus #AED3D9 (tinte claro de marca para fondos sutiles) */
-    --light: 187 35% 76%;
-    --light-foreground: 220 71% 30%;
+    /* Light — Uranus #AED3D9 (tinte claro de marca, suavizado) */
+    --light: 187 26% 80%;
+    --light-foreground: 220 42% 33%;
 
     /* Dark — Metallic Blue #163A83 (sustituye al antiguo Night Blue para chrome oscuro) */
-    --dark: 220 71% 30%;
+    --dark: 220 42% 33%;
     --dark-foreground: 0 0% 100%;
 
     /* Borders — Uranus diluido para bordes sutiles sobre fondos claros */
     --border: 187 30% 88%;
     --input: 187 30% 88%;
-    --ring: 189 100% 27%;
+    --ring: 189 60% 33%;
 
     --radius: 0.75rem;
 
     /* Sidebar — surface blanca con acciones Blue Lagoon */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 71% 30%;
-    --sidebar-primary: 189 100% 27%;
+    --sidebar-foreground: 220 42% 33%;
+    --sidebar-primary: 189 60% 33%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 187 45% 96%;
-    --sidebar-accent-foreground: 220 71% 30%;
+    --sidebar-accent-foreground: 220 42% 33%;
     --sidebar-border: 187 30% 88%;
-    --sidebar-ring: 189 100% 27%;
+    --sidebar-ring: 189 60% 33%;
   }
 
   .dark {
     /* Dark mode con la misma paleta brandbook, sólo aclarados para legibilidad */
 
     /* Primary — Blue Lagoon aclarado */
-    --primary: 189 70% 48%;
+    --primary: 189 48% 52%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — Metallic Blue aclarado */
-    --secondary: 220 60% 52%;
+    /* Secondary — Metallic Blue aclarado (suavizado) */
+    --secondary: 220 40% 55%;
     --secondary-foreground: 0 0% 100%;
 
     /* Background — Metallic Blue muy oscurecido */
@@ -133,8 +133,8 @@
     --muted: 220 45% 20%;
     --muted-foreground: 187 25% 65%;
 
-    /* Accent — Comfort Blue (más visible sobre dark) */
-    --accent: 220 50% 60%;
+    /* Accent — Comfort Blue (más visible sobre dark, suavizado) */
+    --accent: 220 36% 64%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 45%;
@@ -146,7 +146,7 @@
     --warning: 38 80% 45%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 189 70% 48%;
+    --info: 189 48% 52%;
     --info-foreground: 0 0% 100%;
 
     --premium: 45 85% 50%;
@@ -155,7 +155,7 @@
     --live: 0 75% 55%;
     --live-foreground: 0 0% 100%;
 
-    --verified: 189 70% 48%;
+    --verified: 189 48% 52%;
     --verified-foreground: 0 0% 100%;
 
     --light: 187 30% 35%;
@@ -166,16 +166,16 @@
 
     --border: 220 45% 24%;
     --input: 220 45% 24%;
-    --ring: 189 70% 48%;
+    --ring: 189 48% 52%;
 
     --sidebar-background: 220 60% 12%;
     --sidebar-foreground: 187 35% 88%;
-    --sidebar-primary: 189 70% 48%;
+    --sidebar-primary: 189 48% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 45% 20%;
     --sidebar-accent-foreground: 187 35% 82%;
     --sidebar-border: 220 45% 22%;
-    --sidebar-ring: 189 70% 48%;
+    --sidebar-ring: 189 48% 52%;
   }
 }
 
@@ -241,9 +241,18 @@
 
 @layer components {
   .app-header-bar {
-    /* Header en Blue Lagoon (--primary del brandbook) en lugar de Metallic Blue */
-    background-color: hsl(var(--primary));
+    /* Header en Blue Lagoon (--primary) que se difumina hacia el body:
+       teal sólido arriba → translúcido abajo + desenfoque, sin corte de color. */
+    background-color: transparent;
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary) / 0.92) 55%,
+      hsl(var(--primary) / 0.55) 100%
+    );
     color: hsl(var(--primary-foreground));
+    -webkit-backdrop-filter: blur(8px) saturate(1.05);
+    backdrop-filter: blur(8px) saturate(1.05);
   }
 
   .app-header-control {
@@ -1006,7 +1015,7 @@
 
 .app-bg-image {
   /* Fallback Blue Lagoon (tono dominante del brandbook gradient) */
-  background-color: #00768b;
+  background-color: #227787;
   background-attachment: fixed;
 }
 @media (max-width: 768px) {
@@ -1016,11 +1025,44 @@
 }
 
 /* ---------- 1. Header standalone y MainLayout ---------- */
-/* Header en Blue Lagoon (brandbook: chrome principal) */
+/* Header en Blue Lagoon que SE DIFUMINA hacia el body (cliente 2026-06-03):
+   teal sólido arriba → teal translúcido abajo + desenfoque, para que el chrome
+   se "derrita" en el fondo en vez de cortar con una línea de dos colores.
+   La franja teal del body (AppBackground) continúa este mismo tono debajo, así
+   header+body se leen como un solo color que se va difuminando. */
 .app-bg-image > header {
-  background-color: #00768b !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to bottom,
+    hsl(189 60% 33%) 0%,
+    hsl(189 60% 33% / 0.86) 48%,
+    hsl(189 60% 33% / 0.45) 82%,
+    hsl(189 60% 33% / 0.18) 100%
+  ) !important;
   border-bottom: 0 !important;
-  backdrop-filter: none !important;
+  -webkit-backdrop-filter: blur(11px) saturate(1.06) !important;
+  backdrop-filter: blur(11px) saturate(1.06) !important;
+  /* Pluma en el borde inferior: el degradado del fondo se desvanece a nada,
+     reforzando el difuminado sin tocar la nitidez del texto/botones. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, rgba(0, 0, 0, 0.55) 100%);
+  mask-image: linear-gradient(to bottom, #000 80%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* Footer que SE DIFUMINA igual que el header (cliente 2026-06-03): la imagen del
+   body se funde hacia el teal — transparente arriba → teal sólido abajo + blur —
+   para borrar el corte duro donde el globo chocaba con el footer macizo. */
+.app-bg-image footer {
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to bottom,
+    hsl(189 60% 33% / 0) 0%,
+    hsl(189 60% 33% / 0.45) 28%,
+    hsl(189 60% 33% / 0.86) 64%,
+    hsl(189 60% 33%) 100%
+  ) !important;
+  border-top: 0 !important;
+  -webkit-backdrop-filter: blur(11px) saturate(1.06);
+  backdrop-filter: blur(11px) saturate(1.06);
 }
 
 /* SOLO links y botones GHOST del header reciben blanco; outline/default/etc. NO. */
@@ -1140,11 +1182,13 @@
   color: #AED3D9 !important;
 }
 
-/* ---------- 3. Footer standalone fundido ---------- */
-/* Footer en Blue Lagoon (brandbook: chrome principal, simétrico con header) */
+/* ---------- 3. Footer standalone DIFUMINADO ---------- */
+/* El footer ya NO se pinta de teal sólido: usa el degradado transparente→teal
+   definido en ".app-bg-image footer" (cliente 2026-06-03). Forzar aquí un
+   background-color opaco tapaba la transparencia y reaparecía la línea dura. */
 .app-bg-image > footer {
   border-top: 0 !important;
-  background-color: #00768b !important;
+  background-color: transparent !important;
 }
 .app-bg-image > footer .border-t {
   border-top-color: transparent !important;
@@ -1743,7 +1787,7 @@
 
 /* ---------- 19. MobileBackHeader fundido al fondo azul ---------- */
 .app-bg-image .app-back-header {
-  background-color: #00768b !important;
+  background-color: #227787 !important;
   border: 0 !important;
 }
 .app-bg-image .app-back-header button {

@@ -736,15 +736,15 @@ function OrdersTab({ es }: { es: boolean }) {
 <!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedido #${o.id.slice(0,8).toUpperCase()} — Medical Masters</title>
 <style>
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#163A83;padding:24px;max-width:780px;margin:0 auto}
-  h1{color:#00768B;margin:0 0 4px}
+  h1{color:#227787;margin:0 0 4px}
   .muted{color:#64748b;font-size:12px}
-  .box{border:1.5px solid #00768B33;border-radius:10px;padding:14px;margin:14px 0;background:#fff}
-  .box h2{margin:0 0 8px;font-size:13px;color:#00768B;text-transform:uppercase;letter-spacing:.5px}
+  .box{border:1.5px solid #22778733;border-radius:10px;padding:14px;margin:14px 0;background:#fff}
+  .box h2{margin:0 0 8px;font-size:13px;color:#227787;text-transform:uppercase;letter-spacing:.5px}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  td{padding:6px 0;border-bottom:1px solid #00768B14}
+  td{padding:6px 0;border-bottom:1px solid #22778714}
   td:last-child{text-align:right;font-weight:600}
-  .total{font-size:18px;color:#00768B;font-weight:700}
-  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#00768B;color:#fff}
+  .total{font-size:18px;color:#227787;font-weight:700}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#227787;color:#fff}
   @media print{ body{padding:8px} button{display:none} }
 </style></head>
 <body>
@@ -788,7 +788,7 @@ function OrdersTab({ es }: { es: boolean }) {
   <div class="muted" style="margin-top:24px;text-align:center;font-size:11px">
     Este documento es la guía de pedido oficial de Medical Masters. Imprime esta página con Ctrl/Cmd + P y elige "Guardar como PDF".
   </div>
-  <button style="margin-top:16px;background:#00768B;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600" onclick="window.print()">Imprimir / Guardar PDF</button>
+  <button style="margin-top:16px;background:#227787;color:#fff;border:0;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600" onclick="window.print()">Imprimir / Guardar PDF</button>
 </body></html>`;
     const win = window.open('', '_blank', 'width=820,height=900');
     if (!win) { toast.error(t('adminMarketplacePage.orders.allowPopups')); return; }

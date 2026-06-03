@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useBackgroundUploadResumer } from "@/hooks/useBackgroundUploadResumer";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FEATURE_FLAGS } from "@/lib/featureFlags";
+import { useSiteToggles } from "@/hooks/useSiteToggles";
+import { ToggleGate } from "@/components/ToggleGate";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { LivesProvider } from "@/contexts/LivesContext";
 import { VaultProvider } from "@/contexts/VaultContext";
@@ -25,6 +27,7 @@ import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 // Wrapper that only mounts heavy providers when the user is authenticated
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const { toggles } = useSiteToggles();
   // Reanudar uploads pendientes en segundo plano: si el doctor cerró el tab
   // a mitad de un upload, al volver a entrar autenticado lo retomamos.
   useBackgroundUploadResumer();
@@ -35,9 +38,13 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
         <ChatProvider>
           <OtpProvider>
             <PostConsultationRatingProvider>
-              <IncomingCallProvider>
-                {children}
-              </IncomingCallProvider>
+              {toggles.enable_video_calls ? (
+                <IncomingCallProvider>
+                  {children}
+                </IncomingCallProvider>
+              ) : (
+                children
+              )}
             </PostConsultationRatingProvider>
           </OtpProvider>
         </ChatProvider>
@@ -220,7 +227,7 @@ const App = () => {
                       <Route path="/recording/:id" element={<RecordingPlayer />} />
                       <Route path="/wallet" element={<Wallet />} />
                       <Route path="/wallet/ledger" element={<WalletLedger />} />
-                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/chat" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><Chat /></ToggleGate>} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
                       <Route path="/verify-identity" element={<IdentityVerification />} />
@@ -291,10 +298,10 @@ const App = () => {
                       <Route path="/news/:slug" element={<NewsArticle />} />
                       <Route path="/eventos" element={<Eventos />} />
                       <Route path="/events" element={<Eventos />} />
-                      <Route path="/video-call" element={<VideoCall />} />
-                      <Route path="/prescriptions" element={<Prescriptions />} />
-                      <Route path="/prescriptions/new" element={<CreatePrescription />} />
-                      <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+                      <Route path="/video-call" element={<ToggleGate toggleKey="enable_video_calls" feature="videoCalls"><VideoCall /></ToggleGate>} />
+                      <Route path="/prescriptions" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><Prescriptions /></ToggleGate>} />
+                      <Route path="/prescriptions/new" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><CreatePrescription /></ToggleGate>} />
+                      <Route path="/prescriptions/:id" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><PrescriptionDetail /></ToggleGate>} />
                       <Route path="/report-issue" element={<ReportIssue />} />
                       <Route path="/email-confirmed" element={<EmailConfirmed />} />
                       <Route path="/advertising" element={<Advertising />} />

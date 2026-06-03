@@ -10,6 +10,15 @@ import iconConsultas from '@/assets/landing/icons/CONSULTAS.svg';
 import iconEducacion from '@/assets/landing/icons/EDUCACION.svg';
 import iconUsuarios from '@/assets/landing/icons/USUARIOS.svg';
 import iconRetransmision from '@/assets/landing/icons/RETRANSMISION.svg';
+import iconGlobal from '@/assets/landing/icons/GLOBAL.svg';
+import iconMedicos from '@/assets/landing/icons/MEDICOS.svg';
+import iconStream from '@/assets/landing/icons/STREAM.svg';
+import doctor1 from '@/assets/landing/people/doctor1.jpg';
+import doctor2 from '@/assets/landing/people/doctor2.jpg';
+import doctor3 from '@/assets/landing/people/doctor3.jpg';
+import doctor4 from '@/assets/landing/people/online-consult.jpg';
+import surgeryPhoto from '@/assets/landing/people/surgery.jpg';
+import doctorLivePhoto from '@/assets/landing/people/live-drmike.png';
 import {
   ArrowRight,
   Star,
@@ -48,7 +57,7 @@ export default function Landing() {
 
 
   return (
-    <div className="font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#00768b] selection:text-white">
+    <div className="font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#227787] selection:text-white">
       {/* Demo Video Modal */}
       <DemoVideoModal open={showDemoModal} onOpenChange={setShowDemoModal} />
 
@@ -56,7 +65,7 @@ export default function Landing() {
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#aed3d9]/30 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" />
         <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#839ed5]/30 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#00768b]/20 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '4s' }} />
+        <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#227787]/20 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '4s' }} />
       </div>
 
       {/* Navigation */}
@@ -81,7 +90,7 @@ export default function Landing() {
 
               <Link
                 to="/app"
-                className="relative overflow-hidden group bg-[#00768b] hover:bg-white text-white hover:text-[#163a83] font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,118,139,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] border border-transparent hover:border-[#163a83]"
+                className="relative overflow-hidden group bg-[#227787] hover:bg-white text-white hover:text-[#163a83] font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,118,139,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] border border-transparent hover:border-[#163a83]"
               >
                 <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-wider">
                   {t('landing.nav.enterApp')} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -93,7 +102,7 @@ export default function Landing() {
               to="/app"
               className={`lg:hidden font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
                 scrolled
-                  ? 'bg-[#00768b] text-white'
+                  ? 'bg-[#227787] text-white'
                   : 'bg-white/20 backdrop-blur-md text-white border border-white/30'
               }`}
             >
@@ -117,12 +126,31 @@ export default function Landing() {
         <div className="absolute inset-x-0 bottom-0 h-40 z-[1] bg-gradient-to-t from-[#0b1d45]/95 to-transparent" />
 
         <div className="container mx-auto px-5 sm:px-6 lg:px-12 relative z-10 h-full flex flex-col pt-16 sm:pt-20 lg:pt-24 pb-44 sm:pb-44 lg:pb-32">
-          {/* Stats bar removed per client request 2026-05-18 — sin estadísticas en el hero. */}
+          {/* Top stats bar — visible md+. Restaurada 2026-06-02 con SOLO títulos (sin números/datos). */}
+          <div className="hidden md:flex absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl">
+            <div className="flex items-center gap-2">
+              <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.countriesConnected')}</p>
+            </div>
+            <div className="w-px h-7 bg-white/15" />
+            <div className="flex items-center gap-2">
+              <img src={iconMedicos} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.activeDoctors')}</p>
+            </div>
+            <div className="w-px h-7 bg-white/15" />
+            <div className="flex items-center gap-2">
+              <img src={iconStream} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+              <div className="leading-tight">
+                <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.streaming')}</p>
+                <p className="text-[9px] lg:text-[10px] text-slate-300/80 normal-case tracking-normal">{t('landing.hero.streamingSub')}</p>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10 items-start lg:items-center flex-1 min-h-0">
             {/* LEFT: copy + CTAs (kept narrower so floating cards have room beside it) */}
             <div className="relative z-20 animate-fade-in space-y-2.5 sm:space-y-3 lg:space-y-5 max-w-md xl:max-w-lg 2xl:max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00768b]/15 border border-[#aed3d9]/30 backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/15 border border-[#aed3d9]/30 backdrop-blur-md">
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
@@ -133,7 +161,7 @@ export default function Landing() {
 
               <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
                 {t('landing.hero.titleLine1')}<br />{t('landing.hero.titleLine2')}<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#00768b] to-[#839ed5]">{t('landing.hero.titleLine3')}</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#227787] to-[#839ed5]">{t('landing.hero.titleLine3')}</span>
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 font-light leading-relaxed">
@@ -146,7 +174,7 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
                 <Link
                   to="/app"
-                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[#00768b] rounded-full shadow-[0_0_30px_rgba(0,118,139,0.45)] hover:bg-[#00879f] hover:shadow-[0_0_45px_rgba(0,118,139,0.7)] hover:-translate-y-0.5 transition-all duration-300"
+                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[#227787] rounded-full shadow-[0_0_30px_rgba(0,118,139,0.45)] hover:bg-[#00879f] hover:shadow-[0_0_45px_rgba(0,118,139,0.7)] hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <ArrowRight className="w-4 h-4 mr-2 -ml-0.5 rotate-[-45deg]" />
                   <span>{t('landing.hero.ctaPrimary')}</span>
@@ -160,7 +188,19 @@ export default function Landing() {
                 </button>
               </div>
 
-              {/* Mobile stat cards removed per client request 2026-05-18 — sin números/estadísticas. */}
+              {/* Mobile stat chips — restaurados 2026-06-02 con SOLO títulos (sin números). */}
+              <div className="grid grid-cols-3 gap-2 mt-3 md:hidden">
+                {[
+                  { img: iconGlobal, label: t('landing.hero.countriesConnected') },
+                  { img: iconMedicos, label: t('landing.hero.activeDoctors') },
+                  { img: iconStream, label: t('landing.hero.streaming') },
+                ].map((s, i) => (
+                  <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2 rounded-xl border border-white/15 shadow-xl flex flex-col items-center text-center gap-1">
+                    <img src={s.img} alt="" className="w-5 h-5" />
+                    <p className="text-[9px] leading-tight text-slate-200 font-semibold">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* RIGHT column placeholder so the grid stays balanced. Cards live in the absolute layer below. */}
@@ -169,29 +209,98 @@ export default function Landing() {
 
           {/* Floating cards — absolute over the whole hero, spread to extreme left/right so the doctor stays clear */}
           <div className="hidden md:block absolute inset-0 pointer-events-none z-10">
-            {/* TOP LEFT-OF-DOCTOR — Mosaic of 4 doctors. Sits in the gap between text and doctor body, hidden on lg where there is no gap */}
+            {/* TOP LEFT-OF-DOCTOR — Recuadro de llamada estilo FaceTime con 4 fotos de perfil.
+                Restaurado 2026-06-02: fotos reales en vez de iniciales (fallback a iniciales si la imagen falla). */}
             <div className="absolute top-[172px] xl:top-[188px] left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '7s' }}>
               <div className="grid grid-cols-2 gap-1">
                 {[
-                  { from: '#839ed5', to: '#163a83', initials: 'CM' },
-                  { from: '#00768b', to: '#0b1d45', initials: 'LF' },
-                  { from: '#aed3d9', to: '#00768b', initials: 'MR' },
-                  { from: '#163a83', to: '#839ed5', initials: 'JP' },
+                  { img: doctor1, from: '#839ed5', to: '#163a83', initials: 'CM' },
+                  { img: doctor2, from: '#227787', to: '#0b1d45', initials: 'LF' },
+                  { img: doctor3, from: '#aed3d9', to: '#227787', initials: 'MR' },
+                  { img: doctor4, from: '#163a83', to: '#839ed5', initials: 'JP' },
                 ].map((d, i) => (
                   <div key={i} className="aspect-video rounded flex items-center justify-center text-white text-[9px] font-bold relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${d.from}, ${d.to})` }}>
-                    <span className="opacity-90">{d.initials}</span>
-                    <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-400" />
+                    <span className="absolute inset-0 flex items-center justify-center opacity-90">{d.initials}</span>
+                    <img
+                      src={d.img}
+                      alt=""
+                      loading="lazy"
+                      className="relative w-full h-full object-cover object-top"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-white/60" />
                   </div>
                 ))}
               </div>
               <p className="text-[10px] text-white/75 font-medium mt-1.5">{t('landing.hero.doctorsOnline')}</p>
             </div>
 
-            {/* Right-side LIVE cards removed per client request 2026-05-18 —
-                cubrían la cara del doctor. La esencia "live" se mantiene en el
-                badge del eyebrow y en la fila inferior de features. */}
+            {/* Right-side cards — restauradas 2026-06-02 con fotos ilustrativas y SIN números/datos. */}
 
-            {/* "Actividad Global" floating card removed per client request 2026-05-18 — sin estadísticas. */}
+            {/* TOP RIGHT — LIVE doctor card (foto de doctor en directo) */}
+            <div className="absolute top-24 lg:top-28 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[150px] lg:w-[170px]" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
+              <div className="aspect-video bg-gradient-to-br from-[#227787] to-[#163a83] relative flex items-center justify-center">
+                <img
+                  src={doctorLivePhoto}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover object-top"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 z-10">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                </span>
+              </div>
+            </div>
+
+            {/* MID RIGHT — Signos Vitales (sin número de bpm, solo waveform + texto) */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] lg:w-[170px]" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[11px] font-medium text-white/85">{t('landing.hero.vitalSigns')}</span>
+                <HeartPulse className="w-3 h-3 text-rose-300" />
+              </div>
+              <p className="text-[9px] text-slate-300/80 mb-1">{t('landing.hero.realTime')}</p>
+              <svg className="w-full h-6 text-rose-300 mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+              </svg>
+            </div>
+
+            {/* BOTTOM RIGHT — Retransmisión Quirúrgica (foto real de quirófano, sin número de espectadores) */}
+            <div className="absolute bottom-32 lg:bottom-32 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[170px] lg:w-[190px]" style={{ animationDuration: '5.5s', animationDelay: '1.6s' }}>
+              <div className="aspect-[16/8] bg-gradient-to-br from-[#163a83] via-[#0b1d45] to-[#227787] relative">
+                <img
+                  src={surgeryPhoto}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                </span>
+              </div>
+              <div className="p-2">
+                <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+                <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  {t('landing.hero.watchingNow')}
+                </p>
+              </div>
+            </div>
+
+            {/* BOTTOM LEFT-OF-DOCTOR — Actividad Global. Restaurada 2026-06-02 SIN números (solo gráfico decorativo + texto). */}
+            <div className="absolute bottom-32 xl:bottom-36 left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '6.5s', animationDelay: '1.2s' }}>
+              <p className="text-[11px] font-medium text-white/85 mb-1.5">{t('landing.hero.globalActivity')}</p>
+              <div className="h-8 rounded bg-[#0b1d45]/40 mb-1.5 flex items-end justify-around px-1 gap-0.5">
+                {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
+                  <div key={i} className="w-0.5 lg:w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+              <p className="text-[9px] text-slate-300/80 flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                {t('landing.hero.realTime')}
+              </p>
+            </div>
           </div>
 
           {/* Bottom feature row - 4 cards */}
@@ -204,7 +313,7 @@ export default function Landing() {
                 { icon: iconRetransmision, title: t('landing.heroFeatures.live.title'), desc: t('landing.heroFeatures.live.desc') },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 sm:gap-2.5 lg:gap-3">
-                  <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg bg-gradient-to-br from-[#00768b]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
+                  <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg bg-gradient-to-br from-[#227787]/40 to-[#163a83]/40 border border-[#aed3d9]/20 flex items-center justify-center">
                     <img src={f.icon} alt="" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                   </div>
                   <div className="min-w-0">
@@ -243,7 +352,7 @@ export default function Landing() {
         <section id="red-global" className="py-24 lg:py-32 relative overflow-hidden">
           <div className="container mx-auto px-6">
             <div className="text-center max-w-4xl mx-auto mb-20">
-              <span className="text-[#00768b] font-bold tracking-widest text-xs uppercase mb-4 block">{t('landing.ecosystem.eyebrow')}</span>
+              <span className="text-[#227787] font-bold tracking-widest text-xs uppercase mb-4 block">{t('landing.ecosystem.eyebrow')}</span>
               <h2 className="text-4xl lg:text-5xl font-bold text-[#163a83] mb-6">{t('landing.ecosystem.title')}</h2>
               <p className="text-xl text-slate-500 font-light leading-relaxed">
                 {t('landing.ecosystem.descriptionPart1')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionLabs')}</span>{t('landing.ecosystem.descriptionComma1')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionSpecialists')}</span> {t('landing.ecosystem.descriptionAnd')} <span className="font-bold text-[#163a83]">{t('landing.ecosystem.descriptionPatients')}</span> {t('landing.ecosystem.descriptionPart2')}
@@ -265,10 +374,10 @@ export default function Landing() {
                   <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex items-center gap-4">
                     <div className="flex -space-x-3">
                       <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#839ed5] to-[#163a83] flex items-center justify-center text-white text-xs font-bold"><Stethoscope className="w-4 h-4" /></div>
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#00768b] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
-                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#00768b] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#227787] to-[#0b1d45] flex items-center justify-center text-white text-xs font-bold"><Hospital className="w-4 h-4" /></div>
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-[#aed3d9] to-[#227787] flex items-center justify-center text-white text-xs font-bold"><UserRound className="w-4 h-4" /></div>
                     </div>
-                    <span className="text-sm font-bold text-[#00768b]">{t('landing.ecosystem.vip.verifiedCredentials')}</span>
+                    <span className="text-sm font-bold text-[#227787]">{t('landing.ecosystem.vip.verifiedCredentials')}</span>
                   </div>
                 </div>
               </div>
@@ -359,21 +468,21 @@ export default function Landing() {
               <div className="group relative bg-white rounded-3xl p-8 border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#aed3d9]/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-125 duration-700" />
                 <div className="relative z-10">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00768b]/10 border border-[#00768b]/20 mb-5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00768b]" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#00768b]">{t('landing.profiles.residents.badge')}</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/10 border border-[#227787]/20 mb-5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#227787]" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#227787]">{t('landing.profiles.residents.badge')}</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.residents.title')}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed mb-6">
                     {t('landing.profiles.residents.desc')}
                   </p>
                   <ul className="space-y-2.5 text-sm text-gray-700">
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature1')}</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature2')}</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature3')}</li>
-                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature4')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#227787] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature1')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#227787] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature2')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#227787] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature3')}</li>
+                    <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#227787] flex-shrink-0 mt-0.5" /> {t('landing.profiles.residents.feature4')}</li>
                   </ul>
-                  <Link to="/for-residents" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#00768b] hover:text-[#163a83] transition-colors">
+                  <Link to="/for-residents" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#227787] hover:text-[#163a83] transition-colors">
                     {t('landing.profiles.residents.cta')} <ArrowRight className="w-4 h-4" />
                   </Link>
                   <p className="mt-3 text-[11px] text-slate-500">{t('landing.profiles.residents.note')}</p>
@@ -421,7 +530,7 @@ export default function Landing() {
                 { title: t('landing.includes.hospitals.title'), desc: t('landing.includes.hospitals.desc'), icon: <Hospital className="w-5 h-5" /> },
                 { title: t('landing.includes.verification.title'), desc: t('landing.includes.verification.desc'), icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
-                <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#00768b]/30 transition-all duration-300">
+                <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#227787]/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
                   <h3 className="font-bold text-slate-900 mb-2">{f.title}</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
@@ -444,7 +553,7 @@ export default function Landing() {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* Pacientes */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#227787]/50 transition-all duration-300">
                 <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.patients.title')}</h3>
                 <div className="my-4">
                   <span className="text-4xl font-bold text-white">{t('landing.pricing.patients.price')}</span>
@@ -453,15 +562,15 @@ export default function Landing() {
                 <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.patients.desc')}</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.patients.cta')}</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature1')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature2')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature3')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.patients.feature4')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature1')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature2')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature3')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature4')}</li>
                 </ul>
               </div>
 
               {/* Doctores */}
-              <div className="bg-gradient-to-b from-[#00768b] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
+              <div className="bg-gradient-to-b from-[#227787] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">{t('landing.pricing.doctors.popularBadge')}</span>
                 <h3 className="text-xl font-bold text-white">{t('landing.pricing.doctors.title')}</h3>
                 <div className="my-4">
@@ -480,7 +589,7 @@ export default function Landing() {
               </div>
 
               {/* Residentes */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#00768b]/50 transition-all duration-300">
+              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#227787]/50 transition-all duration-300">
                 <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.residents.title')}</h3>
                 <div className="my-4">
                   <span className="text-4xl font-bold text-white">{t('landing.pricing.residents.price')}</span>
@@ -489,10 +598,10 @@ export default function Landing() {
                 <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.residents.desc')}</p>
                 <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.residents.cta')}</Link>
                 <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature1')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature2')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature3')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#00768b] flex-shrink-0" /> {t('landing.pricing.residents.feature4')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature1')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature2')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature3')}</li>
+                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature4')}</li>
                 </ul>
               </div>
             </div>
@@ -506,7 +615,7 @@ export default function Landing() {
         {/* Final CTA */}
         <section className="py-32 relative overflow-hidden bg-[#163a83] border-t border-white/10">
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#00768b]/30 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#227787]/30 rounded-full blur-[120px]" />
             <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#839ed5]/20 rounded-full blur-[80px]" />
           </div>
 

@@ -68,7 +68,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 <body>
   <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(22, 58, 131, 0.12);">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #163a83, #00768b); padding: 24px 32px; color: white;">
+    <div style="background: linear-gradient(135deg, #163a83, #227787); padding: 24px 32px; color: white;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <img src="${logoUrl}" alt="Medical Masters" style="height: 44px; width: auto; filter: brightness(0) invert(1);" onerror="this.style.display='none'" />
@@ -90,7 +90,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         <div style="background: #f0f4fa; padding: 16px; border-radius: 8px; border-left: 4px solid #163a83;">
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Médico</p>
           <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
-          <p style="margin: 2px 0 0; color: #00768b; font-size: 13px;">${rx.doctorSpecialty}</p>
+          <p style="margin: 2px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
           <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}</p>
         </div>
         <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; border-left: 4px solid #839ed5;">
@@ -149,7 +149,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         <div style="display: inline-block; border-bottom: 2px solid #163a83; padding: 0 40px 4px;">
           <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
         </div>
-        <p style="margin: 4px 0 0; color: #00768b; font-size: 13px;">${rx.doctorSpecialty}</p>
+        <p style="margin: 4px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
         <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}</p>
       </div>
     </div>
@@ -162,7 +162,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
   </div>
 
   <div class="no-print" style="position: fixed; bottom: 24px; right: 24px;">
-    <button onclick="window.print()" style="background: linear-gradient(135deg, #163a83, #00768b); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(22, 58, 131, 0.4);">
+    <button onclick="window.print()" style="background: linear-gradient(135deg, #163a83, #227787); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(22, 58, 131, 0.4);">
       📥 Descargar PDF
     </button>
   </div>

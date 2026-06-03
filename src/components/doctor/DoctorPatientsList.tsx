@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Users, MessageCircle } from 'lucide-react';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface PatientInfo {
   id: string;
@@ -18,6 +19,8 @@ interface PatientInfo {
 
 export function DoctorPatientsList() {
   const { supabaseUser } = useAuth();
+  const { toggles } = useSiteToggles();
+  const CHAT_ENABLED = toggles.enable_patient_chat;
   const navigate = useNavigate();
   const [patients, setPatients] = useState<PatientInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,8 +153,8 @@ export function DoctorPatientsList() {
           {patients.slice(0, 8).map(patient => (
             <div
               key={patient.id}
-              className="flex items-center gap-3 p-2.5 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
-              onClick={() => navigate('/chat')}
+              className={`flex items-center gap-3 p-2.5 bg-muted/50 rounded-lg transition-colors ${CHAT_ENABLED ? 'hover:bg-muted/70 cursor-pointer' : ''}`}
+              onClick={CHAT_ENABLED ? () => navigate('/chat') : undefined}
             >
               <Avatar className="w-9 h-9">
                 <AvatarImage src={patient.avatarUrl} />
@@ -178,11 +181,11 @@ export function DoctorPatientsList() {
                   </p>
                 )}
               </div>
-              <MessageCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              {CHAT_ENABLED && <MessageCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
             </div>
           ))}
         </div>
-        {patients.length > 8 && (
+        {CHAT_ENABLED && patients.length > 8 && (
           <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/chat')}>
             Ver todos ({patients.length})
           </Button>
