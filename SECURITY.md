@@ -105,10 +105,18 @@ confirmar **todos** estos puntos antes de mergear:
 ### Entregabilidad de correo transaccional (Resend) — estado 2026-06-03
 - ✅ DKIM (`resend._domainkey.medical-masters.com`) presente; DMARC `p=quarantine`; SPF presente.
 - ✅ `RESEND_API_KEY` + `FROM_EMAIL` configurados en secrets de Supabase (prod).
-- ⏳ **Confirmación manual pendiente**: verificar que el dominio aparezca **"Verified"** en el
-      dashboard Resend de la cuenta de producción, y correr un test real (mail-tester.com)
-      registrando un usuario de prueba. La API key en credenciales locales está obsoleta
-      (cuenta distinta) y no sirve para este test.
+- ✅ **CONFIRMADO 2026-06-03**: envío real de prueba aceptado por Resend (`error: null`,
+      id `1f8e9948-…`) desde `noreply@medical-masters.com` → dominio verificado, prod funciona.
+      (Test hecho con función temporal `test-deliverability`, ya borrada.)
+- ⚠️ Nota: la API key Resend en credenciales locales está obsoleta (otra cuenta) — no sirve
+      para tests locales; usar siempre la de los secrets de Supabase.
+
+### Bug abierto: notificación por correo a admins rota (2026-06-03)
+- `submit-contact` y `notify-admin` arman el lookup de admins como
+  `GET /rest/v1/user_roles?select=profiles:profiles(email)&role=eq.admin` → **HTTP 400**
+  (no hay FK directa `user_roles`→`profiles`). Resultado: `adminEmails` vacío y el correo
+  a admins **nunca se envía** (el mensaje sí se guarda en `reports`).
+- [ ] Fix: consulta en 2 pasos (traer `user_id` con `role=admin`, luego `profiles?id=in.(…)`).
 
 ---
 
