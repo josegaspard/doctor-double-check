@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { renderEmail, infoCard } from "../_shared/email-template.ts";
+import { maskName } from "../_shared/log-redact.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SMS_API_KEY = Deno.env.get("SMS_API_KEY");
@@ -207,7 +208,7 @@ Deno.serve(async (req) => {
       .single();
     const doctorName = doctorProfileInfo?.name || "Tu médico";
 
-    logStep("Profiles fetched", { patientName, doctorName, hasEmail: !!patientEmail, hasPhone: !!patientPhone });
+    logStep("Profiles fetched", { patientName: maskName(patientName), doctorName: maskName(doctorName), hasEmail: !!patientEmail, hasPhone: !!patientPhone });
 
     // Always send in-app notification
     await supabaseAdmin.from("notifications").insert({

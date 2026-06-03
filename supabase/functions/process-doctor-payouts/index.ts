@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 import { generatePayoutReceiptPdf } from "../_shared/payout-receipt.ts";
 import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -314,7 +315,7 @@ Deno.serve(async (req) => {
                   }),
                 }),
               });
-              console.log(`Payout email sent to ${doctorProfile.email}`);
+              console.log(`Payout email sent to ${maskEmail(doctorProfile.email)}`);
             }
           }
         } catch (emailError) {

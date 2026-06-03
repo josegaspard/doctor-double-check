@@ -18,6 +18,7 @@ import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
 import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
 import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -255,7 +256,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   const emailType = payload.data.action_type
-  console.log('Received auth event', { emailType, email: payload.data.email, run_id })
+  console.log('Received auth event', { emailType, email: maskEmail(payload.data.email), run_id })
 
   const EmailTemplate = EMAIL_TEMPLATES[emailType]
   if (!EmailTemplate) {

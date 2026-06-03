@@ -68,9 +68,47 @@ Pedimos un periodo razonable de **90 días** para remediar antes de divulgación
 - [ ] Challenge MFA en flujo de login (actualmente solo enrolamiento disponible).
 - [ ] Enforcement MFA obligatorio para administradores.
 - [ ] Validación Zod en edge functions restantes (`create-consultation-checkout`, `notify-new-chat`, etc).
-- [ ] Auditoría de `console.log` en edge functions para evitar leak de PHI.
+- [x] Auditoría de `console.log` en edge functions para evitar leak de PHI — **hecho 2026-06-03**: helper `_shared/log-redact.ts` (`maskEmail`/`maskName`/`maskPhone`) aplicado a 13 funciones de correo/pago/notif. Excluidas a propósito (flujo lives/llamadas): `send-live-notification-email`, `send-missed-call-email`.
 - [ ] SRI en scripts de Google Fonts.
 - [ ] Tabla `arco_audit_log` para rastrear acciones admin sobre solicitudes ARCO.
+
+---
+
+## Checklist de seguridad para edge functions (obligatorio en cada PR nueva)
+
+Las 4 fugas de mayo-2026 (relays abiertos en `translate-news`, `send-missed-call-email`,
+`send-appointment-confirmation`, `notify-admin`) ocurrieron porque funciones nuevas
+nacieron sin guard heredando `verify_jwt = false`. Toda función nueva o modificada debe
+confirmar **todos** estos puntos antes de mergear:
+
+- [ ] **Auth**: llama a `requireUserJWT(req)` / `requireAdminJWT(req)` de `_shared/auth-guards.ts`,
+      **o** documenta por qué es pública (ej. webhook con firma HMAC propia: Stripe, Daily, Veriff).
+      No basta con `verify_jwt = true` en `config.toml`: pon el guard **dentro** del handler.
+- [ ] **Ownership**: si actúa sobre un recurso (consulta, cita, pago), valida que el caller
+      sea el dueño (`user.id === recurso.doctor_id`/`patient_id`), no solo que esté autenticado.
+- [ ] **CORS**: usa `corsHeadersFor(req)` (allowlist), nunca `Access-Control-Allow-Origin: *`
+      en funciones que mutan estado o envían correo.
+- [ ] **PHI en logs**: nunca loguees email/nombre/teléfono/contenido clínico en claro.
+      Usa `maskEmail`/`maskName`/`maskPhone` de `_shared/log-redact.ts`. UUIDs sí se permiten.
+- [ ] **Validación de input**: tamaño máximo y tipos (idealmente Zod). Las funciones que
+      llaman APIs de pago (Gemini, Resend, Stripe) deben capear longitud para evitar abuso de cuota.
+- [ ] **`config.toml`**: `verify_jwt = false` SOLO con justificación escrita en un comentario.
+
+### Estado de remediación (2026-06-03, verificado en vivo)
+- ✅ Las 4 funciones del incidente responden **HTTP 401** sin auth (protegidas + desplegadas).
+- ✅ Tabla `recordings` revocada a `anon` (`permission denied`) — cerró fuga de datos clínicos.
+- ✅ `.env` fuera de git + ignorado; `config.toml` apunta al proyecto correcto.
+- ✅ Logs PHI redactados en 13 funciones (ver arriba).
+- ⏳ **CSP `unsafe-eval`**: pendiente a propósito — vive en el mismo `script-src` que `*.daily.co`;
+      quitarlo puede romper el SDK de video. Requiere prueba con videollamadas activas.
+
+### Entregabilidad de correo transaccional (Resend) — estado 2026-06-03
+- ✅ DKIM (`resend._domainkey.medical-masters.com`) presente; DMARC `p=quarantine`; SPF presente.
+- ✅ `RESEND_API_KEY` + `FROM_EMAIL` configurados en secrets de Supabase (prod).
+- ⏳ **Confirmación manual pendiente**: verificar que el dominio aparezca **"Verified"** en el
+      dashboard Resend de la cuenta de producción, y correr un test real (mail-tester.com)
+      registrando un usuario de prueba. La API key en credenciales locales está obsoleta
+      (cuenta distinta) y no sirve para este test.
 
 ---
 

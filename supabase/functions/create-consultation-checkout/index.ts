@@ -1,5 +1,6 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,7 +41,7 @@ Deno.serve(async (req) => {
 
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     const { doctorId, consultationFee, doctorName } = await req.json();
     if (!doctorId) throw new Error("doctorId is required");

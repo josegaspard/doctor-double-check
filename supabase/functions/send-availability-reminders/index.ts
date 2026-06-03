@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { renderEmail } from "../_shared/email-template.ts";
+import { maskEmail } from "../_shared/log-redact.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
@@ -167,9 +168,9 @@ Deno.serve(async (req: Request) => {
             });
 
             totalEmailsSent++;
-            logStep("Email sent", { to: profile.email });
+            logStep("Email sent", { to: maskEmail(profile.email) });
           } catch (emailError: any) {
-            logStep("Failed to send email", { to: profile.email, error: emailError.message });
+            logStep("Failed to send email", { to: maskEmail(profile.email), error: emailError.message });
 
             await supabase.from('email_history').insert({
               doctor_id: availability.doctor_id,

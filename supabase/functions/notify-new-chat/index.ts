@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { maskEmail, maskName } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
     const { doctorId, patientName, sessionId, isDoubleCheck } = await req.json();
     if (!doctorId || !sessionId) throw new Error("doctorId and sessionId are required");
 
-    logStep("Notification request", { doctorId, patientName, sessionId, isDoubleCheck });
+    logStep("Notification request", { doctorId, patientName: maskName(patientName), sessionId, isDoubleCheck });
 
     // Get patient info
     const { data: patientProfile } = await supabaseAdmin
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (doctorProfile?.email) {
-        logStep("Sending email notification to doctor", { email: doctorProfile.email });
+        logStep("Sending email notification to doctor", { email: maskEmail(doctorProfile.email) });
         
         // Call the send-chat-notification-email function if it exists
         // For now, we just log it - can be implemented later

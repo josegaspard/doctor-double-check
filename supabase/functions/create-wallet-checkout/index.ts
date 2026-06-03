@@ -1,5 +1,6 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
     
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     // SECURITY (2026-05-11 audit): rate-limit Stripe session creation per user
     // to stop enumeration / Stripe quota abuse / mass tab abandonment.

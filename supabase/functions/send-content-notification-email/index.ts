@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { renderEmail } from "../_shared/email-template.ts";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -171,7 +172,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           status: 'sent',
         });
 
-        logStep("Email sent", { email: profile.email });
+        logStep("Email sent", { email: maskEmail(profile.email) });
         return { success: true, email: profile.email };
       } catch (error: any) {
         // Log failed email to history
@@ -187,7 +188,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           error_message: error.message,
         });
 
-        logStep("Error sending email", { email: profile.email, error: error.message });
+        logStep("Error sending email", { email: maskEmail(profile.email), error: error.message });
         return { success: false, email: profile.email, error: error.message };
       }
     });

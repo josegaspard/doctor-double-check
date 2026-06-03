@@ -1,5 +1,6 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -319,7 +320,7 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
           currency: 'MXN',
         }),
       });
-      logStep("Wallet topup confirmation email sent", { userId, email: userProfile.email });
+      logStep("Wallet topup confirmation email sent", { userId, email: maskEmail(userProfile.email) });
     }
   } catch (emailErr) {
     logStep("Error sending topup confirmation email (non-critical)", { error: emailErr instanceof Error ? emailErr.message : emailErr });
@@ -870,7 +871,7 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     .single();
 
   if (!profile) {
-    logStep("User not found for email", { email: customerEmail });
+    logStep("User not found for email", { email: maskEmail(customerEmail) });
     return;
   }
 
@@ -962,7 +963,7 @@ async function handleSubscriptionDeleted(
     .maybeSingle();
 
   if (!profile) {
-    logStep("User not found for cancelled subscription", { email: customerEmail });
+    logStep("User not found for cancelled subscription", { email: maskEmail(customerEmail) });
     return;
   }
 

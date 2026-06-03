@@ -1,5 +1,6 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,7 +35,7 @@ Deno.serve(async (req) => {
     if (userError || !userData.user) throw new Error("User not authenticated");
     
     const user = userData.user;
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     const { creator_id } = await req.json();
     if (!creator_id) throw new Error("creator_id is required");
