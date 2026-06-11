@@ -228,7 +228,7 @@ export default function Foro() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {livesNow.map((live) => (
-                <Card key={live.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/lives/${live.id}`)}>
+                <Card key={live.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/live/${live.id}`)}>
                   <div className="aspect-video bg-gradient-to-br from-rose-500/20 to-rose-700/30 relative overflow-hidden">
                     {live.thumbnail_url ? (
                       <img src={live.thumbnail_url} alt={live.title} className="w-full h-full object-cover" />
@@ -271,7 +271,7 @@ export default function Foro() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {upcoming.map((m) => (
-                <Card key={m.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/meetings/${m.id}`)}>
+                <Card key={m.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/meetings?id=${m.id}`)}>
                   <CardContent className="p-3 sm:p-4 flex items-start gap-3">
                     <div className="w-11 h-11 rounded-lg bg-emerald-500/15 flex flex-col items-center justify-center flex-shrink-0">
                       <p className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold leading-none">{format(new Date(m.scheduled_at), 'MMM', { locale })}</p>

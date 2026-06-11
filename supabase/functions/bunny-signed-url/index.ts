@@ -55,6 +55,38 @@ Deno.serve(async (req) => {
     if (!videoId || typeof videoId !== 'string')
       return json({ error: 'videoId required' }, 400);
 
+    // Entitlement check (same pattern as b2-presigned-url / get-cloudflare-playback):
+    // the caller must OWN the recording, have PURCHASED it, or it must be FREE
+    // (or admin). Before, ANY logged-in user could sign a playable URL for ANY
+    // videoId — a full bypass of the recordings paywall (Bunny is the primary
+    // recordings backend).
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const { data: rec } = await admin
+      .from('recordings')
+      .select('id, doctor_id, price')
+      .eq('bunny_video_id', videoId)
+      .maybeSingle();
+    if (!rec) return json({ error: 'recording not found' }, 404);
+
+    const isOwner = rec.doctor_id === user.id;
+    const isFree = Number(rec.price) === 0;
+    let allowed = isOwner || isFree;
+    if (!allowed) {
+      const { data: purchase } = await admin
+        .from('purchases').select('id')
+        .eq('user_id', user.id).eq('recording_id', rec.id).maybeSingle();
+      allowed = !!purchase;
+    }
+    if (!allowed) {
+      const { data: roleRow } = await admin
+        .from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
+      allowed = !!roleRow;
+    }
+    if (!allowed) return json({ error: 'payment required' }, 402);
+
     // TTL corto = anti-piracy. URLs comparten ~3 min y mueren.
     // Frontend renueva automáticamente antes de expirar.
     const ttl = Math.min(Math.max(Number(ttlSec) || 180, 60), 3600);

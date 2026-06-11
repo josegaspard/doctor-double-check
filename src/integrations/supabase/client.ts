@@ -2,11 +2,38 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
+
+// Producción real — proyecto Supabase "doctores" (ref: ouawwfqexfwuptlgoksr).
+// Estos valores son PÚBLICOS (la URL y la anon key viajan en el bundle del
+// cliente de todas formas), por eso es seguro fijarlos como respaldo.
+//
+// ⚠️ Por qué existe este respaldo: si un build toma una VITE_SUPABASE_URL
+// ausente o de un proyecto distinto (p.ej. un ref viejo/borrado quedado en
+// .env), TODA la app cae — auth, lives, go-live con Daily, etc., porque cada
+// request iría a un host inexistente. Anclar producción aquí hace imposible
+// desplegar un build que apunte a un Supabase muerto.
+const PROD_SUPABASE_URL = 'https://ouawwfqexfwuptlgoksr.supabase.co';
+const PROD_SUPABASE_PUBLISHABLE_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YXd3ZnFleGZ3dXB0bGdva3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNjkyOTcsImV4cCI6MjA5MzY0NTI5N30.9SYYLgXAJ_S07ok8iayL8MmU1ZTlIFQmvFKvysTiq7E';
+
+const envUrl = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
+const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
+
+// Solo confiamos en las env vars si apuntan al proyecto de producción vigente
+// (permite rotar la anon key vía env sin tocar código). Cualquier otra cosa
+// —vacío o un ref distinto— cae al valor de producción conocido-bueno.
+const envIsProd = envUrl === PROD_SUPABASE_URL && envKey.length > 0;
+
+const SUPABASE_URL = envIsProd ? envUrl : PROD_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = envIsProd ? envKey : PROD_SUPABASE_PUBLISHABLE_KEY;
+
+if (!envIsProd && typeof console !== 'undefined') {
+  console.warn(
+    '[supabase] VITE_SUPABASE_URL/KEY ausentes o no apuntan a producción; usando configuración de producción por defecto.'
+  );
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

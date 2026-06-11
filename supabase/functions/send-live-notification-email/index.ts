@@ -2,17 +2,13 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireUserJWT, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { renderEmail } from "../_shared/email-template.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe-token.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-LIVE-NOTIFICATION-EMAIL] ${step}${detailsStr}`);
-};
-
-// Generate unsubscribe token
-const generateUnsubscribeToken = (subscriberId: string, doctorId: string, type: string): string => {
-  return btoa(`${subscriberId}:${doctorId}:${type}`);
 };
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -113,8 +109,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const subscription = subscriptions.find(s => s.subscriber_id === profile.id);
       if (!subscription) continue;
 
-      const unsubscribeLiveToken = generateUnsubscribeToken(profile.id, doctorId, 'live');
-      const unsubscribeAllToken = generateUnsubscribeToken(profile.id, doctorId, 'all');
+      const unsubscribeLiveToken = await generateUnsubscribeToken(profile.id, doctorId, 'live');
+      const unsubscribeAllToken = await generateUnsubscribeToken(profile.id, doctorId, 'all');
 
       const subject = `${doctorName} está en vivo ahora`;
       const subscriberName = profile.name || "Suscriptor";

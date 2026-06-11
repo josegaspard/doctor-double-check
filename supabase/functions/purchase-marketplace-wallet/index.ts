@@ -80,16 +80,13 @@ Deno.serve(async (req) => {
       newBalance: purchaseResult.new_balance,
     });
 
-    // Atomic stock decrement (compensate on failure)
-    const { data: updatedProduct, error: stockErr } = await adminClient
-      .from("marketplace_products")
-      .update({ stock: product.stock - quantity })
-      .eq("id", product.id)
-      .gte("stock", quantity)
-      .select("id")
-      .single();
+    // Atomic relative stock decrement (no oversell under concurrency).
+    const { data: stockOk, error: stockErr } = await adminClient.rpc("decrement_product_stock", {
+      p_product_id: product.id,
+      p_qty: quantity,
+    });
 
-    if (stockErr || !updatedProduct) {
+    if (stockErr || !stockOk) {
       // Refund wallet — stock changed concurrently
       await adminClient.from('wallet_transactions').insert({
         user_id: user.id,
@@ -106,7 +103,10 @@ Deno.serve(async (req) => {
       throw new Error("Stock changed, your wallet was refunded");
     }
 
-    // Create marketplace order in "paid" state (no Stripe session)
+    // Create marketplace order. Insert as 'pending' first, then flip to 'paid'
+    // so the accounting/earnings trigger (AFTER UPDATE OF status) actually fires
+    // — an INSERT straight into 'paid' never triggers it, so the vendor would
+    // never get credited nor the sale booked.
     const { data: order, error: orderErr } = await adminClient
       .from('marketplace_orders')
       .insert({
@@ -115,8 +115,7 @@ Deno.serve(async (req) => {
         vendor_id: product.vendor_id,
         quantity,
         total_amount: totalAmount,
-        status: 'paid',
-        payment_method: 'wallet',
+        status: 'pending',
         shipping_name: shipping?.name || null,
         shipping_phone: shipping?.phone || null,
         shipping_city: shipping?.city || null,
@@ -127,10 +126,40 @@ Deno.serve(async (req) => {
       .select('id')
       .single();
 
-    if (orderErr) {
-      logStep("Error creating order", { error: orderErr.message });
+    if (orderErr || !order) {
+      // Order failed AFTER the wallet was charged and stock decremented →
+      // refund the wallet and restore stock so the buyer never loses money.
+      logStep("Error creating order — refunding wallet + restoring stock", { error: orderErr?.message });
+      await adminClient.from('wallet_transactions').insert({
+        user_id: user.id,
+        type: 'refund',
+        amount: purchaseResult.amount_charged,
+        description: `Reembolso (no se pudo crear la orden): ${product.name}`,
+        status: 'paid',
+        metadata: { source: 'marketplace', product_id: product.id, reason: 'order_create_failed' },
+      });
+      await adminClient.rpc('credit_wallet_balance', {
+        p_user_id: user.id,
+        p_amount: purchaseResult.amount_charged,
+      }).catch(() => null);
+      await adminClient.rpc('increment_product_stock', {
+        p_product_id: product.id,
+        p_qty: quantity,
+      }).catch(() => null);
+      throw new Error("No se pudo crear la orden; tu wallet fue reembolsado");
     } else {
-      logStep("Order created", { orderId: order.id });
+      // Transition to 'paid' → fires fn_record_marketplace_earning (vendor
+      // earnings + double-entry accounting). Stock was already decremented above
+      // and the trigger no longer decrements it (no double discount).
+      const { error: payErr } = await adminClient
+        .from('marketplace_orders')
+        .update({ status: 'paid' })
+        .eq('id', order.id);
+      if (payErr) {
+        logStep("Error marking order paid", { orderId: order.id, error: payErr.message });
+      } else {
+        logStep("Order created and paid", { orderId: order.id });
+      }
     }
 
     // Send purchase confirmation email (non-critical)

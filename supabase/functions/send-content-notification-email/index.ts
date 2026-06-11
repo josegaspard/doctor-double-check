@@ -3,6 +3,7 @@ import { requireAdminOrCron, AuthError, corsHeaders } from "../_shared/auth-guar
 import { Resend } from "npm:resend@2.0.0";
 import { renderEmail } from "../_shared/email-template.ts";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe-token.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -125,10 +126,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const emailPromises = profiles.map(async (profile) => {
       const subject = `${contentIcon} Nuevo ${contentTypeLabel.toLowerCase()} de ${doctorName}`;
       
-      // Generate unsubscribe token (base64 encoded: subscriberId:doctorId:type)
-      const unsubscribeToken = btoa(`${profile.id}:${doctorId}:content`);
+      // HMAC-signed unsubscribe token (unsigned tokens are rejected by unsubscribe-email)
+      const unsubscribeToken = await generateUnsubscribeToken(profile.id, doctorId, 'content');
       const unsubscribeUrl = `${functionsUrl}/unsubscribe-email?token=${unsubscribeToken}`;
-      const unsubscribeAllToken = btoa(`${profile.id}:${doctorId}:all`);
+      const unsubscribeAllToken = await generateUnsubscribeToken(profile.id, doctorId, 'all');
       const unsubscribeAllUrl = `${functionsUrl}/unsubscribe-email?token=${unsubscribeAllToken}`;
       
       try {

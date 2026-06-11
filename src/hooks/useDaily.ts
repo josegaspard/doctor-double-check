@@ -15,18 +15,33 @@ export function useDaily() {
 
   const createRoom = useCallback(async (liveId: string, title: string, mode: 'live' | 'consultation' = 'live'): Promise<DailyRoom | null> => {
     setIsLoading(true);
+    // Reintentos: la edge function puede dar un blip transitorio (cold start de
+    // Deno, red intermitente, 5xx puntual). Un solo fallo NO debe abortar el
+    // go-live, así que reintentamos hasta 3 veces con backoff antes de rendirnos.
+    const maxAttempts = 3;
+    let lastError: any = null;
     try {
-      const { data, error } = await supabase.functions.invoke('create-daily-room', {
-        body: { liveId, title, mode },
-      });
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const { data, error } = await supabase.functions.invoke('create-daily-room', {
+            body: { liveId, title, mode },
+          });
 
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+          if (error) throw error;
+          if (!data?.success) throw new Error(data?.error || 'create-daily-room sin success');
+          if (!data.room?.url) throw new Error('create-daily-room sin URL de sala');
 
-      setRoom(data.room);
-      return data.room;
-    } catch (error: any) {
-      console.error('Error creating Daily room:', error);
+          setRoom(data.room);
+          return data.room;
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[useDaily] createRoom intento ${attempt}/${maxAttempts} falló:`, err?.message || err);
+          if (attempt < maxAttempts) {
+            await new Promise((r) => setTimeout(r, attempt * 800));
+          }
+        }
+      }
+      console.error('Error creating Daily room (agotados los reintentos):', lastError);
       toast.error('Error al crear sala de transmisión');
       return null;
     } finally {

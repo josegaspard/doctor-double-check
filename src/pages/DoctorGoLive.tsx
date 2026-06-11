@@ -131,51 +131,65 @@ export default function DoctorGoLive() {
     setIsCreating(true);
     setCreatingStage('camera');
 
-    // Forzar devices del dispositivo correcto:
-    // - En desktop (Mac/PC), descartar cámaras/mics tipo Continuity Camera de iPhone/iPad
-    //   y otros virtuales (OBS/Krisp) que dan audio/video con desync.
-    // - En mobile, defaults nativos son fiables (un solo set built-in).
-    let constraints: MediaStreamConstraints = {
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-      audio: { echoCancellation: true, noiseSuppression: true },
-    };
+    // Adquisición de cámara/mic — UNA sola apertura en el caso común.
+    // ANTES abríamos la cámara DOS veces en desktop (un "probe" para listar
+    // labels + reapertura con deviceId exacto). Eso (a) tardaba 1-2s extra y
+    // (b) provocaba NotReadableError intermitente ("la cámara no carga")
+    // porque el dispositivo aún se estaba liberando entre el stop del probe y
+    // la reapertura. Ahora abrimos una vez y SOLO reabrimos si la cámara/mic
+    // activos resultan ser un dispositivo Continuity/virtual no deseado — y en
+    // ese caso abrimos el segundo stream ANTES de cerrar el primero, sin carrera.
     const isMobileUA = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    if (!isMobileUA) {
-      try {
-        // Permission gate primero para que enumerateDevices devuelva labels
-        const probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        probe.getTracks().forEach((tr) => tr.stop());
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const isContinuityOrVirtual = (label: string) => {
-          const l = label.toLowerCase();
-          return l.includes('iphone') || l.includes('ipad') || l.includes('continuity')
-            || l.includes('obs') || l.includes('krisp') || l.includes('virtual')
-            || l.includes('snap camera') || l.includes('elgato virtual');
-        };
-        const cam = devices.find((d) => d.kind === 'videoinput' && d.label && !isContinuityOrVirtual(d.label));
-        const mic = devices.find((d) => d.kind === 'audioinput' && d.label && !isContinuityOrVirtual(d.label));
-        constraints = {
-          video: cam?.deviceId
-            ? { deviceId: { exact: cam.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-            : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-          audio: mic?.deviceId
-            ? { deviceId: { exact: mic.deviceId }, echoCancellation: true, noiseSuppression: true }
-            : { echoCancellation: true, noiseSuppression: true },
-        };
-      } catch (probeErr) {
-        // Si el probe falla, caemos a constraints default y el getUserMedia de abajo manejará el error
-      }
-    }
 
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      setLocalStream(stream);
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
     } catch (err) {
       toast.error(t('doctorGoLivePage.cameraMicAccessError'));
       setIsCreating(false);
       return;
     }
+
+    // Solo desktop: si el dispositivo activo es Continuity/virtual (iPhone/iPad/
+    // OBS/Krisp...), intentamos cambiar al integrado. Si algo falla, nos
+    // quedamos con el stream que YA funciona (no rompemos el go-live por esto).
+    if (!isMobileUA) {
+      try {
+        const isContinuityOrVirtual = (label: string) => {
+          const l = (label || '').toLowerCase();
+          return l.includes('iphone') || l.includes('ipad') || l.includes('continuity')
+            || l.includes('obs') || l.includes('krisp') || l.includes('virtual')
+            || l.includes('snap camera') || l.includes('elgato virtual');
+        };
+        const curCam = stream.getVideoTracks()[0]?.label || '';
+        const curMic = stream.getAudioTracks()[0]?.label || '';
+        if (isContinuityOrVirtual(curCam) || isContinuityOrVirtual(curMic)) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cam = devices.find((d) => d.kind === 'videoinput' && d.label && !isContinuityOrVirtual(d.label));
+          const mic = devices.find((d) => d.kind === 'audioinput' && d.label && !isContinuityOrVirtual(d.label));
+          if (cam || mic) {
+            const better = await navigator.mediaDevices.getUserMedia({
+              video: cam?.deviceId
+                ? { deviceId: { exact: cam.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+                : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+              audio: mic?.deviceId
+                ? { deviceId: { exact: mic.deviceId }, echoCancellation: true, noiseSuppression: true }
+                : { echoCancellation: true, noiseSuppression: true },
+            });
+            // El segundo stream ya está abierto: ahora sí cerramos el primero.
+            stream.getTracks().forEach((tr) => tr.stop());
+            stream = better;
+          }
+        }
+      } catch {
+        // Conservamos el stream original que ya funciona.
+      }
+    }
+
+    setLocalStream(stream);
 
     setCreatingStage('room');
     setEnableRecording(config.enableRecording);

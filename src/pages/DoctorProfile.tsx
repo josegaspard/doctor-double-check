@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { toast } from 'sonner';
 
 interface DoctorData {
@@ -61,6 +62,7 @@ export default function DoctorProfile() {
   const { createSession } = useChat();
   const { balance, purchase, canAfford } = useWallet();
   const { t } = useLanguage();
+  const { toggles } = useSiteToggles();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,6 +274,14 @@ export default function DoctorProfile() {
 
     if (!doctor) return;
 
+    // Patient chat globally disabled by admin toggle → block EVERY chat-start
+    // path (resident, doctor-direct, free, and paid) before any DB session is
+    // created or a doctor notification email is sent.
+    if (!toggles.enable_patient_chat) {
+      toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
+      return;
+    }
+
     // Resident flow
     if (role === 'resident') {
       if (residentConnectionStatus === 'accepted') {
@@ -306,6 +316,14 @@ export default function DoctorProfile() {
 
   const handleWalletPayment = async () => {
     if (!doctor || !user?.id) return;
+
+    // Don't charge for a chat consultation if patient chat is disabled — the
+    // user would pay and then land on "feature unavailable".
+    if (!toggles.enable_patient_chat) {
+      setShowPaymentModal(false);
+      toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
+      return;
+    }
 
     setIsProcessingPayment(true);
     try {
@@ -346,6 +364,13 @@ export default function DoctorProfile() {
 
   const handleStripePayment = async () => {
     if (!doctor) return;
+
+    // Same gate as wallet: no paid chat consultation when patient chat is off.
+    if (!toggles.enable_patient_chat) {
+      setShowPaymentModal(false);
+      toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
+      return;
+    }
 
     setIsProcessingPayment(true);
     try {

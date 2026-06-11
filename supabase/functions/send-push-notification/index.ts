@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     // Configure web-push with VAPID
-    webpush.setVapidDetails('mailto:push@docseek.app', vapidPublicKey, vapidPrivateKey);
+    webpush.setVapidDetails('mailto:soporte@medical-masters.com', vapidPublicKey, vapidPrivateKey);
 
     // Get subscribers
     const { data: subscriptions, error: subsError } = await supabaseAdmin
@@ -82,7 +82,19 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const subscriberIds = subscriptions.map(s => s.subscriber_id);
+    let subscriberIds = subscriptions.map(s => s.subscriber_id);
+
+    // Respect each user's GLOBAL push preference, not just notify_on_live.
+    const { data: prefs } = await supabaseAdmin
+      .from('notification_preferences')
+      .select('user_id, push_notifications')
+      .in('user_id', subscriberIds);
+    const optedOut = new Set((prefs || []).filter(p => p.push_notifications === false).map(p => p.user_id));
+    subscriberIds = subscriberIds.filter(id => !optedOut.has(id));
+    if (!subscriberIds.length) {
+      return new Response(JSON.stringify({ success: true, sent: 0, message: 'All recipients opted out of push' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const { data: pushSubs, error: pushError } = await supabaseAdmin
       .from('push_subscriptions')

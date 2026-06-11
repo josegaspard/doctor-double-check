@@ -55,8 +55,9 @@ async function verifyRecordingAccess(
     .from('user_roles')
     .select('role')
     .eq('user_id', userId)
+    .eq('role', 'admin')
     .maybeSingle();
-  if (roleRow?.role === 'admin') return { allowed: true, reason: 'admin' };
+  if (roleRow) return { allowed: true, reason: 'admin' };
 
   // 2) Recording details (owner / price / live_id)
   const { data: rec, error: recErr } = await supabaseAdmin

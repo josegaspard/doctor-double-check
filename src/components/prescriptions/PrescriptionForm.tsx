@@ -97,12 +97,22 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
 
     const validMeds = medications.filter(m => m.name.trim());
-    
+
     // Must have at least one medication OR an attached file
     if (validMeds.length === 0 && !attachedFile) {
-      toast.error(language === 'es' 
-        ? 'Agrega al menos un medicamento o adjunta un archivo' 
+      toast.error(language === 'es'
+        ? 'Agrega al menos un medicamento o adjunta un archivo'
         : 'Add at least one medication or attach a file');
+      return;
+    }
+
+    // A prescription is a signed medical document: it cannot be issued without
+    // the doctor's professional signature on file. (Before, the signature was
+    // optional and the PDF was generated unsigned.)
+    if (!doctorSignatureUrl) {
+      toast.error(language === 'es'
+        ? 'Configura tu firma profesional en tu perfil antes de emitir recetas.'
+        : 'Set up your professional signature in your profile before issuing prescriptions.');
       return;
     }
 
@@ -147,6 +157,17 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         .single();
 
       if (error) throw error;
+
+      // Record the prescription signature for legal traceability (links the
+      // signing doctor to this specific prescription id).
+      try {
+        await supabase.from('document_signatures').insert({
+          user_id: user.id,
+          document_type: `prescription:${data.id}`,
+          document_version: '1.0',
+          signer_name: user.name || 'Doctor',
+        });
+      } catch { /* never block an already-created prescription on the audit row */ }
 
       // Notify patient
       await supabase.from('notifications').insert({

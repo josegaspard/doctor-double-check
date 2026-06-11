@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Plus, CalendarDays, Loader2, Video } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 export type MeetingStatus = 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
 
@@ -37,6 +38,7 @@ export default function Meetings() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t } = useLanguage();
+  const { toggles } = useSiteToggles();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [invitations, setInvitations] = useState<Meeting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,6 +174,12 @@ export default function Meetings() {
 
   const handleStartCall = async (meeting: Meeting) => {
     if (!user?.id) return;
+
+    // Video calls disabled by admin toggle → don't dead-end on /video-call.
+    if (!toggles.enable_video_calls) {
+      toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
+      return;
+    }
 
     // If room already exists, join it
     if (meeting.dailyRoomUrl) {

@@ -41,7 +41,7 @@ export function MySubscribedDoctorsCard() {
           {top.map(sub => (
             <button
               key={sub.id}
-              onClick={() => navigate(`/doctors/${sub.creatorId}`)}
+              onClick={() => navigate(`/doctor/${sub.creatorId}`)}
               className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors text-left"
             >
               <Avatar className="w-9 h-9 flex-shrink-0">

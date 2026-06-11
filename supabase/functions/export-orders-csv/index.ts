@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       .from("marketplace_orders")
       .select(`
         id, created_at, status, shipping_status, refund_status, total_amount, currency,
-        platform_fee, vendor_net, stripe_fee, payment_method,
+        platform_fee, vendor_net, stripe_fee, stripe_session_id, stripe_payment_intent_id,
         quantity, courier_name, tracking_number, shipped_at, delivered_at,
         buyer_id, vendor_id, product_id,
         marketplace_vendors(name),
@@ -76,7 +76,8 @@ Deno.serve(async (req) => {
       o.id, o.created_at,
       o.marketplace_vendors?.name || "",
       o.marketplace_products?.name || "",
-      o.quantity, o.status, o.shipping_status, o.refund_status, o.payment_method,
+      o.quantity, o.status, o.shipping_status, o.refund_status,
+      (o.stripe_session_id || o.stripe_payment_intent_id) ? 'stripe' : 'wallet',
       o.total_amount, o.platform_fee || "", o.vendor_net || "", o.stripe_fee || "",
       o.currency || "MXN",
       o.courier_name || "", o.tracking_number || "",

@@ -122,7 +122,8 @@ export default function MyOrders() {
       rating: reviewRating,
       title: reviewTitle.trim() || null,
       body: reviewBody.trim() || null,
-      verified_purchase: true,
+      // verified_purchase is set server-side (trigger) from a real paid order;
+      // the RLS policy also blocks reviews without a matching paid order.
     });
     setReviewBusy(false);
     if (error) {

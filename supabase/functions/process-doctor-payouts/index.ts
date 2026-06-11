@@ -198,49 +198,76 @@ Deno.serve(async (req) => {
         const payoutAmount = grossAmount;
         const payoutAmountCents = Math.round(payoutAmount * 100);
 
-        // Create transfer to connected account
-        const transfer = await stripe.transfers.create({
-          amount: payoutAmountCents,
-          currency: "mxn",
-          destination: doctor.stripe_account_id!,
-          metadata: {
-            doctor_id: doctor.user_id,
-            gross_amount: grossAmount.toString(),
-            commission_percentage: payoutSettings.commission_percentage.toString(),
-          },
-        });
-
-        // FIX #5 + #8: Create payout record with invoice_id and period_start
+        // 1) Create the payout record FIRST (status 'processing'). Together with
+        //    the existing-processing check above it acts as a lock, and its id is
+        //    the deterministic idempotency key for the Stripe transfer.
         const now = new Date().toISOString().split("T")[0];
-        await supabaseAdmin.from("doctor_payouts").insert({
-          doctor_id: doctor.user_id,
-          amount: payoutAmount,
-          stripe_transfer_id: transfer.id,
-          status: "processing",
-          period_start: now,
-          period_end: now,
-          invoice_id: invoiceId,
-        });
+        const { data: payoutRow, error: payoutInsErr } = await supabaseAdmin
+          .from("doctor_payouts")
+          .insert({
+            doctor_id: doctor.user_id,
+            amount: payoutAmount,
+            status: "processing",
+            period_start: now,
+            period_end: now,
+            invoice_id: invoiceId,
+          })
+          .select("id")
+          .single();
+        if (payoutInsErr || !payoutRow) {
+          console.error(`Could not create payout row for ${doctor.user_id}:`, payoutInsErr?.message);
+          errors.push(`${doctor.user_id}: could not create payout record`);
+          continue;
+        }
 
-        // FIX #1: Use atomic DB function instead of read-then-write
+        // 2) Deduct pending_earnings ATOMICALLY *before* moving money. Deducting
+        //    after the transfer (as before) meant a crash in between would re-pay
+        //    the doctor on the next run.
         const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc("process_doctor_payout", {
           p_doctor_id: doctor.user_id,
           p_payout_amount: payoutAmount,
           p_gross_amount: grossAmount,
         });
-
-        if (rpcError) {
-          console.error(`Error in atomic payout for ${doctor.user_id}:`, rpcError);
-          errors.push(`${doctor.user_id}: ${rpcError.message}`);
+        if (rpcError || !(rpcResult as any)?.success) {
+          const msg = rpcError?.message || (rpcResult as any)?.error || "deduction failed";
+          console.error(`Atomic deduction failed for ${doctor.user_id}:`, msg);
+          await supabaseAdmin.from("doctor_payouts").update({ status: "failed" }).eq("id", payoutRow.id);
+          errors.push(`${doctor.user_id}: ${msg}`);
           continue;
         }
 
-        const result = rpcResult as { success: boolean; error?: string };
-        if (!result.success) {
-          console.error(`Atomic payout failed for ${doctor.user_id}:`, result.error);
-          errors.push(`${doctor.user_id}: ${result.error}`);
+        // 3) Move the money, with a deterministic idempotency key so a retry can
+        //    never create a second transfer.
+        let transfer;
+        try {
+          transfer = await stripe.transfers.create({
+            amount: payoutAmountCents,
+            currency: "mxn",
+            destination: doctor.stripe_account_id!,
+            metadata: {
+              doctor_id: doctor.user_id,
+              payout_id: payoutRow.id,
+              gross_amount: grossAmount.toString(),
+              commission_percentage: payoutSettings.commission_percentage.toString(),
+            },
+          }, { idempotencyKey: `doctor_payout_${payoutRow.id}` });
+        } catch (transferErr: any) {
+          // Transfer failed → return the money to the doctor's pending balance
+          // (raw re-credit, no commission re-applied) and mark the payout failed.
+          console.error(`Transfer failed for ${doctor.user_id}, reverting deduction:`, transferErr?.message);
+          await supabaseAdmin.rpc("credit_doctor_earnings", {
+            p_doctor_id: doctor.user_id,
+            p_amount: grossAmount,
+            p_sale_type: null,
+            p_apply_commission: false,
+          });
+          await supabaseAdmin.from("doctor_payouts").update({ status: "failed" }).eq("id", payoutRow.id);
+          errors.push(`${doctor.user_id}: transfer failed (${transferErr?.message || "unknown"})`);
           continue;
         }
+
+        // 4) Record the transfer id on the payout.
+        await supabaseAdmin.from("doctor_payouts").update({ stripe_transfer_id: transfer.id }).eq("id", payoutRow.id);
 
         // Notify doctor about payout (in-app)
         await supabaseAdmin.from("notifications").insert({

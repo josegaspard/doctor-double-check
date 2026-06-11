@@ -18,10 +18,31 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   // Grace timer used to tolerate brief remote disconnects (wifi blip)
   // before tearing down the call. Cleared if the remote rejoins.
   const remoteLeftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Keep the latest consultationId reachable from the unmount cleanup.
+  const consultationIdRef = useRef(consultationId);
+  consultationIdRef.current = consultationId;
 
-  // Cleanup on unmount
+  // Cleanup on unmount. If a call was active and the user closed the tab or
+  // navigated away WITHOUT hanging up, also end the Daily room so it doesn't
+  // linger until its 24h expiry. end-daily-room validates ownership server-side,
+  // so only the doctor (room owner) actually closes it; the patient side is a no-op.
   useEffect(() => {
-    return () => { doCleanup(); };
+    return () => {
+      const hadActiveCall = !!callObjectRef.current;
+      const cid = consultationIdRef.current;
+      doCleanup();
+      if (hadActiveCall && cid) {
+        (async () => {
+          try {
+            const { data } = await supabase
+              .from('consultations').select('video_room_name').eq('id', cid).single();
+            if (data?.video_room_name) {
+              await supabase.functions.invoke('end-daily-room', { body: { roomName: data.video_room_name } });
+            }
+          } catch { /* best effort */ }
+        })();
+      }
+    };
   }, []);
 
   const doCleanup = useCallback(async () => {

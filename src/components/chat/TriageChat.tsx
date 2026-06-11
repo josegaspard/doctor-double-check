@@ -6,14 +6,12 @@ import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 /**
- * Free AI triage chat shown to patients before they purchase a chat session
- * with a real doctor. Caps interactions at FREE_LIMIT messages and then
- * blocks the input with a subscription/consultation paywall.
- *
- * The assistant response is intentionally generic + safety-oriented —
- * the real model wiring is expected to be plugged into the `ai-triage`
- * Supabase edge function. Until then we serve a deterministic stub so
- * the UX is fully functional.
+ * Free RULE-BASED orientation chat shown to patients before they purchase a
+ * chat session with a real doctor. This is NOT an AI/LLM and does NOT diagnose:
+ * it returns a deterministic, safety-first reply (red-flag detection + generic
+ * guidance) and the UI labels it as "orientación" with a clear disclaimer that
+ * it does not replace a medical consultation. Caps interactions at FREE_LIMIT
+ * messages, then shows a subscription/consultation paywall.
  */
 
 const FREE_LIMIT = 5;
@@ -36,8 +34,7 @@ async function fetchTriageReply(
   userText: string,
   t: (key: string) => string,
 ): Promise<string> {
-  // Placeholder: deterministic safety-first reply. Swap for edge function:
-  //   await supabase.functions.invoke('ai-triage', { body: { text: userText } })
+  // Deterministic, rule-based safety-first reply (intentionally NOT an LLM).
   const lower = userText.toLowerCase();
   const red = ['dolor pecho', 'pecho', 'sangrado', 'desmay', 'no respiro', 'no puedo respirar', 'suicid', 'chest pain'];
   if (red.some(k => lower.includes(k))) {

@@ -2731,6 +2731,8 @@ export const es = {
     close: 'Cerrar',
   },
   dailyVideoPlayer: {
+    retry: 'Reintentar',
+    joinTakingLong: 'La conexión está tardando más de lo normal.',
     unknownError: 'error desconocido',
     unknown: 'desconocido',
     joinFailed: 'No se pudo unirse a la sala. Detalle:',

@@ -43,9 +43,34 @@ Deno.serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
-    const { doctorId, consultationFee, doctorName } = await req.json();
+    // Feature gate (server-side, covers every UI surface): a paid consultation
+    // ends in /chat, so if the admin disabled patient chat we must NOT charge —
+    // otherwise the patient pays and lands on "feature unavailable".
+    const { data: togglesRow } = await supabaseClient
+      .from("site_settings").select("value").eq("id", "feature_toggles").maybeSingle();
+    const toggles = (togglesRow?.value ?? {}) as Record<string, boolean>;
+    if (toggles.enable_patient_chat !== true) {
+      return new Response(
+        JSON.stringify({ error: "La consulta por chat no está disponible en este momento." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { doctorId, doctorName } = await req.json();
     if (!doctorId) throw new Error("doctorId is required");
-    if (consultationFee === undefined || consultationFee <= 0) throw new Error("Invalid consultation fee");
+
+    // Price and eligibility are SERVER-SIDE: never trust the fee from the body
+    // (before, a user could pay $1 for any consultation), and only charge for an
+    // APPROVED doctor.
+    const { data: docProfile } = await supabaseClient
+      .from("doctor_profiles")
+      .select("consultation_fee, status")
+      .eq("user_id", doctorId)
+      .maybeSingle();
+    if (!docProfile) throw new Error("Doctor not found");
+    if (docProfile.status !== "approved") throw new Error("Doctor is not available for consultations");
+    const consultationFee = Number(docProfile.consultation_fee);
+    if (!consultationFee || consultationFee <= 0) throw new Error("Consultation fee not configured");
 
     logStep("Consultation request", { doctorId, consultationFee, doctorName });
 

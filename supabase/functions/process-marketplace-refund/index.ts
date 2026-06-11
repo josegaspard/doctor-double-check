@@ -79,13 +79,17 @@ Deno.serve(async (req) => {
 
     const { data: order } = await supabaseAdmin
       .from("marketplace_orders")
-      .select("stripe_payment_intent_id, stripe_session_id, payment_method, total_amount, currency, buyer_id")
+      .select("stripe_payment_intent_id, stripe_session_id, total_amount, currency, buyer_id")
       .eq("id", refund.order_id)
       .single();
 
     let stripeRefundId: string | null = null;
 
-    if (order?.payment_method === "stripe") {
+    // marketplace_orders has no payment_method column: an order was paid with
+    // Stripe if it carries Stripe ids; otherwise it was paid with the wallet.
+    const isStripeOrder = !!(order?.stripe_payment_intent_id || order?.stripe_session_id);
+
+    if (isStripeOrder) {
       const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-03-31.basil" });
       let paymentIntentId = order.stripe_payment_intent_id;
       if (!paymentIntentId && order.stripe_session_id) {
@@ -100,14 +104,26 @@ Deno.serve(async (req) => {
         metadata: { refund_id: refundId, order_id: refund.order_id },
       });
       stripeRefundId = stripeRefund.id;
-    } else if (order?.payment_method === "wallet") {
-      // Reembolso a wallet del paciente
-      await supabaseAdmin.rpc("wallet_credit", {
+    } else {
+      // Reembolso a wallet del paciente. Antes llamaba a `wallet_credit` (función
+      // inexistente) y tragaba el error con `.catch(()=>null)`, marcando el refund
+      // como "refunded" aunque el dinero NUNCA volviera. Ahora registra la
+      // transacción y acredita el saldo de verdad; si algo falla, se lanza y NO
+      // se marca como reembolsado (el refund queda reintentable).
+      const { error: txErr } = await supabaseAdmin.from("wallet_transactions").insert({
+        user_id: order.buyer_id,
+        type: "refund",
+        amount: Number(refund.amount),
+        description: `Reembolso pedido ${refund.order_id.slice(0, 8)}`,
+        status: "paid",
+        metadata: { source: "marketplace_refund", refund_id: refundId, order_id: refund.order_id },
+      });
+      if (txErr) throw new Error(`No se pudo registrar el reembolso en wallet: ${txErr.message}`);
+      const { error: creditErr } = await supabaseAdmin.rpc("credit_wallet_balance", {
         p_user_id: order.buyer_id,
-        p_amount: refund.amount,
-        p_description: `Reembolso pedido ${refund.order_id.slice(0,8)}`,
-        p_metadata: { refund_id: refundId, order_id: refund.order_id },
-      }).catch(() => null);
+        p_amount: Number(refund.amount),
+      });
+      if (creditErr) throw new Error(`No se pudo acreditar el reembolso al wallet: ${creditErr.message}`);
     }
 
     await supabaseAdmin
@@ -121,6 +137,16 @@ Deno.serve(async (req) => {
         admin_notes: adminNotes,
       })
       .eq("id", refundId);
+
+    // Keep the order in sync so it reaches a terminal refunded state (was left
+    // stuck on refund_status='requested'). Full refund → status='refunded'.
+    await supabaseAdmin
+      .from("marketplace_orders")
+      .update({
+        refund_status: "refunded",
+        ...(Number(refund.amount) >= Number(order.total_amount) ? { status: "refunded" } : {}),
+      })
+      .eq("id", order.id);
 
     await supabaseAdmin.from("marketplace_audit_log").insert({
       actor_id: userData.user.id, actor_role: "admin",

@@ -38,8 +38,18 @@ Deno.serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { extraGB, price } = await req.json();
-    if (!extraGB || !price || price <= 0) throw new Error("Invalid storage plan");
+    const { extraGB } = await req.json();
+    if (!extraGB || Number(extraGB) <= 0) throw new Error("Invalid storage plan");
+
+    // Price is SERVER-SIDE from site_settings.storage_pricing (same source the UI
+    // reads). Never trust the `price` from the body (before => unlimited GB for $0.01).
+    const { data: pricingRow } = await supabaseClient
+      .from("site_settings").select("value").eq("id", "storage_pricing").maybeSingle();
+    const pricing = (pricingRow?.value ?? {}) as { plans?: { gb: number; price?: number }[]; price_per_gb?: number };
+    const pricePerGb = Number(pricing.price_per_gb) > 0 ? Number(pricing.price_per_gb) : 49;
+    const matched = (pricing.plans || []).find((p) => Number(p.gb) === Number(extraGB));
+    const price = matched && matched.price != null ? Number(matched.price) : Number(extraGB) * pricePerGb;
+    if (!price || price <= 0) throw new Error("Invalid storage price");
 
     // Check user role for resident discount
     const { data: roleData } = await supabaseClient

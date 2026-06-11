@@ -75,10 +75,11 @@ Deno.serve(async (req) => {
         .eq("type", "refund")
         .eq("status", "paid");
       const alreadyRefunded = (priorRefunds || []).reduce(
-        (acc, r: any) => acc + Number(r.amount || 0),
+        (acc, r: any) => acc + Math.abs(Number(r.amount || 0)),
         0,
       );
-      const maxRefundable = Number(srcTx.amount) - alreadyRefunded;
+      // Purchases are stored as negative amounts; compare against the absolute value.
+      const maxRefundable = Math.abs(Number(srcTx.amount)) - alreadyRefunded;
       if (Number(amount) > maxRefundable + 0.001) {
         throw new Error(
           `Refund exceeds remaining refundable amount (max ${maxRefundable.toFixed(2)})`,

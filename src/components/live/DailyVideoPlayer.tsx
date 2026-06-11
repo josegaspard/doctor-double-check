@@ -66,6 +66,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const cleaningUpRef = useRef(false);
   const isLeavingRef = useRef(false);
   const userHasUnmutedRef = useRef(false);
+  const joinAttemptRef = useRef(0);
   
   const [isJoining, setIsJoining] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
@@ -78,6 +79,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [error, setError] = useState<string | null>(null);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
   const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
+  // Cada bump reintenta el join (re-ejecuta el effect de abajo). Lo usa el
+  // watchdog anti-"Conectando..." infinito y el botón Reintentar del error.
+  const [joinAttempt, setJoinAttempt] = useState(0);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const connectionStats = useConnectionQuality(callRef.current, isConnected);
@@ -88,6 +92,12 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
     const initCall = async () => {
       try {
+        // Reset por si esto es un reintento (joinAttempt bump): volvemos a
+        // mostrar el skeleton de "Conectando" y limpiamos el error anterior.
+        setError(null);
+        setIsConnected(false);
+        setIsJoining(true);
+
         try {
           const existing = Daily.getCallInstance();
           if (existing) {
@@ -141,7 +151,35 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         callRef.current = null;
       }
     };
-  }, [roomUrl, token, isOwner]);
+  }, [roomUrl, token, isOwner, joinAttempt]);
+
+  // Watchdog anti "Conectando..." infinito ("no carga"): si tras 18s seguimos
+  // sin unirnos a la sala, reintentamos el join automáticamente (hasta 2 veces).
+  // Si aun así no entra, mostramos un error accionable con botón Reintentar en
+  // lugar de un spinner eterno. Los joins normales tardan 2-5s, así que 18s no
+  // dispara falsos positivos.
+  useEffect(() => {
+    if (!roomUrl || !token) return;
+    if (isConnected || error) return;
+    const id = setTimeout(() => {
+      if (isConnected || cleaningUpRef.current) return;
+      if (joinAttemptRef.current < 2) {
+        joinAttemptRef.current += 1;
+        setJoinAttempt((a) => a + 1);
+      } else {
+        setIsJoining(false);
+        setError(t('dailyVideoPlayer.joinTakingLong'));
+      }
+    }, 18000);
+    return () => clearTimeout(id);
+  }, [roomUrl, token, isConnected, error, joinAttempt, t]);
+
+  const handleRetry = useCallback(() => {
+    joinAttemptRef.current = 0;
+    setError(null);
+    setIsJoining(true);
+    setJoinAttempt((a) => a + 1);
+  }, []);
 
   useEffect(() => {
     if (!isConnected || !videoContainerRef.current || !callRef.current) return;
@@ -490,7 +528,10 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         <div className="text-center px-4">
           <VideoOff className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={onLeave} className="mt-4" variant="outline">{t('dailyVideoPlayer.back')}</Button>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Button onClick={handleRetry}>{t('dailyVideoPlayer.retry')}</Button>
+            <Button onClick={onLeave} variant="outline">{t('dailyVideoPlayer.back')}</Button>
+          </div>
         </div>
       </div>
     );

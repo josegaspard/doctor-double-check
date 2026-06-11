@@ -275,13 +275,12 @@ export default function Vault() {
     if (!supabaseUser?.id) return;
     setIsUpgrading(true);
 
-    const effectiveCost = getEffectivePrice(planPrice);
-
     try {
-      const { data, error } = await supabase.rpc('process_wallet_purchase', {
-        p_amount: effectiveCost,
-        p_description: `Expansión de almacenamiento: +${extraGB}GB`,
-        p_metadata: { type: 'storage_upgrade', extra_gb: extraGB },
+      // RPC dedicada: cobra (precio server-side) Y aplica el storage atómicamente.
+      // (Antes se hacía process_wallet_purchase + UPDATE storage_limit_bytes desde
+      // el cliente, que ahora bloquea el trigger anti-auto-aprobación.)
+      const { data, error } = await supabase.rpc('purchase_storage_with_wallet', {
+        p_extra_gb: extraGB,
       });
 
       if (error) throw error;
@@ -297,12 +296,8 @@ export default function Vault() {
       // Show debit notification
       toast.success(`${t('ads.walletDebited')} $${result.amount_charged} ${t('ads.fromWallet')} $${result.new_balance}`);
 
+      // El almacenamiento ya se aplicó server-side dentro de la RPC (atómico con el cobro).
       const newLimit = storageLimit + (extraGB * 1073741824);
-      await supabase
-        .from('profiles')
-        .update({ storage_limit_bytes: newLimit })
-        .eq('id', supabaseUser.id);
-      
       setStorageLimit(newLimit);
       setShowUpgradeDialog(false);
       setSelectedPlan(null);

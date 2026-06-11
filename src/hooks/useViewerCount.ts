@@ -19,9 +19,9 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
     if (!liveId || hasJoinedRef.current) return;
 
     try {
-      const { error } = await supabase.rpc('increment_viewer_count', { p_live_id: liveId });
+      const { error } = await supabase.rpc('join_live_viewer', { p_live_id: liveId });
       if (error) {
-        console.error('RPC increment_viewer_count failed:', error.message);
+        console.error('RPC join_live_viewer failed:', error.message);
         return;
       }
       hasJoinedRef.current = true;
@@ -36,7 +36,7 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
     if (!liveId || !hasJoinedRef.current) return;
 
     try {
-      const { error } = await supabase.rpc('decrement_viewer_count', { p_live_id: liveId });
+      const { error } = await supabase.rpc('leave_live_viewer', { p_live_id: liveId });
       if (error) {
         console.error('RPC decrement_viewer_count failed:', error.message);
       }
@@ -131,7 +131,7 @@ export function useViewerCount({ liveId, autoJoin = true }: UseViewerCountOption
       if (hasJoinedRef.current && liveId) {
         (async () => {
           try {
-            await supabase.rpc('decrement_viewer_count', { p_live_id: liveId });
+            await supabase.rpc('leave_live_viewer', { p_live_id: liveId });
           } catch (err) {
             console.warn('Cleanup decrement failed:', err);
           }

@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
     const results: any[] = [];
 
     for (const v of eligible) {
+      let payoutRow: any = null;
+      let reservedIds: string[] = [];
       try {
         const { data: earnings } = await supabaseAdmin
           .from("vendor_earnings")
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
         const currency = (earnings[0].currency || "MXN").toLowerCase();
         const amountCents = Math.round(total * 100);
 
-        const { data: payoutRow, error: payoutErr } = await supabaseAdmin
+        const { data: pr, error: payoutErr } = await supabaseAdmin
           .from("vendor_payouts")
           .insert({
             vendor_id: v.vendor_id,
@@ -88,11 +90,17 @@ Deno.serve(async (req) => {
           .select()
           .single();
         if (payoutErr) throw payoutErr;
+        payoutRow = pr;
 
-        await supabaseAdmin
+        // Reservar las earnings ANTES del transfer: la query de elegibles filtra
+        // status='pending' AND payout_id IS NULL, así que una vez reservadas no se
+        // vuelven a elegir → no hay doble pago aunque la corrida se repita.
+        const { error: reserveErr } = await supabaseAdmin
           .from("vendor_earnings")
           .update({ payout_id: payoutRow.id, status: "reserved" })
           .in("id", earnings.map((e: any) => e.id));
+        if (reserveErr) throw reserveErr;
+        reservedIds = earnings.map((e: any) => e.id);
 
         const transfer = await stripe.transfers.create({
           amount: amountCents,
@@ -100,7 +108,12 @@ Deno.serve(async (req) => {
           destination: v.stripe_account_id,
           metadata: { vendor_id: v.vendor_id, payout_id: payoutRow.id, earnings_count: String(earnings.length) },
           description: `Marketplace payout — ${earnings.length} ventas`,
-        });
+        }, { idempotencyKey: `vendor_payout_${payoutRow.id}` });
+
+        await supabaseAdmin
+          .from("vendor_earnings")
+          .update({ status: "paid" })
+          .in("id", reservedIds);
 
         await supabaseAdmin
           .from("vendor_payouts")
@@ -123,6 +136,25 @@ Deno.serve(async (req) => {
         results.push({ vendorId: v.vendor_id, vendorName: v.vendor_name, amount: total, transferId: transfer.id, ok: true });
       } catch (err: any) {
         console.error("payout error vendor", v.vendor_id, err);
+        // ROLLBACK: liberar las earnings reservadas y marcar el payout como fallido,
+        // para que los fondos NO queden congelados e inalcanzables (antes se
+        // quedaban en 'reserved' con un payout atascado en 'processing' para siempre).
+        try {
+          if (reservedIds.length > 0) {
+            await supabaseAdmin
+              .from("vendor_earnings")
+              .update({ payout_id: null, status: "pending" })
+              .in("id", reservedIds);
+          }
+          if (payoutRow) {
+            await supabaseAdmin
+              .from("vendor_payouts")
+              .update({ status: "failed" })
+              .eq("id", payoutRow.id);
+          }
+        } catch (rbErr) {
+          console.error("rollback failed for vendor", v.vendor_id, rbErr);
+        }
         results.push({ vendorId: v.vendor_id, vendorName: v.vendor_name, ok: false, error: err.message });
       }
     }

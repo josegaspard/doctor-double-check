@@ -214,7 +214,7 @@ export function ChatHeader({
           )}
 
           {/* Prescription button - only for doctors */}
-          {!isClosed && userRole === 'doctor' && (() => {
+          {!isClosed && userRole === 'doctor' && toggles.enable_prescriptions && (() => {
             const patientId = session.participant1Id === user?.id ? session.participant2Id : session.participant1Id;
             const patientName = displayInfo.name;
             return (

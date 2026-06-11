@@ -40,8 +40,29 @@ Deno.serve(async (req) => {
     if (order.buyer_id !== userData.user.id) throw new Error("No autorizado");
     if (order.refund_status === "refunded") throw new Error("Pedido ya reembolsado");
     if (["cancelled"].includes(order.status)) throw new Error("Pedido cancelado");
+    // Solo se reembolsan pedidos efectivamente cobrados.
+    if (!["paid", "processing", "shipped", "delivered"].includes(order.status)) {
+      throw new Error("Solo se pueden reembolsar pedidos pagados");
+    }
 
-    const refundAmount = amount && amount > 0 && amount <= order.total_amount ? amount : order.total_amount;
+    // Evitar doble/múltiple reembolso: bloquear si ya hay una solicitud abierta
+    // y exigir que la suma de reembolsos no supere el total del pedido.
+    const { data: priorRefunds } = await supabaseAdmin
+      .from("order_refunds")
+      .select("amount, status")
+      .eq("order_id", orderId);
+    const openRefund = (priorRefunds || []).some((r: any) =>
+      ["requested", "approved", "processing"].includes(r.status));
+    if (openRefund) throw new Error("Ya existe una solicitud de devolución en proceso para este pedido");
+    const alreadyRefunded = (priorRefunds || [])
+      .filter((r: any) => ["refunded", "partial"].includes(r.status))
+      .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+
+    const requested = amount && amount > 0 && amount <= order.total_amount ? amount : order.total_amount;
+    if (alreadyRefunded + requested > order.total_amount + 0.001) {
+      throw new Error("El monto de devolución supera el total del pedido");
+    }
+    const refundAmount = requested;
 
     const { data: refundRow, error: refundErr } = await supabaseAdmin
       .from("order_refunds")

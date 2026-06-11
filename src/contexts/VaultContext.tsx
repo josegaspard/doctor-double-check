@@ -209,6 +209,25 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setUploadProgress(0);
 
     try {
+      // Server-side content validation (magic bytes + size). The file extension
+      // and client MIME are NOT trusted: this blocks uploading a renamed binary
+      // as a .pdf. vault-upload-validate inspects the real bytes.
+      const validateForm = new FormData();
+      validateForm.append('file', file);
+      validateForm.append('declaredMime', file.type || '');
+      const { data: validation, error: validationError } = await supabase.functions.invoke(
+        'vault-upload-validate',
+        { body: validateForm }
+      );
+      if (validationError || !validation?.ok) {
+        setUploadProgress(null);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: validation?.error || 'El archivo no pasó la validación de seguridad (tipo o tamaño no permitido).',
+        };
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 

@@ -170,15 +170,13 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
     if (!user) return;
     setIsProcessing(true);
     try {
-      // In a real implementation, this would update a user status field
-      // For now, we'll create a notification to the user
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        type: 'system',
-        title: language === 'es' ? 'Cuenta suspendida' : 'Account suspended',
-        message: actionReason || (language === 'es' ? 'Tu cuenta ha sido suspendida temporalmente.' : 'Your account has been temporarily suspended.'),
-        data: { action: 'suspended', reason: actionReason },
+      // Real suspension: bans the account at the auth level so it can no longer
+      // log in or refresh its session (not just a notification).
+      const { data, error } = await supabase.functions.invoke('admin-suspend-user', {
+        body: { userId: user.id, suspend: true, reason: actionReason || undefined },
       });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast.success(language === 'es' ? 'Usuario suspendido' : 'User suspended');
       onUserUpdated();

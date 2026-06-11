@@ -5,6 +5,7 @@ import { tContext } from '@/lib/i18n-context';
 import { formatMessagePreview } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 export type ChatParticipantType = 'patient' | 'doctor' | 'resident';
 export type ChatStatus = 'active' | 'closed';
@@ -80,6 +81,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // realtime que pierde mensajes mientras re-conecta).
   const locationRef = useRef(location);
   useEffect(() => { locationRef.current = location; }, [location]);
+  // Mismo patrón de ref para el toggle: si el admin desactivó el chat de
+  // pacientes, no mostramos el toast de "nuevo mensaje" (que llevaría a una
+  // pantalla "función no disponible").
+  const { toggles } = useSiteToggles();
+  const togglesRef = useRef(toggles);
+  useEffect(() => { togglesRef.current = toggles; }, [toggles]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -329,7 +336,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const viewedSession = new URLSearchParams(locationRef.current.search).get('session');
             const isViewingThisSession = isOnChatPage && viewedSession === newMessage.session_id;
 
-            if (!isViewingThisSession) {
+            if (!isViewingThisSession && togglesRef.current?.enable_patient_chat) {
               const preview = newMessage.content.length > 120
                 ? newMessage.content.slice(0, 117) + '…'
                 : newMessage.content;

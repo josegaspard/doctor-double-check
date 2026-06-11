@@ -3,13 +3,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { renderEmail } from "../_shared/email-template.ts";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { generateUnsubscribeToken } from "../_shared/unsubscribe-token.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
-};
-
-const generateUnsubscribeToken = (subscriberId: string, doctorId: string, type: string): string => {
-  return btoa(`${subscriberId}:${doctorId}:${type}`);
 };
 
 Deno.serve(async (req: Request) => {
@@ -110,8 +107,8 @@ Deno.serve(async (req: Request) => {
         for (const profile of profiles) {
           if (!profile.email) continue;
 
-          const unsubscribeToken = generateUnsubscribeToken(profile.id, availability.doctor_id, 'availability');
-          const unsubscribeAllToken = generateUnsubscribeToken(profile.id, availability.doctor_id, 'all');
+          const unsubscribeToken = await generateUnsubscribeToken(profile.id, availability.doctor_id, 'availability');
+          const unsubscribeAllToken = await generateUnsubscribeToken(profile.id, availability.doctor_id, 'all');
           const subscriberName = profile.name || "Suscriptor";
 
           const subject = `Recordatorio: ${availability.title} en menos de 1 hora`;

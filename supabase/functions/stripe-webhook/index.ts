@@ -541,7 +541,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       amount: -finalFee,
       description: "Consulta médica por chat",
       status: "paid",
-      metadata: { doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
+      metadata: { type: "consultation", doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
     });
 
   const { data: patientProfile } = await db

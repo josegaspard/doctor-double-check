@@ -119,28 +119,19 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
     if (!user?.id || !otpPatient) return;
     setIsVerifying(true);
     try {
-      const { data, error } = await supabase
-        .from('expediente_otp')
-        .select('*')
-        .eq('patient_id', otpPatient.id)
-        .eq('doctor_id', user.id)
-        .eq('otp_code', otpCode.trim())
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Server-side verification: the doctor can no longer read the OTP code
+      // directly (RLS), so it's validated by verify_expediente_otp which checks
+      // the code and marks it used atomically.
+      const { data: ok, error } = await supabase.rpc('verify_expediente_otp', {
+        p_patient_id: otpPatient.id,
+        p_code: otpCode.trim(),
+      });
 
       if (error) throw error;
-      if (!data) {
+      if (!ok) {
         toast.error('Código inválido o expirado. Solicita uno nuevo.');
         return;
       }
-
-      await supabase
-        .from('expediente_otp')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', data.id);
 
       const verifiedPatientId = otpPatient.id;
       setVerifiedPatients(prev => new Set([...prev, verifiedPatientId]));

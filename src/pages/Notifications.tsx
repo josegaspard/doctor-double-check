@@ -221,7 +221,7 @@ export default function Notifications() {
                         isSelecting && selectedIds.has(notification.id)
                           ? 'ring-2 ring-primary bg-primary/10 border-primary/50'
                           : !notification.isRead
-                            ? 'bg-card border-l-4 border-l-primary border-primary/20 shadow-sm hover:shadow-md hover:bg-accent/30'
+                            ? 'bg-card border-l-4 border-l-primary border-primary/20 shadow-sm hover:shadow-md hover:bg-accent'
                             : 'bg-card/60 hover:bg-card hover:shadow-sm'
                       }`}
                       onClick={() => handleClick(notification)}

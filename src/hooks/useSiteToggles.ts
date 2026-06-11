@@ -30,7 +30,13 @@ const DEFAULT_TOGGLES: SiteToggles = {
 };
 
 let cachedToggles: SiteToggles | null = null;
-let fetchPromise: Promise<SiteToggles> | null = null;
+const listeners = new Set<(t: SiteToggles) => void>();
+let realtimeStarted = false;
+
+function notify(t: SiteToggles) {
+  cachedToggles = t;
+  listeners.forEach((cb) => cb(t));
+}
 
 async function fetchToggles(): Promise<SiteToggles> {
   try {
@@ -48,8 +54,26 @@ async function fetchToggles(): Promise<SiteToggles> {
   } catch {
     cachedToggles = DEFAULT_TOGGLES;
   }
-  fetchPromise = null;
   return cachedToggles;
+}
+
+// Subscribe once to live changes so a toggle saved by an admin propagates to
+// every open session without a full page reload.
+function startRealtime() {
+  if (realtimeStarted) return;
+  realtimeStarted = true;
+  try {
+    supabase
+      .channel('site_settings_feature_toggles')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'site_settings', filter: 'id=eq.feature_toggles' },
+        async () => { notify(await fetchToggles()); }
+      )
+      .subscribe();
+  } catch {
+    realtimeStarted = false;
+  }
 }
 
 export function useSiteToggles() {
@@ -59,24 +83,12 @@ export function useSiteToggles() {
 
   useEffect(() => {
     mounted.current = true;
-    if (cachedToggles) {
-      setToggles(cachedToggles);
-      setIsLoading(false);
-      return;
-    }
-
-    if (!fetchPromise) {
-      fetchPromise = fetchToggles();
-    }
-
-    fetchPromise.then((result) => {
-      if (mounted.current) {
-        setToggles(result);
-        setIsLoading(false);
-      }
-    });
-
-    return () => { mounted.current = false; };
+    const cb = (t: SiteToggles) => { if (mounted.current) { setToggles(t); setIsLoading(false); } };
+    listeners.add(cb);
+    startRealtime();
+    // Always revalidate on mount (cache shown immediately, then refreshed).
+    fetchToggles().then((t) => cb(t));
+    return () => { mounted.current = false; listeners.delete(cb); };
   }, []);
 
   return { toggles, isLoading };
@@ -93,7 +105,7 @@ export async function saveSiteToggles(toggles: SiteToggles, updatedBy?: string) 
     });
 
   if (!error) {
-    cachedToggles = toggles;
+    notify(toggles); // propagate immediately to all live subscribers
   }
   return { error };
 }

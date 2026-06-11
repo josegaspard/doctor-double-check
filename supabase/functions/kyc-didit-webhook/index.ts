@@ -37,15 +37,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       "";
     const secret = Deno.env.get("DIDIT_WEBHOOK_SECRET") ?? "";
 
-    if (secret) {
-      const ok = await verifyHmac(secret, rawBody, sigHeader);
-      if (!ok) {
-        console.warn("Didit webhook: signature mismatch");
-        return new Response("invalid signature", {
-          status: 401,
-          headers: corsHeaders,
-        });
-      }
+    // Fail-closed: never process an unsigned/unverifiable KYC webhook. If the
+    // secret is missing, an attacker could otherwise forge identity approvals.
+    if (!secret) {
+      console.error("kyc-didit-webhook: DIDIT_WEBHOOK_SECRET not configured — refusing webhook");
+      return new Response("server misconfigured", { status: 500, headers: corsHeaders });
+    }
+    const ok = await verifyHmac(secret, rawBody, sigHeader);
+    if (!ok) {
+      console.warn("Didit webhook: signature mismatch");
+      return new Response("invalid signature", {
+        status: 401,
+        headers: corsHeaders,
+      });
     }
 
     const payload = JSON.parse(rawBody);
