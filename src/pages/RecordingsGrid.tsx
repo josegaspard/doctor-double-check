@@ -39,10 +39,11 @@ import {
 
 type ContentFilter = 'all' | 'free' | 'purchased';
 
-import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 
 export default function RecordingsGrid() {
   const navigate = useNavigate();
+  const { specialtyValues } = useSpecialties();
   const [searchParams] = useSearchParams();
   const doctorFilter = searchParams.get('doctor');
   const { recordings, refreshRecordings } = useLives();
@@ -74,7 +75,7 @@ export default function RecordingsGrid() {
 
   const allTags = useMemo(() => [...new Set(recordings.flatMap(r => r.tags || []))].filter(Boolean).sort(), [recordings]);
   const allDoctorNames = useMemo(() => [...new Set(recordings.map(r => r.doctorName))].filter(Boolean).sort(), [recordings]);
-  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
+  const specialtyOptions = specialtyValues;
 
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;

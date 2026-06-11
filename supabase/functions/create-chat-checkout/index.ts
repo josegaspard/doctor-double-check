@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { getAppConfig } from "../_shared/appconfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +32,7 @@ Deno.serve(async (req) => {
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2023-10-16",
     });
+    const appCfg = await getAppConfig(supabase);
 
     // Get or create customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "mxn",
+            currency: appCfg.currency,
             unit_amount: Math.round(amount * 100),
             product_data: {
               name: `Chat destacado`,

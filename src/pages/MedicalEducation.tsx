@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, FileText, ArrowLeft, Loader2, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
-import { SPECIALTIES_LIST } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 import { toast } from 'sonner';
 
@@ -49,6 +49,7 @@ interface CaseComment {
 
 export default function MedicalEducation() {
   const navigate = useNavigate();
+  const { specialtiesList: SPECIALTIES_LIST } = useSpecialties();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const [cases, setCases] = useState<ClinicalCase[]>([]);

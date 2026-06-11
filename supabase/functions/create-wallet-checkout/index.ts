@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { getAppConfig } from "../_shared/appconfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -69,16 +70,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (amount < 50) {
-      return new Response(JSON.stringify({ error: "El monto mínimo es 50 MXN" }), {
+    // Admin-editable limits + currency (site_settings.app_config), fallback 50/999999/mxn.
+    const appCfg = await getAppConfig(supabaseClient);
+
+    if (amount < appCfg.wallet_min) {
+      return new Response(JSON.stringify({ error: `El monto mínimo es ${appCfg.wallet_min}` }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
 
-    // Stripe Checkout: total <= 999,999.99 (moneda). Para MXN entero -> <= 999,999.
-    if (amount > 999999) {
-      return new Response(JSON.stringify({ error: "El monto máximo por recarga es 999,999 MXN" }), {
+    // Stripe Checkout: total <= 999,999.99 (moneda).
+    if (amount > appCfg.wallet_max) {
+      return new Response(JSON.stringify({ error: `El monto máximo por recarga es ${appCfg.wallet_max}` }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
@@ -103,7 +107,7 @@ Deno.serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "mxn",
+            currency: appCfg.currency,
             product_data: {
               name: "Recarga de Wallet",
               description: `Recarga de $${amount} MXN a tu wallet de Medical Masters`,

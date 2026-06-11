@@ -26,7 +26,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 
-import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -104,6 +104,7 @@ function ChatModeCard({ icon: Icon, title, description, selected, onClick }: Cha
 
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const { t } = useLanguage();
+  const { specialtiesList: SPECIALTIES } = useSpecialties();
   const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');

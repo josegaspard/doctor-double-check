@@ -68,7 +68,7 @@ function reverseGeocode(lat: number, lng: number): string {
   return nearest.replace(/\b\w/g, c => c.toUpperCase());
 }
 
-import { SPECIALTIES_LIST as MEDICAL_SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 
 interface ValidationErrors {
   specialty?: string;
@@ -185,6 +185,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { user, supabaseUser, refreshUser, isLoading: authLoading } = useAuth();
   const { t, language } = useLanguage();
+  const { specialtiesList: MEDICAL_SPECIALTIES } = useSpecialties();
 
   const resolveInitialRole = (): OnboardingRole => {
     const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | undefined;

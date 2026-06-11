@@ -121,7 +121,7 @@ interface DoctorRow {
   country_flag: string | null;
 }
 
-import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 
 // Continent → Country mapping for geo filters
 const CONTINENTS: Record<string, string[]> = {
@@ -147,6 +147,7 @@ function isDoctorAvailableNow(doctor: DoctorRow) {
 
 export default function Doctors() {
   const navigate = useNavigate();
+  const { specialtyValues } = useSpecialties();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -412,7 +413,7 @@ export default function Doctors() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   const totalPages = Math.ceil(totalCount / DOCTORS_PER_PAGE);
 
-  const specialtyOptions = SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value);
+  const specialtyOptions = specialtyValues;
   const cityOptions = dynamicCities.length > 0 ? dynamicCities : ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla', 'Mérida', 'Cancún', 'Querétaro', 'Tijuana'];
 
   return (

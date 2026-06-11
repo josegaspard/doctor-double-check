@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 type SessionStatus = 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
@@ -58,6 +58,7 @@ interface ClinicalSession {
 
 export default function ClinicalSessions() {
   const navigate = useNavigate();
+  const { specialtiesList: SPECIALTIES } = useSpecialties();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
   const [sessions, setSessions] = useState<ClinicalSession[]>([]);

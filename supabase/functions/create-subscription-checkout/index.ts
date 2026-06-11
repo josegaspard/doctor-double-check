@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
 import { getSubscriptionPricing } from "../_shared/pricing.ts";
+import { getAppConfig } from "../_shared/appconfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,6 +64,7 @@ Deno.serve(async (req) => {
     // Price is admin-editable (site_settings.subscription_pricing) with a hard
     // fallback to the historical $99/$199 if the setting is missing/invalid.
     const pricing = await getSubscriptionPricing(supabaseClient);
+    const appCfg = await getAppConfig(supabaseClient);
     const unitAmount = tier === 'premium' ? pricing.premium_cents : pricing.basic_cents;
     logStep("Subscription request", { creatorId, tier, price: unitAmount });
 
@@ -92,7 +94,7 @@ Deno.serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "mxn",
+            currency: appCfg.currency,
             product_data: {
               name: `${tierConfig.name} - ${creatorName}`,
               description: tierConfig.description,

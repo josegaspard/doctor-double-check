@@ -73,6 +73,14 @@ interface SubscriptionPricing {
   premium_recording_discount_pct: number;
 }
 
+interface AppConfigSettings {
+  currency: string;
+  wallet_min: number;
+  wallet_max: number;
+  ad_min: number;
+  ad_max: number;
+}
+
 interface FooterLink {
   label: string;
   href: string;
@@ -127,6 +135,10 @@ export default function AdminSiteSettings() {
     premium_recording_discount_pct: 20,
   });
   const [landingStats, setLandingStats] = useState<LandingStats>(LANDING_STATS_DEFAULTS);
+  const [appConfig, setAppConfig] = useState<AppConfigSettings>({
+    currency: 'mxn', wallet_min: 50, wallet_max: 999999, ad_min: 100, ad_max: 1000000,
+  });
+  const [extraSpecialties, setExtraSpecialties] = useState<string[]>([]);
   const [footerLinks, setFooterLinks] = useState<FooterLinksData>({
     platform: [
       { label: t('adminSiteSettingsPage.footer.defaults.platform.doctors'), href: '/for-doctors' },
@@ -269,6 +281,28 @@ export default function AdminSiteSettings() {
 
         if (landingStatsData?.value) {
           setLandingStats(prev => ({ ...prev, ...(landingStatsData.value as unknown as LandingStats) }));
+        }
+
+        // Fetch app config (limits + currency)
+        const { data: appConfigData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'app_config')
+          .maybeSingle();
+
+        if (appConfigData?.value) {
+          setAppConfig(prev => ({ ...prev, ...(appConfigData.value as unknown as AppConfigSettings) }));
+        }
+
+        // Fetch extra specialties
+        const { data: extraSpecData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'extra_specialties')
+          .maybeSingle();
+
+        if (Array.isArray(extraSpecData?.value)) {
+          setExtraSpecialties((extraSpecData!.value as unknown[]).filter((x): x is string => typeof x === 'string'));
         }
 
         // Fetch footer links
@@ -480,6 +514,48 @@ export default function AdminSiteSettings() {
     } catch (error) {
       console.error('Error saving landing stats:', error);
       toast.error('No se pudieron guardar las estadísticas');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveAppConfig = async () => {
+    setIsSaving(true);
+    try {
+      const clean: AppConfigSettings = {
+        currency: (appConfig.currency || 'mxn').toLowerCase().slice(0, 3),
+        wallet_min: Math.max(0, Number(appConfig.wallet_min) || 0),
+        wallet_max: Math.max(0, Number(appConfig.wallet_max) || 0),
+        ad_min: Math.max(0, Number(appConfig.ad_min) || 0),
+        ad_max: Math.max(0, Number(appConfig.ad_max) || 0),
+      };
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ id: 'app_config', value: clean as unknown as Json, updated_by: supabaseUser?.id });
+      if (error) throw error;
+      setAppConfig(clean);
+      toast.success('Configuración general actualizada');
+    } catch (error) {
+      console.error('Error saving app config:', error);
+      toast.error('No se pudo guardar la configuración');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveExtraSpecialties = async () => {
+    setIsSaving(true);
+    try {
+      const clean = extraSpecialties.map(s => s.trim()).filter(Boolean);
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ id: 'extra_specialties', value: clean as unknown as Json, updated_by: supabaseUser?.id });
+      if (error) throw error;
+      setExtraSpecialties(clean);
+      toast.success('Especialidades actualizadas');
+    } catch (error) {
+      console.error('Error saving extra specialties:', error);
+      toast.error('No se pudieron guardar las especialidades');
     } finally {
       setIsSaving(false);
     }
@@ -928,6 +1004,103 @@ export default function AdminSiteSettings() {
                   <Button onClick={handleSaveLandingStats} disabled={isSaving} className="w-full">
                     {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
                     Guardar estadísticas
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Globe className="w-5 h-5" />
+                    Configuración general (moneda y límites)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Moneda y montos mínimos/máximos. Por defecto MXN y los límites actuales.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Moneda (código ISO, ej. mxn, usd)</Label>
+                    <Input
+                      value={appConfig.currency}
+                      onChange={(e) => setAppConfig({ ...appConfig, currency: e.target.value })}
+                      className="text-sm uppercase"
+                      maxLength={3}
+                    />
+                    <p className="text-xs text-amber-600 dark:text-amber-500">
+                      ⚠️ Solo cambia el código de moneda en los cobros. NO convierte los montos:
+                      si cambias a otra divisa sin ajustar los precios, se cobrará el mismo número en esa moneda.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Recarga wallet — mínimo</Label>
+                      <Input type="number" min="0" value={appConfig.wallet_min}
+                        onChange={(e) => setAppConfig({ ...appConfig, wallet_min: Number(e.target.value) || 0 })} className="text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Recarga wallet — máximo</Label>
+                      <Input type="number" min="0" value={appConfig.wallet_max}
+                        onChange={(e) => setAppConfig({ ...appConfig, wallet_max: Number(e.target.value) || 0 })} className="text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Campaña de anuncios — mínimo</Label>
+                      <Input type="number" min="0" value={appConfig.ad_min}
+                        onChange={(e) => setAppConfig({ ...appConfig, ad_min: Number(e.target.value) || 0 })} className="text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Campaña de anuncios — máximo</Label>
+                      <Input type="number" min="0" value={appConfig.ad_max}
+                        onChange={(e) => setAppConfig({ ...appConfig, ad_max: Number(e.target.value) || 0 })} className="text-sm" />
+                    </div>
+                  </div>
+                  <Button onClick={handleSaveAppConfig} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar configuración general
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="w-5 h-5" />
+                    Especialidades médicas adicionales
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Las especialidades base ya están incluidas. Aquí puedes AGREGAR especialidades extra que aparecerán en los menús de selección y filtros, sin necesidad de un despliegue.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {extraSpecialties.length === 0 && (
+                    <p className="text-xs text-muted-foreground">No hay especialidades adicionales. Agrega una abajo.</p>
+                  )}
+                  {extraSpecialties.map((spec, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input
+                        value={spec}
+                        onChange={(e) => {
+                          const arr = [...extraSpecialties];
+                          arr[idx] = e.target.value;
+                          setExtraSpecialties(arr);
+                        }}
+                        placeholder="Ej. Medicina del Deporte"
+                        className="text-sm"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setExtraSpecialties(extraSpecialties.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={() => setExtraSpecialties([...extraSpecialties, ''])} className="w-full">
+                    <Plus className="w-4 h-4 mr-1" /> Agregar especialidad
+                  </Button>
+                  <Button onClick={handleSaveExtraSpecialties} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar especialidades
                   </Button>
                 </CardContent>
               </Card>

@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
 import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
+import { getAppConfig } from "../_shared/appconfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +91,7 @@ Deno.serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
+    const appCfg = await getAppConfig(supabaseClient);
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
@@ -104,7 +106,7 @@ Deno.serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "mxn",
+            currency: appCfg.currency,
             product_data: {
               name: `Consulta con ${doctorName || 'Doctor'}`,
               description: "Consulta médica por chat con un profesional de la salud verificado",

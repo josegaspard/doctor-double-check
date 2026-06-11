@@ -71,7 +71,7 @@ interface DoctorContent {
   creator_cofepris_rejection_reason?: string | null;
 }
 
-import { SPECIALTIES_FILTER as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 
 const CONTENT_TYPES = [
   { value: 'all', label: 'Todos', icon: Globe },
@@ -273,6 +273,7 @@ function ContentCardBody({
 
 export default function ContentGallery() {
   const { user } = useAuth();
+  const { specialtyValues } = useSpecialties();
   const { language, t } = useLanguage();
   const isMobile = useIsMobile();
   const { getSubscription } = useSubscriptions();
@@ -286,7 +287,7 @@ export default function ContentGallery() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const specialtyOptions = useMemo(() => SPECIALTIES.filter(s => s.value !== 'Todas').map(s => s.value), []);
+  const specialtyOptions = specialtyValues;
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [contentTab, setContentTab] = useState('all');

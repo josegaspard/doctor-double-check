@@ -25,6 +25,7 @@ interface PayoutSettings {
   commission_consultation: number | null; commission_recording: number | null;
   commission_live: number | null; commission_chat: number | null; commission_content: number | null;
   minimum_payout_amount: number; auto_payout_enabled: boolean; require_invoice: boolean;
+  stripe_fee_pct: number; stripe_fee_fixed: number;
 }
 
 export default function AdminPayoutSettings() {
@@ -51,6 +52,7 @@ export default function AdminPayoutSettings() {
     commission_consultation: null, commission_recording: null, commission_live: null,
     commission_chat: null, commission_content: null,
     minimum_payout_amount: 100, auto_payout_enabled: true, require_invoice: true,
+    stripe_fee_pct: 3.6, stripe_fee_fixed: 3,
   });
 
   useEffect(() => {
@@ -73,6 +75,8 @@ export default function AdminPayoutSettings() {
           minimum_payout_amount: data.minimum_payout_amount || 100,
           auto_payout_enabled: data.auto_payout_enabled ?? true,
           require_invoice: data.require_invoice ?? true,
+          stripe_fee_pct: (data as any).stripe_fee_pct ?? 3.6,
+          stripe_fee_fixed: (data as any).stripe_fee_fixed ?? 3,
         });
       }
     } catch (error) { console.error(error); } finally { setIsLoading(false); }
@@ -81,7 +85,7 @@ export default function AdminPayoutSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('payout_settings').upsert({ id: 'default', ...settings, updated_at: new Date().toISOString() });
+      const { error } = await supabase.from('payout_settings').upsert({ id: 'default', ...settings, updated_at: new Date().toISOString() } as any);
       if (error) throw error;
       toast.success(t('adminPayoutSettings.toast.saved'));
     } catch (error: any) { toast.error(error.message); } finally { setIsSaving(false); }
@@ -214,6 +218,23 @@ export default function AdminPayoutSettings() {
                   <Label>{t('adminPayoutSettings.commissions.minLabel')}</Label>
                   <Input type="number" min={0} value={settings.minimum_payout_amount} onChange={(e) => setSettings(s => ({ ...s, minimum_payout_amount: parseFloat(e.target.value) || 0 }))} />
                   <p className="text-xs text-muted-foreground">{t('adminPayoutSettings.commissions.minHint')}</p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label>Comisión de Stripe (estimada en contabilidad)</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Porcentaje (%)</Label>
+                      <Input type="number" min={0} max={100} step="0.1" value={settings.stripe_fee_pct} onChange={(e) => setSettings(s => ({ ...s, stripe_fee_pct: parseFloat(e.target.value) || 0 }))} />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Fijo por transacción (MXN)</Label>
+                      <Input type="number" min={0} step="0.5" value={settings.stripe_fee_fixed} onChange={(e) => setSettings(s => ({ ...s, stripe_fee_fixed: parseFloat(e.target.value) || 0 }))} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Se usa para estimar el costo de Stripe en los asientos contables del marketplace (por defecto 3.6% + $3).</p>
                 </div>
               </CardContent>
             </Card>

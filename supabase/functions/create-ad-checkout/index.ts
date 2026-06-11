@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { getAppConfig } from "../_shared/appconfig.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -36,8 +37,10 @@ serve(async (req) => {
     // overflow-large values, and the caller's relation to the campaign
     // wasn't verified.
     const amount = Number(requestedAmount);
-    if (!Number.isFinite(amount) || amount < 100 || amount > 1000000) {
-      throw new Error("Amount must be between 100 and 1,000,000 MXN");
+    // Admin-editable limits + currency (site_settings.app_config), fallback 100/1,000,000/mxn.
+    const appCfg = await getAppConfig(supabaseAdmin);
+    if (!Number.isFinite(amount) || amount < appCfg.ad_min || amount > appCfg.ad_max) {
+      throw new Error(`Amount must be between ${appCfg.ad_min} and ${appCfg.ad_max}`);
     }
     const { data: campaign, error: campErr } = await supabaseAdmin
       .from("ad_campaigns")
@@ -66,7 +69,7 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "mxn",
+            currency: appCfg.currency,
             product_data: {
               name: `Campaña publicitaria - Medical Masters`,
               description: `Presupuesto de $${amount} MXN para campaña publicitaria`,

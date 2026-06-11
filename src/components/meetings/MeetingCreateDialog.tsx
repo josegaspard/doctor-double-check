@@ -17,7 +17,7 @@ import { Loader2, Search, Stethoscope, UserPlus, X, Globe, Lock, Languages } fro
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
-import { SPECIALTIES_LIST as SPECIALTIES } from '@/lib/specialties';
+import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 
 interface Props {
@@ -47,6 +47,7 @@ interface InviteeDoc {
 
 export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: Props) {
   const { user, role } = useAuth();
+  const { specialtiesList: SPECIALTIES } = useSpecialties();
   const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState({
