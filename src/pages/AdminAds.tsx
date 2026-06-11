@@ -152,7 +152,7 @@ function PlacementUploadCard({
               </Button>
             </div>
             <div>
-              <label className="text-[10px] font-medium text-muted-foreground mb-1 block">{es ? 'URL de destino' : 'Destination URL'}</label>
+              <label className="text-[10px] font-medium text-muted-foreground mb-1 block">{t('autoI18n.clAdminAds1')}</label>
               <div className="flex gap-1.5">
                 <Input placeholder="https://..." value={editUrl} onChange={e => setEditUrl(e.target.value)} className="text-xs h-8 flex-1" />
                 <Button size="sm" className="h-8 px-3 text-xs" disabled={isSavingUrl || editUrl === existingCreative.click_url || !editUrl.trim()} onClick={handleSaveUrl}>
@@ -178,7 +178,7 @@ function PlacementUploadCard({
                 </>
               )}
             </div>
-            <Input placeholder={es ? 'URL de destino (opcional)' : 'Destination URL (optional)'} value={clickUrl} onChange={e => onClickUrlChange(e.target.value)} className="text-xs h-8" />
+            <Input placeholder={t('autoI18n.clAdminAds2')} value={clickUrl} onChange={e => onClickUrlChange(e.target.value)} className="text-xs h-8" />
           </div>
         )}
       </CardContent>
@@ -372,7 +372,7 @@ export default function AdminAds() {
       updated_at: new Date().toISOString(),
     } as any).eq('id', editingCampaign);
     setIsSavingEdit(false);
-    if (error) { toast.error(es ? 'Error al guardar' : 'Error saving'); return; }
+    if (error) { toast.error(t('autoI18n.clAdminAds3')); return; }
     toast.success(t('ads.campaignUpdated'));
     setEditingCampaign(null);
     fetchCampaigns();
@@ -435,9 +435,9 @@ export default function AdminAds() {
 
   const updateCreativeClickUrl = async (creativeId: string, newUrl: string) => {
     const { error } = await supabase.from('ad_creatives' as any).update({ click_url: newUrl } as any).eq('id', creativeId);
-    if (error) { toast.error(es ? 'Error al guardar URL' : 'Error saving URL'); return; }
+    if (error) { toast.error(t('autoI18n.clAdminAds4')); return; }
     setCampaignCreatives(prev => prev.map(c => c.id === creativeId ? { ...c, click_url: newUrl } : c));
-    toast.success(es ? 'URL actualizada' : 'URL updated');
+    toast.success(t('autoI18n.clAdminAds5'));
   };
 
   // ── Exports ──
@@ -460,7 +460,7 @@ export default function AdminAds() {
   if (role !== 'admin') return null;
 
   const chartConfig = { impressions: { label: t('ads.impressions'), color: 'hsl(var(--info))' }, clicks: { label: t('ads.clicks'), color: 'hsl(var(--warning))' } };
-  const revenueChartConfig = { revenue: { label: es ? 'Ingresos' : 'Revenue', color: 'hsl(var(--success))' } };
+  const revenueChartConfig = { revenue: { label: t('autoI18n.clAdminAds6'), color: 'hsl(var(--success))' } };
   const categories = categorizePlacements(placements as PlacementDef[], t);
 
   return (
@@ -584,10 +584,10 @@ export default function AdminAds() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">1. {es ? 'Información básica' : 'Basic info'}</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">1. {t('autoI18n.clAdminAds7')}</p>
                     <div>
                       <Label className="text-xs">{t('ads.campaignName')}</Label>
-                      <Input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder={es ? 'Mi campaña' : 'My campaign'} />
+                      <Input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder={t('autoI18n.clAdminAds8')} />
                     </div>
                     <div>
                       <Label className="text-xs">{t('ads.budget')}</Label>
@@ -648,7 +648,7 @@ export default function AdminAds() {
                       {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
                       {t('ads.createCampaign')}
                     </Button>
-                    <Button variant="outline" onClick={() => setShowCreate(false)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                    <Button variant="outline" onClick={() => setShowCreate(false)}>{t('autoI18n.clAdminAds9')}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -697,8 +697,8 @@ export default function AdminAds() {
                             </div>
                             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${Number(campaign.budget).toLocaleString()}</span>
-                              <span className="flex items-center gap-1 text-warning"><Wallet className="w-3 h-3" />${calculatedSpent.toFixed(0)} {es ? 'gastado' : 'spent'}</span>
-                              <span className="flex items-center gap-1 text-success"><DollarSign className="w-3 h-3" />${remaining.toFixed(0)} {es ? 'restante' : 'remaining'}</span>
+                              <span className="flex items-center gap-1 text-warning"><Wallet className="w-3 h-3" />${calculatedSpent.toFixed(0)} {t('autoI18n.clAdminAds10')}</span>
+                              <span className="flex items-center gap-1 text-success"><DollarSign className="w-3 h-3" />${remaining.toFixed(0)} {t('autoI18n.clAdminAds11')}</span>
                               <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{stats.impressions.toLocaleString()} imp</span>
                               <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{stats.clicks} clics ({ctr}%)</span>
                             </div>
@@ -773,9 +773,9 @@ export default function AdminAds() {
                             <div className="flex gap-2">
                               <Button size="sm" onClick={saveEditCampaign} disabled={isSavingEdit} className="gap-1.5">
                                 {isSavingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                {es ? 'Guardar' : 'Save'}
+                                {t('autoI18n.clAdminAds12')}
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => setEditingCampaign(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingCampaign(null)}>{t('autoI18n.clAdminAds13')}</Button>
                             </div>
                           </div>
                         )}
@@ -786,7 +786,7 @@ export default function AdminAds() {
                             <h4 className="text-xs font-semibold flex items-center gap-1.5 mb-3">
                               <ImageIcon className="w-3.5 h-3.5" /> {t('ads.creatives')} ({campaignCreatives.length})
                               <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                                {t('ads.formats')}: {es ? 'imagen, GIF, video' : 'image, GIF, video'} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
+                                {t('ads.formats')}: {t('autoI18n.clAdminAds14')} · {t('ads.maxSize')}: {config.max_file_size_kb}KB
                               </span>
                             </h4>
 

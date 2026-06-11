@@ -65,8 +65,8 @@ interface VerificationWithUser {
 export default function AdminVerifications() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { language } = useLanguage();
-  
+  const { t } = useLanguage();
+
   const [verifications, setVerifications] = useState<VerificationWithUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedVerification, setSelectedVerification] = useState<VerificationWithUser | null>(null);
@@ -80,9 +80,9 @@ export default function AdminVerifications() {
   useEffect(() => {
     if (role && role !== 'admin') {
       navigate('/');
-      toast.error(language === 'es' ? 'Acceso denegado' : 'Access denied');
+      toast.error(t('adminVerifications.accessDenied'));
     }
-  }, [role, navigate, language]);
+  }, [role, navigate]);
 
   const fetchVerifications = async () => {
     setIsLoading(true);
@@ -196,8 +196,8 @@ export default function AdminVerifications() {
 
       toast.success(
         actionType === 'approve'
-          ? (language === 'es' ? 'Verificación aprobada' : 'Verification approved')
-          : (language === 'es' ? 'Verificación rechazada' : 'Verification rejected')
+          ? t('adminVerifications.verificationApproved')
+          : t('adminVerifications.verificationRejected')
       );
 
       setIsActionDialogOpen(false);
@@ -211,11 +211,11 @@ export default function AdminVerifications() {
 
   const getStatusBadge = (status: VerificationStatus) => {
     const configs: Record<VerificationStatus, { variant: any; label: string; icon: React.ElementType }> = {
-      pending: { variant: 'warning', label: language === 'es' ? 'Pendiente' : 'Pending', icon: Clock },
-      in_progress: { variant: 'info', label: language === 'es' ? 'En proceso' : 'In Progress', icon: RefreshCw },
-      verified: { variant: 'success', label: language === 'es' ? 'Verificado' : 'Verified', icon: CheckCircle },
-      failed: { variant: 'destructive', label: language === 'es' ? 'Rechazado' : 'Rejected', icon: XCircle },
-      expired: { variant: 'secondary', label: language === 'es' ? 'Expirado' : 'Expired', icon: AlertCircle },
+      pending: { variant: 'warning', label: t('adminVerifications.badgePending'), icon: Clock },
+      in_progress: { variant: 'info', label: t('adminVerifications.badgeInProgress'), icon: RefreshCw },
+      verified: { variant: 'success', label: t('adminVerifications.badgeVerified'), icon: CheckCircle },
+      failed: { variant: 'destructive', label: t('adminVerifications.badgeRejected'), icon: XCircle },
+      expired: { variant: 'secondary', label: t('adminVerifications.badgeExpired'), icon: AlertCircle },
     };
     const config = configs[status];
     const Icon = config.icon;
@@ -247,10 +247,10 @@ export default function AdminVerifications() {
           <div className="flex-1 min-w-0">
             <h1 className="font-heading text-base sm:text-2xl font-bold text-foreground flex items-center gap-1.5 sm:gap-2">
               <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-              <span className="truncate">{language === 'es' ? 'Verificaciones' : 'Verifications'}</span>
+              <span className="truncate">{t('adminVerifications.title')}</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {language === 'es' ? 'Identidad biométrica + credenciales médicas' : 'Biometric identity + medical credentials'}
+              {t('adminVerifications.subtitle')}
             </p>
           </div>
           <Button variant="outline" size="icon" onClick={fetchVerifications} disabled={isLoading} className="h-9 w-9">
@@ -263,11 +263,11 @@ export default function AdminVerifications() {
           <TabsList className="grid w-full grid-cols-2 h-10">
             <TabsTrigger value="identity" className="gap-1.5 text-xs sm:text-sm">
               <Shield className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Identidad' : 'Identity'}
+              {t('adminVerifications.identity')}
             </TabsTrigger>
             <TabsTrigger value="credentials" className="gap-1.5 text-xs sm:text-sm">
               <ShieldCheck className="w-3.5 h-3.5" />
-              {language === 'es' ? 'Credenciales médicas' : 'Medical credentials'}
+              {t('adminVerifications.medicalCredentials')}
             </TabsTrigger>
           </TabsList>
 
@@ -285,7 +285,7 @@ export default function AdminVerifications() {
                 {verifications.filter(v => v.status === 'pending' || v.status === 'in_progress').length}
               </div>
               <div className="text-[10px] sm:text-sm text-muted-foreground">
-                {language === 'es' ? 'Pendientes' : 'Pending'}
+                {t('adminVerifications.statPending')}
               </div>
             </CardContent>
           </Card>
@@ -295,7 +295,7 @@ export default function AdminVerifications() {
                 {verifications.filter(v => v.status === 'verified').length}
               </div>
               <div className="text-[10px] sm:text-sm text-muted-foreground">
-                {language === 'es' ? 'Verificados' : 'Verified'}
+                {t('adminVerifications.statVerified')}
               </div>
             </CardContent>
           </Card>
@@ -305,7 +305,7 @@ export default function AdminVerifications() {
                 {verifications.filter(v => v.status === 'failed').length}
               </div>
               <div className="text-[10px] sm:text-sm text-muted-foreground">
-                {language === 'es' ? 'Rechazados' : 'Rejected'}
+                {t('adminVerifications.statRejected')}
               </div>
             </CardContent>
           </Card>
@@ -316,18 +316,18 @@ export default function AdminVerifications() {
           <TabsList className="grid w-full grid-cols-4 mb-4 h-9">
             <TabsTrigger value="pending" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
               <Clock className="w-3 h-3 hidden sm:block" />
-              {language === 'es' ? 'Pendientes' : 'Pending'}
+              {t('adminVerifications.statPending')}
             </TabsTrigger>
             <TabsTrigger value="verified" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
               <CheckCircle className="w-3 h-3 hidden sm:block" />
-              {language === 'es' ? 'Verificados' : 'Verified'}
+              {t('adminVerifications.statVerified')}
             </TabsTrigger>
             <TabsTrigger value="rejected" className="text-[10px] sm:text-xs gap-1 px-1 sm:px-3">
               <XCircle className="w-3 h-3 hidden sm:block" />
-              {language === 'es' ? 'Rechazados' : 'Rejected'}
+              {t('adminVerifications.statRejected')}
             </TabsTrigger>
             <TabsTrigger value="all" className="text-[10px] sm:text-xs px-1 sm:px-3">
-              {language === 'es' ? 'Todos' : 'All'}
+              {t('adminVerifications.tabAll')}
             </TabsTrigger>
           </TabsList>
 
@@ -353,7 +353,7 @@ export default function AdminVerifications() {
                 <CardContent className="p-8 sm:p-12 text-center">
                   <FileCheck className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    {language === 'es' ? 'No hay verificaciones en esta categoría' : 'No verifications in this category'}
+                    {t('adminVerifications.noVerifications')}
                   </p>
                 </CardContent>
               </Card>
@@ -376,7 +376,7 @@ export default function AdminVerifications() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                               <span className="font-medium text-sm truncate">
-                                {verification.user?.name || 'Usuario'}
+                                {verification.user?.name || t('adminVerifications.userFallback')}
                               </span>
                               {getStatusBadge(verification.status)}
                             </div>
@@ -410,7 +410,7 @@ export default function AdminVerifications() {
                             }}
                           >
                             <Eye className="w-3.5 h-3.5 mr-1" />
-                            {language === 'es' ? 'Ver' : 'View'}
+                            {t('adminVerifications.view')}
                           </Button>
 
                           {(verification.status === 'pending' || verification.status === 'in_progress') && (
@@ -422,7 +422,7 @@ export default function AdminVerifications() {
                                 onClick={() => openActionDialog(verification, 'approve')}
                               >
                                 <CheckCircle className="w-3.5 h-3.5 sm:mr-1" />
-                                <span className="hidden sm:inline">{language === 'es' ? 'Aprobar' : 'Approve'}</span>
+                                <span className="hidden sm:inline">{t('adminVerifications.approve')}</span>
                               </Button>
                               <Button
                                 size="sm"
@@ -431,7 +431,7 @@ export default function AdminVerifications() {
                                 onClick={() => openActionDialog(verification, 'reject')}
                               >
                                 <XCircle className="w-3.5 h-3.5 sm:mr-1" />
-                                <span className="hidden sm:inline">{language === 'es' ? 'Rechazar' : 'Reject'}</span>
+                                <span className="hidden sm:inline">{t('adminVerifications.reject')}</span>
                               </Button>
                             </>
                           )}
@@ -454,7 +454,7 @@ export default function AdminVerifications() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  {language === 'es' ? 'Documentos de Verificación' : 'Verification Documents'}
+                  {t('adminVerifications.verificationDocuments')}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedVerification.user?.name} - {selectedVerification.user?.email}
@@ -472,7 +472,7 @@ export default function AdminVerifications() {
                 {selectedVerification.metadata?.front_url && (
                   <div>
                     <p className="text-sm font-medium mb-2">
-                      {language === 'es' ? 'Frente del documento' : 'Document front'}
+                      {t('adminVerifications.documentFront')}
                     </p>
                     {documentUrls[selectedVerification.metadata.front_url] ? (
                       <img
@@ -489,7 +489,7 @@ export default function AdminVerifications() {
                 {selectedVerification.metadata?.back_url && (
                   <div>
                     <p className="text-sm font-medium mb-2">
-                      {language === 'es' ? 'Reverso del documento' : 'Document back'}
+                      {t('adminVerifications.documentBack')}
                     </p>
                     {documentUrls[selectedVerification.metadata.back_url] ? (
                       <img
@@ -506,7 +506,7 @@ export default function AdminVerifications() {
                 {selectedVerification.metadata?.selfie_url && (
                   <div>
                     <p className="text-sm font-medium mb-2">
-                      {language === 'es' ? 'Selfie de verificación' : 'Verification selfie'}
+                      {t('adminVerifications.verificationSelfie')}
                     </p>
                     {documentUrls[selectedVerification.metadata.selfie_url] ? (
                       <img
@@ -523,7 +523,7 @@ export default function AdminVerifications() {
                 {selectedVerification.metadata?.rejection_reason && (
                   <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                     <p className="text-sm font-medium text-destructive mb-1">
-                      {language === 'es' ? 'Motivo de rechazo' : 'Rejection reason'}
+                      {t('adminVerifications.rejectionReason')}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {selectedVerification.metadata.rejection_reason}
@@ -544,7 +544,7 @@ export default function AdminVerifications() {
                       }}
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      {language === 'es' ? 'Aprobar' : 'Approve'}
+                      {t('adminVerifications.approve')}
                     </Button>
                     <Button
                       variant="destructive"
@@ -555,7 +555,7 @@ export default function AdminVerifications() {
                       }}
                     >
                       <XCircle className="w-4 h-4 mr-1" />
-                      {language === 'es' ? 'Rechazar' : 'Reject'}
+                      {t('adminVerifications.reject')}
                     </Button>
                   </div>
                 )}
@@ -570,8 +570,8 @@ export default function AdminVerifications() {
             <DialogHeader>
               <DialogTitle>
                 {actionType === 'approve'
-                  ? (language === 'es' ? '¿Aprobar verificación?' : 'Approve verification?')
-                  : (language === 'es' ? '¿Rechazar verificación?' : 'Reject verification?')}
+                  ? t('adminVerifications.approveQuestion')
+                  : t('adminVerifications.rejectQuestion')}
               </DialogTitle>
               <DialogDescription>
                 {selectedVerification?.user?.name} - {selectedVerification?.user?.email}
@@ -581,12 +581,12 @@ export default function AdminVerifications() {
             {actionType === 'reject' && (
               <div>
                 <label className="text-sm font-medium">
-                  {language === 'es' ? 'Motivo del rechazo' : 'Rejection reason'}
+                  {t('adminVerifications.rejectionReasonLabel')}
                 </label>
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder={language === 'es' ? 'Explica el motivo...' : 'Explain the reason...'}
+                  placeholder={t('adminVerifications.rejectionReasonPlaceholder')}
                   className="mt-2"
                 />
               </div>
@@ -594,7 +594,7 @@ export default function AdminVerifications() {
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsActionDialogOpen(false)}>
-                {language === 'es' ? 'Cancelar' : 'Cancel'}
+                {t('adminVerifications.cancel')}
               </Button>
               <Button
                 variant={actionType === 'approve' ? 'success' : 'destructive'}
@@ -603,8 +603,8 @@ export default function AdminVerifications() {
               >
                 {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {actionType === 'approve'
-                  ? (language === 'es' ? 'Aprobar' : 'Approve')
-                  : (language === 'es' ? 'Rechazar' : 'Reject')}
+                  ? t('adminVerifications.approve')
+                  : t('adminVerifications.reject')}
               </Button>
             </DialogFooter>
           </DialogContent>

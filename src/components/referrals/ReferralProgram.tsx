@@ -10,7 +10,7 @@ import { Gift, Copy, Users, Wallet, Loader2, Check, Share2 } from 'lucide-react'
 
 export function ReferralProgram() {
   const { myCode, redemptions, hasRedeemed, isLoading, generateCode, redeemCode } = useReferrals();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [redeemInput, setRedeemInput] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -20,7 +20,7 @@ export function ReferralProgram() {
     setIsGenerating(true);
     const code = await generateCode();
     if (code) {
-      toast.success(language === 'es' ? '¡Código generado!' : 'Code generated!');
+      toast.success(t('autoI18n.referral1'));
     }
     setIsGenerating(false);
   };
@@ -29,7 +29,7 @@ export function ReferralProgram() {
     if (myCode) {
       navigator.clipboard.writeText(myCode.code);
       setCopied(true);
-      toast.success(language === 'es' ? 'Código copiado' : 'Code copied');
+      toast.success(t('autoI18n.referral2'));
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -37,8 +37,8 @@ export function ReferralProgram() {
   const handleShare = () => {
     if (myCode && navigator.share) {
       navigator.share({
-        title: 'Medical Masters - Código de Referido',
-        text: `¡Únete a Medical Masters con mi código ${myCode.code} y recibe $50 MXN de bono!`,
+        title: t('autoI18n.referral3'),
+        text: t('autoI18n.referral4').replace('{code}', myCode.code),
         url: window.location.origin,
       }).catch(() => {});
     } else {
@@ -74,14 +74,12 @@ export function ReferralProgram() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Gift className="w-5 h-5 text-primary" />
-            {language === 'es' ? 'Programa de Referidos' : 'Referral Program'}
+            {t('autoI18n.referral5')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {language === 'es'
-              ? 'Invita amigos y ambos reciben $50 MXN de bono en su wallet.'
-              : 'Invite friends and both receive $50 MXN bonus in your wallet.'}
+            {t('autoI18n.referral6')}
           </p>
 
           {myCode ? (
@@ -101,18 +99,18 @@ export function ReferralProgram() {
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Users className="w-4 h-4" />
-                  <span>{myCode.usesCount} {language === 'es' ? 'referidos' : 'referrals'}</span>
+                  <span>{myCode.usesCount} {t('autoI18n.referral7')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Wallet className="w-4 h-4" />
-                  <span>${myCode.usesCount * 50} MXN {language === 'es' ? 'ganados' : 'earned'}</span>
+                  <span>${myCode.usesCount * 50} MXN {t('autoI18n.referral8')}</span>
                 </div>
               </div>
             </div>
           ) : (
             <Button onClick={handleGenerate} disabled={isGenerating} className="w-full gap-2">
               {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gift className="w-4 h-4" />}
-              {language === 'es' ? 'Generar mi Código' : 'Generate my Code'}
+              {t('autoI18n.referral9')}
             </Button>
           )}
 
@@ -120,7 +118,7 @@ export function ReferralProgram() {
           {redemptions.length > 0 && (
             <div className="pt-3 border-t">
               <p className="text-sm font-medium mb-2">
-                {language === 'es' ? 'Referidos recientes' : 'Recent referrals'}
+                {t('autoI18n.referral10')}
               </p>
               <div className="space-y-2">
                 {redemptions.slice(0, 5).map(r => (
@@ -146,19 +144,19 @@ export function ReferralProgram() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">
-              {language === 'es' ? '¿Tienes un código?' : 'Have a code?'}
+              {t('autoI18n.referral11')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
               <Input
-                placeholder={language === 'es' ? 'Ingresa código de referido' : 'Enter referral code'}
+                placeholder={t('autoI18n.referral12')}
                 value={redeemInput}
                 onChange={(e) => setRedeemInput(e.target.value.toUpperCase())}
                 className="font-mono"
               />
               <Button onClick={handleRedeem} disabled={isRedeeming || !redeemInput.trim()}>
-                {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : (language === 'es' ? 'Canjear' : 'Redeem')}
+                {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin" /> : t('autoI18n.referral13')}
               </Button>
             </div>
           </CardContent>

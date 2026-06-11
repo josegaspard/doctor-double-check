@@ -28,8 +28,7 @@ interface Subscriber {
 export default function SubscribersList() {
   const { user, role } = useAuth();
   const navigate = useNavigate();
-  const { language } = useLanguage();
-  const es = language === 'es';
+  const { t } = useLanguage();
   const [subs, setSubs] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -71,10 +70,10 @@ export default function SubscribersList() {
     if (tier === 'basic')
       return (
         <Badge variant="secondary" className="gap-1">
-          <Star className="w-3 h-3" /> {es ? 'Básico' : 'Basic'}
+          <Star className="w-3 h-3" /> {t('autoI18n.subsList2')}
         </Badge>
       );
-    return <Badge variant="outline">{es ? 'Gratis' : 'Free'}</Badge>;
+    return <Badge variant="outline">{t('autoI18n.subsList3')}</Badge>;
   };
 
   return (
@@ -86,7 +85,7 @@ export default function SubscribersList() {
           onClick={() => navigate(-1)}
           className="mb-3 -ml-2 text-white hover:text-white"
         >
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver' : 'Back'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.subsList1')}
         </Button>
 
         <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
@@ -96,10 +95,10 @@ export default function SubscribersList() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
-                {es ? 'Mis suscriptores' : 'My subscribers'}
+                {t('autoI18n.subsList4')}
               </h1>
               <p className="text-xs sm:text-sm text-secondary/70">
-                {activeCount} {es ? 'activos' : 'active'} · {premiumCount} premium
+                {activeCount} {t('autoI18n.subsList5')} · {premiumCount} premium
               </p>
             </div>
           </div>
@@ -107,11 +106,11 @@ export default function SubscribersList() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{es ? 'Lista' : 'List'}</CardTitle>
+            <CardTitle className="text-base">{t('autoI18n.subsList6')}</CardTitle>
             <div className="relative mt-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder={es ? 'Buscar por nombre o email…' : 'Search by name or email…'}
+                placeholder={t('autoI18n.subsList7')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-9 h-11 text-base"
@@ -120,10 +119,10 @@ export default function SubscribersList() {
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">{es ? 'Cargando…' : 'Loading…'}</div>
+              <div className="p-6 text-center text-sm text-muted-foreground">{t('autoI18n.subsList8')}</div>
             ) : filtered.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
-                {query ? (es ? 'Sin resultados' : 'No results') : (es ? 'Aún no tienes suscriptores' : 'No subscribers yet')}
+                {query ? t('autoI18n.subsList9') : t('autoI18n.subsList10')}
               </div>
             ) : (
               <ul className="divide-y">
@@ -137,13 +136,13 @@ export default function SubscribersList() {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-base truncate">{s.name || (es ? 'Sin nombre' : 'No name')}</p>
+                        <p className="font-medium text-base truncate">{s.name || t('autoI18n.subsList11')}</p>
                         {tierBadge(s.tier)}
-                        {!s.is_active && <Badge variant="outline" className="text-muted-foreground">{es ? 'Inactivo' : 'Inactive'}</Badge>}
+                        {!s.is_active && <Badge variant="outline" className="text-muted-foreground">{t('autoI18n.subsList12')}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
-                        {es ? 'Desde' : 'Since'} {format(new Date(s.created_at), 'd MMM yyyy', { locale: esLocale })}
-                        {s.expires_at && ` · ${es ? 'vence' : 'expires'} ${format(new Date(s.expires_at), 'd MMM yyyy', { locale: esLocale })}`}
+                        {t('autoI18n.subsList13')} {format(new Date(s.created_at), 'd MMM yyyy', { locale: esLocale })}
+                        {s.expires_at && ` · ${t('autoI18n.subsList14')} ${format(new Date(s.expires_at), 'd MMM yyyy', { locale: esLocale })}`}
                       </p>
                     </div>
                     <div className="text-right shrink-0">

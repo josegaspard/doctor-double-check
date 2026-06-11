@@ -45,6 +45,7 @@ function NotificationItem({
   language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
 }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const getNotificationIcon = () => {
     switch (notification.type) {
@@ -161,9 +162,9 @@ function NotificationItem({
             {!notification.isRead && (
               <span
                 className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none"
-                aria-label={language === 'es' ? 'Nuevo' : 'New'}
+                aria-label={t('autoI18n.notifBell1')}
               >
-                {language === 'es' ? 'Nuevo' : 'New'}
+                {t('autoI18n.notifBell1')}
               </span>
             )}
           </div>
@@ -263,7 +264,7 @@ export function NotificationBell() {
               className="w-full text-primary text-sm"
               onClick={() => navigate('/notifications')}
             >
-              {language === 'es' ? 'Ver todas las notificaciones' : 'View all notifications'}
+              {t('autoI18n.notifBell2')}
             </Button>
           </div>
         )}

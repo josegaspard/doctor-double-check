@@ -12,9 +12,8 @@ import { ArrowLeft, DollarSign, Loader2, TrendingUp, Clock, CheckCircle2, AlertC
 
 export default function VendorEarnings() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const { supabaseUser } = useAuth();
-  const es = language === 'es';
 
   const [vendor, setVendor] = useState<any>(null);
   const [balance, setBalance] = useState<any>(null);
@@ -50,7 +49,7 @@ export default function VendorEarnings() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
         <Button variant="back" size="sm" onClick={() => navigate('/vendor/dashboard')} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver' : 'Back'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.vendorEarn1')}
         </Button>
 
         <div className="mb-4 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4">
@@ -59,7 +58,7 @@ export default function VendorEarnings() {
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-secondary">{es ? 'Mis ganancias' : 'My earnings'}</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-secondary">{t('autoI18n.vendorEarn2')}</h1>
               <p className="text-xs text-secondary/70">{vendor.name}</p>
             </div>
           </div>
@@ -70,8 +69,8 @@ export default function VendorEarnings() {
             <CardContent className="p-3 flex items-start gap-2">
               <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               <div className="flex-1 text-sm">
-                <p className="font-medium">{es ? 'Conecta Stripe para recibir pagos' : 'Connect Stripe to receive payouts'}</p>
-                <Button size="sm" className="mt-2" onClick={() => navigate('/vendor/stripe-setup')}>{es ? 'Configurar' : 'Setup'}</Button>
+                <p className="font-medium">{t('autoI18n.vendorEarn3')}</p>
+                <Button size="sm" className="mt-2" onClick={() => navigate('/vendor/stripe-setup')}>{t('autoI18n.vendorEarn4')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -79,31 +78,31 @@ export default function VendorEarnings() {
 
         <div className="grid grid-cols-3 gap-2 mb-4">
           <Card><CardContent className="p-3">
-            <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-warning" /><p className="text-[10px] text-muted-foreground">{es ? 'Pendiente' : 'Pending'}</p></div>
+            <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-warning" /><p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorEarn5')}</p></div>
             <p className="text-base sm:text-lg font-bold font-mono mt-1">{fmt(balance?.pending_amount || 0)}</p>
-            <p className="text-[10px] text-muted-foreground">{balance?.pending_count || 0} {es ? 'ventas' : 'sales'}</p>
+            <p className="text-[10px] text-muted-foreground">{balance?.pending_count || 0} {t('autoI18n.vendorEarn6')}</p>
           </CardContent></Card>
           <Card><CardContent className="p-3">
-            <div className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground">{es ? 'Disponible' : 'Available'}</p></div>
+            <div className="flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorEarn7')}</p></div>
             <p className="text-base sm:text-lg font-bold font-mono mt-1 text-primary">{fmt(balance?.available_amount || 0)}</p>
-            <p className="text-[10px] text-muted-foreground">{balance?.available_count || 0} {es ? 'listas' : 'ready'}</p>
+            <p className="text-[10px] text-muted-foreground">{balance?.available_count || 0} {t('autoI18n.vendorEarn8')}</p>
           </CardContent></Card>
           <Card><CardContent className="p-3">
-            <div className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /><p className="text-[10px] text-muted-foreground">{es ? 'Pagado total' : 'Total paid'}</p></div>
+            <div className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /><p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorEarn9')}</p></div>
             <p className="text-base sm:text-lg font-bold font-mono mt-1 text-success">{fmt(balance?.total_paid || 0)}</p>
           </CardContent></Card>
         </div>
 
         <Card className="mb-4">
           <CardContent className="p-4">
-            <p className="text-sm font-semibold mb-2">{es ? 'Historial de pagos recibidos' : 'Payout history'}</p>
-            {payouts.length === 0 ? <p className="text-xs text-muted-foreground">{es ? 'Aún no has recibido pagos' : 'No payouts yet'}</p> : (
+            <p className="text-sm font-semibold mb-2">{t('autoI18n.vendorEarn10')}</p>
+            {payouts.length === 0 ? <p className="text-xs text-muted-foreground">{t('autoI18n.vendorEarn11')}</p> : (
               <div className="space-y-1">
                 {payouts.map(p => (
                   <div key={p.id} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
                     <div>
                       <span className="font-medium">{fmt(p.total_amount)} {p.currency}</span>
-                      <span className="text-muted-foreground"> · {p.earnings_count} {es ? 'ventas' : 'sales'}</span>
+                      <span className="text-muted-foreground"> · {p.earnings_count} {t('autoI18n.vendorEarn12')}</span>
                     </div>
                     <div className="text-right">
                       <Badge variant={p.status === 'paid' ? 'verified' : 'secondary'} className="text-[10px]">{p.status}</Badge>
@@ -118,8 +117,8 @@ export default function VendorEarnings() {
 
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm font-semibold mb-2">{es ? 'Ganancias por venta' : 'Earnings by sale'}</p>
-            {earnings.length === 0 ? <p className="text-xs text-muted-foreground">{es ? 'Sin ventas todavía' : 'No sales yet'}</p> : (
+            <p className="text-sm font-semibold mb-2">{t('autoI18n.vendorEarn13')}</p>
+            {earnings.length === 0 ? <p className="text-xs text-muted-foreground">{t('autoI18n.vendorEarn14')}</p> : (
               <div className="space-y-1">
                 {earnings.map(e => (
                   <div key={e.id} className="flex items-center justify-between p-2 bg-muted/20 rounded text-xs">

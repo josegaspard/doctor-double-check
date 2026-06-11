@@ -48,8 +48,8 @@ interface VerificationRecord {
 export default function IdentityVerification() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { language } = useLanguage();
-  
+  const { t } = useLanguage();
+
   const [verification, setVerification] = useState<VerificationRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStartingVeriff, setIsStartingVeriff] = useState(false);
@@ -119,11 +119,7 @@ export default function IdentityVerification() {
       });
 
       if (!error && data?.session_url) {
-        toast.info(
-          language === 'es'
-            ? 'Redirigiendo a la verificación biométrica...'
-            : 'Redirecting to biometric verification...'
-        );
+        toast.info(t('identityVerification.redirectingBiometric'));
         window.location.href = data.session_url;
         setTimeout(fetchVerification, 3000);
         return;
@@ -137,21 +133,13 @@ export default function IdentityVerification() {
         if (dErr) throw dErr;
         if (!dData?.verification_url) throw new Error('No Didit verification URL');
 
-        toast.info(
-          language === 'es'
-            ? 'Iniciando verificación biométrica...'
-            : 'Starting biometric verification...'
-        );
+        toast.info(t('identityVerification.startingBiometric'));
         window.location.href = dData.verification_url;
         setTimeout(fetchVerification, 3000);
         return;
       } catch (diditErr: any) {
         console.error('Both Veriff and Didit failed:', diditErr);
-        toast.error(
-          language === 'es'
-            ? 'No se pudo iniciar la verificación automática. Puedes subir tus documentos manualmente.'
-            : 'Could not start automatic verification. You can upload your documents manually.'
-        );
+        toast.error(t('identityVerification.couldNotStartAuto'));
         setShowManualUpload(true);
       }
     } finally {
@@ -169,12 +157,12 @@ export default function IdentityVerification() {
     if (!file) return;
 
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-      toast.error(language === 'es' ? 'Solo se permiten imágenes o PDF' : 'Only images or PDF allowed');
+      toast.error(t('identityVerification.onlyImagesOrPdf'));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error(language === 'es' ? 'El archivo no puede superar 10MB' : 'File cannot exceed 10MB');
+      toast.error(t('identityVerification.fileTooLarge'));
       return;
     }
 
@@ -244,9 +232,7 @@ export default function IdentityVerification() {
       }
 
       setUploadProgress(100);
-      toast.success(
-        language === 'es' ? 'Documentos enviados para verificación' : 'Documents submitted for verification'
-      );
+      toast.success(t('identityVerification.documentsSubmitted'));
 
       await fetchVerification();
       setFrontFile(null); setFrontPreview(null);
@@ -254,7 +240,7 @@ export default function IdentityVerification() {
       setSelfieFile(null); setSelfiePreview(null);
       setShowManualUpload(false);
     } catch (error: any) {
-      toast.error(error.message || (language === 'es' ? 'Error al enviar documentos' : 'Error submitting documents'));
+      toast.error(error.message || t('identityVerification.errorSubmitting'));
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
@@ -265,38 +251,28 @@ export default function IdentityVerification() {
     const configs = {
       pending: {
         icon: Clock, color: 'text-warning', bg: 'bg-warning/15', ring: 'ring-warning/30', stripe: 'before:bg-warning', badge: 'warning' as const,
-        title: language === 'es' ? 'Verificación en proceso' : 'Verification in progress',
-        description: language === 'es'
-          ? 'Estamos revisando tus documentos. Este proceso puede tomar 24-48 horas.'
-          : 'We are reviewing your documents. This process may take 24-48 hours.',
+        title: t('identityVerification.statusPendingTitle'),
+        description: t('identityVerification.statusPendingDesc'),
       },
       in_progress: {
         icon: Clock, color: 'text-info', bg: 'bg-info/15', ring: 'ring-info/30', stripe: 'before:bg-info', badge: 'info' as const,
-        title: language === 'es' ? 'Verificación en curso' : 'Verification in progress',
-        description: language === 'es'
-          ? 'Tu verificación biométrica está siendo procesada automáticamente.'
-          : 'Your biometric verification is being processed automatically.',
+        title: t('identityVerification.statusInProgressTitle'),
+        description: t('identityVerification.statusInProgressDesc'),
       },
       verified: {
         icon: CheckCircle, color: 'text-success', bg: 'bg-success/15', ring: 'ring-success/30', stripe: 'before:bg-success', badge: 'success' as const,
-        title: language === 'es' ? 'Identidad verificada' : 'Identity verified',
-        description: language === 'es'
-          ? 'Tu identidad ha sido verificada exitosamente.'
-          : 'Your identity has been successfully verified.',
+        title: t('identityVerification.statusVerifiedTitle'),
+        description: t('identityVerification.statusVerifiedDesc'),
       },
       failed: {
         icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/15', ring: 'ring-destructive/30', stripe: 'before:bg-destructive', badge: 'destructive' as const,
-        title: language === 'es' ? 'Verificación rechazada' : 'Verification rejected',
-        description: language === 'es'
-          ? 'Tu solicitud fue rechazada. Por favor, intenta nuevamente.'
-          : 'Your request was rejected. Please try again.',
+        title: t('identityVerification.statusFailedTitle'),
+        description: t('identityVerification.statusFailedDesc'),
       },
       expired: {
         icon: AlertCircle, color: 'text-muted-foreground', bg: 'bg-muted', ring: 'ring-border', stripe: 'before:bg-muted-foreground/40', badge: 'secondary' as const,
-        title: language === 'es' ? 'Verificación expirada' : 'Verification expired',
-        description: language === 'es'
-          ? 'Tu verificación ha expirado. Por favor, verifica nuevamente.'
-          : 'Your verification has expired. Please verify again.',
+        title: t('identityVerification.statusExpiredTitle'),
+        description: t('identityVerification.statusExpiredDesc'),
       },
     };
     return configs[status];
@@ -313,7 +289,7 @@ export default function IdentityVerification() {
         <div className="container mx-auto px-4 py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">
-            {language === 'es' ? 'Cargando...' : 'Loading...'}
+            {t('identityVerification.loading')}
           </p>
         </div>
       </MainLayout>
@@ -333,12 +309,10 @@ export default function IdentityVerification() {
           </Button>
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">
-              {language === 'es' ? 'Verificación de Identidad' : 'Identity Verification'}
+              {t('identityVerification.pageTitle')}
             </h1>
             <p className="text-muted-foreground">
-              {language === 'es' 
-                ? 'Verifica tu identidad para mayor seguridad' 
-                : 'Verify your identity for enhanced security'}
+              {t('identityVerification.pageSubtitle')}
             </p>
           </div>
         </div>
@@ -357,11 +331,11 @@ export default function IdentityVerification() {
                   <h3 className="font-semibold text-sm sm:text-base text-card-foreground">{statusConfig.title}</h3>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-2">
                     <Badge variant={statusConfig.badge} className="text-[10px] sm:text-xs">
-                      {verification.status === 'pending' && (language === 'es' ? 'Pendiente' : 'Pending')}
-                      {verification.status === 'in_progress' && (language === 'es' ? 'En proceso' : 'In Progress')}
-                      {verification.status === 'verified' && (language === 'es' ? 'Verificado' : 'Verified')}
-                      {verification.status === 'failed' && (language === 'es' ? 'Rechazado' : 'Rejected')}
-                      {verification.status === 'expired' && (language === 'es' ? 'Expirado' : 'Expired')}
+                      {verification.status === 'pending' && t('identityVerification.badgePending')}
+                      {verification.status === 'in_progress' && t('identityVerification.badgeInProgress')}
+                      {verification.status === 'verified' && t('identityVerification.badgeVerified')}
+                      {verification.status === 'failed' && t('identityVerification.badgeRejected')}
+                      {verification.status === 'expired' && t('identityVerification.badgeExpired')}
                     </Badge>
                     {verification.provider === 'veriff' && (
                       <Badge variant="outline" className="text-[10px] sm:text-xs bg-card">
@@ -373,7 +347,7 @@ export default function IdentityVerification() {
                   <p className="text-xs sm:text-sm text-muted-foreground">{statusConfig.description}</p>
                   {verification.verified_at && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      {language === 'es' ? 'Verificado el: ' : 'Verified on: '}
+                      {t('identityVerification.verifiedOn')}
                       {new Date(verification.verified_at).toLocaleDateString()}
                     </p>
                   )}
@@ -389,22 +363,18 @@ export default function IdentityVerification() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Fingerprint className="w-5 h-5 text-primary" />
-                {language === 'es' ? 'Verificación biométrica' : 'Biometric Verification'}
+                {t('identityVerification.biometricTitle')}
               </CardTitle>
               <CardDescription>
-                {language === 'es'
-                  ? 'Primero verificamos tu cédula profesional con el SEP, luego confirmas tu identidad con reconocimiento facial (INE o pasaporte) para asegurar que coincida.'
-                  : 'First we verify your professional license with SEP, then you confirm your identity with facial recognition (ID or passport) to ensure it matches.'}
+                {t('identityVerification.biometricDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <Alert>
                 <Info className="w-4 h-4" />
-                <AlertTitle>{language === 'es' ? 'Proceso rápido' : 'Quick process'}</AlertTitle>
+                <AlertTitle>{t('identityVerification.quickProcess')}</AlertTitle>
                 <AlertDescription>
-                  {language === 'es'
-                    ? 'Necesitarás tu documento de identidad (INE, pasaporte o licencia) y tu cámara para tomar una selfie. El proceso tarda menos de 2 minutos.'
-                    : 'You will need your ID document (government ID, passport or license) and your camera for a selfie. The process takes less than 2 minutes.'}
+                  {t('identityVerification.quickProcessDesc')}
                 </AlertDescription>
               </Alert>
 
@@ -415,10 +385,10 @@ export default function IdentityVerification() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">
-                      {language === 'es' ? '1. Fotografía tu documento' : '1. Photograph your document'}
+                      {t('identityVerification.step1Title')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'es' ? 'INE/IFE, Pasaporte o Licencia de conducir' : 'Government ID, Passport or Driver\'s license'}
+                      {t('identityVerification.step1Desc')}
                     </p>
                   </div>
                 </div>
@@ -428,10 +398,10 @@ export default function IdentityVerification() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">
-                      {language === 'es' ? '2. Tómate una selfie' : '2. Take a selfie'}
+                      {t('identityVerification.step2Title')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'es' ? 'Verificación facial automática' : 'Automatic facial verification'}
+                      {t('identityVerification.step2Desc')}
                     </p>
                   </div>
                 </div>
@@ -441,10 +411,10 @@ export default function IdentityVerification() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">
-                      {language === 'es' ? '3. Resultado automático' : '3. Automatic result'}
+                      {t('identityVerification.step3Title')}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'es' ? 'Recibirás el resultado en minutos' : 'You will receive the result in minutes'}
+                      {t('identityVerification.step3Desc')}
                     </p>
                   </div>
                 </div>
@@ -459,12 +429,12 @@ export default function IdentityVerification() {
                 {isStartingVeriff ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {language === 'es' ? 'Iniciando...' : 'Starting...'}
+                    {t('identityVerification.starting')}
                   </>
                 ) : (
                   <>
                     <Fingerprint className="w-4 h-4 mr-2" />
-                    {language === 'es' ? 'Iniciar verificación biométrica' : 'Start biometric verification'}
+                    {t('identityVerification.startBiometric')}
                   </>
                 )}
               </Button>
@@ -475,7 +445,7 @@ export default function IdentityVerification() {
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-2 text-muted-foreground">
-                    {language === 'es' ? 'o alternativamente' : 'or alternatively'}
+                    {t('identityVerification.orAlternatively')}
                   </span>
                 </div>
               </div>
@@ -486,13 +456,11 @@ export default function IdentityVerification() {
                 onClick={() => setShowManualUpload(true)}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {language === 'es' ? 'Subir documentos manualmente' : 'Upload documents manually'}
+                {t('identityVerification.uploadManually')}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                {language === 'es'
-                  ? 'Tus datos se procesan de forma segura con Veriff, líder en verificación de identidad.'
-                  : 'Your data is securely processed by Veriff, a leader in identity verification.'}
+                {t('identityVerification.secureNoteVeriff')}
               </p>
             </CardContent>
           </Card>
@@ -506,27 +474,23 @@ export default function IdentityVerification() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="w-5 h-5" />
-                    {language === 'es' ? 'Sube tu documento' : 'Upload your document'}
+                    {t('identityVerification.uploadDocument')}
                   </CardTitle>
                   <CardDescription>
-                    {language === 'es'
-                      ? 'Asegúrate de que el documento sea legible y esté completo'
-                      : 'Make sure the document is readable and complete'}
+                    {t('identityVerification.uploadDocumentDesc')}
                   </CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => setShowManualUpload(false)}>
-                  {language === 'es' ? 'Usar biométrica' : 'Use biometric'}
+                  {t('identityVerification.useBiometric')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <Alert className="mb-4">
                 <Info className="w-4 h-4" />
-                <AlertTitle>{language === 'es' ? 'Documentos aceptados' : 'Accepted documents'}</AlertTitle>
+                <AlertTitle>{t('identityVerification.acceptedDocuments')}</AlertTitle>
                 <AlertDescription>
-                  {language === 'es'
-                    ? 'INE/IFE, Pasaporte, Licencia de conducir u otro documento oficial con fotografía.'
-                    : 'Government ID, Passport, Driver\'s license or other official photo ID.'}
+                  {t('identityVerification.acceptedDocumentsDesc')}
                 </AlertDescription>
               </Alert>
 
@@ -534,7 +498,7 @@ export default function IdentityVerification() {
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <FileCheck className="w-4 h-4" />
-                  {language === 'es' ? 'Frente del documento *' : 'Front of document *'}
+                  {t('identityVerification.frontOfDocument')}
                 </label>
                 <div
                   className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -546,7 +510,7 @@ export default function IdentityVerification() {
                       <img src={frontPreview} alt="Front" className="max-h-48 mx-auto rounded" />
                       <Badge className="absolute top-2 right-2" variant="success">
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                        {t('identityVerification.uploaded')}
                       </Badge>
                     </div>
                   ) : frontFile ? (
@@ -558,7 +522,7 @@ export default function IdentityVerification() {
                     <>
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
+                        {t('identityVerification.clickToUpload')}
                       </p>
                     </>
                   )}
@@ -570,7 +534,7 @@ export default function IdentityVerification() {
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <FileCheck className="w-4 h-4" />
-                  {language === 'es' ? 'Reverso del documento (opcional)' : 'Back of document (optional)'}
+                  {t('identityVerification.backOfDocument')}
                 </label>
                 <div
                   className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -582,7 +546,7 @@ export default function IdentityVerification() {
                       <img src={backPreview} alt="Back" className="max-h-48 mx-auto rounded" />
                       <Badge className="absolute top-2 right-2" variant="success">
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                        {t('identityVerification.uploaded')}
                       </Badge>
                     </div>
                   ) : backFile ? (
@@ -594,7 +558,7 @@ export default function IdentityVerification() {
                     <>
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Haz clic para subir' : 'Click to upload'}
+                        {t('identityVerification.clickToUpload')}
                       </p>
                     </>
                   )}
@@ -606,7 +570,7 @@ export default function IdentityVerification() {
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Camera className="w-4 h-4" />
-                  {language === 'es' ? 'Selfie con documento (opcional)' : 'Selfie with document (optional)'}
+                  {t('identityVerification.selfieWithDocument')}
                 </label>
                 <div
                   className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -618,7 +582,7 @@ export default function IdentityVerification() {
                       <img src={selfiePreview} alt="Selfie" className="max-h-48 mx-auto rounded" />
                       <Badge className="absolute top-2 right-2" variant="success">
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        {language === 'es' ? 'Cargado' : 'Uploaded'}
+                        {t('identityVerification.uploaded')}
                       </Badge>
                     </div>
                   ) : selfieFile ? (
@@ -630,7 +594,7 @@ export default function IdentityVerification() {
                     <>
                       <Camera className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        {language === 'es' ? 'Tómate una foto sosteniendo tu documento' : 'Take a photo holding your document'}
+                        {t('identityVerification.takeSelfieHolding')}
                       </p>
                     </>
                   )}
@@ -641,7 +605,7 @@ export default function IdentityVerification() {
               {isSubmitting && uploadProgress > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>{language === 'es' ? 'Subiendo documentos...' : 'Uploading documents...'}</span>
+                    <span>{t('identityVerification.uploadingDocuments')}</span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <Progress value={uploadProgress} />
@@ -652,20 +616,18 @@ export default function IdentityVerification() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {language === 'es' ? 'Enviando...' : 'Submitting...'}
+                    {t('identityVerification.submitting')}
                   </>
                 ) : (
                   <>
                     <Shield className="w-4 h-4 mr-2" />
-                    {language === 'es' ? 'Enviar para verificación' : 'Submit for verification'}
+                    {t('identityVerification.submitForVerification')}
                   </>
                 )}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                {language === 'es'
-                  ? 'Tus documentos se almacenan de forma segura y solo se usan para verificar tu identidad.'
-                  : 'Your documents are stored securely and only used to verify your identity.'}
+                {t('identityVerification.secureNoteDocs')}
               </p>
             </CardContent>
           </Card>
@@ -677,15 +639,13 @@ export default function IdentityVerification() {
             <CardContent className="p-8 text-center">
               <CheckCircle className="w-16 h-16 mx-auto text-success mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {language === 'es' ? '¡Ya estás verificado!' : 'You are already verified!'}
+                {t('identityVerification.alreadyVerifiedTitle')}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {language === 'es'
-                  ? 'Tu identidad ha sido confirmada. Disfruta de todos los beneficios.'
-                  : 'Your identity has been confirmed. Enjoy all the benefits.'}
+                {t('identityVerification.alreadyVerifiedDesc')}
               </p>
               <Button variant="outline" onClick={() => navigate('/profile')}>
-                {language === 'es' ? 'Volver al perfil' : 'Back to profile'}
+                {t('identityVerification.backToProfile')}
               </Button>
             </CardContent>
           </Card>

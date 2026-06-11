@@ -223,7 +223,7 @@ export default function Eventos() {
           p_doctor_id: supabaseUser.id,
           p_notification_type: 'new_content',
           p_title: `📣 ${typeLabel}: ${form.title.trim()}`,
-          p_message: `${format(new Date(form.event_date), language === 'es' ? "d 'de' MMM 'a las' HH:mm" : "MMM d 'at' HH:mm", { locale })}${form.is_online ? ' · Online' : (form.location.trim() ? ` · ${form.location.trim()}` : '')}`,
+          p_message: `${format(new Date(form.event_date), language === 'es' ? "d 'de' MMM 'a las' HH:mm" : "MMM d 'at' HH:mm", { locale })}${form.is_online ? ` · ${t('autoI18n.eventos1')}` : (form.location.trim() ? ` · ${form.location.trim()}` : '')}`,
           p_data: { event_id: (res.data as any)?.id, event_type: form.event_type, deeplink: '/eventos' },
         });
       } catch (e) {

@@ -15,7 +15,7 @@ interface LegalContent {
 
 export default function Privacy() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [customContent, setCustomContent] = useState<string | null>(null);
 
@@ -147,11 +147,11 @@ Para ejercer sus derechos o realizar consultas sobre privacidad, contáctenos en
             <div className="flex items-center gap-2 sm:gap-3">
               <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
               <CardTitle className="text-lg sm:text-xl">
-                {language === 'es' ? 'Política de Privacidad' : 'Privacy Policy'}
+                {t('autoI18n.privacy1')}
               </CardTitle>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {language === 'es' ? 'Última actualización: Enero 2026' : 'Last updated: January 2026'}
+              {t('autoI18n.privacy2')}
             </p>
           </CardHeader>
           <CardContent className="px-4 sm:px-6 prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">

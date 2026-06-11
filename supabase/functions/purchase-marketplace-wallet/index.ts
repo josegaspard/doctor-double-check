@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { product_id, quantity = 1, shipping } = await req.json();
+    const { product_id, quantity = 1, shipping, idempotencyKey } = await req.json();
     if (!product_id) throw new Error("product_id is required");
     if (quantity < 1) throw new Error("quantity must be >= 1");
 
@@ -53,6 +53,26 @@ Deno.serve(async (req) => {
     const totalAmount = product.price * quantity;
     logStep("Product loaded", { name: product.name, totalAmount });
 
+    // Idempotency: a stable key per purchase intent. Use the client-supplied key,
+    // else derive a time-bucketed fingerprint so a double-click / retry within the
+    // window does NOT charge twice nor create a second order. The unique index on
+    // marketplace_orders.idempotency_key makes the order creation race-safe too.
+    const idemKey: string = idempotencyKey ||
+      `mkt:${user.id}:${product.id}:${quantity}:${Math.floor(Date.now() / 120000)}`;
+
+    const { data: priorOrder } = await adminClient
+      .from('marketplace_orders')
+      .select('id, status')
+      .eq('idempotency_key', idemKey)
+      .maybeSingle();
+    if (priorOrder) {
+      logStep("Idempotent replay — returning existing order", { orderId: priorOrder.id });
+      return new Response(
+        JSON.stringify({ success: true, orderId: priorOrder.id, idempotent: true }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Use the same RPC used for recording purchases so wallet logic stays consistent
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } },
@@ -68,6 +88,7 @@ Deno.serve(async (req) => {
           vendor_id: product.vendor_id,
           quantity,
         },
+        p_idempotency_key: idemKey,
       });
 
     if (purchaseError) throw new Error(purchaseError.message);
@@ -122,12 +143,28 @@ Deno.serve(async (req) => {
         shipping_state: shipping?.state || null,
         shipping_zip: shipping?.zip || null,
         shipping_notes: shipping?.notes || null,
+        idempotency_key: idemKey,
       })
       .select('id')
       .single();
 
     if (orderErr || !order) {
-      // Order failed AFTER the wallet was charged and stock decremented →
+      // Concurrent double-submit: a sibling request already created the order with
+      // this idempotency key (and our charge above was an idempotent replay, so no
+      // money was taken here) → return the existing order, do NOT refund.
+      const isDup = (orderErr as any)?.code === '23505' || /duplicate key|idempotency/i.test(orderErr?.message || '');
+      if (isDup) {
+        const { data: dup } = await adminClient
+          .from('marketplace_orders').select('id').eq('idempotency_key', idemKey).maybeSingle();
+        if (dup) {
+          logStep("Idempotent race — returning sibling order", { orderId: dup.id });
+          return new Response(
+            JSON.stringify({ success: true, orderId: dup.id, idempotent: true }),
+            { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          );
+        }
+      }
+      // Genuine failure AFTER the wallet was charged and stock decremented →
       // refund the wallet and restore stock so the buyer never loses money.
       logStep("Error creating order — refunding wallet + restoring stock", { error: orderErr?.message });
       await adminClient.from('wallet_transactions').insert({

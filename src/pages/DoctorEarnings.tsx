@@ -185,17 +185,17 @@ export default function DoctorEarnings() {
 
   const getSourceLabel = (source: string) => {
     switch (source) {
-      case 'consultation': return language === 'es' ? 'Orientación' : 'Consultation';
-      case 'recording': return language === 'es' ? 'Grabación' : 'Recording';
-      case 'subscription': return language === 'es' ? 'Suscripción' : 'Subscription';
-      case 'subscription_renewal': return language === 'es' ? 'Renovación' : 'Renewal';
-      default: return language === 'es' ? 'Otro' : 'Other';
+      case 'consultation': return t('autoI18n.doctorEarnings1');
+      case 'recording': return t('autoI18n.doctorEarnings2');
+      case 'subscription': return t('autoI18n.doctorEarnings3');
+      case 'subscription_renewal': return t('autoI18n.doctorEarnings4');
+      default: return t('autoI18n.doctorEarnings5');
     }
   };
 
   const handleExportCSV = () => {
     if (transactions.length === 0) {
-      toast.info(language === 'es' ? 'No hay datos para exportar' : 'No data to export');
+      toast.info(t('autoI18n.doctorEarnings6'));
       return;
     }
     const headers = ['Fecha', 'Descripción', 'Tipo', 'Monto', 'Estado'];
@@ -214,21 +214,21 @@ export default function DoctorEarnings() {
     a.download = `ganancias_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(language === 'es' ? 'CSV descargado' : 'CSV downloaded');
+    toast.success(t('autoI18n.doctorEarnings7'));
   };
 
   const getPayoutStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid': return <Badge variant="verified" className="gap-0.5 text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
-      case 'processing': return <Badge variant="warning" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{language === 'es' ? 'En proceso' : 'Processing'}</Badge>;
-      case 'failed': return <Badge className="gap-0.5 text-[10px] sm:text-xs bg-destructive text-destructive-foreground">{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
-      default: return <Badge variant="outline" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
+      case 'paid': return <Badge variant="verified" className="gap-0.5 text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3" />{t('autoI18n.doctorEarnings8')}</Badge>;
+      case 'processing': return <Badge variant="warning" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{t('autoI18n.doctorEarnings9')}</Badge>;
+      case 'failed': return <Badge className="gap-0.5 text-[10px] sm:text-xs bg-destructive text-destructive-foreground">{t('autoI18n.doctorEarnings10')}</Badge>;
+      default: return <Badge variant="outline" className="gap-0.5 text-[10px] sm:text-xs"><Clock className="w-3 h-3" />{t('autoI18n.doctorEarnings11')}</Badge>;
     }
   };
 
   const getPayoutMethodBadge = (transferId: string | null) => {
     if (transferId?.startsWith('manual_')) {
-      return <Badge variant="secondary" className="text-[10px]">{language === 'es' ? 'Banco' : 'Bank'}</Badge>;
+      return <Badge variant="secondary" className="text-[10px]">{t('autoI18n.doctorEarnings12')}</Badge>;
     }
     return <Badge variant="outline" className="text-[10px]">Stripe</Badge>;
   };
@@ -250,12 +250,10 @@ export default function DoctorEarnings() {
           </Button>
           <div className="min-w-0">
             <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground truncate">
-              {language === 'es' ? 'Mis Ganancias' : 'My Earnings'}
+              {t('autoI18n.doctorEarnings13')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground hidden sm:block">
-              {language === 'es' 
-                ? 'Resumen detallado de tus ingresos en la plataforma' 
-                : 'Detailed summary of your platform earnings'}
+              {t('autoI18n.doctorEarnings14')}
             </p>
           </div>
         </div>
@@ -269,10 +267,10 @@ export default function DoctorEarnings() {
             {/* Summary Cards - 2x2 on mobile, 4 cols on desktop */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
               {[
-                { label: language === 'es' ? 'Total' : 'Total', value: summary.totalEarnings, icon: DollarSign, colorClass: 'text-success', bgClass: 'bg-success/10' },
-                { label: language === 'es' ? 'Pendiente' : 'Pending', value: summary.pendingEarnings, icon: Clock, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
-                { label: language === 'es' ? 'Este Mes' : 'This Month', value: summary.thisMonthEarnings, icon: TrendingUp, colorClass: 'text-info', bgClass: 'bg-info/10' },
-                { label: language === 'es' ? 'Pagado' : 'Paid', value: summary.paidEarnings, icon: CheckCircle, colorClass: 'text-success', bgClass: 'bg-success/10' },
+                { label: t('autoI18n.doctorEarnings15'), value: summary.totalEarnings, icon: DollarSign, colorClass: 'text-success', bgClass: 'bg-success/10' },
+                { label: t('autoI18n.doctorEarnings16'), value: summary.pendingEarnings, icon: Clock, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
+                { label: t('autoI18n.doctorEarnings17'), value: summary.thisMonthEarnings, icon: TrendingUp, colorClass: 'text-info', bgClass: 'bg-info/10' },
+                { label: t('autoI18n.doctorEarnings18'), value: summary.paidEarnings, icon: CheckCircle, colorClass: 'text-success', bgClass: 'bg-success/10' },
               ].map((card) => {
                 const Icon = card.icon;
                 return (
@@ -297,7 +295,7 @@ export default function DoctorEarnings() {
               <Card className="lg:col-span-2">
                 <CardHeader className="pb-2 sm:pb-3">
                   <CardTitle className="text-base sm:text-lg">
-                    {language === 'es' ? 'Ingresos Mensuales' : 'Monthly Earnings'}
+                    {t('autoI18n.doctorEarnings19')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pr-1 sm:pr-6">
@@ -308,7 +306,7 @@ export default function DoctorEarnings() {
                         <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                         <YAxis tick={{ fontSize: 10 }} width={40} />
                         <Tooltip 
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, language === 'es' ? 'Ingresos' : 'Earnings']}
+                          formatter={(value: number) => [`$${value.toLocaleString()}`, t('autoI18n.doctorEarnings20')]}
                           contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: 12 }}
                         />
                         <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
@@ -316,7 +314,7 @@ export default function DoctorEarnings() {
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-[160px] sm:h-[220px] text-muted-foreground text-sm">
-                      {language === 'es' ? 'Sin datos aún' : 'No data yet'}
+                      {t('autoI18n.doctorEarnings21')}
                     </div>
                   )}
                 </CardContent>
@@ -326,14 +324,14 @@ export default function DoctorEarnings() {
               <Card>
                 <CardHeader className="pb-2 sm:pb-3">
                   <CardTitle className="text-base sm:text-lg">
-                    {language === 'es' ? 'Por Tipo' : 'By Type'}
+                    {t('autoI18n.doctorEarnings22')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 sm:space-y-3">
                   {[
-                    { icon: MessageSquare, label: language === 'es' ? 'Orientaciones' : 'Consultations', value: summary.consultationEarnings, colorClass: 'text-info', bgClass: 'bg-info/10' },
-                    { icon: Video, label: language === 'es' ? 'Grabaciones' : 'Recordings', value: summary.recordingEarnings, colorClass: 'text-primary', bgClass: 'bg-primary/10' },
-                    { icon: Users, label: language === 'es' ? 'Suscripciones' : 'Subscriptions', value: summary.subscriptionEarnings, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
+                    { icon: MessageSquare, label: t('autoI18n.doctorEarnings23'), value: summary.consultationEarnings, colorClass: 'text-info', bgClass: 'bg-info/10' },
+                    { icon: Video, label: t('autoI18n.doctorEarnings24'), value: summary.recordingEarnings, colorClass: 'text-primary', bgClass: 'bg-primary/10' },
+                    { icon: Users, label: t('autoI18n.doctorEarnings25'), value: summary.subscriptionEarnings, colorClass: 'text-warning', bgClass: 'bg-warning/10' },
                   ].map((item) => {
                     const Icon = item.icon;
                     return (
@@ -352,7 +350,7 @@ export default function DoctorEarnings() {
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs sm:text-sm text-muted-foreground">
-                        {language === 'es' ? 'Comisión' : 'Commission'}
+                        {t('autoI18n.doctorEarnings26')}
                       </span>
                     </div>
                     <span className="font-semibold text-sm text-muted-foreground">{commissionRate}%</span>
@@ -367,11 +365,11 @@ export default function DoctorEarnings() {
                 <TabsList className="grid grid-cols-2 w-full sm:w-auto">
                   <TabsTrigger value="transactions" className="text-xs sm:text-sm gap-1">
                     <Wallet className="w-3.5 h-3.5" />
-                    {language === 'es' ? 'Transacciones' : 'Transactions'}
+                    {t('autoI18n.doctorEarnings27')}
                   </TabsTrigger>
                   <TabsTrigger value="payouts" className="text-xs sm:text-sm gap-1">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    {language === 'es' ? 'Pagos' : 'Payouts'}
+                    {t('autoI18n.doctorEarnings28')}
                   </TabsTrigger>
                 </TabsList>
                 <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1.5 h-8 text-xs flex-shrink-0">
@@ -385,7 +383,7 @@ export default function DoctorEarnings() {
                   <CardContent className="p-0">
                     {transactions.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground text-sm">
-                        {language === 'es' ? 'No hay transacciones aún' : 'No transactions yet'}
+                        {t('autoI18n.doctorEarnings29')}
                       </div>
                     ) : (
                       <div className="divide-y divide-border">
@@ -421,7 +419,7 @@ export default function DoctorEarnings() {
                   <CardContent className="p-0">
                     {payouts.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground text-sm">
-                        {language === 'es' ? 'No hay pagos registrados aún' : 'No payouts recorded yet'}
+                        {t('autoI18n.doctorEarnings30')}
                       </div>
                     ) : (
                       <div className="divide-y divide-border">
@@ -437,7 +435,7 @@ export default function DoctorEarnings() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-xs sm:text-sm font-medium">
-                                    {language === 'es' ? 'Pago' : 'Payout'}
+                                    {t('autoI18n.doctorEarnings31')}
                                   </span>
                                   {getPayoutMethodBadge(payout.stripe_transfer_id)}
                                   {getPayoutStatusBadge(payout.status)}

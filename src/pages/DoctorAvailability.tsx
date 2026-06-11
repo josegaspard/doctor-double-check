@@ -170,7 +170,7 @@ export default function DoctorAvailabilityPage() {
       let added = false;
       for (const p of parts) {
         if (!EMAIL_RE.test(p)) {
-          toast({ title: t('common.error'), description: `${p}: ${language === 'es' ? 'no es un correo válido' : 'is not a valid email'}`, variant: 'destructive' });
+          toast({ title: t('common.error'), description: `${p}: ${t('availabilityPage.invalidEmail')}`, variant: 'destructive' });
           continue;
         }
         if (!next.has(p)) { next.add(p); added = true; }
@@ -210,10 +210,8 @@ export default function DoctorAvailabilityPage() {
       const subs = result.notified ?? 0;
       const invs = result.invitees ?? 0;
       toast({
-        title: language === 'es' ? 'Cambio notificado' : 'Change notified',
-        description: language === 'es'
-          ? `${subs} suscriptor${subs === 1 ? '' : 'es'}${invs ? ` · ${invs} invitado${invs === 1 ? '' : 's'}` : ''}`
-          : `${subs} subscriber${subs === 1 ? '' : 's'}${invs ? ` · ${invs} invitee${invs === 1 ? '' : 's'}` : ''}`,
+        title: t('availabilityPage.changeNotified'),
+        description: `${subs} ${t('availabilityPage.subscribers')}${invs ? ` · ${invs} ${t('availabilityPage.extraInvitees')}` : ''}`,
       });
     } else {
       toast({ title: t('common.error'), description: result.error, variant: 'destructive' });
@@ -228,7 +226,7 @@ export default function DoctorAvailabilityPage() {
 
   const handleCreate = async () => {
     if (!formData.title.trim()) {
-      toast({ title: t('common.error'), description: language === 'es' ? 'El título es requerido' : 'Title is required', variant: 'destructive' });
+      toast({ title: t('common.error'), description: t('availabilityPage.titleRequired'), variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
@@ -247,7 +245,7 @@ export default function DoctorAvailabilityPage() {
     setIsSubmitting(false);
 
     if (result.success) {
-      toast({ title: t('common.success'), description: language === 'es' ? 'Disponibilidad programada' : 'Availability scheduled' });
+      toast({ title: t('common.success'), description: t('availabilityPage.availabilityScheduled') });
       setIsDialogOpen(false);
       setFormData({ title: '', description: '', type: 'live', date: new Date(), time: '10:00', duration: 60, invitees: [] });
       setInviteeInput('');
@@ -259,14 +257,14 @@ export default function DoctorAvailabilityPage() {
   const handleConfirm = async (id: string) => {
     const result = await confirmAvailability(id);
     if (result.success) {
-      toast({ description: language === 'es' ? 'Disponibilidad confirmada' : 'Availability confirmed' });
+      toast({ description: t('availabilityPage.availabilityConfirmed') });
       setSelectedEvent(null);
     }
   };
   const handleCancel = async (id: string) => {
     const result = await cancelAvailability(id);
     if (result.success) {
-      toast({ description: language === 'es' ? 'Disponibilidad cancelada' : 'Availability cancelled' });
+      toast({ description: t('availabilityPage.availabilityCancelled') });
       setSelectedEvent(null);
     }
   };
@@ -274,8 +272,8 @@ export default function DoctorAvailabilityPage() {
     const result = await notifySubscribers(id);
     if (result.success) {
       toast({
-        title: language === 'es' ? 'Notificaciones enviadas' : 'Notifications sent',
-        description: language === 'es' ? `Se notificó a ${result.notified} suscriptores` : `${result.notified} subscribers notified`,
+        title: t('availabilityPage.notificationsSent'),
+        description: t('availabilityPage.subscribersNotified').replace('{count}', String(result.notified)),
       });
       setSelectedEvent(null);
     } else {
@@ -289,7 +287,7 @@ export default function DoctorAvailabilityPage() {
   const handleDeleteSingle = async (id: string) => {
     const result = await deleteAvailabilities([id]);
     if (result.success) {
-      toast({ description: language === 'es' ? 'Evento eliminado' : 'Event deleted' });
+      toast({ description: t('availabilityPage.eventDeleted') });
       setSelectedEvent(null);
       setConfirmDeleteSingle(null);
     } else {
@@ -327,8 +325,8 @@ export default function DoctorAvailabilityPage() {
     //   consultation → Blue Lagoon (--primary)
     //   office_hours → Comfort Blue (--accent)
     live: { color: 'bg-secondary/15 text-secondary', icon: Video, label: 'Live' },
-    consultation: { color: 'bg-primary/10 text-primary', icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation' },
-    office_hours: { color: 'bg-accent/15 text-accent', icon: Clock, label: language === 'es' ? 'Disponible' : 'Available' },
+    consultation: { color: 'bg-primary/10 text-primary', icon: MessageSquare, label: t('availabilityPage.consultation') },
+    office_hours: { color: 'bg-accent/15 text-accent', icon: Clock, label: t('availabilityPage.available') },
   };
 
   return (
@@ -344,7 +342,7 @@ export default function DoctorAvailabilityPage() {
               <h1 className="text-xl sm:text-2xl font-bold">{t('availability.title')}</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
-                {subscriberCount} {language === 'es' ? 'suscriptores' : 'subscribers'}
+                {subscriberCount} {t('availabilityPage.subscribers')}
               </p>
             </div>
           </div>
@@ -371,7 +369,7 @@ export default function DoctorAvailabilityPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={goToday}>
-              {language === 'es' ? 'Hoy' : 'Today'}
+              {t('availabilityPage.today')}
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={navigatePrev}>
               <ChevronLeft className="h-4 w-4" />
@@ -383,9 +381,9 @@ export default function DoctorAvailabilityPage() {
           </div>
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
             <TabsList className="h-9">
-              <TabsTrigger value="month" className="text-xs px-3">{language === 'es' ? 'Mes' : 'Month'}</TabsTrigger>
-              <TabsTrigger value="week" className="text-xs px-3">{language === 'es' ? 'Semana' : 'Week'}</TabsTrigger>
-              <TabsTrigger value="day" className="text-xs px-3">{language === 'es' ? 'Día' : 'Day'}</TabsTrigger>
+              <TabsTrigger value="month" className="text-xs px-3">{t('availabilityPage.month')}</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs px-3">{t('availabilityPage.week')}</TabsTrigger>
+              <TabsTrigger value="day" className="text-xs px-3">{t('availabilityPage.day')}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -394,8 +392,8 @@ export default function DoctorAvailabilityPage() {
         <div className="flex flex-wrap gap-3 mb-4">
           {[
             { color: 'bg-secondary', label: 'Live' },
-            { color: 'bg-primary', label: language === 'es' ? 'Orientación' : 'Consultation' },
-            { color: 'bg-accent', label: language === 'es' ? 'Disponible' : 'Available' },
+            { color: 'bg-primary', label: t('availabilityPage.consultation') },
+            { color: 'bg-accent', label: t('availabilityPage.available') },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <div className={cn('w-3 h-3 rounded-sm', item.color)} />
@@ -485,20 +483,20 @@ export default function DoctorAvailabilityPage() {
                     {selectedEvent.notificationsSent && (
                       <div className="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/25 rounded-full px-2.5 py-1 w-fit">
                         <Send className="h-3 w-3" />
-                        {language === 'es' ? 'Notificaciones enviadas a suscriptores' : 'Notifications sent to subscribers'}
+                        {t('availabilityPage.notificationsSentToSubscribers')}
                       </div>
                     )}
                     {selectedEvent.reminderSent && (
                       <div className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary bg-secondary/10 border border-secondary/25 rounded-full px-2.5 py-1 w-fit">
                         <Bell className="h-3 w-3" />
-                        {language === 'es' ? 'Recordatorio enviado' : 'Reminder sent'}
+                        {t('availabilityPage.reminderSent')}
                       </div>
                     )}
                     {(selectedEvent.extraInvitees?.length ?? 0) > 0 && (
                       <div className="rounded-lg border border-primary/25 bg-primary/5 p-2.5">
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-primary mb-1.5 flex items-center gap-1.5">
                           <Send className="w-3 h-3" />
-                          {language === 'es' ? 'Invitados extra' : 'Extra invitees'} ({selectedEvent.extraInvitees!.length})
+                          {t('availabilityPage.extraInvitees')} ({selectedEvent.extraInvitees!.length})
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {selectedEvent.extraInvitees!.map(email => (
@@ -515,7 +513,7 @@ export default function DoctorAvailabilityPage() {
                       onClick={() => setConfirmDeleteSingle(selectedEvent.id)}
                       className="border-destructive/40 text-destructive hover:bg-destructive/10 sm:mr-auto"
                     >
-                      <Trash2 className="h-4 w-4 mr-1" /> {language === 'es' ? 'Eliminar' : 'Delete'}
+                      <Trash2 className="h-4 w-4 mr-1" /> {t('availabilityPage.delete')}
                     </Button>
                     {!isPast && selectedEvent.status !== 'cancelled' && selectedEvent.status !== 'completed' && (
                       <div className="flex flex-col sm:flex-row gap-2">
@@ -529,7 +527,7 @@ export default function DoctorAvailabilityPage() {
                         </Button>
                         {!selectedEvent.notificationsSent && (
                           <Button size="sm" variant="secondary" onClick={() => handleNotify(selectedEvent.id)}>
-                            <Bell className="h-4 w-4 mr-1" /> {language === 'es' ? 'Notificar' : 'Notify'}
+                            <Bell className="h-4 w-4 mr-1" /> {t('availabilityPage.notify')}
                           </Button>
                         )}
                       </div>
@@ -545,20 +543,20 @@ export default function DoctorAvailabilityPage() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg h-full sm:h-auto">
             <DialogHeader className="pb-2">
-              <DialogTitle className="text-base sm:text-lg">{language === 'es' ? 'Programar disponibilidad' : 'Schedule availability'}</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">{t('availabilityPage.scheduleAvailability')}</DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
-                {language === 'es' ? 'Crea un horario de live, orientación o disponibilidad' : 'Create a live, consultation, or availability schedule'}
+                {t('availabilityPage.scheduleAvailabilityDesc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
               {/* Type selector */}
               <div className="space-y-2">
-                <Label className="text-xs sm:text-sm">{language === 'es' ? 'Tipo' : 'Type'}</Label>
+                <Label className="text-xs sm:text-sm">{t('availabilityPage.type')}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-secondary border-secondary bg-secondary/15' },
-                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: language === 'es' ? 'Orientación' : 'Consultation', color: 'text-primary border-primary bg-primary/10' },
-                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: language === 'es' ? 'Disponible' : 'Available', color: 'text-accent border-accent bg-accent/15' },
+                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: t('availabilityPage.consultation'), color: 'text-primary border-primary bg-primary/10' },
+                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: t('availabilityPage.available'), color: 'text-accent border-accent bg-accent/15' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -577,20 +575,20 @@ export default function DoctorAvailabilityPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="title">{language === 'es' ? 'Título' : 'Title'}</Label>
+                <Label htmlFor="title">{t('availabilityPage.titleLabel')}</Label>
                 <Input
                   id="title"
-                  placeholder={language === 'es' ? 'Ej: Live sobre cardiología preventiva' : 'E.g.: Preventive cardiology live'}
+                  placeholder={t('availabilityPage.titlePlaceholder')}
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">{language === 'es' ? 'Descripción (opcional)' : 'Description (optional)'}</Label>
+                <Label htmlFor="description">{t('availabilityPage.descriptionLabel')}</Label>
                 <Textarea
                   id="description"
-                  placeholder={language === 'es' ? 'Describe brevemente...' : 'Briefly describe...'}
+                  placeholder={t('availabilityPage.descriptionPlaceholder')}
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
@@ -599,7 +597,7 @@ export default function DoctorAvailabilityPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-xs sm:text-sm">{language === 'es' ? 'Fecha' : 'Date'}</Label>
+                  <Label className="text-xs sm:text-sm">{t('availabilityPage.date')}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-start text-left font-normal h-9 sm:h-10 text-xs sm:text-sm">
@@ -620,7 +618,7 @@ export default function DoctorAvailabilityPage() {
                   </Popover>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="time" className="text-xs sm:text-sm">{language === 'es' ? 'Hora' : 'Time'}</Label>
+                  <Label htmlFor="time" className="text-xs sm:text-sm">{t('availabilityPage.time')}</Label>
                   <Input
                     id="time"
                     type="time"
@@ -632,7 +630,7 @@ export default function DoctorAvailabilityPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">{language === 'es' ? 'Duración' : 'Duration'}</Label>
+                <Label className="text-xs sm:text-sm">{t('availabilityPage.duration')}</Label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                   {[
                     { value: 15, label: '15m' },
@@ -662,16 +660,16 @@ export default function DoctorAvailabilityPage() {
               {/* Extra invitees (emails) */}
               <div className="space-y-1.5">
                 <Label htmlFor="invitees" className="text-xs sm:text-sm flex items-center gap-1.5">
-                  {language === 'es' ? 'Invitados extra (opcional)' : 'Extra invitees (optional)'}
+                  {t('availabilityPage.extraInviteesLabel')}
                   <span className="text-[10px] text-muted-foreground font-normal">
-                    {language === 'es' ? '— se suman a tus suscriptores' : '— added to your subscribers'}
+                    {t('availabilityPage.extraInviteesHint')}
                   </span>
                 </Label>
                 <Input
                   id="invitees"
                   type="email"
                   inputMode="email"
-                  placeholder={language === 'es' ? 'correo@ejemplo.com (Enter o coma)' : 'email@example.com (Enter or comma)'}
+                  placeholder={t('availabilityPage.inviteePlaceholder')}
                   value={inviteeInput}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -701,7 +699,7 @@ export default function DoctorAvailabilityPage() {
                           type="button"
                           onClick={() => removeInvitee(email)}
                           className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-                          aria-label={language === 'es' ? `Quitar ${email}` : `Remove ${email}`}
+                          aria-label={t('availabilityPage.removeInvitee').replace('{email}', email)}
                         >
                           <XCircle className="w-3 h-3" />
                         </button>
@@ -718,9 +716,9 @@ export default function DoctorAvailabilityPage() {
               </Button>
               <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Creando...' : 'Creating...'}</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
                 ) : (
-                  <><Plus className="w-4 h-4 mr-2" />{language === 'es' ? 'Crear' : 'Create'}</>
+                  <><Plus className="w-4 h-4 mr-2" />{t('availabilityPage.create')}</>
                 )}
               </Button>
             </DialogFooter>
@@ -769,12 +767,10 @@ export default function DoctorAvailabilityPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {language === 'es' ? '¿Eliminar este evento?' : 'Delete this event?'}
+                {t('availabilityPage.deleteEventQuestion')}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                {language === 'es'
-                  ? 'Esta acción no se puede deshacer. Si ya enviaste notificaciones, los suscriptores ya recibieron el aviso.'
-                  : 'This action cannot be undone. If you already notified subscribers, they have already received the alert.'}
+                {t('availabilityPage.deleteEventDesc')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -784,7 +780,7 @@ export default function DoctorAvailabilityPage() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                {language === 'es' ? 'Eliminar' : 'Delete'}
+                {t('availabilityPage.delete')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -795,24 +791,24 @@ export default function DoctorAvailabilityPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {language === 'es' ? 'Fecha actualizada' : 'Date updated'}
+                {t('availabilityPage.dateUpdated')}
               </AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="space-y-2 text-sm">
                   <p>
-                    {language === 'es' ? 'Moviste' : 'You moved'}{' '}
+                    {t('availabilityPage.youMoved')}{' '}
                     <span className="font-semibold text-foreground">"{pendingMove?.title}"</span>
                   </p>
                   {pendingMove && (
                     <div className="rounded-lg bg-muted/60 border border-border p-3 space-y-1.5 text-xs">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">{language === 'es' ? 'Antes' : 'Before'}</span>
+                        <span className="text-muted-foreground">{t('availabilityPage.before')}</span>
                         <span className="font-medium text-foreground line-through">
                           {format(pendingMove.oldDate, language === 'es' ? "EEE d MMM, HH:mm" : 'EEE MMM d, HH:mm', { locale: language === 'es' ? es : enUS })}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-muted-foreground">{language === 'es' ? 'Ahora' : 'Now'}</span>
+                        <span className="text-muted-foreground">{t('availabilityPage.now')}</span>
                         <span className="font-semibold text-primary">
                           {format(pendingMove.newDate, language === 'es' ? "EEE d MMM, HH:mm" : 'EEE MMM d, HH:mm', { locale: language === 'es' ? es : enUS })}
                         </span>
@@ -820,16 +816,17 @@ export default function DoctorAvailabilityPage() {
                     </div>
                   )}
                   <p className="text-muted-foreground">
-                    {language === 'es'
-                      ? `¿Avisar a tus ${subscriberCount} suscriptor${subscriberCount === 1 ? '' : 'es'}${pendingMove?.inviteesCount ? ` y ${pendingMove.inviteesCount} invitado${pendingMove.inviteesCount === 1 ? '' : 's'} extra` : ''} del cambio?`
-                      : `Notify your ${subscriberCount} subscriber${subscriberCount === 1 ? '' : 's'}${pendingMove?.inviteesCount ? ` and ${pendingMove.inviteesCount} extra invitee${pendingMove.inviteesCount === 1 ? '' : 's'}` : ''} of the change?`}
+                    {t('availabilityPage.notifyChangeQuestion')
+                      .replace('{subs}', String(subscriberCount))
+                      .replace('{subscribers}', t('availabilityPage.subscribers'))
+                      .replace('{invitees}', pendingMove?.inviteesCount ? ` + ${pendingMove.inviteesCount} ${t('availabilityPage.extraInvitees')}` : '')}
                   </p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isNotifyingMove}>
-                {language === 'es' ? 'Solo guardar' : 'Just save'}
+                {t('availabilityPage.justSave')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={(e) => { e.preventDefault(); handleConfirmNotifyMove(); }}
@@ -837,7 +834,7 @@ export default function DoctorAvailabilityPage() {
                 className="gap-1.5"
               >
                 {isNotifyingMove ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {language === 'es' ? 'Sí, notificar' : 'Yes, notify'}
+                {t('availabilityPage.yesNotify')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

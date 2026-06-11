@@ -44,7 +44,7 @@ const emptyHospital = {
 export default function AdminHospitals() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const es = language === 'es';
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +91,7 @@ export default function AdminHospitals() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.address) { toast.error(es ? 'Nombre y dirección son requeridos' : 'Name and address are required'); return; }
+    if (!form.name || !form.address) { toast.error(t('autoI18n.clAdminHosp1')); return; }
     setSaving(true);
     const payload = {
       name: form.name, address: form.address, phone: form.phone || null, website: form.website || null,
@@ -103,18 +103,18 @@ export default function AdminHospitals() {
     };
     if (editingId) {
       const { error } = await supabase.from('hospitals').update(payload as any).eq('id', editingId);
-      if (error) toast.error(error.message); else toast.success(es ? 'Hospital actualizado' : 'Hospital updated');
+      if (error) toast.error(error.message); else toast.success(t('autoI18n.clAdminHosp2'));
     } else {
       const { error } = await supabase.from('hospitals').insert(payload as any);
-      if (error) toast.error(error.message); else toast.success(es ? 'Hospital creado' : 'Hospital created');
+      if (error) toast.error(error.message); else toast.success(t('autoI18n.clAdminHosp3'));
     }
     setSaving(false); setDialogOpen(false); fetchHospitals();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(es ? '¿Eliminar este hospital?' : 'Delete this hospital?')) return;
+    if (!confirm(t('autoI18n.clAdminHosp4'))) return;
     const { error } = await supabase.from('hospitals').delete().eq('id', id);
-    if (error) toast.error(error.message); else { toast.success(es ? 'Eliminado' : 'Deleted'); fetchHospitals(); }
+    if (error) toast.error(error.message); else { toast.success(t('autoI18n.clAdminHosp5')); fetchHospitals(); }
   };
 
   const toggleActive = async (id: string, active: boolean) => {
@@ -186,7 +186,7 @@ export default function AdminHospitals() {
       await supabase.from('hospital_doctors').update({ is_primary: primaryIds.has(id) } as any).eq('hospital_id', hospitalId).eq('doctor_id', id);
     }
 
-    toast.success(es ? 'Doctores actualizados' : 'Doctors updated');
+    toast.success(t('autoI18n.clAdminHosp6'));
     setDocsSaving(false);
     setDocsDialogHospital(null);
   };
@@ -209,7 +209,7 @@ export default function AdminHospitals() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.clAdminHosp7')}
         </Button>
         <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -218,28 +218,28 @@ export default function AdminHospitals() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
-                {es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics'}
+                {t('autoI18n.clAdminHosp8')}
               </h1>
-              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Administra el directorio de hospitales' : 'Manage the hospital directory'}</p>
+              <p className="text-xs sm:text-sm text-secondary/70">{t('autoI18n.clAdminHosp9')}</p>
             </div>
           </div>
           <Button onClick={openCreate} className="gap-1.5 flex-shrink-0">
-            <Plus className="w-4 h-4" /> {es ? 'Agregar' : 'Add'}
+            <Plus className="w-4 h-4" /> {t('autoI18n.clAdminHosp10')}
           </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder={es ? 'Buscar hospital...' : 'Search hospital...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <Input placeholder={t('autoI18n.clAdminHosp11')} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{es ? 'Todos' : 'All'}</SelectItem>
-              <SelectItem value="public">{es ? 'Público' : 'Public'}</SelectItem>
-              <SelectItem value="private">{es ? 'Privado' : 'Private'}</SelectItem>
-              <SelectItem value="clinic">{es ? 'Clínica' : 'Clinic'}</SelectItem>
+              <SelectItem value="all">{t('autoI18n.clAdminHosp12')}</SelectItem>
+              <SelectItem value="public">{t('autoI18n.clAdminHosp13')}</SelectItem>
+              <SelectItem value="private">{t('autoI18n.clAdminHosp14')}</SelectItem>
+              <SelectItem value="clinic">{t('autoI18n.clAdminHosp15')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -264,20 +264,20 @@ export default function AdminHospitals() {
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <Badge variant={h.type === 'public' ? 'default' : 'secondary'} className="text-[10px]">
-                          {h.type === 'public' ? (es ? 'Público' : 'Public') : h.type === 'private' ? (es ? 'Privado' : 'Private') : (es ? 'Clínica' : 'Clinic')}
+                          {h.type === 'public' ? t('autoI18n.clAdminHosp13') : h.type === 'private' ? t('autoI18n.clAdminHosp14') : t('autoI18n.clAdminHosp15')}
                         </Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {h.phone && <span className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{h.phone}</span>}
-                      {h.website && <span className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="w-3 h-3" />{es ? 'Sitio web' : 'Website'}</span>}
+                      {h.website && <span className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="w-3 h-3" />{t('autoI18n.clAdminHosp16')}</span>}
                       {h.zone && <Badge variant="outline" className="text-[10px]">{h.zone}</Badge>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-2" onClick={() => openDoctorsDialog(h)} title={es ? 'Doctores' : 'Doctors'}>
+                    <Button variant="ghost" size="sm" className="gap-1.5 h-8 px-2" onClick={() => openDoctorsDialog(h)} title={t('autoI18n.clAdminHosp17')}>
                       <Stethoscope className="w-4 h-4" />
-                      <span className="hidden sm:inline text-xs">{es ? 'Doctores' : 'Doctors'}</span>
+                      <span className="hidden sm:inline text-xs">{t('autoI18n.clAdminHosp17')}</span>
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(h)}><Pencil className="w-4 h-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => toggleActive(h.id, h.is_active)}>
@@ -288,51 +288,51 @@ export default function AdminHospitals() {
                 </CardContent>
               </Card>
             ))}
-            {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{es ? 'No hay hospitales' : 'No hospitals'}</p>}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{t('autoI18n.clAdminHosp18')}</p>}
           </div>
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? (es ? 'Editar Hospital' : 'Edit Hospital') : (es ? 'Agregar Hospital' : 'Add Hospital')}</DialogTitle>
+              <DialogTitle>{editingId ? t('autoI18n.clAdminHosp19') : t('autoI18n.clAdminHosp20')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div><Label>{es ? 'Nombre' : 'Name'} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-              <div><Label>{es ? 'Dirección' : 'Address'} *</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminHosp21')} *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminHosp22')} *</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>{es ? 'Teléfono' : 'Phone'}</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
-                <div><Label>{es ? 'Sitio Web' : 'Website'}</Label><Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} /></div>
+                <div><Label>{t('autoI18n.clAdminHosp23')}</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                <div><Label>{t('autoI18n.clAdminHosp24')}</Label><Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label>{es ? 'Tipo' : 'Type'}</Label>
+                  <Label>{t('autoI18n.clAdminHosp25')}</Label>
                   <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="public">{es ? 'Público' : 'Public'}</SelectItem>
-                      <SelectItem value="private">{es ? 'Privado' : 'Private'}</SelectItem>
-                      <SelectItem value="clinic">{es ? 'Clínica' : 'Clinic'}</SelectItem>
+                      <SelectItem value="public">{t('autoI18n.clAdminHosp13')}</SelectItem>
+                      <SelectItem value="private">{t('autoI18n.clAdminHosp14')}</SelectItem>
+                      <SelectItem value="clinic">{t('autoI18n.clAdminHosp15')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>{es ? 'Nivel' : 'Level'}</Label><Input value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))} placeholder="3er nivel" /></div>
+                <div><Label>{t('autoI18n.clAdminHosp26')}</Label><Input value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))} placeholder="3er nivel" /></div>
               </div>
-              <div><Label>{es ? 'Zona' : 'Zone'}</Label><Input value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} placeholder="Centro, Norte, Sur..." /></div>
-              <div><Label>{es ? 'Especialidades (separadas por coma)' : 'Specialties (comma separated)'}</Label><Input value={form.specialties} onChange={e => setForm(f => ({ ...f, specialties: e.target.value }))} /></div>
-              <div><Label>{es ? 'Horario' : 'Hours'}</Label><Input value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} placeholder="Urgencias 24h" /></div>
-              <div><Label>{es ? 'URL de Imagen' : 'Image URL'}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminHosp27')}</Label><Input value={form.zone} onChange={e => setForm(f => ({ ...f, zone: e.target.value }))} placeholder="Centro, Norte, Sur..." /></div>
+              <div><Label>{t('autoI18n.clAdminHosp28')}</Label><Input value={form.specialties} onChange={e => setForm(f => ({ ...f, specialties: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminHosp29')}</Label><Input value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} placeholder="Urgencias 24h" /></div>
+              <div><Label>{t('autoI18n.clAdminHosp30')}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>Latitud</Label><Input type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} /></div>
                 <div><Label>Longitud</Label><Input type="number" step="any" value={form.lng} onChange={e => setForm(f => ({ ...f, lng: e.target.value }))} /></div>
               </div>
-              <div><Label>{es ? 'Descripción' : 'Description'}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} /></div>
+              <div><Label>{t('autoI18n.clAdminHosp31')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} /></div>
               <div className="flex items-center gap-2">
                 <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
-                <Label>{es ? 'Activo' : 'Active'}</Label>
+                <Label>{t('autoI18n.clAdminHosp32')}</Label>
               </div>
               <Button onClick={handleSave} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? (es ? 'Guardar Cambios' : 'Save Changes') : (es ? 'Crear Hospital' : 'Create Hospital'))}
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? t('autoI18n.clAdminHosp33') : t('autoI18n.clAdminHosp34'))}
               </Button>
             </div>
           </DialogContent>
@@ -343,19 +343,17 @@ export default function AdminHospitals() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Stethoscope className="w-5 h-5 text-primary" />
-                {es ? 'Doctores en' : 'Doctors at'} {docsDialogHospital?.name}
+                {t('autoI18n.clAdminHosp35')} {docsDialogHospital?.name}
               </DialogTitle>
               <p className="text-xs text-muted-foreground">
-                {es
-                  ? 'Asigna los médicos que atienden en esta clínica. Marca como principal a los destacados.'
-                  : 'Assign doctors who practice at this clinic. Mark featured ones as primary.'}
+                {t('autoI18n.clAdminHosp36')}
               </p>
             </DialogHeader>
 
             <div className="relative mb-2 flex-shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder={es ? 'Buscar por nombre o especialidad...' : 'Search by name or specialty...'}
+                placeholder={t('autoI18n.clAdminHosp37')}
                 value={docsSearch}
                 onChange={(e) => setDocsSearch(e.target.value)}
                 className="pl-9"
@@ -366,7 +364,7 @@ export default function AdminHospitals() {
               {docsLoading ? (
                 <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
               ) : filteredDocs.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">{es ? 'Sin doctores aprobados' : 'No approved doctors'}</p>
+                <p className="text-center text-sm text-muted-foreground py-8">{t('autoI18n.clAdminHosp38')}</p>
               ) : (
                 filteredDocs.map((d: any) => {
                   const assigned = assignedIds.has(d.id);
@@ -386,7 +384,7 @@ export default function AdminHospitals() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{d.name ? `Dr. ${d.name}` : (es ? 'Médico' : 'Doctor')}</p>
+                        <p className="text-sm font-medium truncate">{d.name ? `Dr. ${d.name}` : t('autoI18n.clAdminHosp39')}</p>
                         <p className="text-xs text-muted-foreground truncate">
                           {d.specialty}
                           {Number(d.rating) > 0 && (
@@ -405,7 +403,7 @@ export default function AdminHospitals() {
                         disabled={!assigned && !primary}
                       >
                         {primary && <Check className="w-3 h-3" />}
-                        {es ? 'Principal' : 'Primary'}
+                        {t('autoI18n.clAdminHosp40')}
                       </Button>
                     </div>
                   );
@@ -415,12 +413,12 @@ export default function AdminHospitals() {
 
             <div className="flex items-center justify-between gap-2 pt-3 mt-2 border-t flex-shrink-0">
               <p className="text-xs text-muted-foreground">
-                {assignedIds.size} {es ? 'seleccionados' : 'selected'}
+                {assignedIds.size} {t('autoI18n.clAdminHosp41')}
               </p>
               <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => setDocsDialogHospital(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+                <Button variant="ghost" onClick={() => setDocsDialogHospital(null)}>{t('autoI18n.clAdminHosp42')}</Button>
                 <Button onClick={saveDoctorAssignments} disabled={docsSaving}>
-                  {docsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}
+                  {docsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('autoI18n.clAdminHosp43')}
                 </Button>
               </div>
             </div>

@@ -34,7 +34,7 @@ interface PayoutData {
 export function EarningsCard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [earnings, setEarnings] = useState<EarningsData | null>(null);
   const [recentPayouts, setRecentPayouts] = useState<PayoutData[]>([]);
@@ -89,11 +89,11 @@ export function EarningsCard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return <Badge variant="verified" className="text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Pagado' : 'Paid'}</Badge>;
+        return <Badge variant="verified" className="text-[10px] sm:text-xs"><CheckCircle className="w-3 h-3 mr-1" />{t('autoI18n.earningsCard1')}</Badge>;
       case 'processing':
-        return <Badge variant="warning" className="text-[10px] sm:text-xs"><Clock className="w-3 h-3 mr-1" />{language === 'es' ? 'Procesando' : 'Processing'}</Badge>;
+        return <Badge variant="warning" className="text-[10px] sm:text-xs"><Clock className="w-3 h-3 mr-1" />{t('autoI18n.earningsCard2')}</Badge>;
       case 'failed':
-        return <Badge variant="destructive" className="text-[10px] sm:text-xs"><AlertCircle className="w-3 h-3 mr-1" />{language === 'es' ? 'Fallido' : 'Failed'}</Badge>;
+        return <Badge variant="destructive" className="text-[10px] sm:text-xs"><AlertCircle className="w-3 h-3 mr-1" />{t('autoI18n.earningsCard3')}</Badge>;
       default:
         return <Badge variant="outline" className="text-[10px] sm:text-xs">{status}</Badge>;
     }
@@ -121,7 +121,7 @@ export function EarningsCard() {
       <CardHeader className="pb-1.5 sm:pb-2">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-          <span className="flex-1">{language === 'es' ? 'Ganancias' : 'Earnings'}</span>
+          <span className="flex-1">{t('autoI18n.earningsCard4')}</span>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
@@ -132,7 +132,7 @@ export function EarningsCard() {
             <div className="flex items-center gap-1.5 mb-0.5">
               <Clock className="w-3.5 h-3.5 text-success" />
               <span className="text-[10px] sm:text-xs text-muted-foreground">
-                {language === 'es' ? 'Pendiente' : 'Pending'}
+                {t('autoI18n.earningsCard5')}
               </span>
             </div>
             <p className="text-base sm:text-xl font-bold text-success">
@@ -143,7 +143,7 @@ export function EarningsCard() {
             <div className="flex items-center gap-1.5 mb-0.5">
               <TrendingUp className="w-3.5 h-3.5 text-primary" />
               <span className="text-[10px] sm:text-xs text-muted-foreground">
-                {language === 'es' ? 'Total' : 'Total'}
+                {t('autoI18n.earningsCard6')}
               </span>
             </div>
             <p className="text-base sm:text-xl font-bold text-primary">
@@ -158,9 +158,7 @@ export function EarningsCard() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
               <p className="text-xs sm:text-sm text-foreground">
-                {language === 'es' 
-                  ? 'Configura tu cuenta bancaria para recibir pagos'
-                  : 'Set up your bank account to receive payments'}
+                {t('autoI18n.earningsCard7')}
               </p>
             </div>
           </div>
@@ -170,7 +168,7 @@ export function EarningsCard() {
         {recentPayouts.length > 0 && (
           <div>
             <h4 className="text-xs font-medium mb-1.5 text-muted-foreground">
-              {language === 'es' ? 'Pagos recientes' : 'Recent payouts'}
+              {t('autoI18n.earningsCard8')}
             </h4>
             <div className="space-y-1.5">
               {recentPayouts.map((payout) => (
@@ -195,7 +193,7 @@ export function EarningsCard() {
             onClick={(e) => { e.stopPropagation(); navigate('/doctor/bank-account'); }}
           >
             <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-            {language === 'es' ? 'Banco' : 'Bank'}
+            {t('autoI18n.earningsCard9')}
           </Button>
           <Button 
             variant="outline" 
@@ -203,7 +201,7 @@ export function EarningsCard() {
             className="flex-1 h-8 text-xs justify-center"
             onClick={(e) => { e.stopPropagation(); navigate('/doctor/invoices'); }}
           >
-            {language === 'es' ? 'Facturas' : 'Invoices'}
+            {t('autoI18n.earningsCard10')}
             <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
           </Button>
         </div>

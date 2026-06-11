@@ -142,7 +142,7 @@ function NewsCard({ item, isHero = false, dateLocale, language, t }: {
             <p className={`text-muted-foreground mb-3 ${isHero ? 'text-sm line-clamp-3' : 'text-sm line-clamp-2'}`}>{item.summary}</p>
           )}
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-auto">
-            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{item.view_count || 0} {language === 'es' ? 'lecturas' : 'views'}</span>
+            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{item.view_count || 0} {t('autoI18n.medicalNews1')}</span>
             <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" />{item.comment_count || 0} {t('medicalNews.comments')}</span>
           </div>
         </CardContent>
@@ -212,9 +212,9 @@ export default function MedicalNews() {
   }, [page, search, selectedCategory, sortBy]);
 
   const sortOptions: { key: SortBy; label: string; icon: React.ReactNode }[] = [
-    { key: 'recent', label: language === 'es' ? 'Recientes' : 'Recent', icon: <Clock className="w-3.5 h-3.5" /> },
-    { key: 'most_read', label: language === 'es' ? 'Más leídos' : 'Most Read', icon: <TrendingUp className="w-3.5 h-3.5" /> },
-    { key: 'most_commented', label: language === 'es' ? 'Más comentados' : 'Most Commented', icon: <Flame className="w-3.5 h-3.5" /> },
+    { key: 'recent', label: t('autoI18n.medicalNews2'), icon: <Clock className="w-3.5 h-3.5" /> },
+    { key: 'most_read', label: t('autoI18n.medicalNews3'), icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { key: 'most_commented', label: t('autoI18n.medicalNews4'), icon: <Flame className="w-3.5 h-3.5" /> },
   ];
 
   const heroItem = page === 0 && news.length > 0 && !isMobile ? news[0] : null;

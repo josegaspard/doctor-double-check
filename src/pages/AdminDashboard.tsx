@@ -22,7 +22,7 @@ interface AdminModule {
 const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDashboard(_props, ref) {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [stats, setStats] = useState({ 
     pendingVerifications: 0, pendingDoctors: 0, pendingResidents: 0,
     totalUsers: 0, totalDoctors: 0, totalPatients: 0, totalResidents: 0,
@@ -66,52 +66,50 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
     if (role === 'admin') fetchStats();
   }, [role]);
 
-  const es = language === 'es';
-
   const moduleCategories: { title: string; modules: AdminModule[] }[] = [
     {
-      title: es ? '💰 Financiero' : '💰 Financial',
+      title: t('autoI18n.clAdminDash1'),
       modules: [
-        { id: 'analytics', icon: BarChart3, href: '/admin/analytics', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Analytics y Reportes' : 'Analytics & Reports', desc: es ? 'Estadísticas de ingresos, usuarios y actividad' : 'Revenue, users and activity stats' },
-        { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: es ? 'Pagos a Doctores' : 'Doctor Payouts', desc: es ? 'Paga por Stripe o transferencia manual' : 'Pay via Stripe or manual transfer' },
-        { id: 'invoices', icon: FileText, href: '/admin/invoices', color: 'text-secondary', borderColor: 'border-l-secondary', title: es ? 'Revisión de Facturas' : 'Invoice Review', desc: es ? 'Aprueba o rechaza facturas' : 'Approve or reject invoices', badge: stats.pendingInvoices },
-        { id: 'payout-settings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground', borderColor: 'border-l-muted-foreground', title: es ? 'Config. de Pagos' : 'Payout Settings', desc: es ? 'Comisiones, frecuencia y payouts' : 'Commissions, frequency and payouts' },
-        { id: 'refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive', borderColor: 'border-l-destructive', title: es ? 'Reembolsos' : 'Refunds', desc: es ? 'Solicitudes y reembolsos manuales' : 'Requests and manual refunds', badge: stats.pendingRefundRequests },
+        { id: 'analytics', icon: BarChart3, href: '/admin/analytics', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash2'), desc: t('autoI18n.clAdminDash3') },
+        { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash4'), desc: t('autoI18n.clAdminDash5') },
+        { id: 'invoices', icon: FileText, href: '/admin/invoices', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash6'), desc: t('autoI18n.clAdminDash7'), badge: stats.pendingInvoices },
+        { id: 'payout-settings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground', borderColor: 'border-l-muted-foreground', title: t('autoI18n.clAdminDash8'), desc: t('autoI18n.clAdminDash9') },
+        { id: 'refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash10'), desc: t('autoI18n.clAdminDash11'), badge: stats.pendingRefundRequests },
       ],
     },
     {
-      title: es ? '👥 Usuarios' : '👥 Users',
+      title: t('autoI18n.clAdminDash12'),
       modules: [
-        { id: 'users', icon: Users, href: '/admin/users', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Gestión de Usuarios' : 'User Management', desc: es ? 'Administra todos los usuarios' : 'Manage all users' },
-        { id: 'doctors', icon: Stethoscope, href: '/admin/doctors', color: 'text-success', borderColor: 'border-l-success', title: es ? 'Validación de Médicos' : 'Doctor Validation', desc: es ? 'Aprueba solicitudes de médicos' : 'Approve doctor requests', badge: stats.pendingDoctors },
-        { id: 'residents', icon: GraduationCap, href: '/admin/residents', color: 'text-accent', borderColor: 'border-l-accent', title: es ? 'Validación de Residentes' : 'Resident Validation', desc: es ? 'Gestiona solicitudes de residentes' : 'Manage resident requests', badge: stats.pendingResidents },
-        { id: 'verifications', icon: FileCheck, href: '/admin/verifications', color: 'text-info', borderColor: 'border-l-info', title: es ? 'Verificaciones de Identidad' : 'Identity Verifications', desc: es ? 'Revisa solicitudes de pacientes' : 'Review patient requests', badge: stats.pendingVerifications },
-        { id: 'credentials', icon: ShieldCheck, href: '/admin/credentials', color: 'text-accent', borderColor: 'border-l-accent', title: es ? 'Credenciales de Doctores' : 'Doctor Credentials', desc: es ? 'Educación y certificaciones' : 'Education and certifications' },
+        { id: 'users', icon: Users, href: '/admin/users', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash13'), desc: t('autoI18n.clAdminDash14') },
+        { id: 'doctors', icon: Stethoscope, href: '/admin/doctors', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash15'), desc: t('autoI18n.clAdminDash16'), badge: stats.pendingDoctors },
+        { id: 'residents', icon: GraduationCap, href: '/admin/residents', color: 'text-accent', borderColor: 'border-l-accent', title: t('autoI18n.clAdminDash17'), desc: t('autoI18n.clAdminDash18'), badge: stats.pendingResidents },
+        { id: 'verifications', icon: FileCheck, href: '/admin/verifications', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash19'), desc: t('autoI18n.clAdminDash20'), badge: stats.pendingVerifications },
+        { id: 'credentials', icon: ShieldCheck, href: '/admin/credentials', color: 'text-accent', borderColor: 'border-l-accent', title: t('autoI18n.clAdminDash21'), desc: t('autoI18n.clAdminDash22') },
       ],
     },
     {
-      title: es ? '📰 Contenido' : '📰 Content',
+      title: t('autoI18n.clAdminDash23'),
       modules: [
-        { id: 'news', icon: Newspaper, href: '/admin/news', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Noticias y Blog Médico' : 'Medical News & Blog', desc: es ? 'Crea y publica artículos' : 'Create and publish articles' },
-        { id: 'events', icon: Megaphone, href: '/admin/events', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Eventos y convocatorias' : 'Events & calls', desc: es ? 'Modera eventos publicados por doctores' : 'Moderate events published by doctors' },
-        { id: 'ranks', icon: ShieldCheck, href: '/admin/ranks', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Rangos de Doctores' : 'Doctor Ranks', desc: es ? 'Administra rangos y sus requisitos' : 'Manage ranks and requirements' },
-        { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-accent', borderColor: 'border-l-accent', title: es ? 'Publicidad' : 'Advertising', desc: es ? 'Campañas, placements y métricas' : 'Campaigns, placements and metrics' },
-        { id: 'site-settings', icon: Settings, href: '/admin/site-settings', color: 'text-info', borderColor: 'border-l-info', title: es ? 'Config. del Sitio' : 'Site Settings', desc: es ? 'Redes sociales, términos y privacidad' : 'Social media, terms and privacy' },
+        { id: 'news', icon: Newspaper, href: '/admin/news', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash24'), desc: t('autoI18n.clAdminDash25') },
+        { id: 'events', icon: Megaphone, href: '/admin/events', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash26'), desc: t('autoI18n.clAdminDash27') },
+        { id: 'ranks', icon: ShieldCheck, href: '/admin/ranks', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash28'), desc: t('autoI18n.clAdminDash29') },
+        { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-accent', borderColor: 'border-l-accent', title: t('autoI18n.clAdminDash30'), desc: t('autoI18n.clAdminDash31') },
+        { id: 'site-settings', icon: Settings, href: '/admin/site-settings', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash32'), desc: t('autoI18n.clAdminDash33') },
       ],
     },
     {
-      title: es ? '🛡️ Soporte' : '🛡️ Support',
+      title: t('autoI18n.clAdminDash34'),
       modules: [
-        { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: es ? 'Reportes y Reclamos' : 'Reports & Claims', desc: es ? 'Gestiona reportes de usuarios' : 'Manage user reports', badge: stats.pendingReports },
-        { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: es ? 'QA Checklist E2E' : 'QA Checklist E2E', desc: es ? 'Pruebas end-to-end por rol con seguimiento' : 'End-to-end testing by role with tracking' },
+        { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash35'), desc: t('autoI18n.clAdminDash36'), badge: stats.pendingReports },
+        { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash37'), desc: t('autoI18n.clAdminDash38') },
       ],
     },
     {
-      title: es ? '🏥 Directorio y Marketplace' : '🏥 Directory & Marketplace',
+      title: t('autoI18n.clAdminDash39'),
       modules: [
-        { id: 'hospitals', icon: Building2, href: '/admin/hospitals', color: 'text-primary', borderColor: 'border-l-primary', title: es ? 'Hospitales y Clínicas' : 'Hospitals & Clinics', desc: es ? 'Administra el directorio de hospitales' : 'Manage hospital directory' },
-        { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: es ? 'Marketplace Material Médico' : 'Medical Supplies Marketplace', desc: es ? 'Productos, proveedores y pedidos' : 'Products, vendors and orders' },
-        { id: 'featured', icon: Star, href: '/admin/featured', color: 'text-warning', borderColor: 'border-l-warning', title: es ? 'Destacados y Promociones' : 'Featured & Promotions', desc: es ? 'Destaca hospitales y productos con métricas' : 'Feature hospitals & products with analytics' },
+        { id: 'hospitals', icon: Building2, href: '/admin/hospitals', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash40'), desc: t('autoI18n.clAdminDash41') },
+        { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash42'), desc: t('autoI18n.clAdminDash43') },
+        { id: 'featured', icon: Star, href: '/admin/featured', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash44'), desc: t('autoI18n.clAdminDash45') },
       ],
     },
   ];

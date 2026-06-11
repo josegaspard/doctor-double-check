@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -50,7 +51,7 @@ export default function HospitalDoctorsList({
   language,
 }: HospitalDoctorsListProps) {
   const navigate = useNavigate();
-  const es = language === 'es';
+  const { t } = useLanguage();
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [usedFallback, setUsedFallback] = useState(false);
@@ -152,7 +153,7 @@ export default function HospitalDoctorsList({
     return (
       <div className="mt-4 p-4 rounded-lg bg-muted/40 border border-border flex items-center gap-2">
         <Loader2 className="w-4 h-4 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">{es ? 'Cargando médicos...' : 'Loading doctors...'}</p>
+        <p className="text-sm text-muted-foreground">{t('autoI18n.clHospDoctors1')}</p>
       </div>
     );
   }
@@ -161,7 +162,7 @@ export default function HospitalDoctorsList({
     return (
       <div className="mt-4 p-4 rounded-lg bg-muted/40 border border-border">
         <p className="text-sm text-muted-foreground">
-          {es ? 'No hay médicos relacionados disponibles por el momento.' : 'No related doctors available right now.'}
+          {t('autoI18n.clHospDoctors2')}
         </p>
         <Button
           variant="link"
@@ -169,7 +170,7 @@ export default function HospitalDoctorsList({
           className="px-0 mt-1"
           onClick={() => navigate('/doctors')}
         >
-          {es ? 'Ver directorio completo' : 'See full directory'} <ChevronRight className="w-3 h-3 ml-1" />
+          {t('autoI18n.clHospDoctors3')} <ChevronRight className="w-3 h-3 ml-1" />
         </Button>
       </div>
     );
@@ -180,11 +181,11 @@ export default function HospitalDoctorsList({
       <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <Stethoscope className="w-4 h-4 text-primary" />
-          {es ? 'Médicos relacionados' : 'Related doctors'}
+          {t('autoI18n.clHospDoctors4')}
           <Badge variant="secondary" className="text-[10px] h-5">{doctors.length}</Badge>
           {usedFallback && (
             <span className="text-[10px] font-normal text-muted-foreground">
-              {es ? '(sugeridos por rating)' : '(suggested by rating)'}
+              {t('autoI18n.clHospDoctors5')}
             </span>
           )}
         </h4>
@@ -197,7 +198,7 @@ export default function HospitalDoctorsList({
             navigate(sp ? `/doctors?specialty=${encodeURIComponent(sp)}` : '/doctors');
           }}
         >
-          {es ? 'Ver todos' : 'See all'} <ChevronRight className="w-3 h-3 ml-0.5" />
+          {t('autoI18n.clHospDoctors6')} <ChevronRight className="w-3 h-3 ml-0.5" />
         </Button>
       </div>
 
@@ -220,12 +221,12 @@ export default function HospitalDoctorsList({
                       </AvatarFallback>
                     </Avatar>
                     {available && (
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-card" aria-label={es ? 'Disponible' : 'Available'} />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-success border-2 border-card" aria-label={t('autoI18n.clHospDoctors7')} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate text-foreground">
-                      {d.name ? `Dr. ${d.name}` : (es ? 'Médico verificado' : 'Verified doctor')}
+                      {d.name ? `Dr. ${d.name}` : t('autoI18n.clHospDoctors8')}
                     </p>
                     <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
                     <div className="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
@@ -240,12 +241,12 @@ export default function HospitalDoctorsList({
                       {available ? (
                         <span className="inline-flex items-center gap-0.5 text-success font-medium">
                           <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                          {es ? 'Disponible' : 'Available'}
+                          {t('autoI18n.clHospDoctors9')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-0.5">
                           <Clock className="w-3 h-3" />
-                          {es ? 'No disp.' : 'Unavailable'}
+                          {t('autoI18n.clHospDoctors10')}
                         </span>
                       )}
                     </div>
@@ -256,7 +257,7 @@ export default function HospitalDoctorsList({
           })}
         </div>
       </div>
-      <p className="mt-1 text-[10px] text-muted-foreground text-center">{es ? '← Desliza para ver más médicos →' : '← Swipe to see more doctors →'}</p>
+      <p className="mt-1 text-[10px] text-muted-foreground text-center">{t('autoI18n.clHospDoctors11')}</p>
     </div>
   );
 }

@@ -47,7 +47,7 @@ interface EventStats {
 export default function AdminFeatured() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const es = language === 'es';
 
   useEffect(() => { if (role && role !== 'admin') navigate('/'); }, [role, navigate]);
@@ -57,7 +57,7 @@ export default function AdminFeatured() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl">
         <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.clAdminFeat1')}
         </Button>
         <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
           <div className="flex items-center gap-3">
@@ -66,10 +66,10 @@ export default function AdminFeatured() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">
-                {es ? 'Destacados y Promociones' : 'Featured & Promotions'}
+                {t('autoI18n.clAdminFeat2')}
               </h1>
               <p className="text-xs sm:text-sm text-secondary/70">
-                {es ? 'Administra hospitales y productos destacados con métricas de rendimiento' : 'Manage featured hospitals and products with performance metrics'}
+                {t('autoI18n.clAdminFeat3')}
               </p>
             </div>
           </div>
@@ -78,10 +78,10 @@ export default function AdminFeatured() {
         <Tabs defaultValue="listings">
           <TabsList className="w-full grid grid-cols-2 mb-4">
             <TabsTrigger value="listings" className="text-xs sm:text-sm gap-1">
-              <Star className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Destacados' : 'Featured'}
+              <Star className="w-3.5 h-3.5 hidden sm:inline" />{t('autoI18n.clAdminFeat4')}
             </TabsTrigger>
             <TabsTrigger value="analytics" className="text-xs sm:text-sm gap-1">
-              <BarChart3 className="w-3.5 h-3.5 hidden sm:inline" />{es ? 'Métricas' : 'Analytics'}
+              <BarChart3 className="w-3.5 h-3.5 hidden sm:inline" />{t('autoI18n.clAdminFeat5')}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="listings"><ListingsTab es={es} /></TabsContent>
@@ -93,6 +93,7 @@ export default function AdminFeatured() {
 }
 
 function ListingsTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [listings, setListings] = useState<FeaturedListing[]>([]);
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -150,7 +151,7 @@ function ListingsTab({ es }: { es: boolean }) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleSave = async () => {
-    if (!form.listing_id) { toast.error(es ? 'Selecciona un elemento' : 'Select an item'); return; }
+    if (!form.listing_id) { toast.error(t('autoI18n.clAdminFeat6')); return; }
     setSaving(true);
     const payload = {
       listing_type: form.listing_type,
@@ -168,10 +169,10 @@ function ListingsTab({ es }: { es: boolean }) {
 
     if (editingId) {
       const { error } = await supabase.from('featured_listings').update(payload).eq('id', editingId);
-      if (error) toast.error(error.message); else toast.success(es ? 'Actualizado' : 'Updated');
+      if (error) toast.error(error.message); else toast.success(t('autoI18n.clAdminFeat7'));
     } else {
       const { error } = await supabase.from('featured_listings').insert(payload);
-      if (error) toast.error(error.message); else toast.success(es ? 'Creado' : 'Created');
+      if (error) toast.error(error.message); else toast.success(t('autoI18n.clAdminFeat8'));
     }
 
     // Sync is_featured flag
@@ -187,7 +188,7 @@ function ListingsTab({ es }: { es: boolean }) {
   };
 
   const handleDelete = async (listing: FeaturedListing) => {
-    if (!confirm(es ? '¿Eliminar este destacado?' : 'Remove this featured listing?')) return;
+    if (!confirm(t('autoI18n.clAdminFeat9'))) return;
     await supabase.from('featured_listings').delete().eq('id', listing.id);
     // Remove featured flag
     if (listing.listing_type === 'hospital') {
@@ -196,7 +197,7 @@ function ListingsTab({ es }: { es: boolean }) {
       await supabase.from('marketplace_products').update({ is_featured: false }).eq('id', listing.listing_id);
     }
     fetchData();
-    toast.success(es ? 'Eliminado' : 'Deleted');
+    toast.success(t('autoI18n.clAdminFeat10'));
   };
 
   const toggleActive = async (listing: FeaturedListing) => {
@@ -237,14 +238,14 @@ function ListingsTab({ es }: { es: boolean }) {
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{es ? 'Todos' : 'All'}</SelectItem>
-            <SelectItem value="hospital">{es ? 'Hospitales' : 'Hospitals'}</SelectItem>
-            <SelectItem value="product">{es ? 'Productos' : 'Products'}</SelectItem>
+            <SelectItem value="all">{t('autoI18n.clAdminFeat11')}</SelectItem>
+            <SelectItem value="hospital">{t('autoI18n.clAdminFeat12')}</SelectItem>
+            <SelectItem value="product">{t('autoI18n.clAdminFeat13')}</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex-1" />
         <Button onClick={openCreate} className="gap-1.5">
-          <Plus className="w-4 h-4" /> {es ? 'Destacar' : 'Feature'}
+          <Plus className="w-4 h-4" /> {t('autoI18n.clAdminFeat14')}
         </Button>
       </div>
 
@@ -259,10 +260,10 @@ function ListingsTab({ es }: { es: boolean }) {
                     <div className="flex items-center gap-2">
                       {l.listing_type === 'hospital' ? <Building2 className="w-4 h-4 text-primary" /> : <Package className="w-4 h-4 text-secondary" />}
                       <div>
-                        <p className="font-semibold text-sm">{l.listing_name || (es ? 'Elemento eliminado' : 'Deleted item')}</p>
+                        <p className="font-semibold text-sm">{l.listing_name || t('autoI18n.clAdminFeat15')}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-[9px]">{l.listing_type === 'hospital' ? (es ? 'Hospital' : 'Hospital') : (es ? 'Producto' : 'Product')}</Badge>
-                          <Badge variant={l.is_active ? 'default' : 'secondary'} className="text-[9px]">{l.is_active ? (es ? 'Activo' : 'Active') : (es ? 'Inactivo' : 'Inactive')}</Badge>
+                          <Badge variant="outline" className="text-[9px]">{l.listing_type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
+                          <Badge variant={l.is_active ? 'default' : 'secondary'} className="text-[9px]">{l.is_active ? t('autoI18n.clAdminFeat18') : t('autoI18n.clAdminFeat19')}</Badge>
                           <span className="text-[10px] text-muted-foreground">P:{l.priority}</span>
                         </div>
                       </div>
@@ -281,12 +282,12 @@ function ListingsTab({ es }: { es: boolean }) {
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <Eye className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
                       <p className="text-xs font-bold">{stats?.impressions || 0}</p>
-                      <p className="text-[9px] text-muted-foreground">{es ? 'Impresiones' : 'Impressions'}</p>
+                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat20')}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <MousePointerClick className="w-3.5 h-3.5 mx-auto mb-0.5 text-success" />
                       <p className="text-xs font-bold">{stats?.clicks || 0}</p>
-                      <p className="text-[9px] text-muted-foreground">{es ? 'Clics' : 'Clicks'}</p>
+                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <TrendingUp className="w-3.5 h-3.5 mx-auto mb-0.5 text-warning" />
@@ -296,7 +297,7 @@ function ListingsTab({ es }: { es: boolean }) {
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
                       <p className="text-xs font-bold">${(stats?.cost || 0).toFixed(0)}</p>
-                      <p className="text-[9px] text-muted-foreground">{es ? 'Costo' : 'Cost'}</p>
+                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p>
                     </div>
                   </div>
 
@@ -304,8 +305,8 @@ function ListingsTab({ es }: { es: boolean }) {
                   {l.budget > 0 && (
                     <div className="mt-2">
                       <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                        <span>{es ? 'Presupuesto' : 'Budget'}: ${l.budget}</span>
-                        <span>{es ? 'Gastado' : 'Spent'}: ${(stats?.cost || 0).toFixed(0)}</span>
+                        <span>{t('autoI18n.clAdminFeat23')}: ${l.budget}</span>
+                        <span>{t('autoI18n.clAdminFeat24')}: ${(stats?.cost || 0).toFixed(0)}</span>
                       </div>
                       <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(100, ((stats?.cost || 0) / l.budget) * 100)}%` }} />
@@ -324,57 +325,57 @@ function ListingsTab({ es }: { es: boolean }) {
               </Card>
             );
           })}
-          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{es ? 'No hay destacados' : 'No featured listings'}</p>}
+          {filtered.length === 0 && <p className="text-center text-muted-foreground py-8">{t('autoI18n.clAdminFeat25')}</p>}
         </div>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? (es ? 'Editar Destacado' : 'Edit Featured') : (es ? 'Nuevo Destacado' : 'New Featured')}</DialogTitle>
+            <DialogTitle>{editingId ? t('autoI18n.clAdminFeat26') : t('autoI18n.clAdminFeat27')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>{es ? 'Tipo' : 'Type'}</Label>
+              <Label>{t('autoI18n.clAdminFeat28')}</Label>
               <Select value={form.listing_type} onValueChange={v => setForm(f => ({ ...f, listing_type: v, listing_id: '' }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="hospital">{es ? 'Hospital' : 'Hospital'}</SelectItem>
-                  <SelectItem value="product">{es ? 'Producto' : 'Product'}</SelectItem>
+                  <SelectItem value="hospital">{t('autoI18n.clAdminFeat16')}</SelectItem>
+                  <SelectItem value="product">{t('autoI18n.clAdminFeat17')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>{es ? 'Elemento' : 'Item'} *</Label>
+              <Label>{t('autoI18n.clAdminFeat29')} *</Label>
               <Select value={form.listing_id} onValueChange={v => setForm(f => ({ ...f, listing_id: v }))}>
-                <SelectTrigger><SelectValue placeholder={es ? 'Seleccionar...' : 'Select...'} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t('autoI18n.clAdminFeat30')} /></SelectTrigger>
                 <SelectContent>
                   {itemOptions.map(opt => <SelectItem key={opt.id} value={opt.id}>{opt.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Prioridad' : 'Priority'}</Label><Input type="number" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} /></div>
-              <div><Label>{es ? 'Presupuesto (MXN)' : 'Budget (MXN)'}</Label><Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat31')}</Label><Input type="number" value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat32')}</Label><Input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div><Label>CPC (MXN)</Label><Input type="number" step="0.01" value={form.cpc_rate} onChange={e => setForm(f => ({ ...f, cpc_rate: e.target.value }))} /></div>
               <div><Label>CPM (MXN)</Label><Input type="number" step="0.01" value={form.cpm_rate} onChange={e => setForm(f => ({ ...f, cpm_rate: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Fecha Inicio' : 'Start Date'}</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
-              <div><Label>{es ? 'Fecha Fin' : 'End Date'}</Label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat33')}</Label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat34')}</Label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>{es ? 'Etiqueta (ES)' : 'Label (ES)'}</Label><Input value={form.label_es} onChange={e => setForm(f => ({ ...f, label_es: e.target.value }))} /></div>
-              <div><Label>{es ? 'Etiqueta (EN)' : 'Label (EN)'}</Label><Input value={form.label_en} onChange={e => setForm(f => ({ ...f, label_en: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat35')}</Label><Input value={form.label_es} onChange={e => setForm(f => ({ ...f, label_es: e.target.value }))} /></div>
+              <div><Label>{t('autoI18n.clAdminFeat36')}</Label><Input value={form.label_en} onChange={e => setForm(f => ({ ...f, label_en: e.target.value }))} /></div>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
-              <Label>{es ? 'Activo' : 'Active'}</Label>
+              <Label>{t('autoI18n.clAdminFeat18')}</Label>
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Guardar' : 'Save')}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('autoI18n.clAdminFeat37')}
             </Button>
           </div>
         </DialogContent>
@@ -384,6 +385,7 @@ function ListingsTab({ es }: { es: boolean }) {
 }
 
 function AnalyticsTab({ es }: { es: boolean }) {
+  const { t } = useLanguage();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('7d');
@@ -452,7 +454,7 @@ function AnalyticsTab({ es }: { es: boolean }) {
       <div className="flex gap-2 mb-4">
         {['7d', '30d', '90d'].map(p => (
           <Button key={p} variant={period === p ? 'default' : 'outline'} size="sm" className="text-xs" onClick={() => setPeriod(p)}>
-            {p === '7d' ? (es ? '7 días' : '7 days') : p === '30d' ? (es ? '30 días' : '30 days') : (es ? '90 días' : '90 days')}
+            {p === '7d' ? t('autoI18n.clAdminFeat38') : p === '30d' ? t('autoI18n.clAdminFeat39') : t('autoI18n.clAdminFeat40')}
           </Button>
         ))}
       </div>
@@ -463,21 +465,21 @@ function AnalyticsTab({ es }: { es: boolean }) {
           <CardContent className="p-4 text-center">
             <Eye className="w-5 h-5 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">{totals.impressions.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Impresiones Totales' : 'Total Impressions'}</p>
+            <p className="text-[10px] text-muted-foreground">{t('autoI18n.clAdminFeat41')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <MousePointerClick className="w-5 h-5 mx-auto mb-1 text-success" />
             <p className="text-lg font-bold">{totals.clicks.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Clics Totales' : 'Total Clicks'}</p>
+            <p className="text-[10px] text-muted-foreground">{t('autoI18n.clAdminFeat42')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <DollarSign className="w-5 h-5 mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold">${totals.cost.toFixed(0)}</p>
-            <p className="text-[10px] text-muted-foreground">{es ? 'Costo Total' : 'Total Cost'}</p>
+            <p className="text-[10px] text-muted-foreground">{t('autoI18n.clAdminFeat43')}</p>
           </CardContent>
         </Card>
       </div>
@@ -491,19 +493,19 @@ function AnalyticsTab({ es }: { es: boolean }) {
                   {row.type === 'hospital' ? <Building2 className="w-4 h-4 text-primary flex-shrink-0" /> : <Package className="w-4 h-4 text-secondary flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{row.name}</p>
-                    <Badge variant="outline" className="text-[9px]">{row.type === 'hospital' ? 'Hospital' : (es ? 'Producto' : 'Product')}</Badge>
+                    <Badge variant="outline" className="text-[9px]">{row.type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
                   </div>
                   <div className="flex gap-4 text-xs text-right">
-                    <div><p className="font-bold">{row.impressions}</p><p className="text-[9px] text-muted-foreground">{es ? 'Imp.' : 'Imp.'}</p></div>
-                    <div><p className="font-bold">{row.clicks}</p><p className="text-[9px] text-muted-foreground">{es ? 'Clics' : 'Clicks'}</p></div>
+                    <div><p className="font-bold">{row.impressions}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat44')}</p></div>
+                    <div><p className="font-bold">{row.clicks}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p></div>
                     <div><p className="font-bold">{row.ctr}%</p><p className="text-[9px] text-muted-foreground">CTR</p></div>
-                    <div><p className="font-bold">${row.cost}</p><p className="text-[9px] text-muted-foreground">{es ? 'Costo' : 'Cost'}</p></div>
+                    <div><p className="font-bold">${row.cost}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p></div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
-          {data.length === 0 && <p className="text-center text-muted-foreground py-8">{es ? 'Sin datos en este período' : 'No data in this period'}</p>}
+          {data.length === 0 && <p className="text-center text-muted-foreground py-8">{t('autoI18n.clAdminFeat45')}</p>}
         </div>
       )}
     </div>

@@ -24,11 +24,13 @@ function AvailabilityCard({
   language,
   isPremium,
   onClick,
+  t,
 }: {
   availability: DoctorAvailability;
   language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
   isPremium?: boolean;
   onClick: () => void;
+  t: (path: string) => string;
 }) {
   const isLive = availability.type === 'live';
   const isConsultation = availability.type === 'consultation';
@@ -67,7 +69,7 @@ function AvailabilityCard({
               </p>
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 <Badge variant={availability.status === 'confirmed' ? 'verified' : 'secondary'} className="text-[10px] px-1.5 py-0 h-5">
-                  {isLive ? 'Live' : isConsultation ? 'Consulta' : 'Horario'}
+                  {isLive ? t('autoI18n.upcomingAvail1') : isConsultation ? t('autoI18n.upcomingAvail2') : t('autoI18n.upcomingAvail3')}
                 </Badge>
                 {isPremium && isLive && (
                   <Badge className="text-[10px] bg-warning/10 text-warning border-warning px-1.5 py-0 h-5">
@@ -98,12 +100,14 @@ function AvailabilityDetailDialog({
   isPremium,
   open,
   onOpenChange,
+  t,
 }: {
   availability: DoctorAvailability | null;
   language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
   isPremium?: boolean;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  t: (path: string) => string;
 }) {
   if (!availability) return null;
 
@@ -143,11 +147,11 @@ function AvailabilityDetailDialog({
         <div className="space-y-3 mt-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={availability.status === 'confirmed' ? 'verified' : 'secondary'}>
-              {isLive ? 'Live' : isConsultation ? 'Consulta' : 'Horario'}
+              {isLive ? t('autoI18n.upcomingAvail1') : isConsultation ? t('autoI18n.upcomingAvail2') : t('autoI18n.upcomingAvail3')}
             </Badge>
             {isPremium && isLive && (
               <Badge className="bg-warning/10 text-warning border-warning gap-1">
-                ⭐ Acceso anticipado
+                ⭐ {t('autoI18n.upcomingAvail4')}
               </Badge>
             )}
           </div>
@@ -176,12 +180,12 @@ function AvailabilityDetailDialog({
 
         <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-            Cerrar
+            {t('autoI18n.upcomingAvail5')}
           </Button>
           <Button asChild className="w-full sm:w-auto">
             <Link to={`/doctor/${availability.doctorId}`}>
               <User className="h-4 w-4 mr-1.5" />
-              Ver perfil del doctor
+              {t('autoI18n.upcomingAvail6')}
             </Link>
           </Button>
         </DialogFooter>
@@ -215,7 +219,7 @@ export function UpcomingAvailabilities() {
         <CardHeader className="pb-3 px-4 sm:px-6">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Próximas actividades
+            {t('autoI18n.upcomingAvail8')}
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
@@ -247,21 +251,21 @@ export function UpcomingAvailabilities() {
               <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
               <span className="truncate">
                 {followedAvailabilities.length > 0
-                  ? 'Próximos de doctores que sigues'
-                  : 'Próximas actividades'}
+                  ? t('autoI18n.upcomingAvail7')
+                  : t('autoI18n.upcomingAvail8')}
               </span>
             </CardTitle>
             {followedAvailabilities.length === 0 && subscriptions.length === 0 && (
               <Badge variant="secondary" className="gap-1 hidden sm:inline-flex">
                 <Bell className="h-3 w-3" />
-                Sigue doctores para recibir alertas
+                {t('autoI18n.upcomingAvail9')}
               </Badge>
             )}
           </div>
           {followedAvailabilities.length === 0 && subscriptions.length === 0 && (
             <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 sm:hidden">
               <Bell className="h-3 w-3" />
-              Sigue doctores para recibir alertas
+              {t('autoI18n.upcomingAvail9')}
             </p>
           )}
         </CardHeader>
@@ -275,6 +279,7 @@ export function UpcomingAvailabilities() {
                   language={language}
                   isPremium={premiumDoctorIds.has(availability.doctorId)}
                   onClick={() => openDetails(availability)}
+                  t={t}
                 />
               ))}
 
@@ -285,7 +290,7 @@ export function UpcomingAvailabilities() {
                       <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                         <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:translate-x-0.5 transition-transform" />
                       </div>
-                      <p className="text-xs sm:text-sm font-medium text-primary">Ver todas</p>
+                      <p className="text-xs sm:text-sm font-medium text-primary">{t('autoI18n.upcomingAvail10')}</p>
                       <p className="text-[10px] text-muted-foreground">({displayAvailabilities.length})</p>
                     </CardContent>
                   </Card>
@@ -303,6 +308,7 @@ export function UpcomingAvailabilities() {
         isPremium={selected ? premiumDoctorIds.has(selected.doctorId) : false}
         open={open}
         onOpenChange={setOpen}
+        t={t}
       />
 
       <Dialog open={allOpen} onOpenChange={setAllOpen}>
@@ -311,11 +317,11 @@ export function UpcomingAvailabilities() {
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
               {followedAvailabilities.length > 0
-                ? 'Próximos de doctores que sigues'
-                : 'Próximas actividades'}
+                ? t('autoI18n.upcomingAvail7')
+                : t('autoI18n.upcomingAvail8')}
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
-              {displayAvailabilities.length} {displayAvailabilities.length === 1 ? 'actividad' : 'actividades'}
+              {displayAvailabilities.length} {displayAvailabilities.length === 1 ? t('autoI18n.upcomingAvail11') : t('autoI18n.upcomingAvail12')}
             </p>
           </DialogHeader>
 
@@ -378,7 +384,7 @@ export function UpcomingAvailabilities() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAllOpen(false)} className="w-full sm:w-auto">
-              Cerrar
+              {t('autoI18n.upcomingAvail5')}
             </Button>
           </DialogFooter>
         </DialogContent>

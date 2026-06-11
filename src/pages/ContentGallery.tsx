@@ -455,7 +455,7 @@ export default function ContentGallery() {
               <Link to="/doctor/upload">
                 <Button variant="live" className="gap-2">
                   <Upload className="w-4 h-4" />
-                  {language === 'es' ? 'Subir contenido' : 'Upload content'}
+                  {t('autoI18n.contentGallery1')}
                 </Button>
               </Link>
             )}
@@ -469,13 +469,13 @@ export default function ContentGallery() {
               {/* Access filter FIRST */}
               <div>
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                  {language === 'es' ? 'Filtros' : 'Filters'}
+                  {t('autoI18n.contentGallery2')}
                 </h4>
                 <div className="space-y-0.5">
                   {[
-                    { value: 'all', label: language === 'es' ? 'Todo' : 'All', icon: Globe },
-                    { value: 'new', label: language === 'es' ? 'Gratis' : 'Free', icon: Sparkles },
-                    { value: 'purchased', label: language === 'es' ? 'Pagado' : 'Paid', icon: ShoppingBag },
+                    { value: 'all', label: t('autoI18n.contentGallery3'), icon: Globe },
+                    { value: 'new', label: t('autoI18n.contentGallery4'), icon: Sparkles },
+                    { value: 'purchased', label: t('autoI18n.contentGallery5'), icon: ShoppingBag },
                   ].map(tab => (
                     <button
                       key={tab.value}
@@ -503,15 +503,15 @@ export default function ContentGallery() {
               <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
                 <TabsTrigger value="all" className="gap-1.5 text-xs sm:text-sm">
                   <Library className="w-3.5 h-3.5" />
-                  {language === 'es' ? 'Todo' : 'All'}
+                  {t('autoI18n.contentGallery6')}
                 </TabsTrigger>
                 <TabsTrigger value="new" className="gap-1.5 text-xs sm:text-sm">
                   <Sparkles className="w-3.5 h-3.5" />
-                  {language === 'es' ? 'Gratis' : 'Free'}
+                  {t('autoI18n.contentGallery7')}
                 </TabsTrigger>
                 <TabsTrigger value="purchased" className="gap-1.5 text-xs sm:text-sm">
                   <ShoppingBag className="w-3.5 h-3.5" />
-                  {language === 'es' ? 'Pagado' : 'Paid'}
+                  {t('autoI18n.contentGallery8')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -533,22 +533,22 @@ export default function ContentGallery() {
                 options={specialtyOptions}
                 value={selectedSpecialty}
                 onChange={setSelectedSpecialty}
-                placeholder={language === 'es' ? 'Especialidad' : 'Specialty'}
-                searchPlaceholder={language === 'es' ? 'Buscar especialidad...' : 'Search specialty...'}
-                emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                placeholder={t('autoI18n.contentGallery9')}
+                searchPlaceholder={t('autoI18n.contentGallery10')}
+                emptyLabel={t('autoI18n.contentGallery11')}
                 icon={Stethoscope}
-                allLabel={language === 'es' ? 'Todas' : 'All'}
+                allLabel={t('autoI18n.contentGallery12')}
               />
               {categories.length > 0 && (
                 <SearchableFilter
                   options={categories}
                   value={categoryFilter === 'all' ? '' : categoryFilter}
                   onChange={(val) => setCategoryFilter(val || 'all')}
-                  placeholder={language === 'es' ? 'Categoría' : 'Category'}
-                  searchPlaceholder={language === 'es' ? 'Buscar categoría...' : 'Search category...'}
-                  emptyLabel={language === 'es' ? 'Sin resultados' : 'No results'}
+                  placeholder={t('autoI18n.contentGallery13')}
+                  searchPlaceholder={t('autoI18n.contentGallery14')}
+                  emptyLabel={t('autoI18n.contentGallery11')}
                   icon={Tag}
-                  allLabel={language === 'es' ? 'Todas' : 'All'}
+                  allLabel={t('autoI18n.contentGallery12')}
                 />
               )}
             </div>

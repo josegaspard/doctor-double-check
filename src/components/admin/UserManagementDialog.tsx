@@ -68,7 +68,7 @@ interface UserManagementDialogProps {
 }
 
 export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: UserManagementDialogProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const locale = language === 'es' ? es : enUS;
   const [activeTab, setActiveTab] = useState('info');
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -178,7 +178,7 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      toast.success(language === 'es' ? 'Usuario suspendido' : 'User suspended');
+      toast.success(t('autoI18n.userMgmt1'));
       onUserUpdated();
       onClose();
     } catch (error: any) {
@@ -200,12 +200,12 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success(language === 'es' ? 'Usuario eliminado completamente' : 'User completely deleted');
+      toast.success(t('autoI18n.userMgmt2'));
       onUserUpdated();
       onClose();
     } catch (error: any) {
       console.error('Delete user error:', error);
-      toast.error(error.message || (language === 'es' ? 'Error al eliminar usuario' : 'Error deleting user'));
+      toast.error(error.message || t('autoI18n.userMgmt3'));
     } finally {
       setIsProcessing(false);
       setDeleteConfirm(false);
@@ -253,38 +253,38 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
             </div>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {language === 'es' ? 'Gestión de usuario' : 'User management'}
+            {t('autoI18n.userMgmt4')}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="info">{language === 'es' ? 'Info' : 'Info'}</TabsTrigger>
-            <TabsTrigger value="stats">{language === 'es' ? 'Analíticas' : 'Analytics'}</TabsTrigger>
-            <TabsTrigger value="transactions">{language === 'es' ? 'Transacciones' : 'Transactions'}</TabsTrigger>
-            <TabsTrigger value="actions">{language === 'es' ? 'Acciones' : 'Actions'}</TabsTrigger>
+            <TabsTrigger value="info">{t('autoI18n.userMgmt5')}</TabsTrigger>
+            <TabsTrigger value="stats">{t('autoI18n.userMgmt6')}</TabsTrigger>
+            <TabsTrigger value="transactions">{t('autoI18n.userMgmt7')}</TabsTrigger>
+            <TabsTrigger value="actions">{t('autoI18n.userMgmt8')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="mt-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">{language === 'es' ? 'Rol' : 'Role'}</p>
+                <p className="text-sm text-muted-foreground">{t('autoI18n.userMgmt9')}</p>
                 <div className="mt-1">{getRoleBadge(user.role || 'patient')}</div>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">{language === 'es' ? 'Verificación' : 'Verification'}</p>
+                <p className="text-sm text-muted-foreground">{t('autoI18n.userMgmt10')}</p>
                 <Badge variant={user.is_identity_verified ? 'success' : 'secondary'} className="mt-1">
                   {user.is_identity_verified ? (
-                    <><BadgeCheck className="w-3 h-3 mr-1" />{language === 'es' ? 'Verificado' : 'Verified'}</>
+                    <><BadgeCheck className="w-3 h-3 mr-1" />{t('autoI18n.userMgmt11')}</>
                   ) : (
-                    language === 'es' ? 'No verificado' : 'Not verified'
+                    t('autoI18n.userMgmt12')
                   )}
                 </Badge>
               </div>
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {language === 'es' ? 'Registro' : 'Registered'}
+                  {t('autoI18n.userMgmt13')}
                 </p>
                 <p className="font-medium mt-1">
                   {format(new Date(user.created_at), "d MMM yyyy", { locale })}
@@ -293,12 +293,12 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Mail className="w-3 h-3" />
-                  {language === 'es' ? 'Onboarding' : 'Onboarding'}
+                  {t('autoI18n.userMgmt14')}
                 </p>
                 <Badge variant={user.onboarding_completed ? 'success' : 'warning'} className="mt-1">
-                  {user.onboarding_completed 
-                    ? (language === 'es' ? 'Completado' : 'Completed')
-                    : (language === 'es' ? 'Pendiente' : 'Pending')}
+                  {user.onboarding_completed
+                    ? t('autoI18n.userMgmt15')
+                    : t('autoI18n.userMgmt16')}
                 </Badge>
               </div>
             </div>
@@ -318,42 +318,42 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Wallet className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Balance' : 'Balance'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt17')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">${stats.walletBalance.toFixed(2)}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Transacciones' : 'Transactions'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt18')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">{stats.totalTransactions}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-destructive">
                     <ShoppingCart className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Total gastado' : 'Total spent'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt19')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">${stats.totalSpent.toFixed(2)}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-success">
                     <DollarSign className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Total ganado' : 'Total earned'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt20')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">${stats.totalEarned.toFixed(2)}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MessageSquare className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Consultas' : 'Consultations'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt21')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">{stats.consultationsCount}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Video className="w-4 h-4" />
-                    <span className="text-sm">{language === 'es' ? 'Lives' : 'Lives'}</span>
+                    <span className="text-sm">{t('autoI18n.userMgmt22')}</span>
                   </div>
                   <p className="text-2xl font-bold mt-1">{stats.livesCount}</p>
                 </div>
@@ -380,7 +380,7 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
-                {language === 'es' ? 'No hay transacciones' : 'No transactions'}
+                {t('autoI18n.userMgmt23')}
               </p>
             )}
           </TabsContent>
@@ -389,15 +389,13 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
             <div className="p-4 border border-warning/50 bg-warning/5 rounded-lg">
               <h4 className="font-medium flex items-center gap-2">
                 <Pause className="w-4 h-4" />
-                {language === 'es' ? 'Suspender usuario' : 'Suspend user'}
+                {t('autoI18n.userMgmt24')}
               </h4>
               <p className="text-sm text-muted-foreground mt-1">
-                {language === 'es' 
-                  ? 'El usuario no podrá acceder a la plataforma temporalmente.'
-                  : 'The user will not be able to access the platform temporarily.'}
+                {t('autoI18n.userMgmt25')}
               </p>
               <Textarea
-                placeholder={language === 'es' ? 'Razón de la suspensión (opcional)' : 'Suspension reason (optional)'}
+                placeholder={t('autoI18n.userMgmt26')}
                 value={actionReason}
                 onChange={(e) => setActionReason(e.target.value)}
                 className="mt-3"
@@ -410,19 +408,17 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
                 disabled={isProcessing}
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pause className="w-4 h-4 mr-2" />}
-                {language === 'es' ? 'Suspender' : 'Suspend'}
+                {t('autoI18n.userMgmt27')}
               </Button>
             </div>
 
             <div className="p-4 border border-destructive/50 bg-destructive/5 rounded-lg">
               <h4 className="font-medium flex items-center gap-2 text-destructive">
                 <Trash2 className="w-4 h-4" />
-                {language === 'es' ? 'Eliminar usuario' : 'Delete user'}
+                {t('autoI18n.userMgmt28')}
               </h4>
               <p className="text-sm text-muted-foreground mt-1">
-                {language === 'es' 
-                  ? 'Esta acción es permanente y no se puede deshacer.'
-                  : 'This action is permanent and cannot be undone.'}
+                {t('autoI18n.userMgmt29')}
               </p>
               {!deleteConfirm ? (
                 <Button 
@@ -431,7 +427,7 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
                   onClick={() => setDeleteConfirm(true)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  {language === 'es' ? 'Eliminar usuario' : 'Delete user'}
+                  {t('autoI18n.userMgmt30')}
                 </Button>
               ) : (
                 <div className="mt-3 flex gap-2">
@@ -441,10 +437,10 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
                     disabled={isProcessing}
                   >
                     {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                    {language === 'es' ? 'Confirmar eliminación' : 'Confirm deletion'}
+                    {t('autoI18n.userMgmt31')}
                   </Button>
                   <Button variant="outline" onClick={() => setDeleteConfirm(false)}>
-                    {language === 'es' ? 'Cancelar' : 'Cancel'}
+                    {t('autoI18n.userMgmt32')}
                   </Button>
                 </div>
               )}

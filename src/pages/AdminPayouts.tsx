@@ -404,7 +404,7 @@ export default function AdminPayouts() {
       // El comprobante es OBLIGATORIO para pagos manuales (transferencia bancaria):
       // el doctor siempre debe recibir su comprobante por correo.
       if (payoutMethod === 'manual' && !receiptFile) {
-        toast.error('Debes adjuntar el comprobante de pago para registrar un pago manual.');
+        toast.error(t('autoI18n.adminPayouts1'));
         setIsProcessing(false);
         return;
       }

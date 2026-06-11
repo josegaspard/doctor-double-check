@@ -198,7 +198,7 @@ function ProductsTab({ es }: { es: boolean }) {
               <Select value={form.brand_id || '__none__'} onValueChange={v => setForm(f => ({ ...f, brand_id: v === '__none__' ? '' : v }))}>
                 <SelectTrigger><SelectValue placeholder={t('adminMarketplacePage.common.select')} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">{es ? 'Sin marca' : 'No brand'}</SelectItem>
+                  <SelectItem value="__none__">{t('autoI18n.adminMkt1')}</SelectItem>
                   {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -286,7 +286,7 @@ function BrandsTab({ es }: { es: boolean }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">{es ? 'Marcas registradas' : 'Registered brands'}</h3>
+        <h3 className="text-sm font-semibold">{t('autoI18n.adminMkt2')}</h3>
         <Button
           onClick={() => { setEditingId(null); setForm({ name: '', description: '', logo_url: '', is_active: true }); setDialogOpen(true); }}
           className="gap-1.5"

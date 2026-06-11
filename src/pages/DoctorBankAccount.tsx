@@ -42,7 +42,7 @@ export default function DoctorBankAccount() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingBank, setIsSavingBank] = useState(false);
@@ -60,12 +60,12 @@ export default function DoctorBankAccount() {
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      toast.success(language === 'es' ? 'Cuenta Stripe configurada exitosamente' : 'Stripe account configured successfully');
+      toast.success(t('doctorBankAccount.stripeConfigured'));
       loadBankData();
       setActiveTab('stripe');
     }
     if (searchParams.get('refresh') === 'true') {
-      toast.info(language === 'es' ? 'Continuando configuración...' : 'Continuing setup...');
+      toast.info(t('doctorBankAccount.continuingSetup'));
       handleContinueStripeSetup();
     }
   }, [searchParams]);
@@ -109,18 +109,18 @@ export default function DoctorBankAccount() {
 
     // Validate CLABE (18 digits)
     if (bankDetails.clabe && !/^\d{18}$/.test(bankDetails.clabe)) {
-      toast.error(language === 'es' ? 'La CLABE debe tener exactamente 18 dígitos' : 'CLABE must be exactly 18 digits');
+      toast.error(t('doctorBankAccount.clabe18Digits'));
       return;
     }
 
     // Validate RFC
     if (bankDetails.rfc && !/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i.test(bankDetails.rfc)) {
-      toast.error(language === 'es' ? 'RFC inválido' : 'Invalid RFC');
+      toast.error(t('doctorBankAccount.invalidRfc'));
       return;
     }
 
     if (!bankDetails.bank_name || !bankDetails.clabe || !bankDetails.account_holder_name) {
-      toast.error(language === 'es' ? 'Completa banco, CLABE y nombre del titular' : 'Fill in bank, CLABE and account holder name');
+      toast.error(t('doctorBankAccount.fillBankClabeHolder'));
       return;
     }
 
@@ -149,10 +149,10 @@ export default function DoctorBankAccount() {
       if (error) throw error;
 
       setBankDetails(prev => ({ ...prev, clabe_last4: clabeLast4, payment_method: newPaymentMethod }));
-      toast.success(language === 'es' ? 'Datos bancarios guardados' : 'Bank details saved');
+      toast.success(t('doctorBankAccount.bankDetailsSaved'));
     } catch (error: any) {
       console.error('Error saving bank details:', error);
-      toast.error(error.message || (language === 'es' ? 'Error al guardar' : 'Error saving'));
+      toast.error(error.message || t('doctorBankAccount.errorSaving'));
     } finally {
       setIsSavingBank(false);
     }
@@ -166,7 +166,7 @@ export default function DoctorBankAccount() {
       if (data?.url) window.location.href = data.url;
     } catch (error: any) {
       console.error('Error creating Stripe account:', error);
-      toast.error(error.message || (language === 'es' ? 'Error al crear cuenta' : 'Error creating account'));
+      toast.error(error.message || t('doctorBankAccount.errorCreatingAccount'));
     } finally {
       setIsCreating(false);
     }
@@ -180,7 +180,7 @@ export default function DoctorBankAccount() {
       if (data?.url) window.location.href = data.url;
     } catch (error: any) {
       console.error('Error continuing setup:', error);
-      toast.error(error.message || (language === 'es' ? 'Error al continuar' : 'Error continuing'));
+      toast.error(error.message || t('doctorBankAccount.errorContinuing'));
     } finally {
       setIsCreating(false);
     }
@@ -190,12 +190,12 @@ export default function DoctorBankAccount() {
     if (!accountStatus?.hasAccount) return null;
     switch (accountStatus.status) {
       case 'active':
-        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Activa' : 'Active'}</Badge>;
+        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{t('doctorBankAccount.active')}</Badge>;
       case 'pending':
       case 'pending_verification':
-        return <Badge variant="warning" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
+        return <Badge variant="warning" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />{t('doctorBankAccount.pending')}</Badge>;
       case 'restricted':
-        return <Badge variant="destructive" className="gap-1"><AlertCircle className="w-3 h-3" />{language === 'es' ? 'Restringida' : 'Restricted'}</Badge>;
+        return <Badge variant="destructive" className="gap-1"><AlertCircle className="w-3 h-3" />{t('doctorBankAccount.restricted')}</Badge>;
       default:
         return null;
     }
@@ -204,13 +204,13 @@ export default function DoctorBankAccount() {
   const getPaymentMethodBadge = () => {
     switch (bankDetails.payment_method) {
       case 'both':
-        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Stripe + Banco' : 'Stripe + Bank'}</Badge>;
+        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{t('doctorBankAccount.stripePlusBank')}</Badge>;
       case 'stripe':
         return <Badge variant="verified" className="gap-1"><CreditCard className="w-3 h-3" />Stripe</Badge>;
       case 'bank':
-        return <Badge variant="verified" className="gap-1"><Building className="w-3 h-3" />{language === 'es' ? 'Banco' : 'Bank'}</Badge>;
+        return <Badge variant="verified" className="gap-1"><Building className="w-3 h-3" />{t('doctorBankAccount.bank')}</Badge>;
       default:
-        return <Badge variant="warning" className="gap-1"><AlertCircle className="w-3 h-3" />{language === 'es' ? 'Sin configurar' : 'Not configured'}</Badge>;
+        return <Badge variant="warning" className="gap-1"><AlertCircle className="w-3 h-3" />{t('doctorBankAccount.notConfigured')}</Badge>;
     }
   };
 
@@ -221,16 +221,16 @@ export default function DoctorBankAccount() {
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 gap-2 hidden sm:inline-flex">
           <ArrowLeft className="w-4 h-4" />
-          {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
+          {t('doctorBankAccount.backToDashboard')}
         </Button>
 
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">
-              {language === 'es' ? 'Métodos de Pago' : 'Payment Methods'}
+              {t('doctorBankAccount.pageTitle')}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {language === 'es' ? 'Configura cómo recibir tus ganancias' : 'Set up how to receive your earnings'}
+              {t('doctorBankAccount.pageSubtitle')}
             </p>
           </div>
           {getPaymentMethodBadge()}
@@ -243,7 +243,7 @@ export default function DoctorBankAccount() {
             <TabsList className="w-full mb-4">
               <TabsTrigger value="bank" className="flex-1 gap-2">
                 <Building className="w-4 h-4" />
-                {language === 'es' ? 'Cuenta Bancaria' : 'Bank Account'}
+                {t('doctorBankAccount.bankAccount')}
               </TabsTrigger>
               <TabsTrigger value="stripe" className="flex-1 gap-2">
                 <CreditCard className="w-4 h-4" />
@@ -257,32 +257,30 @@ export default function DoctorBankAccount() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Building className="w-5 h-5" />
-                    {language === 'es' ? 'Datos Bancarios (México)' : 'Bank Details (Mexico)'}
+                    {t('doctorBankAccount.bankDetailsMexico')}
                   </CardTitle>
                   <CardDescription>
-                    {language === 'es'
-                      ? 'Ingresa los datos de tu cuenta bancaria mexicana para recibir pagos por transferencia.'
-                      : 'Enter your Mexican bank account details to receive payments via transfer.'}
+                    {t('doctorBankAccount.bankDetailsDesc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>{language === 'es' ? 'Nombre del Titular *' : 'Account Holder Name *'}</Label>
+                    <Label>{t('doctorBankAccount.accountHolderName')}</Label>
                     <Input
-                      placeholder={language === 'es' ? 'Como aparece en tu estado de cuenta' : 'As shown on your bank statement'}
+                      placeholder={t('doctorBankAccount.accountHolderPlaceholder')}
                       value={bankDetails.account_holder_name}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, account_holder_name: e.target.value }))}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>{language === 'es' ? 'Banco *' : 'Bank *'}</Label>
+                    <Label>{t('doctorBankAccount.bankLabel')}</Label>
                     <select
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       value={bankDetails.bank_name}
                       onChange={(e) => setBankDetails(prev => ({ ...prev, bank_name: e.target.value }))}
                     >
-                      <option value="">{language === 'es' ? 'Selecciona tu banco' : 'Select your bank'}</option>
+                      <option value="">{t('doctorBankAccount.selectYourBank')}</option>
                       {MEXICAN_BANKS.map(bank => (
                         <option key={bank} value={bank}>{bank}</option>
                       ))}
@@ -290,7 +288,7 @@ export default function DoctorBankAccount() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>CLABE Interbancaria * (18 {language === 'es' ? 'dígitos' : 'digits'})</Label>
+                    <Label>CLABE Interbancaria * (18 {t('doctorBankAccount.digits')})</Label>
                     <Input
                       placeholder="012345678901234567"
                       maxLength={18}
@@ -301,13 +299,13 @@ export default function DoctorBankAccount() {
                       }}
                     />
                     {bankDetails.clabe && bankDetails.clabe.length !== 18 && (
-                      <p className="text-xs text-destructive">{bankDetails.clabe.length}/18 {language === 'es' ? 'dígitos' : 'digits'}</p>
+                      <p className="text-xs text-destructive">{bankDetails.clabe.length}/18 {t('doctorBankAccount.digits')}</p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>RFC ({language === 'es' ? 'opcional' : 'optional'})</Label>
+                      <Label>RFC ({t('doctorBankAccount.optional')})</Label>
                       <Input
                         placeholder="XXXX000000XXX"
                         maxLength={13}
@@ -316,9 +314,9 @@ export default function DoctorBankAccount() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{language === 'es' ? 'Sucursal (opcional)' : 'Branch (optional)'}</Label>
+                      <Label>{t('doctorBankAccount.branchOptional')}</Label>
                       <Input
-                        placeholder={language === 'es' ? 'Ej: Centro' : 'E.g. Downtown'}
+                        placeholder={t('doctorBankAccount.branchPlaceholder')}
                         value={bankDetails.bank_branch}
                         onChange={(e) => setBankDetails(prev => ({ ...prev, bank_branch: e.target.value }))}
                       />
@@ -327,9 +325,9 @@ export default function DoctorBankAccount() {
 
                   <Button onClick={handleSaveBankDetails} disabled={isSavingBank} className="w-full">
                     {isSavingBank ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Guardando...' : 'Saving...'}</>
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorBankAccount.saving')}</>
                     ) : (
-                      <><Save className="w-4 h-4 mr-2" />{language === 'es' ? 'Guardar datos bancarios' : 'Save bank details'}</>
+                      <><Save className="w-4 h-4 mr-2" />{t('doctorBankAccount.saveBankDetails')}</>
                     )}
                   </Button>
 
@@ -338,7 +336,7 @@ export default function DoctorBankAccount() {
                       <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
                       <div>
                         <p className="text-sm font-medium text-success">
-                          {language === 'es' ? 'Cuenta bancaria configurada' : 'Bank account configured'}
+                          {t('doctorBankAccount.bankAccountConfigured')}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {bankDetails.bank_name} · ****{bankDetails.clabe_last4}
@@ -359,30 +357,28 @@ export default function DoctorBankAccount() {
                       <CreditCard className="w-6 h-6 text-primary" />
                     </div>
                     <CardTitle>
-                      {language === 'es' ? 'Configurar Stripe Connect' : 'Set up Stripe Connect'}
+                      {t('doctorBankAccount.setUpStripeConnect')}
                     </CardTitle>
                     <CardDescription>
-                      {language === 'es'
-                        ? 'Stripe permite pagos automáticos directos. Este proceso es seguro y solo toma unos minutos. Es opcional si ya configuraste cuenta bancaria.'
-                        : 'Stripe enables automatic direct payments. This process is secure and only takes a few minutes. Optional if you already configured bank account.'}
+                      {t('doctorBankAccount.stripeConnectDesc')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-success" />
-                        {language === 'es' ? 'Pagos automáticos (sin intervención del admin)' : 'Automatic payments (no admin needed)'}
+                        {t('doctorBankAccount.automaticPayments')}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-success" />
-                        {language === 'es' ? 'Depósito directo a tu cuenta' : 'Direct deposit to your account'}
+                        {t('doctorBankAccount.directDeposit')}
                       </li>
                     </ul>
                     <Button onClick={handleCreateStripeAccount} disabled={isCreating} className="w-full">
                       {isCreating ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Conectando...' : 'Connecting...'}</>
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorBankAccount.connecting')}</>
                       ) : (
-                        <><CreditCard className="w-4 h-4 mr-2" />{language === 'es' ? 'Configurar Stripe Connect' : 'Set up Stripe Connect'}</>
+                        <><CreditCard className="w-4 h-4 mr-2" />{t('doctorBankAccount.setUpStripeConnect')}</>
                       )}
                     </Button>
                   </CardContent>
@@ -401,21 +397,19 @@ export default function DoctorBankAccount() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">{language === 'es' ? 'Pagos habilitados' : 'Payouts enabled'}</p>
-                        <p className="font-semibold">{accountStatus.payoutsEnabled ? (language === 'es' ? 'Sí' : 'Yes') : 'No'}</p>
+                        <p className="text-sm text-muted-foreground mb-1">{t('doctorBankAccount.payoutsEnabled')}</p>
+                        <p className="font-semibold">{accountStatus.payoutsEnabled ? t('doctorBankAccount.yes') : 'No'}</p>
                       </div>
                       <div className="p-4 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground mb-1">{language === 'es' ? 'Cuenta' : 'Account'}</p>
-                        <p className="font-semibold">{accountStatus.bankLast4 ? `****${accountStatus.bankLast4}` : (language === 'es' ? 'No configurada' : 'Not configured')}</p>
+                        <p className="text-sm text-muted-foreground mb-1">{t('doctorBankAccount.account')}</p>
+                        <p className="font-semibold">{accountStatus.bankLast4 ? `****${accountStatus.bankLast4}` : t('doctorBankAccount.notConfiguredFem')}</p>
                       </div>
                     </div>
 
                     {!accountStatus.payoutsEnabled && (
                       <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
                         <p className="text-sm text-primary font-medium">
-                          {language === 'es'
-                            ? 'Tu cuenta aún no está lista para recibir pagos. Completa la configuración.'
-                            : 'Your account is not yet ready. Complete the setup.'}
+                          {t('doctorBankAccount.accountNotReady')}
                         </p>
                       </div>
                     )}
@@ -423,12 +417,12 @@ export default function DoctorBankAccount() {
                     <div className="flex gap-3">
                       <Button variant="outline" onClick={loadBankData} className="flex-1">
                         <RefreshCw className="w-4 h-4 mr-2" />
-                        {language === 'es' ? 'Actualizar' : 'Refresh'}
+                        {t('doctorBankAccount.refresh')}
                       </Button>
                       {!accountStatus.payoutsEnabled && (
                         <Button onClick={handleContinueStripeSetup} disabled={isCreating} className="flex-1">
                           {isCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ExternalLink className="w-4 h-4 mr-2" />}
-                          {language === 'es' ? 'Completar configuración' : 'Complete setup'}
+                          {t('doctorBankAccount.completeSetup')}
                         </Button>
                       )}
                     </div>

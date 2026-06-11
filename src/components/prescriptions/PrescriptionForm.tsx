@@ -24,7 +24,7 @@ interface PrescriptionFormProps {
 
 export function PrescriptionForm({ patientId, patientName, consultationId, onCreated }: PrescriptionFormProps) {
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [patientAge, setPatientAge] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
@@ -59,7 +59,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
     // Max 10MB
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('El archivo no puede superar 10MB');
+      toast.error(t('autoI18n.prescForm1'));
       return;
     }
 
@@ -100,9 +100,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
     // Must have at least one medication OR an attached file
     if (validMeds.length === 0 && !attachedFile) {
-      toast.error(language === 'es'
-        ? 'Agrega al menos un medicamento o adjunta un archivo'
-        : 'Add at least one medication or attach a file');
+      toast.error(t('autoI18n.prescForm2'));
       return;
     }
 
@@ -110,9 +108,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
     // the doctor's professional signature on file. (Before, the signature was
     // optional and the PDF was generated unsigned.)
     if (!doctorSignatureUrl) {
-      toast.error(language === 'es'
-        ? 'Configura tu firma profesional en tu perfil antes de emitir recetas.'
-        : 'Set up your professional signature in your profile before issuing prescriptions.');
+      toast.error(t('autoI18n.prescForm3'));
       return;
     }
 
@@ -129,7 +125,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           .from('prescriptions')
           .upload(filePath, attachedFile, { upsert: false });
 
-        if (uploadError) throw new Error(`Error subiendo archivo: ${uploadError.message}`);
+        if (uploadError) throw new Error(t('autoI18n.prescForm4').replace('{message}', uploadError.message));
         fileUrl = filePath;
       }
 
@@ -173,8 +169,8 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       await supabase.from('notifications').insert({
         user_id: patientId,
         type: 'system' as any,
-        title: '📋 Nueva receta médica',
-        message: `${user.name || 'Tu doctor'} te ha enviado una receta`,
+        title: t('autoI18n.prescForm5'),
+        message: t('autoI18n.prescForm6').replace('{name}', user.name || t('autoI18n.prescForm7')),
         data: { url: `/prescriptions/${data.id}`, prescription_id: data.id },
       });
 
@@ -197,7 +193,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         });
       }
 
-      toast.success(language === 'es' ? 'Receta creada y enviada al paciente' : 'Prescription created and sent');
+      toast.success(t('autoI18n.prescForm8'));
       onCreated?.(data.id);
     } catch (error: any) {
       toast.error(error.message || 'Error');
@@ -211,13 +207,13 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       {/* Patient Info */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label>{language === 'es' ? 'Paciente' : 'Patient'}</Label>
+          <Label>{t('autoI18n.prescForm9')}</Label>
           <Input value={patientName} disabled className="bg-muted/50" />
         </div>
         <div>
-          <Label>{language === 'es' ? 'Edad' : 'Age'}</Label>
+          <Label>{t('autoI18n.prescForm10')}</Label>
           <Input
-            placeholder="Ej: 35 años"
+            placeholder={t('autoI18n.prescForm11')}
             value={patientAge}
             onChange={(e) => setPatientAge(e.target.value)}
           />
@@ -225,9 +221,9 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       </div>
 
       <div>
-        <Label>{language === 'es' ? 'Diagnóstico' : 'Diagnosis'}</Label>
+        <Label>{t('autoI18n.prescForm12')}</Label>
         <Input
-          placeholder={language === 'es' ? 'Diagnóstico del paciente' : 'Patient diagnosis'}
+          placeholder={t('autoI18n.prescForm13')}
           value={diagnosis}
           onChange={(e) => setDiagnosis(e.target.value)}
         />
@@ -239,10 +235,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       <div>
         <Label className="flex items-center gap-2 mb-2">
           <Upload className="w-4 h-4" />
-          {language === 'es' ? 'Adjuntar archivo (imagen o PDF)' : 'Attach file (image or PDF)'}
+          {t('autoI18n.prescForm14')}
         </Label>
         <p className="text-xs text-muted-foreground mb-3">
-          Puedes tomar una foto de la receta, subir un PDF escaneado o cualquier documento relevante.
+          {t('autoI18n.prescForm15')}
         </p>
         
         {attachedFile ? (
@@ -266,7 +262,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
             {filePreview && (
               <img 
                 src={filePreview} 
-                alt="Vista previa" 
+                alt={t('autoI18n.prescForm16')}
                 className="rounded-md max-h-48 w-auto object-contain border"
               />
             )}
@@ -278,10 +274,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           >
             <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              Haz clic o arrastra un archivo aquí
+              {t('autoI18n.prescForm17')}
             </p>
             <p className="text-xs text-muted-foreground/70 mt-1">
-              JPG, PNG, PDF — máx 10MB
+              {t('autoI18n.prescForm18')}
             </p>
           </div>
         )}
@@ -299,10 +295,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       {/* Medications */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <Label>{language === 'es' ? 'Medicamentos' : 'Medications'}</Label>
+          <Label>{t('autoI18n.prescForm19')}</Label>
           <Button variant="outline" size="sm" onClick={addMedication} className="gap-1">
             <Plus className="w-3 h-3" />
-            {language === 'es' ? 'Agregar' : 'Add'}
+            {t('autoI18n.prescForm20')}
           </Button>
         </div>
         <div className="space-y-3">
@@ -318,28 +314,28 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Input
-                  placeholder={language === 'es' ? 'Medicamento' : 'Medication'}
+                  placeholder={t('autoI18n.prescForm21')}
                   value={med.name}
                   onChange={(e) => updateMedication(i, 'name', e.target.value)}
                 />
                 <Input
-                  placeholder={language === 'es' ? 'Dosis (ej: 500mg)' : 'Dosage'}
+                  placeholder={t('autoI18n.prescForm22')}
                   value={med.dosage}
                   onChange={(e) => updateMedication(i, 'dosage', e.target.value)}
                 />
                 <Input
-                  placeholder={language === 'es' ? 'Frecuencia (ej: c/8h)' : 'Frequency'}
+                  placeholder={t('autoI18n.prescForm23')}
                   value={med.frequency}
                   onChange={(e) => updateMedication(i, 'frequency', e.target.value)}
                 />
                 <Input
-                  placeholder={language === 'es' ? 'Duración (ej: 7 días)' : 'Duration'}
+                  placeholder={t('autoI18n.prescForm24')}
                   value={med.duration}
                   onChange={(e) => updateMedication(i, 'duration', e.target.value)}
                 />
               </div>
               <Input
-                placeholder={language === 'es' ? 'Notas del medicamento (opcional)' : 'Medication notes'}
+                placeholder={t('autoI18n.prescForm25')}
                 value={med.notes || ''}
                 onChange={(e) => updateMedication(i, 'notes', e.target.value)}
               />
@@ -350,9 +346,9 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
       {/* Instructions */}
       <div>
-        <Label>{language === 'es' ? 'Indicaciones generales' : 'General instructions'}</Label>
+        <Label>{t('autoI18n.prescForm26')}</Label>
         <Textarea
-          placeholder={language === 'es' ? 'Indicaciones detalladas para el paciente...' : 'Detailed instructions...'}
+          placeholder={t('autoI18n.prescForm27')}
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
           rows={4}
@@ -360,9 +356,9 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       </div>
 
       <div>
-        <Label>{language === 'es' ? 'Notas adicionales' : 'Additional notes'}</Label>
+        <Label>{t('autoI18n.prescForm28')}</Label>
         <Textarea
-          placeholder={language === 'es' ? 'Observaciones, advertencias, seguimiento...' : 'Observations, warnings, follow-up...'}
+          placeholder={t('autoI18n.prescForm29')}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
@@ -375,7 +371,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         ) : (
           <FileText className="w-4 h-4" />
         )}
-        {language === 'es' ? 'Crear Receta y Enviar al Paciente' : 'Create Prescription & Send to Patient'}
+        {t('autoI18n.prescForm30')}
       </Button>
     </div>
   );

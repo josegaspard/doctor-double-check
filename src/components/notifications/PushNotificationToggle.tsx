@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function PushNotificationToggle() {
   const { isSupported, isSubscribed, isLoading, permission, subscribe, unsubscribe } = usePushNotifications();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const handleToggle = async (checked: boolean) => {
     if (checked) {
@@ -24,13 +24,13 @@ export function PushNotificationToggle() {
         <Label className="flex flex-col gap-1">
           <span className="flex items-center gap-2">
             <BellOff className="h-4 w-4" />
-            {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
+            {t('autoI18n.pushToggle1')}
           </span>
           <span className="text-xs text-muted-foreground font-normal">
-            {language === 'es' ? 'No disponible en este navegador' : 'Not available in this browser'}
+            {t('autoI18n.pushToggle2')}
           </span>
         </Label>
-        <Badge variant="secondary">{language === 'es' ? 'No soportado' : 'Not supported'}</Badge>
+        <Badge variant="secondary">{t('autoI18n.pushToggle3')}</Badge>
       </div>
     );
   }
@@ -41,13 +41,13 @@ export function PushNotificationToggle() {
         <Label className="flex flex-col gap-1 min-w-0">
           <span className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-            {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
+            {t('autoI18n.pushToggle1')}
           </span>
           <span className="text-xs text-muted-foreground font-normal">
-            {language === 'es' ? 'Bloqueadas. Habilita en ajustes del navegador.' : 'Blocked. Enable in browser settings.'}
+            {t('autoI18n.pushToggle4')}
           </span>
         </Label>
-        <Badge variant="destructive" className="shrink-0 text-[10px] px-2">{language === 'es' ? 'Bloqueado' : 'Blocked'}</Badge>
+        <Badge variant="destructive" className="shrink-0 text-[10px] px-2">{t('autoI18n.pushToggle5')}</Badge>
       </div>
     );
   }
@@ -61,12 +61,12 @@ export function PushNotificationToggle() {
           ) : (
             <BellOff className="h-4 w-4" />
           )}
-          {language === 'es' ? 'Notificaciones Push' : 'Push Notifications'}
+          {t('autoI18n.pushToggle1')}
         </span>
         <span className="text-xs text-muted-foreground font-normal">
-          {isSubscribed 
-            ? (language === 'es' ? 'Recibirás alertas cuando un doctor inicie un live' : 'You will receive alerts when a doctor starts a live')
-            : (language === 'es' ? 'Activa para recibir alertas en tiempo real' : 'Enable to receive real-time alerts')
+          {isSubscribed
+            ? t('autoI18n.pushToggle6')
+            : t('autoI18n.pushToggle7')
           }
         </span>
       </Label>

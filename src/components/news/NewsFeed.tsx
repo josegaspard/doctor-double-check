@@ -141,7 +141,7 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
           className="gap-2 px-6"
         >
           <Newspaper className="w-4 h-4" />
-          {language === 'es' ? 'Leer más noticias' : 'Read more news'}
+          {t('autoI18n.newsFeed1')}
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>

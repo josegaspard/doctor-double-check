@@ -191,7 +191,7 @@ export function PrescriptionsList() {
         <CardContent className="p-8 text-center">
           <Pill className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-muted-foreground">
-            {language === 'es' ? 'No hay recetas' : 'No prescriptions'}
+            {t('autoI18n.prescList1')}
           </p>
         </CardContent>
       </Card>
@@ -277,13 +277,13 @@ export function PrescriptionsList() {
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     {rx.medications.length > 0 && (
                       <Badge variant="outline" className="text-sm">
-                        {rx.medications.length} {language === 'es' ? 'medicamentos' : 'medications'}
+                        {rx.medications.length} {t('autoI18n.prescList2')}
                       </Badge>
                     )}
                     {rx.fileUrl && (
                       <Badge variant="secondary" className="text-xs gap-1">
                         <Image className="w-3 h-3" />
-                        {language === 'es' ? 'Archivo' : 'File'}
+                        {t('autoI18n.prescList3')}
                       </Badge>
                     )}
                     <span className="text-sm text-muted-foreground">

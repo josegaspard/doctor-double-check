@@ -201,10 +201,10 @@ export default function Notifications() {
               return notifications.map((notification) => {
                 const date = notification.createdAt;
                 let group = '';
-                if (isToday(date)) group = language === 'es' ? 'Hoy' : 'Today';
-                else if (isYesterday(date)) group = language === 'es' ? 'Ayer' : 'Yesterday';
-                else if (isThisWeek(date)) group = language === 'es' ? 'Esta semana' : 'This week';
-                else group = language === 'es' ? 'Anteriores' : 'Older';
+                if (isToday(date)) group = t('autoI18n.notifications1');
+                else if (isYesterday(date)) group = t('autoI18n.notifications2');
+                else if (isThisWeek(date)) group = t('autoI18n.notifications3');
+                else group = t('autoI18n.notifications4');
 
                 const showHeader = group !== lastGroup;
                 lastGroup = group;

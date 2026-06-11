@@ -246,7 +246,7 @@ export default function ClinicalSessions() {
                   <Input
                     value={newSession.title}
                     onChange={(e) => setNewSession({ ...newSession, title: e.target.value })}
-                    placeholder="Ej: Caso de cardiopatía congénita compleja"
+                    placeholder={t('autoI18n.clClinicalSess1')}
                   />
                 </div>
                 <div>
@@ -256,7 +256,7 @@ export default function ClinicalSessions() {
                     value={newSession.specialty}
                     onChange={(value) => setNewSession({ ...newSession, specialty: value })}
                     placeholder={t('clinicalSessions.selectSpecialty')}
-                    searchPlaceholder="Buscar especialidad..."
+                    searchPlaceholder={t('autoI18n.clClinicalSess2')}
                     icon={Stethoscope}
                     allLabel=""
                   />

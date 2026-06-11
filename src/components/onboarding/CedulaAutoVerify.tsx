@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,8 +39,9 @@ export function CedulaAutoVerify({
   userId, 
   onVerified, 
   onClaimed,
-  language = 'es' 
+  language = 'es'
 }: CedulaAutoVerifyProps) {
+  const { t } = useLanguage();
   const [isVerifying, setIsVerifying] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [verificationResult, setVerificationResult] = useState<{
@@ -52,9 +54,7 @@ export function CedulaAutoVerify({
 
   const handleVerify = useCallback(async () => {
     if (!cedula || cedula.length < 7) {
-      toast.error(language === 'es' 
-        ? 'Ingresa un número de cédula válido (7-8 dígitos)' 
-        : 'Enter a valid license number (7-8 digits)');
+      toast.error(t('autoI18n.cedulaAuto1'));
       return;
     }
 
@@ -82,21 +82,15 @@ export function CedulaAutoVerify({
       }
 
       if (!data.verified) {
-        toast.error(data.error || (language === 'es' 
-          ? 'No se pudo verificar la cédula' 
-          : 'Could not verify license'));
+        toast.error(data.error || t('autoI18n.cedulaAuto2'));
       }
     } catch (error: any) {
       console.error('Error verifying cedula:', error);
       setVerificationResult({
         verified: false,
-        error: error.message || (language === 'es' 
-          ? 'Error al verificar' 
-          : 'Verification error'),
+        error: error.message || t('autoI18n.cedulaAuto3'),
       });
-      toast.error(error.message || (language === 'es' 
-        ? 'Error al verificar la cédula' 
-        : 'Error verifying license'));
+      toast.error(error.message || t('autoI18n.cedulaAuto4'));
     } finally {
       setIsVerifying(false);
     }
@@ -114,14 +108,10 @@ export function CedulaAutoVerify({
       if (error) throw error;
 
       if (data.success) {
-        toast.success(data.message || (language === 'es' 
-          ? 'Cédula reclamada exitosamente' 
-          : 'License claimed successfully'));
+        toast.success(data.message || t('autoI18n.cedulaAuto5'));
         
         if (data.autoApproved) {
-          toast.success(language === 'es' 
-            ? '¡Tu perfil ha sido verificado automáticamente!' 
-            : 'Your profile has been automatically verified!', {
+          toast.success(t('autoI18n.cedulaAuto6'), {
             duration: 5000,
           });
         }
@@ -134,9 +124,7 @@ export function CedulaAutoVerify({
       }
     } catch (error: any) {
       console.error('Error claiming cedula:', error);
-      toast.error(error.message || (language === 'es' 
-        ? 'Error al reclamar la cédula' 
-        : 'Error claiming license'));
+      toast.error(error.message || t('autoI18n.cedulaAuto7'));
     } finally {
       setIsClaiming(false);
     }
@@ -157,12 +145,12 @@ export function CedulaAutoVerify({
           {isVerifying ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {language === 'es' ? 'Verificando en SEP...' : 'Verifying with SEP...'}
+              {t('autoI18n.cedulaAuto8')}
             </>
           ) : (
             <>
               <Search className="w-4 h-4 mr-2" />
-              {language === 'es' ? 'Verificar cédula automáticamente' : 'Verify license automatically'}
+              {t('autoI18n.cedulaAuto9')}
             </>
           )}
         </Button>
@@ -176,16 +164,14 @@ export function CedulaAutoVerify({
               <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-destructive">
-                  {language === 'es' ? 'No se pudo verificar' : 'Could not verify'}
+                  {t('autoI18n.cedulaAuto10')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {verificationResult.error}
                 </p>
                 {verificationResult.alreadyClaimed && (
                   <p className="text-sm text-destructive mt-2">
-                    {language === 'es' 
-                      ? 'Esta cédula ya fue verificada por otro usuario. Contacta soporte si crees que es un error.'
-                      : 'This license was already verified by another user. Contact support if you believe this is an error.'}
+                    {t('autoI18n.cedulaAuto11')}
                   </p>
                 )}
               </div>
@@ -203,7 +189,7 @@ export function CedulaAutoVerify({
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-success">
-                    {language === 'es' ? '¡Cédula verificada!' : 'License verified!'}
+                    {t('autoI18n.cedulaAuto12')}
                   </p>
                   <Badge variant="verified" className="text-xs">
                     <ShieldCheck className="w-3 h-3 mr-1" />
@@ -211,9 +197,7 @@ export function CedulaAutoVerify({
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {language === 'es' 
-                    ? 'Los datos coinciden con el registro de la SEP' 
-                    : 'Data matches SEP registry'}
+                  {t('autoI18n.cedulaAuto13')}
                 </p>
               </div>
             </div>
@@ -224,7 +208,7 @@ export function CedulaAutoVerify({
                 <User className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Nombre' : 'Name'}
+                    {t('autoI18n.cedulaAuto14')}
                   </p>
                   <p className="font-medium">
                     {verificationResult.data.nombre} {verificationResult.data.paterno} {verificationResult.data.materno}
@@ -235,7 +219,7 @@ export function CedulaAutoVerify({
                 <GraduationCap className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Título' : 'Degree'}
+                    {t('autoI18n.cedulaAuto15')}
                   </p>
                   <p className="font-medium truncate">{verificationResult.data.titulo}</p>
                 </div>
@@ -244,7 +228,7 @@ export function CedulaAutoVerify({
                 <Building className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Institución' : 'Institution'}
+                    {t('autoI18n.cedulaAuto16')}
                   </p>
                   <p className="font-medium truncate">{verificationResult.data.institucion}</p>
                 </div>
@@ -253,7 +237,7 @@ export function CedulaAutoVerify({
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Año de registro' : 'Registration year'}
+                    {t('autoI18n.cedulaAuto17')}
                   </p>
                   <p className="font-medium">{verificationResult.data.anioRegistro}</p>
                 </div>
@@ -269,20 +253,18 @@ export function CedulaAutoVerify({
               {isClaiming ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {language === 'es' ? 'Confirmando...' : 'Confirming...'}
+                  {t('autoI18n.cedulaAuto18')}
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 mr-2" />
-                  {language === 'es' ? 'Confirmar y verificar mi perfil' : 'Confirm and verify my profile'}
+                  {t('autoI18n.cedulaAuto19')}
                 </>
               )}
             </Button>
 
             <p className="text-xs text-muted-foreground text-center mt-2">
-              {language === 'es' 
-                ? 'Al confirmar, esta cédula quedará asociada a tu cuenta y no podrá ser usada por otro usuario.'
-                : 'By confirming, this license will be associated with your account and cannot be used by another user.'}
+              {t('autoI18n.cedulaAuto20')}
             </p>
           </CardContent>
         </Card>
@@ -291,9 +273,7 @@ export function CedulaAutoVerify({
       {/* Info text */}
       {!verificationResult && cedulaValid && (
         <p className="text-xs text-muted-foreground text-center">
-          {language === 'es' 
-            ? 'Verificamos tu cédula directamente con la base de datos de la SEP (Secretaría de Educación Pública)'
-            : 'We verify your license directly with the SEP (Secretary of Public Education) database'}
+          {t('autoI18n.cedulaAuto21')}
         </p>
       )}
     </div>

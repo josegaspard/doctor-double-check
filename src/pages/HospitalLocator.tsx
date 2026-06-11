@@ -38,7 +38,7 @@ function formatDist(d: number) {
 type SortMode = 'distance' | 'rating' | 'name';
 
 export default function HospitalLocator() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { user } = useAuth();
   const es = language === 'es';
   const [hospitals, setHospitals] = useState<any[]>([]);
@@ -143,7 +143,7 @@ export default function HospitalLocator() {
     });
     if (error) toast.error(error.message);
     else {
-      toast.success(es ? 'Reseña enviada' : 'Review submitted');
+      toast.success(t('autoI18n.hospitalLoc1'));
       const { data: r } = await supabase.from('hospital_reviews').select('*');
       const revData = r || [];
       const revMap: Record<string, any[]> = {};
@@ -199,10 +199,10 @@ export default function HospitalLocator() {
   const FilterPanel = () => (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Tipo' : 'Type'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc2')}</p>
         <div className="px-3 py-2 rounded-lg bg-secondary/10 border border-secondary/30 flex items-center gap-2">
           <span aria-hidden>🏨</span>
-          <span className="text-sm font-medium text-secondary">{es ? 'Hospitales privados de México' : 'Private hospitals in Mexico'}</span>
+          <span className="text-sm font-medium text-secondary">{t('autoI18n.hospitalLoc3')}</span>
         </div>
       </div>
 
@@ -210,11 +210,11 @@ export default function HospitalLocator() {
 
       {/* Specialty */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Especialidad' : 'Specialty'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc4')}</p>
         <Select value={filterSpecialty} onValueChange={setFilterSpecialty}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={es ? 'Todas' : 'All'} /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('autoI18n.hospitalLoc5')} /></SelectTrigger>
           <SelectContent className="max-h-60">
-            <SelectItem value="all">{es ? 'Todas las especialidades' : 'All specialties'}</SelectItem>
+            <SelectItem value="all">{t('autoI18n.hospitalLoc6')}</SelectItem>
             {allSpecialties.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -224,10 +224,10 @@ export default function HospitalLocator() {
 
       {/* Zone */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Zona' : 'Zone'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc7')}</p>
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setFilterZone('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filterZone === 'all' ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
-            {es ? 'Todas' : 'All'}
+            {t('autoI18n.hospitalLoc8')}
           </button>
           {ZONES.map(z => (
             <button key={z} onClick={() => setFilterZone(z)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${filterZone === z ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
@@ -241,11 +241,11 @@ export default function HospitalLocator() {
 
       {/* Min rating */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Calificación mínima' : 'Min. Rating'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc9')}</p>
         <div className="grid grid-cols-5 gap-1.5">
           {[0, 3, 3.5, 4, 4.5].map(r => (
             <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-secondary/15 text-secondary border-2 border-secondary shadow-sm ring-1 ring-secondary/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
-              {r === 0 ? (es ? 'Todo' : 'All') : `${r}+`}
+              {r === 0 ? t('autoI18n.hospitalLoc10') : `${r}+`}
             </button>
           ))}
         </div>
@@ -258,8 +258,8 @@ export default function HospitalLocator() {
         <>
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{es ? 'Distancia máxima' : 'Max Distance'}</p>
-              <span className="text-xs font-semibold text-primary">{filterMaxDist < 100 ? `${filterMaxDist} km` : es ? 'Sin límite' : 'No limit'}</span>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('autoI18n.hospitalLoc11')}</p>
+              <span className="text-xs font-semibold text-primary">{filterMaxDist < 100 ? `${filterMaxDist} km` : t('autoI18n.hospitalLoc12')}</span>
             </div>
             <Slider value={[filterMaxDist]} onValueChange={([v]) => setFilterMaxDist(v)} min={1} max={100} step={1} className="py-2" />
             <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-0.5">
@@ -272,12 +272,12 @@ export default function HospitalLocator() {
 
       {/* Sort */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{es ? 'Ordenar por' : 'Sort by'}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc13')}</p>
         <div className="grid grid-cols-3 gap-1.5">
           {([
-            { value: 'distance', label: es ? 'Cercanía' : 'Near', icon: <Navigation className="w-3.5 h-3.5" /> },
-            { value: 'rating', label: es ? 'Rating' : 'Rating', icon: <Star className="w-3.5 h-3.5" /> },
-            { value: 'name', label: es ? 'Nombre' : 'Name', icon: <ArrowUpDown className="w-3.5 h-3.5" /> },
+            { value: 'distance', label: t('autoI18n.hospitalLoc14'), icon: <Navigation className="w-3.5 h-3.5" /> },
+            { value: 'rating', label: t('autoI18n.hospitalLoc15'), icon: <Star className="w-3.5 h-3.5" /> },
+            { value: 'name', label: t('autoI18n.hospitalLoc16'), icon: <ArrowUpDown className="w-3.5 h-3.5" /> },
           ] as { value: SortMode; label: string; icon: React.ReactNode }[]).map(s => (
             <button key={s.value} onClick={() => setSortMode(s.value)} className={`flex flex-col items-center gap-1 py-2.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
               {s.icon}
@@ -291,7 +291,7 @@ export default function HospitalLocator() {
         <>
           <hr className="border-border/50" />
           <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10">
-            <X className="w-3.5 h-3.5" /> {es ? 'Limpiar filtros' : 'Clear filters'} ({activeFilterCount})
+            <X className="w-3.5 h-3.5" /> {t('autoI18n.hospitalLoc17')} ({activeFilterCount})
           </Button>
         </>
       )}
@@ -308,15 +308,15 @@ export default function HospitalLocator() {
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold">{es ? 'Localiza un Hospital' : 'Find a Hospital'}</h1>
-              <p className="text-sm text-muted-foreground">{es ? 'Directorio de hospitales y clínicas en México' : 'Hospital & clinic directory in Mexico'}</p>
+              <h1 className="text-xl sm:text-2xl font-bold">{t('autoI18n.hospitalLoc18')}</h1>
+              <p className="text-sm text-muted-foreground">{t('autoI18n.hospitalLoc19')}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-primary" />{hospitals.length} {es ? 'hospitales' : 'hospitals'}</span>
-            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-secondary" />{es ? 'Información verificada' : 'Verified info'}</span>
-            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-primary" />{es ? 'Ubicación activa' : 'Location active'}</span>}
-            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-accent" />{activeDoctorsCount} {es ? 'doctores activos' : 'active doctors'}</span>
+            <span className="mm-stat-pill"><Building2 className="w-3.5 h-3.5 text-primary" />{hospitals.length} {t('autoI18n.hospitalLoc20')}</span>
+            <span className="mm-stat-pill"><Star className="w-3.5 h-3.5 text-secondary" />{t('autoI18n.hospitalLoc21')}</span>
+            {userLoc && <span className="mm-stat-pill"><Navigation className="w-3.5 h-3.5 text-primary" />{t('autoI18n.hospitalLoc22')}</span>}
+            <span className="mm-stat-pill"><Heart className="w-3.5 h-3.5 text-accent" />{activeDoctorsCount} {t('autoI18n.hospitalLoc23')}</span>
           </div>
         </div>
 
@@ -325,7 +325,7 @@ export default function HospitalLocator() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder={es ? 'Buscar hospital, dirección o especialidad...' : 'Search hospital, address or specialty...'}
+              placeholder={t('autoI18n.hospitalLoc24')}
               value={search} onChange={e => setSearch(e.target.value)}
               className="pl-9 h-11 bg-white dark:bg-card border-2 border-primary/30 shadow-md focus-visible:ring-primary/40 focus-visible:border-primary placeholder:text-muted-foreground"
             />
@@ -344,13 +344,13 @@ export default function HospitalLocator() {
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-              <SheetHeader><SheetTitle>{es ? 'Filtros y Ordenar' : 'Filters & Sort'}</SheetTitle></SheetHeader>
+              <SheetHeader><SheetTitle>{t('autoI18n.hospitalLoc25')}</SheetTitle></SheetHeader>
               <div className="mt-4 overflow-y-auto max-h-[calc(85vh-80px)] pb-6">
                 <FilterPanel />
               </div>
               <div className="pt-3 border-t">
                 <Button onClick={() => setFiltersOpen(false)} className="w-full">
-                  {es ? `Ver ${filtered.length} resultados` : `Show ${filtered.length} results`}
+                  {t('autoI18n.hospitalLoc26').replace('{count}', String(filtered.length))}
                 </Button>
               </div>
             </SheetContent>
@@ -361,16 +361,16 @@ export default function HospitalLocator() {
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
             <span className="mm-chip mm-chip-active bg-secondary/15 text-secondary">
-              {es ? '🏥 Hospitales privados · México' : '🏥 Private hospitals · Mexico'}
+              {t('autoI18n.hospitalLoc27')}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
               <SelectTrigger className="h-8 w-36 text-xs"><ArrowUpDown className="w-3 h-3 mr-1" /><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="distance">{es ? 'Cercanía' : 'Distance'}</SelectItem>
-                <SelectItem value="rating">{es ? 'Calificación' : 'Rating'}</SelectItem>
-                <SelectItem value="name">{es ? 'Nombre' : 'Name'}</SelectItem>
+                <SelectItem value="distance">{t('autoI18n.hospitalLoc28')}</SelectItem>
+                <SelectItem value="rating">{t('autoI18n.hospitalLoc29')}</SelectItem>
+                <SelectItem value="name">{t('autoI18n.hospitalLoc30')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -408,7 +408,7 @@ export default function HospitalLocator() {
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5">
                 <SlidersHorizontal className="w-4 h-4 text-primary" />
-                {es ? 'Filtros' : 'Filters'}
+                {t('autoI18n.hospitalLoc31')}
               </h3>
               <FilterPanel />
             </div>
@@ -418,21 +418,21 @@ export default function HospitalLocator() {
           <div className="flex-1 min-w-0">
             {/* Results count */}
             <p className="text-xs text-muted-foreground mb-3">
-              {es ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}` : `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`}
+              {(filtered.length === 1 ? t('autoI18n.hospitalLoc32') : t('autoI18n.hospitalLoc33')).replace('{count}', String(filtered.length))}
             </p>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">{es ? 'Cargando hospitales...' : 'Loading hospitals...'}</p>
+                <p className="text-sm text-muted-foreground">{t('autoI18n.hospitalLoc34')}</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Building2 className="w-12 h-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">{es ? 'No se encontraron hospitales' : 'No hospitals found'}</p>
+                <p className="text-sm text-muted-foreground">{t('autoI18n.hospitalLoc35')}</p>
                 {activeFilterCount > 0 && (
                   <Button variant="outline" size="sm" onClick={clearFilters} className="text-xs gap-1">
-                    <X className="w-3.5 h-3.5" /> {es ? 'Limpiar filtros' : 'Clear filters'}
+                    <X className="w-3.5 h-3.5" /> {t('autoI18n.hospitalLoc36')}
                   </Button>
                 )}
               </div>
@@ -463,7 +463,7 @@ export default function HospitalLocator() {
                           {/* Overlays */}
                           <div className="absolute top-2.5 left-2.5 flex gap-1.5">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${h.type === 'public' ? 'bg-primary/90 text-primary-foreground' : h.type === 'private' ? 'bg-secondary/90 text-secondary-foreground' : 'bg-accent/90 text-accent-foreground'}`}>
-                              {h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🩺 Clínica' : '🩺 Clinic')}
+                              {h.type === 'public' ? t('autoI18n.hospitalLoc37') : h.type === 'private' ? t('autoI18n.hospitalLoc38') : t('autoI18n.hospitalLoc39')}
                             </span>
                           </div>
                           {isFeatured && (
@@ -483,7 +483,7 @@ export default function HospitalLocator() {
                       ) : (
                         <div className="relative px-4 pt-3 flex items-center justify-between">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${h.type === 'public' ? 'bg-primary/10 text-primary' : h.type === 'private' ? 'bg-secondary/10 text-secondary' : 'bg-accent/15 text-accent'}`}>
-                            {h.type === 'public' ? (es ? '🏥 Público' : '🏥 Public') : h.type === 'private' ? (es ? '🏨 Privado' : '🏨 Private') : (es ? '🩺 Clínica' : '🩺 Clinic')}
+                            {h.type === 'public' ? t('autoI18n.hospitalLoc40') : h.type === 'private' ? t('autoI18n.hospitalLoc41') : t('autoI18n.hospitalLoc42')}
                           </span>
                           {isFeatured && (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-accent/15 text-accent flex items-center gap-1">
@@ -507,7 +507,7 @@ export default function HospitalLocator() {
                               ))}
                             </div>
                             <span className="text-xs font-semibold">{h.avg_rating.toFixed(1)}</span>
-                            <span className="text-[10px] text-muted-foreground">({h.review_count} {es ? 'reseñas' : 'reviews'})</span>
+                            <span className="text-[10px] text-muted-foreground">({h.review_count} {t('autoI18n.hospitalLoc43')})</span>
                           </div>
                         )}
 
@@ -569,7 +569,7 @@ export default function HospitalLocator() {
                             onClick={() => handleCardClick(h)}
                           >
                             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                            {es ? 'Más' : 'More'}
+                            {t('autoI18n.hospitalLoc44')}
                           </Button>
                         </div>
 
@@ -577,11 +577,11 @@ export default function HospitalLocator() {
                         {expanded && (
                           <div className="mt-3 pt-3 border-t border-border space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                             {h.description && <p className="text-xs text-muted-foreground leading-relaxed">{h.description}</p>}
-                            {h.level && <p className="text-xs"><span className="font-medium">{es ? 'Nivel: ' : 'Level: '}</span>{h.level}</p>}
+                            {h.level && <p className="text-xs"><span className="font-medium">{t('autoI18n.hospitalLoc45')}</span>{h.level}</p>}
 
                             {h.specialties.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium mb-1.5">{es ? 'Todas las especialidades:' : 'All specialties:'}</p>
+                                <p className="text-xs font-medium mb-1.5">{t('autoI18n.hospitalLoc46')}</p>
                                 <div className="flex flex-wrap gap-1">
                                   {h.specialties.map((sp: string, i: number) => (
                                     <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
@@ -594,22 +594,22 @@ export default function HospitalLocator() {
 
                             {h.website && (
                               <a href={h.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                                <Globe className="w-3.5 h-3.5" /> {es ? 'Visitar sitio web' : 'Visit website'} <ExternalLink className="w-3 h-3" />
+                                <Globe className="w-3.5 h-3.5" /> {t('autoI18n.hospitalLoc47')} <ExternalLink className="w-3 h-3" />
                               </a>
                             )}
 
                             {/* Reviews section */}
                             <div>
                               <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs font-medium">{es ? 'Reseñas' : 'Reviews'} ({hospReviews.length})</p>
+                                <p className="text-xs font-medium">{t('autoI18n.hospitalLoc48')} ({hospReviews.length})</p>
                                 {user && (
                                   <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => setReviewDialog(h.id)}>
-                                    <MessageSquare className="w-3 h-3" /> {es ? 'Escribir' : 'Write'}
+                                    <MessageSquare className="w-3 h-3" /> {t('autoI18n.hospitalLoc49')}
                                   </Button>
                                 )}
                               </div>
                               {hospReviews.length === 0 && (
-                                <p className="text-xs text-muted-foreground italic">{es ? 'Sin reseñas aún' : 'No reviews yet'}</p>
+                                <p className="text-xs text-muted-foreground italic">{t('autoI18n.hospitalLoc50')}</p>
                               )}
                               {hospReviews.slice(0, 3).map(rv => (
                                 <div key={rv.id} className="bg-muted/50 rounded-lg p-2.5 mb-1.5">
@@ -648,10 +648,10 @@ export default function HospitalLocator() {
         {/* Review Dialog */}
         <Dialog open={!!reviewDialog} onOpenChange={() => setReviewDialog(null)}>
           <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>{es ? 'Escribir Reseña' : 'Write Review'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('autoI18n.hospitalLoc51')}</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div>
-                <p className="text-sm font-medium mb-2">{es ? 'Calificación' : 'Rating'}</p>
+                <p className="text-sm font-medium mb-2">{t('autoI18n.hospitalLoc52')}</p>
                 <div className="flex gap-1">
                   {[1,2,3,4,5].map(s => (
                     <button key={s} onClick={() => setReviewForm(f => ({ ...f, rating: s }))} className="p-1 transition-transform hover:scale-110">
@@ -661,12 +661,12 @@ export default function HospitalLocator() {
                 </div>
               </div>
               <Textarea
-                placeholder={es ? 'Tu opinión (opcional)...' : 'Your review (optional)...'}
+                placeholder={t('autoI18n.hospitalLoc53')}
                 value={reviewForm.comment} onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
                 rows={3}
               />
               <Button onClick={handleSubmitReview} disabled={submitting} className="w-full">
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (es ? 'Enviar Reseña' : 'Submit Review')}
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('autoI18n.hospitalLoc54')}
               </Button>
             </div>
           </DialogContent>

@@ -8,6 +8,7 @@ import { es, enUS } from 'date-fns/locale';
 import { DoctorAvailability } from '@/hooks/useDoctorAvailability';
 import { cn } from '@/lib/utils';
 import { Video, MessageSquare, Clock } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -33,11 +34,13 @@ interface CalendarGridProps {
   draggableIds?: Set<string>;
 }
 
-const typeConfig = {
-  live: { color: 'bg-destructive', text: 'text-white', icon: Video, label: 'Live' },
-  consultation: { color: 'bg-primary', text: 'text-white', icon: MessageSquare, label: 'Orientación' },
-  office_hours: { color: 'bg-success', text: 'text-white', icon: Clock, label: 'Disponible' },
-};
+function getTypeConfig(t: (path: string) => string) {
+  return {
+    live: { color: 'bg-destructive', text: 'text-white', icon: Video, label: t('autoI18n.calendarGrid1') },
+    consultation: { color: 'bg-primary', text: 'text-white', icon: MessageSquare, label: t('autoI18n.calendarGrid2') },
+    office_hours: { color: 'bg-success', text: 'text-white', icon: Clock, label: t('autoI18n.calendarGrid3') },
+  };
+}
 
 function EventChip({
   availability, onClick, isManaging, isSelected, onToggleSelect,
@@ -52,6 +55,8 @@ function EventChip({
   onDragStart?: (id: string) => void;
   onDragEnd?: () => void;
 }) {
+  const { t } = useLanguage();
+  const typeConfig = getTypeConfig(t);
   const config = typeConfig[availability.type] || typeConfig.office_hours;
   const Icon = config.icon;
   const isCancelled = availability.status === 'cancelled';

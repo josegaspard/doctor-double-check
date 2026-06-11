@@ -462,7 +462,7 @@ export default function NewsArticle() {
         {showTranslated && (
           <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground bg-primary/5 rounded-md px-3 py-2 border border-primary/20">
             <Languages className="w-3 h-3 text-primary" />
-            <span>{language === 'es' ? 'Translated to English' : 'Traducido al español'}</span>
+            <span>{t('autoI18n.newsArticle1')}</span>
             <button className="ml-auto text-primary hover:underline" onClick={() => setShowTranslated(false)}>
               {t('ads.showOriginal')}
             </button>

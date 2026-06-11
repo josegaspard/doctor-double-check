@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVault } from '@/contexts/VaultContext';
@@ -56,6 +56,9 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStripeProcessing, setIsStripeProcessing] = useState(false);
+  // Stable idempotency key per flow instance → a double-submit reuses the same
+  // key and is replayed server-side instead of charging twice.
+  const idemKeyRef = useRef<string>(crypto.randomUUID());
 
   const patientFiles = files.filter(f => f.patientId === user?.id);
   const discountedFee = getEffectivePrice(doctor.consultationFee);
@@ -93,6 +96,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           p_doctor_id: doctor.userId,
           p_amount: doctor.consultationFee,
           p_description: t('doubleCheckFlow.purchase.description').replace('{doctorName}', doctor.name),
+          p_idempotency_key: idemKeyRef.current,
         }
       );
 

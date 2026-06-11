@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export default function CreatePrescription() {
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -57,7 +57,7 @@ export default function CreatePrescription() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="font-heading text-xl font-bold">
-            {language === 'es' ? 'Crear Receta' : 'Create Prescription'}
+            {t('autoI18n.createPresc1')}
           </h1>
         </div>
         <Card>

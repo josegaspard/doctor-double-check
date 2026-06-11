@@ -77,6 +77,9 @@ Deno.serve(async (req) => {
         p_amount: recording.price,
         p_description: `Grabación: ${recording.title}`,
         p_metadata: { recording_id: recordingId },
+        // Natural idempotency key: closes the concurrent-double-click race
+        // (the "already purchased" pre-check above only covers the sequential case).
+        p_idempotency_key: `recording:${recordingId}`,
       });
 
     if (purchaseError) {

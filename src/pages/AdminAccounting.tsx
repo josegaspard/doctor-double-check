@@ -38,8 +38,7 @@ const ACCOUNT_LABELS_ES: Record<string, string> = {
 export default function AdminAccounting() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const { language } = useLanguage();
-  const es = language === 'es';
+  const { t } = useLanguage();
 
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -100,7 +99,7 @@ export default function AdminAccounting() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `accounting_${from}_${to}.csv`; a.click();
       URL.revokeObjectURL(url);
-      toast.success('CSV exportado');
+      toast.success(t('autoI18n.clAdminAccount29'));
     } catch (e: any) {
       toast.error(e.message);
     } finally { setExporting(false); }
@@ -112,7 +111,7 @@ export default function AdminAccounting() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {es ? 'Volver al panel' : 'Back to admin'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.clAdminAccount1')}
         </Button>
 
         <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
@@ -121,8 +120,8 @@ export default function AdminAccounting() {
               <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">{es ? 'Contabilidad' : 'Accounting'}</h1>
-              <p className="text-xs sm:text-sm text-secondary/70">{es ? 'Estado financiero de toda la plataforma en tiempo real — consultas, grabaciones, suscripciones, marketplace y recargas' : 'Real-time platform-wide P&L'}</p>
+              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">{t('autoI18n.clAdminAccount2')}</h1>
+              <p className="text-xs sm:text-sm text-secondary/70">{t('autoI18n.clAdminAccount3')}</p>
             </div>
           </div>
         </div>
@@ -130,42 +129,42 @@ export default function AdminAccounting() {
         <Card className="mb-4">
           <CardContent className="p-3 sm:p-4 flex flex-wrap items-end gap-2">
             <div>
-              <Label className="text-xs">{es ? 'Desde' : 'From'}</Label>
+              <Label className="text-xs">{t('autoI18n.clAdminAccount4')}</Label>
               <Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="h-9" />
             </div>
             <div>
-              <Label className="text-xs">{es ? 'Hasta' : 'To'}</Label>
+              <Label className="text-xs">{t('autoI18n.clAdminAccount5')}</Label>
               <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="h-9" />
             </div>
             <Button onClick={fetchData} disabled={loading} size="sm" className="h-9">
               {loading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-              {es ? 'Actualizar' : 'Refresh'}
+              {t('autoI18n.clAdminAccount6')}
             </Button>
             <Button onClick={exportCSV} disabled={exporting} variant="outline" size="sm" className="h-9 ml-auto">
               {exporting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
-              {es ? 'Exportar CSV' : 'Export CSV'}
+              {t('autoI18n.clAdminAccount7')}
             </Button>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <KpiCard label={es ? 'Comisión plataforma' : 'Platform revenue'} value={fmt(platformRevenue)} icon={TrendingUp} tone="success" />
-          <KpiCard label={es ? 'Neto plataforma' : 'Net platform'} value={fmt(netPlatform)} icon={Receipt} tone={netPlatform >= 0 ? 'success' : 'destructive'} />
-          <KpiCard label={es ? 'Adeudo a doctores' : 'Doctor payable'} value={fmt(doctorPayable)} icon={Wallet} tone="warning" />
-          <KpiCard label={es ? 'Adeudo a vendors' : 'Vendor payable'} value={fmt(vendorPayable)} icon={Wallet} tone="warning" />
+          <KpiCard label={t('autoI18n.clAdminAccount8')} value={fmt(platformRevenue)} icon={TrendingUp} tone="success" />
+          <KpiCard label={t('autoI18n.clAdminAccount9')} value={fmt(netPlatform)} icon={Receipt} tone={netPlatform >= 0 ? 'success' : 'destructive'} />
+          <KpiCard label={t('autoI18n.clAdminAccount10')} value={fmt(doctorPayable)} icon={Wallet} tone="warning" />
+          <KpiCard label={t('autoI18n.clAdminAccount11')} value={fmt(vendorPayable)} icon={Wallet} tone="warning" />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <KpiCard label={es ? 'IVA por pagar' : 'VAT payable'} value={fmt(ivaPayable)} icon={FileText} tone="warning" />
-          <KpiCard label={es ? 'Saldo usuarios (wallets)' : 'User wallet balance'} value={fmt(userWalletLiability)} icon={Wallet} tone="muted" />
-          <KpiCard label={es ? 'Devoluciones' : 'Refunds'} value={fmt(refundExpense)} icon={AlertTriangle} tone="destructive" />
-          <KpiCard label={es ? 'Efectivo entrante' : 'Cash in'} value={fmt(cashIn)} icon={DollarSign} tone="primary" />
+          <KpiCard label={t('autoI18n.clAdminAccount12')} value={fmt(ivaPayable)} icon={FileText} tone="warning" />
+          <KpiCard label={t('autoI18n.clAdminAccount13')} value={fmt(userWalletLiability)} icon={Wallet} tone="muted" />
+          <KpiCard label={t('autoI18n.clAdminAccount14')} value={fmt(refundExpense)} icon={AlertTriangle} tone="destructive" />
+          <KpiCard label={t('autoI18n.clAdminAccount15')} value={fmt(cashIn)} icon={DollarSign} tone="primary" />
         </div>
 
         <Tabs defaultValue="summary">
           <TabsList>
-            <TabsTrigger value="summary">{es ? 'Resumen por cuenta' : 'By account'}</TabsTrigger>
-            <TabsTrigger value="entries">{es ? 'Asientos recientes' : 'Recent entries'}</TabsTrigger>
+            <TabsTrigger value="summary">{t('autoI18n.clAdminAccount16')}</TabsTrigger>
+            <TabsTrigger value="entries">{t('autoI18n.clAdminAccount17')}</TabsTrigger>
           </TabsList>
           <TabsContent value="summary">
             <Card>
@@ -173,10 +172,10 @@ export default function AdminAccounting() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      <th className="text-left p-3 font-semibold">{es ? 'Cuenta' : 'Account'}</th>
-                      <th className="text-right p-3 font-semibold">{es ? 'Débitos' : 'Debits'}</th>
-                      <th className="text-right p-3 font-semibold">{es ? 'Créditos' : 'Credits'}</th>
-                      <th className="text-right p-3 font-semibold">{es ? 'Balance' : 'Balance'}</th>
+                      <th className="text-left p-3 font-semibold">{t('autoI18n.clAdminAccount18')}</th>
+                      <th className="text-right p-3 font-semibold">{t('autoI18n.clAdminAccount19')}</th>
+                      <th className="text-right p-3 font-semibold">{t('autoI18n.clAdminAccount20')}</th>
+                      <th className="text-right p-3 font-semibold">{t('autoI18n.clAdminAccount21')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -188,7 +187,7 @@ export default function AdminAccounting() {
                         <td className={`p-3 text-right font-mono font-bold ${Number(s.balance) < 0 ? 'text-success' : 'text-foreground'}`}>{fmt(Number(s.balance))}</td>
                       </tr>
                     ))}
-                    {summary.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">{es ? 'Sin movimientos en este rango' : 'No entries in this range'}</td></tr>}
+                    {summary.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">{t('autoI18n.clAdminAccount22')}</td></tr>}
                   </tbody>
                 </table>
               </CardContent>
@@ -200,11 +199,11 @@ export default function AdminAccounting() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      <th className="text-left p-2 font-semibold">{es ? 'Fecha' : 'Date'}</th>
-                      <th className="text-left p-2 font-semibold">{es ? 'Cuenta' : 'Account'}</th>
-                      <th className="text-left p-2 font-semibold">{es ? 'Tipo' : 'Type'}</th>
-                      <th className="text-right p-2 font-semibold">{es ? 'Monto' : 'Amount'}</th>
-                      <th className="text-left p-2 font-semibold hidden sm:table-cell">{es ? 'Descripción' : 'Description'}</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount23')}</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount24')}</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount25')}</th>
+                      <th className="text-right p-2 font-semibold">{t('autoI18n.clAdminAccount26')}</th>
+                      <th className="text-left p-2 font-semibold hidden sm:table-cell">{t('autoI18n.clAdminAccount27')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -217,7 +216,7 @@ export default function AdminAccounting() {
                         <td className="p-2 text-xs text-muted-foreground hidden sm:table-cell">{r.description}</td>
                       </tr>
                     ))}
-                    {recent.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">{es ? 'Sin asientos' : 'No entries'}</td></tr>}
+                    {recent.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">{t('autoI18n.clAdminAccount28')}</td></tr>}
                   </tbody>
                 </table>
               </CardContent>

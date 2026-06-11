@@ -20,7 +20,7 @@ interface ContactInfo {
 
 export default function Contact() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [contactInfo, setContactInfo] = useState<ContactInfo>({
@@ -63,7 +63,7 @@ export default function Contact() {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.message) {
-      toast.error(language === 'es' ? 'Por favor completa todos los campos requeridos' : 'Please fill in all required fields');
+      toast.error(t('autoI18n.contact1'));
       return;
     }
 
@@ -80,10 +80,10 @@ export default function Contact() {
       if (error || (data && (data as { error?: string }).error)) {
         throw new Error((data as { error?: string })?.error || error?.message || 'send failed');
       }
-      toast.success(language === 'es' ? 'Mensaje enviado correctamente' : 'Message sent successfully');
+      toast.success(t('autoI18n.contact2'));
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al enviar el mensaje. Intenta de nuevo.' : 'Error sending the message. Please try again.');
+      toast.error(t('autoI18n.contact3'));
     } finally {
       setIsSending(false);
     }
@@ -94,12 +94,10 @@ export default function Contact() {
       <main className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-14 pb-8 sm:pb-12 max-w-4xl">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl font-bold mb-2">
-            {language === 'es' ? 'Contacto' : 'Contact'}
+            {t('autoI18n.contact4')}
           </h1>
           <p className="text-sm text-muted-foreground px-4">
-            {language === 'es' 
-              ? 'Estamos aquí para ayudarte. Envíanos un mensaje y te responderemos lo antes posible.' 
-              : "We're here to help. Send us a message and we'll respond as soon as possible."}
+            {t('autoI18n.contact5')}
           </p>
         </div>
 
@@ -126,7 +124,7 @@ export default function Contact() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-muted-foreground">
-                      {language === 'es' ? 'Teléfono' : 'Phone'}
+                      {t('autoI18n.contact6')}
                     </p>
                     <p className="text-xs sm:text-sm font-medium">{contactInfo.phone}</p>
                   </div>
@@ -141,7 +139,7 @@ export default function Contact() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-muted-foreground">
-                    {language === 'es' ? 'Ubicación' : 'Location'}
+                    {t('autoI18n.contact7')}
                   </p>
                   <p className="text-xs sm:text-sm font-medium">{contactInfo.address}</p>
                 </div>
@@ -162,12 +160,10 @@ export default function Contact() {
           <Card className="md:col-span-2">
             <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
               <CardTitle className="text-base sm:text-lg">
-                {language === 'es' ? 'Envíanos un mensaje' : 'Send us a message'}
+                {t('autoI18n.contact8')}
               </CardTitle>
               <CardDescription className="text-xs">
-                {language === 'es' 
-                  ? 'Completa el formulario y nos pondremos en contacto contigo.' 
-                  : "Fill out the form and we'll get back to you."}
+                {t('autoI18n.contact9')}
               </CardDescription>
             </CardHeader>
             <CardContent className="px-4 sm:px-6">
@@ -175,13 +171,13 @@ export default function Contact() {
                 <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-xs">
-                      {language === 'es' ? 'Nombre' : 'Name'} *
+                      {t('autoI18n.contact10')} *
                     </Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder={language === 'es' ? 'Tu nombre' : 'Your name'}
+                      placeholder={t('autoI18n.contact11')}
                       className="text-sm h-10"
                       required
                     />
@@ -193,7 +189,7 @@ export default function Contact() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder={language === 'es' ? 'tu@email.com' : 'your@email.com'}
+                      placeholder={t('autoI18n.contact12')}
                       className="text-sm h-10"
                       required
                     />
@@ -202,26 +198,26 @@ export default function Contact() {
                 
                 <div className="space-y-1.5">
                   <Label htmlFor="subject" className="text-xs">
-                    {language === 'es' ? 'Asunto' : 'Subject'}
+                    {t('autoI18n.contact13')}
                   </Label>
                   <Input
                     id="subject"
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    placeholder={language === 'es' ? '¿En qué podemos ayudarte?' : 'How can we help you?'}
+                    placeholder={t('autoI18n.contact14')}
                     className="text-sm h-10"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="message" className="text-xs">
-                    {language === 'es' ? 'Mensaje' : 'Message'} *
+                    {t('autoI18n.contact15')} *
                   </Label>
                   <Textarea
                     id="message"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder={language === 'es' ? 'Escribe tu mensaje aquí...' : 'Write your message here...'}
+                    placeholder={t('autoI18n.contact16')}
                     className="min-h-[100px] sm:min-h-[120px] text-sm"
                     required
                   />
@@ -233,9 +229,9 @@ export default function Contact() {
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  {isSending 
-                    ? (language === 'es' ? 'Enviando...' : 'Sending...') 
-                    : (language === 'es' ? 'Enviar Mensaje' : 'Send Message')}
+                  {isSending
+                    ? t('autoI18n.contact17')
+                    : t('autoI18n.contact18')}
                 </Button>
               </form>
             </CardContent>

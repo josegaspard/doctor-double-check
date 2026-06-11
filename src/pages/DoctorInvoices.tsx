@@ -74,7 +74,7 @@ interface EarningsSummary {
 export default function DoctorInvoices() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
@@ -145,11 +145,11 @@ export default function DoctorInvoices() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        toast.error(language === 'es' ? 'El archivo no debe exceder 10MB' : 'File must not exceed 10MB');
+        toast.error(t('doctorInvoices.fileTooLarge'));
         return;
       }
       if (!file.type.includes('pdf') && !file.type.includes('image')) {
-        toast.error(language === 'es' ? 'Solo PDF o imágenes' : 'Only PDF or images allowed');
+        toast.error(t('doctorInvoices.onlyPdfOrImages'));
         return;
       }
       setSelectedFile(file);
@@ -158,7 +158,7 @@ export default function DoctorInvoices() {
 
   const handleUpload = async () => {
     if (!invoiceNumber || !periodStart || !periodEnd || !amount || !selectedFile) {
-      toast.error(language === 'es' ? 'Completa todos los campos' : 'Complete all fields');
+      toast.error(t('doctorInvoices.completeAllFields'));
       return;
     }
 
@@ -189,20 +189,20 @@ export default function DoctorInvoices() {
         });
       if (insertError) throw insertError;
 
-      toast.success(language === 'es' ? 'Factura subida exitosamente' : 'Invoice uploaded successfully');
+      toast.success(t('doctorInvoices.invoiceUploaded'));
       setIsDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error: any) {
       console.error('Error uploading invoice:', error);
-      toast.error(error.message || (language === 'es' ? 'Error al subir factura' : 'Error uploading invoice'));
+      toast.error(error.message || t('doctorInvoices.errorUploading'));
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleDelete = async (invoiceId: string) => {
-    if (!confirm(language === 'es' ? '¿Eliminar esta factura?' : 'Delete this invoice?')) return;
+    if (!confirm(t('doctorInvoices.deleteInvoiceConfirm'))) return;
 
     try {
       const { error } = await supabase
@@ -212,10 +212,10 @@ export default function DoctorInvoices() {
 
       if (error) throw error;
 
-      toast.success(language === 'es' ? 'Factura eliminada' : 'Invoice deleted');
+      toast.success(t('doctorInvoices.invoiceDeleted'));
       fetchData();
     } catch (error: any) {
-      toast.error(error.message || (language === 'es' ? 'Error al eliminar' : 'Error deleting'));
+      toast.error(error.message || t('doctorInvoices.errorDeleting'));
     }
   };
 
@@ -241,13 +241,13 @@ export default function DoctorInvoices() {
     switch (status) {
       case 'approved':
       case 'paid':
-        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{language === 'es' ? 'Aprobada' : 'Approved'}</Badge>;
+        return <Badge variant="verified" className="gap-1"><CheckCircle className="w-3 h-3" />{t('doctorInvoices.approved')}</Badge>;
       case 'pending':
       case 'processing':
-        return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{language === 'es' ? 'Pendiente' : 'Pending'}</Badge>;
+        return <Badge variant="warning" className="gap-1"><Clock className="w-3 h-3" />{t('doctorInvoices.pending')}</Badge>;
       case 'rejected':
       case 'failed':
-        return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />{language === 'es' ? 'Rechazada' : 'Rejected'}</Badge>;
+        return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />{t('doctorInvoices.rejected')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -272,22 +272,20 @@ export default function DoctorInvoices() {
           className="mb-4 gap-2 hidden sm:inline-flex"
         >
           <ArrowLeft className="w-4 h-4" />
-          {language === 'es' ? 'Volver al panel' : 'Back to dashboard'}
+          {t('doctorInvoices.backToDashboard')}
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div className="min-w-0">
             <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground">
-              {language === 'es' ? 'Facturas y Pagos' : 'Invoices & Payments'}
+              {t('doctorInvoices.pageTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              {language === 'es' 
-                ? 'Gestiona tus facturas y revisa el historial de pagos' 
-                : 'Manage your invoices and review payment history'}
+              {t('doctorInvoices.pageSubtitle')}
             </p>
           </div>
           <Button onClick={() => { prefillWithPendingEarnings(); setIsDialogOpen(true); }} className="gap-2 w-full sm:w-auto" size="sm">
             <Upload className="w-4 h-4" />
-            {language === 'es' ? 'Subir Factura' : 'Upload Invoice'}
+            {t('doctorInvoices.uploadInvoice')}
           </Button>
         </div>
 
@@ -301,7 +299,7 @@ export default function DoctorInvoices() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Ganancias Pendientes' : 'Pending Earnings'}
+                    {t('doctorInvoices.pendingEarnings')}
                   </p>
                   <p className="text-xl font-bold text-success">
                     {formatCurrency(earnings?.pending_earnings || 0)}
@@ -319,7 +317,7 @@ export default function DoctorInvoices() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Total Ganado' : 'Total Earned'}
+                    {t('doctorInvoices.totalEarned')}
                   </p>
                   <p className="text-xl font-bold text-primary">
                     {formatCurrency(earnings?.total_earnings || 0)}
@@ -337,19 +335,19 @@ export default function DoctorInvoices() {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Cuenta Bancaria' : 'Bank Account'}
+                    {t('doctorInvoices.bankAccount')}
                   </p>
                   {earnings?.payouts_enabled ? (
                     <p className="text-sm font-medium text-success">
-                      {language === 'es' ? 'Configurada ✓' : 'Configured ✓'}
+                      {t('doctorInvoices.configured')}
                     </p>
                   ) : (
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       className="p-0 h-auto text-warning"
                       onClick={() => navigate('/doctor/bank-account')}
                     >
-                      {language === 'es' ? 'Configurar' : 'Set up'} <ArrowRight className="w-3 h-3 ml-1" />
+                      {t('doctorInvoices.setUp')} <ArrowRight className="w-3 h-3 ml-1" />
                     </Button>
                   )}
                 </div>
@@ -366,14 +364,10 @@ export default function DoctorInvoices() {
                 <Info className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">
-                    {language === 'es' 
-                      ? `Tienes ${formatCurrency(earnings?.pending_earnings || 0)} en ganancias pendientes`
-                      : `You have ${formatCurrency(earnings?.pending_earnings || 0)} in pending earnings`}
+                    {t('doctorInvoices.pendingEarningsBanner').replace('{amount}', formatCurrency(earnings?.pending_earnings || 0))}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {language === 'es'
-                      ? 'Sube una factura por este monto para procesar tu pago. Los pagos se procesan automáticamente una vez aprobada la factura.'
-                      : 'Upload an invoice for this amount to process your payment. Payments are processed automatically once the invoice is approved.'}
+                    {t('doctorInvoices.pendingEarningsBannerDesc')}
                   </p>
                 </div>
               </div>
@@ -389,7 +383,7 @@ export default function DoctorInvoices() {
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                   <p className="text-sm font-semibold">
-                    {language === 'es' ? '¿Cómo facturar mis ganancias?' : 'How to invoice my earnings?'}
+                    {t('doctorInvoices.howToInvoice')}
                   </p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
@@ -397,36 +391,28 @@ export default function DoctorInvoices() {
               <CollapsibleContent className="mt-3">
                 <div className="space-y-2 text-xs text-muted-foreground">
                   <p>
-                    {language === 'es'
-                      ? 'Tienes dos opciones flexibles para facturar:'
-                      : 'You have two flexible invoicing options:'}
+                    {t('doctorInvoices.twoOptions')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                     <div className="p-3 rounded-lg bg-muted/50 border border-border">
                       <p className="font-medium text-foreground text-sm mb-1">
-                        {language === 'es' ? '📄 Factura global' : '📄 Single invoice'}
+                        {t('doctorInvoices.singleInvoice')}
                       </p>
                       <p>
-                        {language === 'es'
-                          ? 'Sube una sola factura por el total de tus ganancias pendientes.'
-                          : 'Upload one invoice for your total pending earnings.'}
+                        {t('doctorInvoices.singleInvoiceDesc')}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50 border border-border">
                       <p className="font-medium text-foreground text-sm mb-1">
-                        {language === 'es' ? '📑 Facturas por tipo' : '📑 Per-type invoices'}
+                        {t('doctorInvoices.perTypeInvoices')}
                       </p>
                       <p>
-                        {language === 'es'
-                          ? 'Sube facturas separadas por tipo de servicio.'
-                          : 'Upload separate invoices per service type.'}
+                        {t('doctorInvoices.perTypeInvoicesDesc')}
                       </p>
                     </div>
                   </div>
                   <p className="mt-2 text-muted-foreground">
-                    {language === 'es'
-                      ? '💡 Tip: Consulta con tu contador cuál opción se adapta mejor a tu régimen fiscal.'
-                      : '💡 Tip: Consult your accountant for the best option for your tax situation.'}
+                    {t('doctorInvoices.accountantTip')}
                   </p>
                 </div>
               </CollapsibleContent>
@@ -439,14 +425,14 @@ export default function DoctorInvoices() {
           <TabsList className="mb-4">
             <TabsTrigger value="invoices" className="gap-2">
               <FileText className="w-4 h-4" />
-              {language === 'es' ? 'Facturas' : 'Invoices'}
+              {t('doctorInvoices.invoices')}
               {invoices.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{invoices.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="payouts" className="gap-2">
               <DollarSign className="w-4 h-4" />
-              {language === 'es' ? 'Historial de Pagos' : 'Payment History'}
+              {t('doctorInvoices.paymentHistory')}
               {payouts.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{payouts.length}</Badge>
               )}
@@ -465,16 +451,14 @@ export default function DoctorInvoices() {
                 <CardContent className="text-center py-12">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="font-semibold text-lg mb-2">
-                    {language === 'es' ? 'No hay facturas' : 'No invoices'}
+                    {t('doctorInvoices.noInvoices')}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {language === 'es' 
-                      ? 'Sube tu primera factura para empezar a recibir pagos'
-                      : 'Upload your first invoice to start receiving payments'}
+                    {t('doctorInvoices.noInvoicesDesc')}
                   </p>
                   <Button onClick={() => { prefillWithPendingEarnings(); setIsDialogOpen(true); }} variant="outline">
                     <Upload className="w-4 h-4 mr-2" />
-                    {language === 'es' ? 'Subir Factura' : 'Upload Invoice'}
+                    {t('doctorInvoices.uploadInvoice')}
                   </Button>
                 </CardContent>
               </Card>
@@ -505,7 +489,7 @@ export default function DoctorInvoices() {
                           </div>
                           {invoice.admin_notes && invoice.status === 'rejected' && (
                             <div className="mt-2 p-2 bg-destructive/10 rounded text-sm text-destructive">
-                              <strong>{language === 'es' ? 'Motivo: ' : 'Reason: '}</strong>
+                              <strong>{t('doctorInvoices.reason')}</strong>
                               {invoice.admin_notes}
                             </div>
                           )}
@@ -517,7 +501,7 @@ export default function DoctorInvoices() {
                             onClick={() => setPreviewInvoice(invoice)}
                           >
                             <Eye className="w-4 h-4 mr-1" />
-                            {language === 'es' ? 'Ver' : 'View'}
+                            {t('doctorInvoices.view')}
                           </Button>
                           {invoice.status === 'pending' && (
                             <Button
@@ -550,12 +534,10 @@ export default function DoctorInvoices() {
                 <CardContent className="text-center py-12">
                   <DollarSign className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="font-semibold text-lg mb-2">
-                    {language === 'es' ? 'No hay pagos aún' : 'No payments yet'}
+                    {t('doctorInvoices.noPaymentsYet')}
                   </h3>
                   <p className="text-muted-foreground">
-                    {language === 'es' 
-                      ? 'Los pagos aparecerán aquí una vez procesados'
-                      : 'Payments will appear here once processed'}
+                    {t('doctorInvoices.noPaymentsYetDesc')}
                   </p>
                 </CardContent>
               </Card>
@@ -598,17 +580,15 @@ export default function DoctorInvoices() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-primary" />
-                {language === 'es' ? 'Subir Nueva Factura' : 'Upload New Invoice'}
+                {t('doctorInvoices.uploadNewInvoice')}
               </DialogTitle>
               <DialogDescription>
-                {language === 'es' 
-                  ? 'La factura será revisada por el equipo antes de procesar el pago'
-                  : 'The invoice will be reviewed by the team before processing payment'}
+                {t('doctorInvoices.uploadNewInvoiceDesc')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{language === 'es' ? 'Número de factura' : 'Invoice number'} *</Label>
+                <Label>{t('doctorInvoices.invoiceNumber')} *</Label>
                 <Input
                   placeholder="F-001"
                   value={invoiceNumber}
@@ -617,7 +597,7 @@ export default function DoctorInvoices() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{language === 'es' ? 'Período desde' : 'Period from'} *</Label>
+                  <Label>{t('doctorInvoices.periodFrom')} *</Label>
                   <Input
                     type="date"
                     value={periodStart}
@@ -625,7 +605,7 @@ export default function DoctorInvoices() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{language === 'es' ? 'Período hasta' : 'Period to'} *</Label>
+                  <Label>{t('doctorInvoices.periodTo')} *</Label>
                   <Input
                     type="date"
                     value={periodEnd}
@@ -634,7 +614,7 @@ export default function DoctorInvoices() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{language === 'es' ? 'Monto (MXN)' : 'Amount (MXN)'} *</Label>
+                <Label>{t('doctorInvoices.amountMxn')} *</Label>
                 <Input
                   type="number"
                   placeholder="1000.00"
@@ -643,13 +623,13 @@ export default function DoctorInvoices() {
                 />
                 {(earnings?.pending_earnings || 0) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {language === 'es' ? 'Ganancias pendientes: ' : 'Pending earnings: '}
+                    {t('doctorInvoices.pendingEarningsLabel')}
                     <span className="font-medium text-success">{formatCurrency(earnings?.pending_earnings || 0)}</span>
                   </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>{language === 'es' ? 'Archivo (PDF o imagen)' : 'File (PDF or image)'} *</Label>
+                <Label>{t('doctorInvoices.filePdfOrImage')} *</Label>
                 <div className="border-2 border-dashed border-muted rounded-lg p-4 text-center">
                   <Input
                     type="file"
@@ -667,7 +647,7 @@ export default function DoctorInvoices() {
                     ) : (
                       <div className="text-muted-foreground">
                         <Upload className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">{language === 'es' ? 'Clic para seleccionar' : 'Click to select'}</p>
+                        <p className="text-sm">{t('doctorInvoices.clickToSelect')}</p>
                         <p className="text-xs mt-1">PDF, JPG, PNG (max 10MB)</p>
                       </div>
                     )}
@@ -677,13 +657,13 @@ export default function DoctorInvoices() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
-                {language === 'es' ? 'Cancelar' : 'Cancel'}
+                {t('doctorInvoices.cancel')}
               </Button>
               <Button onClick={handleUpload} disabled={isUploading}>
                 {isUploading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'es' ? 'Subiendo...' : 'Uploading...'}</>
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorInvoices.uploading')}</>
                 ) : (
-                  <><Upload className="w-4 h-4 mr-2" />{language === 'es' ? 'Subir Factura' : 'Upload Invoice'}</>
+                  <><Upload className="w-4 h-4 mr-2" />{t('doctorInvoices.uploadInvoice')}</>
                 )}
               </Button>
             </DialogFooter>

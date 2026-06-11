@@ -135,18 +135,22 @@ Deno.serve(async (req) => {
     if (dpError || !doctorProfile) throw new Error("Only approved doctors can request OTP");
     logStep("Doctor verified");
 
-    // Verify doctor-patient relationship
+    // Verify a RECENT doctor-patient relationship (last 180 days) — prevents a
+    // doctor from pulling an expediente OTP off a years-old, one-off interaction.
+    const since = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
     const { data: relationCheck } = await supabaseAdmin
       .from("consultations")
       .select("id")
       .eq("doctor_id", doctorId)
       .eq("patient_id", patientId)
+      .gte("started_at", since)
       .limit(1);
 
     if (!relationCheck || relationCheck.length === 0) {
       const { data: chatCheck } = await supabaseAdmin
         .from("chat_sessions")
         .select("id")
+        .gte("created_at", since)
         .or(`and(participant1_id.eq.${doctorId},participant2_id.eq.${patientId}),and(participant1_id.eq.${patientId},participant2_id.eq.${doctorId})`)
         .limit(1);
 

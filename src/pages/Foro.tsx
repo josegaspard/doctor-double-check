@@ -160,11 +160,11 @@ export default function Foro() {
 
   const meetingTypeLabel = (type: string | null) => {
     switch (type) {
-      case 'resident_class': return language === 'es' ? 'Clase para residentes' : 'Resident class';
-      case 'case_discussion': return language === 'es' ? 'Discusión de caso' : 'Case discussion';
+      case 'resident_class': return t('autoI18n.clForo1');
+      case 'case_discussion': return t('autoI18n.clForo2');
       case 'open_zoom':
-      case 'public': return language === 'es' ? 'Reunión abierta' : 'Open meeting';
-      default: return language === 'es' ? 'Reunión' : 'Meeting';
+      case 'public': return t('autoI18n.clForo3');
+      default: return t('autoI18n.clForo4');
     }
   };
 
@@ -194,18 +194,18 @@ export default function Foro() {
           <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
               <p className="text-lg sm:text-2xl font-bold text-[#163a83] dark:text-cyan-200">{loading ? '…' : stats.doctors}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Doctores activos' : 'Active doctors'}</p>
+              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo5')}</p>
             </div>
             <div className="rounded-lg bg-rose-500/10 backdrop-blur p-2 sm:p-3 text-center border border-rose-500/30">
               <p className="text-lg sm:text-2xl font-bold text-rose-700 dark:text-rose-300 flex items-center justify-center gap-1">
                 {stats.liveNow > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
                 {loading ? '…' : stats.liveNow}
               </p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'En vivo ahora' : 'Live now'}</p>
+              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo6')}</p>
             </div>
             <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
               <p className="text-lg sm:text-2xl font-bold text-emerald-700 dark:text-emerald-300">{loading ? '…' : stats.upcoming}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{language === 'es' ? 'Próximas sesiones' : 'Upcoming'}</p>
+              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo7')}</p>
             </div>
             <div className="rounded-lg bg-amber-500/10 backdrop-blur p-2 sm:p-3 text-center border border-amber-500/30">
               <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-300">{loading ? '…' : stats.events}</p>
@@ -220,10 +220,10 @@ export default function Foro() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                {language === 'es' ? 'En vivo ahora' : 'Live now'}
+                {t('autoI18n.clForo6')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/lives')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {language === 'es' ? 'Ver todos' : 'See all'} <ArrowRight className="w-3 h-3" />
+                {t('autoI18n.clForo8')} <ArrowRight className="w-3 h-3" />
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -263,10 +263,10 @@ export default function Foro() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
-                {language === 'es' ? 'Próximas sesiones públicas' : 'Upcoming public sessions'}
+                {t('autoI18n.clForo9')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/meetings')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {language === 'es' ? 'Ver todas' : 'See all'} <ArrowRight className="w-3 h-3" />
+                {t('autoI18n.clForo10')} <ArrowRight className="w-3 h-3" />
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -316,7 +316,7 @@ export default function Foro() {
                       <p className="font-semibold text-sm line-clamp-2 leading-snug">{e.title}</p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         <Badge variant="outline" className="text-[10px] h-5 capitalize">{eventTypeLabel(e.event_type)}</Badge>
-                        {e.is_online && <span className="text-[10px] text-muted-foreground">{language === 'es' ? 'Online' : 'Online'}</span>}
+                        {e.is_online && <span className="text-[10px] text-muted-foreground">{t('autoI18n.clForo11')}</span>}
                         {!e.is_online && e.location && <span className="text-[10px] text-muted-foreground truncate">{e.location}</span>}
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-1">{format(new Date(e.event_date), 'EEEE d MMM · HH:mm', { locale })}</p>
@@ -330,7 +330,7 @@ export default function Foro() {
 
         {/* Section header para las cards estáticas */}
         <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3 sm:mb-4">
-          {language === 'es' ? 'Explora el foro' : 'Explore the forum'}
+          {t('autoI18n.clForo12')}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -70,7 +70,7 @@ const TIMELINE_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
 const STATUS_FILTERS = ['all', 'pending', 'paid', 'shipped', 'delivered', 'cancelled'];
 
 export default function MyOrders() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const es = language === 'es';
@@ -91,7 +91,7 @@ export default function MyOrders() {
 
   const submitRefund = async () => {
     if (!refundOrder || !refundReason.trim()) {
-      toast.error(es ? 'Describe el motivo' : 'Describe the reason');
+      toast.error(t('autoI18n.myOrders1'));
       return;
     }
     setRefundBusy(true);
@@ -103,7 +103,7 @@ export default function MyOrders() {
       toast.error(error?.message || data?.error || 'Error');
       return;
     }
-    toast.success(es ? 'Solicitud enviada — recibirás respuesta en 48h' : 'Request submitted — response in 48h');
+    toast.success(t('autoI18n.myOrders2'));
     setRefundOrder(null); setRefundReason(''); setRefundCategory('damaged');
     // Refresh orders
     if (user) {
@@ -127,11 +127,11 @@ export default function MyOrders() {
     });
     setReviewBusy(false);
     if (error) {
-      if (error.code === '23505') toast.error(es ? 'Ya reseñaste este pedido' : 'Already reviewed');
+      if (error.code === '23505') toast.error(t('autoI18n.myOrders3'));
       else toast.error(error.message);
       return;
     }
-    toast.success(es ? 'Gracias por tu reseña' : 'Thanks for your review');
+    toast.success(t('autoI18n.myOrders4'));
     setReviewOrder(null); setReviewRating(5); setReviewTitle(''); setReviewBody('');
   };
 
@@ -184,8 +184,8 @@ export default function MyOrders() {
                 <ShoppingBag className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">{es ? 'Mis Compras' : 'My Orders'}</h1>
-                <p className="text-sm text-light">{es ? 'Historial y seguimiento de pedidos' : 'Order history & tracking'}</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground">{t('autoI18n.myOrders5')}</h1>
+                <p className="text-sm text-light">{t('autoI18n.myOrders6')}</p>
               </div>
             </div>
 
@@ -194,15 +194,15 @@ export default function MyOrders() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
                   <p className="text-lg sm:text-xl font-bold text-primary-foreground">{stats.total}</p>
-                  <p className="text-[10px] text-light">{es ? 'Pedidos' : 'Orders'}</p>
+                  <p className="text-[10px] text-light">{t('autoI18n.myOrders7')}</p>
                 </div>
                 <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
                   <p className="text-lg sm:text-xl font-bold text-primary-foreground">${stats.totalSpent.toLocaleString()}</p>
-                  <p className="text-[10px] text-light">{es ? 'Total gastado' : 'Total spent'}</p>
+                  <p className="text-[10px] text-light">{t('autoI18n.myOrders8')}</p>
                 </div>
                 <div className="rounded-xl bg-light/20 border border-light/40 backdrop-blur p-3 text-center">
                   <p className="text-lg sm:text-xl font-bold text-primary-foreground">{stats.active}</p>
-                  <p className="text-[10px] text-light">{es ? 'En curso' : 'Active'}</p>
+                  <p className="text-[10px] text-light">{t('autoI18n.myOrders9')}</p>
                 </div>
               </div>
             )}
@@ -234,7 +234,7 @@ export default function MyOrders() {
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring/60 active:scale-[0.98] ${pillCls}`}
                   >
                     {PillIcon && <PillIcon className="w-3.5 h-3.5" />}
-                    <span>{s === 'all' ? (es ? 'Todos' : 'All') : (es ? sc!.label_es : sc!.label_en)}</span>
+                    <span>{s === 'all' ? t('autoI18n.myOrders10') : (es ? sc!.label_es : sc!.label_en)}</span>
                     <span className={`min-w-[20px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors ${countCls}`}>{count}</span>
                   </button>
                 );
@@ -244,7 +244,7 @@ export default function MyOrders() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder={es ? 'Buscar por producto...' : 'Search by product...'}
+                placeholder={t('autoI18n.myOrders11')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="pl-9 h-10 text-sm bg-card border border-border shadow-sm hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary transition-colors placeholder:text-muted-foreground"
@@ -261,14 +261,14 @@ export default function MyOrders() {
             <div className="w-20 h-20 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
               <Package className="w-10 h-10 text-muted-foreground/30" />
             </div>
-            <h3 className="font-semibold mb-1">{es ? 'No tienes compras aún' : 'No orders yet'}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{es ? 'Explora nuestro marketplace de material médico' : 'Explore our medical supplies marketplace'}</p>
+            <h3 className="font-semibold mb-1">{t('autoI18n.myOrders12')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('autoI18n.myOrders13')}</p>
             <Button onClick={() => navigate('/medical-supplies')} className="gap-2">
-              <ArrowRight className="w-4 h-4" /> {es ? 'Ir al Marketplace' : 'Go to Marketplace'}
+              <ArrowRight className="w-4 h-4" /> {t('autoI18n.myOrders14')}
             </Button>
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">{es ? 'Sin resultados' : 'No results'}</p>
+          <p className="text-center text-muted-foreground py-12">{t('autoI18n.myOrders15')}</p>
         ) : (
           <div className="space-y-3">
             {filtered.map(o => {
@@ -296,7 +296,7 @@ export default function MyOrders() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{product?.name || (es ? 'Producto' : 'Product')}</p>
+                            <p className="font-semibold text-sm truncate">{product?.name || t('autoI18n.myOrders16')}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{formatOrderId(o.id)}</p>
                           </div>
                           <Badge className={`text-[10px] ${sc.color} border flex-shrink-0`}>
@@ -356,7 +356,7 @@ export default function MyOrders() {
                         {o.status === 'cancelled' && (
                           <div className="bg-destructive dark:bg-destructive/20 rounded-lg p-3 flex items-center gap-2">
                             <XCircle className="w-5 h-5 text-destructive" />
-                            <span className="text-sm text-destructive dark:text-destructive">{es ? 'Este pedido fue cancelado' : 'This order was cancelled'}</span>
+                            <span className="text-sm text-destructive dark:text-destructive">{t('autoI18n.myOrders17')}</span>
                           </div>
                         )}
 
@@ -365,17 +365,17 @@ export default function MyOrders() {
                           <div className="bg-secondary dark:bg-secondary/20 rounded-xl p-4">
                             <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
                               <Truck className="w-4 h-4 text-secondary" />
-                              {es ? 'Número de rastreo' : 'Tracking number'}
+                              {t('autoI18n.myOrders18')}
                             </p>
                             <div className="flex items-center gap-2">
                               <code className="text-sm font-mono bg-card px-3 py-1.5 rounded-lg border flex-1">{o.tracking_number}</code>
-                              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { navigator.clipboard.writeText(o.tracking_number); toast.success(es ? 'Copiado' : 'Copied'); }}>
-                                <Copy className="w-3 h-3" /> {es ? 'Copiar' : 'Copy'}
+                              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { navigator.clipboard.writeText(o.tracking_number); toast.success(t('autoI18n.myOrders19')); }}>
+                                <Copy className="w-3 h-3" /> {t('autoI18n.myOrders20')}
                               </Button>
                             </div>
                             {o.estimated_delivery && (
                               <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                📅 {es ? 'Entrega estimada:' : 'Estimated delivery:'} <strong>{new Date(o.estimated_delivery).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</strong>
+                                📅 {t('autoI18n.myOrders21')} <strong>{new Date(o.estimated_delivery).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</strong>
                               </p>
                             )}
                           </div>
@@ -386,7 +386,7 @@ export default function MyOrders() {
                           <div className="bg-muted/50 rounded-xl p-4">
                             <p className="text-xs font-semibold mb-2 flex items-center gap-1.5">
                               <MapPin className="w-4 h-4 text-primary" />
-                              {es ? 'Dirección de envío' : 'Shipping address'}
+                              {t('autoI18n.myOrders22')}
                             </p>
                             <div className="space-y-1">
                               <p className="text-sm font-medium">{o.shipping_name}</p>
@@ -399,15 +399,15 @@ export default function MyOrders() {
 
                         {/* Timestamps */}
                         <div className="bg-muted/30 rounded-xl p-3">
-                          <p className="text-xs font-semibold mb-2">{es ? 'Historial' : 'History'}</p>
+                          <p className="text-xs font-semibold mb-2">{t('autoI18n.myOrders23')}</p>
                           <div className="space-y-1.5 text-xs text-muted-foreground">
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                              {es ? 'Creado' : 'Created'}: {new Date(o.created_at).toLocaleString('es-MX')}
+                              {t('autoI18n.myOrders24')}: {new Date(o.created_at).toLocaleString('es-MX')}
                             </div>
-                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" />✅ {es ? 'Pagado' : 'Paid'}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
-                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary" />📦 {es ? 'Enviado' : 'Shipped'}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
-                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success" />🎉 {es ? 'Entregado' : 'Delivered'}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
+                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" />✅ {t('autoI18n.myOrders25')}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
+                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary" />📦 {t('autoI18n.myOrders26')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
+                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success" />🎉 {t('autoI18n.myOrders27')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
                           </div>
                         </div>
 
@@ -415,18 +415,18 @@ export default function MyOrders() {
                         <div className="flex flex-col sm:flex-row gap-2">
                           {(['paid','shipped','delivered'].includes(o.status)) && o.refund_status !== 'refunded' && o.refund_status !== 'requested' && (
                             <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" onClick={() => setRefundOrder(o)}>
-                              <RotateCcw className="w-3.5 h-3.5" /> {es ? 'Solicitar devolución' : 'Request refund'}
+                              <RotateCcw className="w-3.5 h-3.5" /> {t('autoI18n.myOrders28')}
                             </Button>
                           )}
                           {o.refund_status === 'requested' && (
-                            <Badge variant="secondary" className="self-center text-[10px]">{es ? 'Devolución en revisión' : 'Refund under review'}</Badge>
+                            <Badge variant="secondary" className="self-center text-[10px]">{t('autoI18n.myOrders29')}</Badge>
                           )}
                           {o.refund_status === 'refunded' && (
-                            <Badge variant="verified" className="self-center text-[10px]">{es ? 'Reembolsado' : 'Refunded'}</Badge>
+                            <Badge variant="verified" className="self-center text-[10px]">{t('autoI18n.myOrders30')}</Badge>
                           )}
                           {o.status === 'delivered' && (
                             <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" onClick={() => setReviewOrder(o)}>
-                              <Star className="w-3.5 h-3.5" /> {es ? 'Calificar producto' : 'Rate product'}
+                              <Star className="w-3.5 h-3.5" /> {t('autoI18n.myOrders31')}
                             </Button>
                           )}
                         </div>
@@ -434,7 +434,7 @@ export default function MyOrders() {
                         {/* Contact support */}
                         <Button variant="ghost" size="sm" className="w-full text-xs gap-1.5 text-muted-foreground" onClick={() => navigate('/contact')}>
                           <ExternalLink className="w-3 h-3" />
-                          {es ? '¿Necesitas ayuda? Contactar soporte' : 'Need help? Contact support'}
+                          {t('autoI18n.myOrders32')}
                         </Button>
                       </div>
                     )}
@@ -448,34 +448,34 @@ export default function MyOrders() {
         {/* Refund Dialog */}
         <Dialog open={!!refundOrder} onOpenChange={(o) => { if (!o) setRefundOrder(null); }}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>{es ? 'Solicitar devolución' : 'Request refund'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('autoI18n.myOrders33')}</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground">{refundOrder?.marketplace_products?.name}</p>
-              <p className="font-semibold">{es ? 'Importe' : 'Amount'}: {Number(refundOrder?.total_amount || 0).toFixed(2)} {refundOrder?.marketplace_products?.currency || 'MXN'}</p>
+              <p className="font-semibold">{t('autoI18n.myOrders34')}: {Number(refundOrder?.total_amount || 0).toFixed(2)} {refundOrder?.marketplace_products?.currency || 'MXN'}</p>
               <div>
-                <Label className="text-xs">{es ? 'Motivo' : 'Reason'}</Label>
+                <Label className="text-xs">{t('autoI18n.myOrders35')}</Label>
                 <Select value={refundCategory} onValueChange={setRefundCategory}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="damaged">{es ? 'Producto dañado' : 'Damaged'}</SelectItem>
-                    <SelectItem value="not_received">{es ? 'No lo recibí' : 'Not received'}</SelectItem>
-                    <SelectItem value="wrong_item">{es ? 'Producto incorrecto' : 'Wrong item'}</SelectItem>
-                    <SelectItem value="not_as_described">{es ? 'No corresponde a la descripción' : 'Not as described'}</SelectItem>
-                    <SelectItem value="changed_mind">{es ? 'Cambié de opinión' : 'Changed mind'}</SelectItem>
-                    <SelectItem value="other">{es ? 'Otro' : 'Other'}</SelectItem>
+                    <SelectItem value="damaged">{t('autoI18n.myOrders36')}</SelectItem>
+                    <SelectItem value="not_received">{t('autoI18n.myOrders37')}</SelectItem>
+                    <SelectItem value="wrong_item">{t('autoI18n.myOrders38')}</SelectItem>
+                    <SelectItem value="not_as_described">{t('autoI18n.myOrders39')}</SelectItem>
+                    <SelectItem value="changed_mind">{t('autoI18n.myOrders40')}</SelectItem>
+                    <SelectItem value="other">{t('autoI18n.myOrders41')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Cuéntanos más detalles' : 'More details'}</Label>
-                <Textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={4} placeholder={es ? 'Ej: El producto llegó con la caja rota...' : 'E.g. arrived with broken packaging...'} />
+                <Label className="text-xs">{t('autoI18n.myOrders42')}</Label>
+                <Textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={4} placeholder={t('autoI18n.myOrders43')} />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRefundOrder(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button variant="outline" onClick={() => setRefundOrder(null)}>{t('autoI18n.myOrders44')}</Button>
               <Button onClick={submitRefund} disabled={refundBusy || !refundReason.trim()}>
                 {refundBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                {es ? 'Enviar solicitud' : 'Submit'}
+                {t('autoI18n.myOrders45')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -484,11 +484,11 @@ export default function MyOrders() {
         {/* Review Dialog */}
         <Dialog open={!!reviewOrder} onOpenChange={(o) => { if (!o) setReviewOrder(null); }}>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>{es ? 'Calificar producto' : 'Rate product'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t('autoI18n.myOrders46')}</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm">
               <p className="text-muted-foreground">{reviewOrder?.marketplace_products?.name}</p>
               <div>
-                <Label className="text-xs">{es ? 'Calificación' : 'Rating'}</Label>
+                <Label className="text-xs">{t('autoI18n.myOrders47')}</Label>
                 <div className="flex gap-1 mt-1">
                   {[1,2,3,4,5].map(n => (
                     <button key={n} type="button" onClick={() => setReviewRating(n)}>
@@ -498,19 +498,19 @@ export default function MyOrders() {
                 </div>
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Título (opcional)' : 'Title (optional)'}</Label>
+                <Label className="text-xs">{t('autoI18n.myOrders48')}</Label>
                 <Input value={reviewTitle} onChange={e => setReviewTitle(e.target.value)} />
               </div>
               <div>
-                <Label className="text-xs">{es ? 'Reseña (opcional)' : 'Review (optional)'}</Label>
+                <Label className="text-xs">{t('autoI18n.myOrders49')}</Label>
                 <Textarea value={reviewBody} onChange={e => setReviewBody(e.target.value)} rows={3} />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setReviewOrder(null)}>{es ? 'Cancelar' : 'Cancel'}</Button>
+              <Button variant="outline" onClick={() => setReviewOrder(null)}>{t('autoI18n.myOrders50')}</Button>
               <Button onClick={submitReview} disabled={reviewBusy}>
                 {reviewBusy ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                {es ? 'Publicar reseña' : 'Submit review'}
+                {t('autoI18n.myOrders51')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -521,7 +521,7 @@ export default function MyOrders() {
           <div className="mt-6 text-center">
             <Button variant="outline" size="sm" onClick={() => navigate('/medical-supplies')} className="gap-2 text-xs">
               <ArrowRight className="w-3.5 h-3.5" />
-              {es ? 'Seguir comprando' : 'Continue shopping'}
+              {t('autoI18n.myOrders52')}
             </Button>
           </div>
         )}
