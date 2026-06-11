@@ -81,6 +81,29 @@ interface AppConfigSettings {
   ad_max: number;
 }
 
+interface EmailBrandingSettings {
+  brand_name: string;
+  tagline: string;
+  primary_color: string;
+  support_url: string;
+  support_label: string;
+}
+
+// Curated landing/UI strings the owner most often wants to reword. Each maps to
+// an i18n key; the override is saved per-language into site_settings.text_overrides.
+const LANDING_TEXT_KEYS: { key: string; label: string }[] = [
+  { key: 'landing.hero.subtitle', label: 'Inicio — Titular principal' },
+  { key: 'landing.hero.description', label: 'Inicio — Descripción del hero' },
+  { key: 'landing.hero.ctaPrimary', label: 'Inicio — Botón principal' },
+  { key: 'landing.hero.ctaSecondary', label: 'Inicio — Botón secundario' },
+  { key: 'landing.finalCta.title', label: 'Inicio — Cierre: título' },
+  { key: 'landing.finalCta.subtitle', label: 'Inicio — Cierre: subtítulo' },
+  { key: 'landing.finalCta.ctaPrimary', label: 'Inicio — Cierre: botón principal' },
+  { key: 'landing.finalCta.ctaSecondary', label: 'Inicio — Cierre: botón secundario' },
+  { key: 'landing.ecosystem.eyebrow', label: 'Inicio — Sección ecosistema: etiqueta' },
+  { key: 'landing.ecosystem.title', label: 'Inicio — Sección ecosistema: título' },
+];
+
 interface FooterLink {
   label: string;
   href: string;
@@ -97,7 +120,7 @@ interface FooterLinksData {
 export default function AdminSiteSettings() {
   const navigate = useNavigate();
   const { role, supabaseUser } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -139,6 +162,11 @@ export default function AdminSiteSettings() {
     currency: 'mxn', wallet_min: 50, wallet_max: 999999, ad_min: 100, ad_max: 1000000,
   });
   const [extraSpecialties, setExtraSpecialties] = useState<string[]>([]);
+  const [textOverrides, setTextOverrides] = useState<Record<string, Record<string, string>>>({});
+  const [emailBranding, setEmailBranding] = useState<EmailBrandingSettings>({
+    brand_name: 'Medical Masters', tagline: 'Plataforma de telemedicina',
+    primary_color: '#00768b', support_url: 'https://medical-masters.com/contact', support_label: 'Contáctanos',
+  });
   const [footerLinks, setFooterLinks] = useState<FooterLinksData>({
     platform: [
       { label: t('adminSiteSettingsPage.footer.defaults.platform.doctors'), href: '/for-doctors' },
@@ -303,6 +331,28 @@ export default function AdminSiteSettings() {
 
         if (Array.isArray(extraSpecData?.value)) {
           setExtraSpecialties((extraSpecData!.value as unknown[]).filter((x): x is string => typeof x === 'string'));
+        }
+
+        // Fetch text overrides (landing/UI copy)
+        const { data: overridesData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'text_overrides')
+          .maybeSingle();
+
+        if (overridesData?.value && typeof overridesData.value === 'object') {
+          setTextOverrides(overridesData.value as Record<string, Record<string, string>>);
+        }
+
+        // Fetch email branding
+        const { data: emailBrandingData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'email_branding')
+          .maybeSingle();
+
+        if (emailBrandingData?.value) {
+          setEmailBranding(prev => ({ ...prev, ...(emailBrandingData.value as unknown as EmailBrandingSettings) }));
         }
 
         // Fetch footer links
@@ -538,6 +588,54 @@ export default function AdminSiteSettings() {
     } catch (error) {
       console.error('Error saving app config:', error);
       toast.error('No se pudo guardar la configuración');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveEmailBranding = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ id: 'email_branding', value: emailBranding as unknown as Json, updated_by: supabaseUser?.id });
+      if (error) throw error;
+      toast.success('Branding de correos actualizado');
+    } catch (error) {
+      console.error('Error saving email branding:', error);
+      toast.error('No se pudo guardar el branding de correos');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const setOverrideValue = (key: string, value: string) => {
+    setTextOverrides(prev => {
+      const langMap = { ...(prev[language] || {}) };
+      if (value.trim() === '') { delete langMap[key]; }
+      else { langMap[key] = value; }
+      return { ...prev, [language]: langMap };
+    });
+  };
+
+  const handleSaveTextOverrides = async () => {
+    setIsSaving(true);
+    try {
+      // Drop empty language maps to keep the row tidy.
+      const clean: Record<string, Record<string, string>> = {};
+      for (const [lang, map] of Object.entries(textOverrides)) {
+        const m = Object.fromEntries(Object.entries(map || {}).filter(([, v]) => (v || '').trim() !== ''));
+        if (Object.keys(m).length) clean[lang] = m;
+      }
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ id: 'text_overrides', value: clean as unknown as Json, updated_by: supabaseUser?.id });
+      if (error) throw error;
+      setTextOverrides(clean);
+      toast.success('Textos actualizados (recarga la página para verlos)');
+    } catch (error) {
+      console.error('Error saving text overrides:', error);
+      toast.error('No se pudieron guardar los textos');
     } finally {
       setIsSaving(false);
     }
@@ -908,6 +1006,73 @@ export default function AdminSiteSettings() {
 
             {/* Storage Pricing Tab */}
             <TabsContent value="storage">
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="w-5 h-5" />
+                    Textos del inicio (landing)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Reescribe los textos clave de la página de inicio. Estás editando el idioma: <b className="uppercase">{language}</b> (cámbialo con el selector de idioma para editar otro). Deja vacío para usar el texto por defecto.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {LANDING_TEXT_KEYS.map(({ key, label }) => (
+                    <div key={key} className="space-y-1.5">
+                      <Label className="text-xs">{label}</Label>
+                      <Input
+                        value={textOverrides[language]?.[key] ?? ''}
+                        onChange={(e) => setOverrideValue(key, e.target.value)}
+                        placeholder={t(key)}
+                        className="text-sm"
+                      />
+                    </div>
+                  ))}
+                  <Button onClick={handleSaveTextOverrides} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar textos del inicio
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Mail className="w-5 h-5" />
+                    Branding de correos
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Marca, color y enlace de soporte que aparecen en TODOS los correos transaccionales. Los cambios aplican en minutos (al reciclar los servidores).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Nombre de marca</Label>
+                      <Input value={emailBranding.brand_name} onChange={(e) => setEmailBranding({ ...emailBranding, brand_name: e.target.value })} className="text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Lema / tagline del footer</Label>
+                      <Input value={emailBranding.tagline} onChange={(e) => setEmailBranding({ ...emailBranding, tagline: e.target.value })} className="text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Color principal (hex)</Label>
+                      <Input value={emailBranding.primary_color} onChange={(e) => setEmailBranding({ ...emailBranding, primary_color: e.target.value })} className="text-sm" placeholder="#00768b" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Texto del enlace de soporte</Label>
+                      <Input value={emailBranding.support_label} onChange={(e) => setEmailBranding({ ...emailBranding, support_label: e.target.value })} className="text-sm" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">URL de soporte</Label>
+                    <Input value={emailBranding.support_url} onChange={(e) => setEmailBranding({ ...emailBranding, support_url: e.target.value })} className="text-sm" placeholder="https://..." />
+                  </div>
+                  <Button onClick={handleSaveEmailBranding} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar branding de correos
+                  </Button>
+                </CardContent>
+              </Card>
               <Card className="mb-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">

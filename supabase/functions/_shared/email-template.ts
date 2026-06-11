@@ -56,6 +56,51 @@ export interface RenderEmailOptions {
 const APP_URL_DEFAULT = "https://medical-masters.com";
 const LOGO_URL = `${APP_URL_DEFAULT}/email-logo-white.png`;
 
+// ── Admin-editable email branding (site_settings.email_branding) ──
+// Loaded ONCE per isolate at module init (top-level await). Any failure or
+// timeout falls back to the historical values, so emails always render.
+interface EmailBranding {
+  brand_name: string;
+  tagline: string;
+  primary_color: string;
+  support_url: string;
+  support_label: string;
+}
+const EMAIL_BRANDING: EmailBranding = await (async () => {
+  const fb: EmailBranding = {
+    brand_name: "Medical Masters",
+    tagline: "Plataforma de telemedicina",
+    primary_color: brand.teal,
+    support_url: `${APP_URL_DEFAULT}/contact`,
+    support_label: "Contáctanos",
+  };
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !key) return fb;
+    const ctrl = new AbortController();
+    const tmo = setTimeout(() => ctrl.abort(), 2500);
+    const resp = await fetch(`${url}/rest/v1/site_settings?id=eq.email_branding&select=value`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: ctrl.signal,
+    });
+    clearTimeout(tmo);
+    if (!resp.ok) return fb;
+    const rows = await resp.json();
+    const v = (rows && rows[0] && rows[0].value) || {};
+    const str = (x: unknown, d: string) => (typeof x === "string" && x.trim() ? x : d);
+    return {
+      brand_name: str(v.brand_name, fb.brand_name),
+      tagline: str(v.tagline, fb.tagline),
+      primary_color: (typeof v.primary_color === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v.primary_color)) ? v.primary_color : fb.primary_color,
+      support_url: str(v.support_url, fb.support_url),
+      support_label: str(v.support_label, fb.support_label),
+    };
+  } catch {
+    return fb;
+  }
+})();
+
 export function renderEmail(opts: RenderEmailOptions): string {
   const accent = ACCENTS[opts.accent ?? "neutral"];
   const appUrl = opts.appUrl ?? APP_URL_DEFAULT;
@@ -117,7 +162,7 @@ export function renderEmail(opts: RenderEmailOptions): string {
           <!-- header: gradient navy → teal con logo -->
           <tr>
             <td align="center" style="background:${brand.navy};background-image:linear-gradient(135deg,${brand.navy} 0%,${brand.teal} 100%);padding:28px 24px;">
-              <img src="${LOGO_URL}" alt="Medical Masters" width="180" height="36" style="display:block;border:0;outline:none;text-decoration:none;height:36px;width:180px;max-width:180px;" />
+              <img src="${LOGO_URL}" alt="${EMAIL_BRANDING.brand_name}" width="180" height="36" style="display:block;border:0;outline:none;text-decoration:none;height:36px;width:180px;max-width:180px;" />
             </td>
           </tr>
 
@@ -174,7 +219,7 @@ export function renderEmail(opts: RenderEmailOptions): string {
           <!-- in-card footer (mini links) -->
           <tr>
             <td class="mm-pad-x mm-muted" style="padding:16px 40px 28px 40px;font-size:12px;line-height:18px;color:${brand.muted};text-align:center;">
-              ¿Necesitas ayuda? <a href="${appUrl}/contact" style="color:${brand.teal};text-decoration:none;">Contáctanos</a>
+              ¿Necesitas ayuda? <a href="${EMAIL_BRANDING.support_url}" style="color:${EMAIL_BRANDING.primary_color};text-decoration:none;">${EMAIL_BRANDING.support_label}</a>
               &nbsp;·&nbsp;
               <a href="${appUrl}/help" style="color:${brand.teal};text-decoration:none;">Centro de ayuda</a>
             </td>
@@ -186,7 +231,7 @@ export function renderEmail(opts: RenderEmailOptions): string {
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="mm-container" style="width:600px;max-width:600px;margin-top:16px;">
           <tr>
             <td align="center" class="mm-footer mm-muted" style="padding:12px 24px;color:${brand.muted};font-size:11px;line-height:18px;">
-              © ${new Date().getFullYear()} Medical Masters · Plataforma de telemedicina<br/>
+              © ${new Date().getFullYear()} ${EMAIL_BRANDING.brand_name} · ${EMAIL_BRANDING.tagline}<br/>
               <a href="${appUrl}/privacy" style="color:${brand.muted};text-decoration:underline;">Privacidad</a>
               &nbsp;·&nbsp;
               <a href="${appUrl}/terms" style="color:${brand.muted};text-decoration:underline;">Términos</a>

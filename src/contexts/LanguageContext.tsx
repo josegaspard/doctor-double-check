@@ -14,6 +14,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 const SUPPORTED: readonly SupportedLanguage[] = ['es', 'en', 'pt', 'fr', 'it', 'de'] as const;
 
+// Admin text overrides (site_settings.text_overrides): { [lang]: { [i18nKey]: text } }.
+// Lets the admin reword ANY landing/UI string without a deploy. A missing/empty
+// override falls through to the normal i18n value, so this can never blank out text.
+type TextOverrides = Partial<Record<SupportedLanguage, Record<string, string>>>;
+let overridesCache: TextOverrides = {};
+
 function normalize(value: string | null | undefined): SupportedLanguage {
   if (!value) return 'es';
   const v = value.slice(0, 2).toLowerCase();
@@ -68,7 +74,29 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const t = (path: string) => translate(language, path);
+  // Load admin text overrides once (cached at module level).
+  const [overrides, setOverrides] = useState<TextOverrides>(overridesCache);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'text_overrides')
+          .maybeSingle();
+        const v = (data?.value && typeof data.value === 'object') ? (data.value as TextOverrides) : {};
+        overridesCache = v;
+        if (active) setOverrides(v);
+      } catch { /* keep i18n defaults */ }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const t = (path: string) => {
+    const o = overrides[language]?.[path];
+    return (o !== undefined && o !== null && o !== '') ? o : translate(language, path);
+  };
   const translations = getTranslations(language);
 
   return (
