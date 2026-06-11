@@ -72,9 +72,15 @@ Deno.serve(async (req) => {
           status: 200,
         });
       }
-      logStep("Failed to record event for idempotency", { error: msg });
-      // Don't block delivery — fall through; in worst case we retry idempotency
-      // on the next replay.
+      // Could NOT record the idempotency marker for a non-duplicate reason
+      // (transient DB error). FAIL CLOSED: return 500 so Stripe retries later.
+      // Processing now — without a marker — risks double-credit/double-pay if the
+      // retry also slips through, so we refuse rather than proceed unguarded.
+      logStep("Failed to record idempotency marker — failing closed (will retry)", { error: msg });
+      return new Response(JSON.stringify({ error: "idempotency marker unavailable" }), {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      });
     }
 
     // Handle checkout.session.completed
@@ -456,6 +462,21 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
   const finalFee = parseFloat(session.metadata!.final_fee);
   
   logStep("Processing consultation payment", { userId, doctorId, finalFee });
+
+  // Idempotency: a Stripe replay (or a stuck-'processing' re-run) must not
+  // create a second consultation, double-debit the patient, or double-credit
+  // the doctor. The patient debit below is tagged with stripe_session_id.
+  const { data: dupTx } = await db
+    .from("wallet_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "purchase")
+    .contains("metadata", { stripe_session_id: session.id })
+    .maybeSingle();
+  if (dupTx) {
+    logStep("Consultation payment already processed, skipping", { sessionId: session.id });
+    return;
+  }
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
@@ -858,33 +879,60 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     logStep("Could not retrieve subscription from Stripe, will fall back to +1 month", { error: e instanceof Error ? e.message : e });
   }
 
-  const customerEmail = invoice.customer_email;
-  if (!customerEmail) {
-    logStep("No customer email in invoice");
-    return;
+  // ── Idempotency: each invoice credits the doctor exactly once. A Stripe
+  // replay of invoice.payment_succeeded must NOT re-credit. The renewal earning
+  // is tagged with reference_id = invoice.id, so its presence = already done.
+  if (invoice.id) {
+    const { data: alreadyCredited } = await db
+      .from("wallet_transactions")
+      .select("id")
+      .eq("type", "earning")
+      .contains("metadata", { source: "subscription_renewal", reference_id: invoice.id })
+      .maybeSingle();
+    if (alreadyCredited) {
+      logStep("Renewal already processed for this invoice, skipping", { invoiceId: invoice.id });
+      return;
+    }
   }
 
-  const { data: profile } = await db
-    .from("profiles")
-    .select("id")
-    .eq("email", customerEmail)
-    .single();
+  // Identify the EXACT (subscriber, creator) from the Stripe subscription
+  // metadata (set in create-subscription-checkout.subscription_data.metadata).
+  // This stops the old bug where one invoice credited every creator the user
+  // was subscribed to, and works even when invoice.customer_email is null.
+  const subMeta = (stripeSub?.metadata ?? {}) as Record<string, string>;
+  let userId: string | undefined = subMeta.user_id;
+  const creatorId: string | undefined = subMeta.creator_id;
 
-  if (!profile) {
-    logStep("User not found for email", { email: maskEmail(customerEmail) });
-    return;
+  // Legacy fallback: subscriptions created before metadata was attached.
+  if (!userId) {
+    let customerEmail: string | null = invoice.customer_email;
+    if (!customerEmail) {
+      try {
+        const custId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+        if (custId) {
+          const cust = await stripe.customers.retrieve(custId);
+          if (cust && !(cust as any).deleted) customerEmail = (cust as Stripe.Customer).email;
+        }
+      } catch (e) {
+        logStep("Could not retrieve customer for email", { error: e instanceof Error ? e.message : e });
+      }
+    }
+    if (!customerEmail) { logStep("No customer email; cannot match subscription"); return; }
+    const { data: profile } = await db.from("profiles").select("id").eq("email", customerEmail).single();
+    if (!profile) { logStep("User not found for email", { email: maskEmail(customerEmail) }); return; }
+    userId = profile.id;
   }
 
-  const userId = profile.id;
-
-  const { data: subscriptions, error: subError } = await db
+  let subQuery = db
     .from("subscriptions")
     .select("*")
     .eq("subscriber_id", userId)
     .eq("is_active", true);
+  if (creatorId) subQuery = subQuery.eq("creator_id", creatorId);
+  const { data: subscriptions, error: subError } = await subQuery;
 
   if (subError || !subscriptions || subscriptions.length === 0) {
-    logStep("No active subscription found for user", { userId });
+    logStep("No matching active subscription found", { userId, creatorId });
     return;
   }
 
@@ -905,9 +953,9 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
 
     logStep("Subscription renewed", { subscriptionId: sub.id, newExpiresAt });
 
-    // creditDoctorEarningsAtomic is itself idempotent on (subscription_id,
-    // invoice_id) — and the outer webhook event idempotency stops re-entry,
-    // so this is safe under Stripe replay.
+    // Safe under Stripe replay: the invoice.id idempotency guard at the top of
+    // this handler returns early if this invoice already produced a renewal
+    // earning, so we never reach this credit twice for the same invoice.
     await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", invoice.id || null);
 
     await db
