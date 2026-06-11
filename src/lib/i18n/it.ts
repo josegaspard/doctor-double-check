@@ -2742,8 +2742,8 @@ export const it = {
   },
   medical: {
     bloodType: {
-      'A+': "A+', 'A-': 'A-', 'B+': 'B+', 'B-': 'B-",
-      'AB+': "AB+', 'AB-': 'AB-', 'O+': 'O+', 'O-': 'O-",
+      'A+': 'A+', 'A-': 'A-', 'B+': 'B+', 'B-': 'B-',
+      'AB+': 'AB+', 'AB-': 'AB-', 'O+': 'O+', 'O-': 'O-',
       'No sé': 'Non so',
     },
     frequency: {

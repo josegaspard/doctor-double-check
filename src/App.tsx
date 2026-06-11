@@ -251,7 +251,7 @@ const App = () => {
                       <Route path="/medical-supplies" element={<MedicalSupplies />} />
                       <Route path="/my-orders" element={<MyOrders />} />
                       <Route path="/order-success" element={<OrderSuccess />} />
-                      <Route path="/double-check" element={<DoubleCheck />} />
+                      <Route path="/double-check" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><DoubleCheck /></ToggleGate>} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/admin" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminDashboard /></AccessGuard>} />
                       <Route path="/admin/verifications" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminVerifications /></AccessGuard>} />

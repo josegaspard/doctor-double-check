@@ -58,7 +58,10 @@ serve(async (req) => {
     }
 
     const payload = JSON.parse(rawBody);
-    console.log("Veriff webhook payload:", JSON.stringify(payload));
+    // Never log the full payload — it contains identity-document PHI. Log only
+    // non-sensitive routing metadata.
+    const _vf = payload.verification || payload;
+    console.log("Veriff webhook received:", { id: _vf?.id, status: _vf?.status || _vf?.code, action: payload?.action });
 
     // Veriff sends different event types
     const verification = payload.verification || payload;

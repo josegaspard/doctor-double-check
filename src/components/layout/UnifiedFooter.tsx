@@ -123,6 +123,10 @@ export function UnifiedFooter({ variant }: Props) {
     ? `${year} Medical Masters. Todos os direitos reservados.`
     : lang === 'fr'
     ? `${year} Medical Masters. Tous droits réservés.`
+    : lang === 'it'
+    ? `${year} Medical Masters. Tutti i diritti riservati.`
+    : lang === 'de'
+    ? `${year} Medical Masters. Alle Rechte vorbehalten.`
     : `${year} Medical Masters. All rights reserved.`;
 
   if (variant === 'app') {

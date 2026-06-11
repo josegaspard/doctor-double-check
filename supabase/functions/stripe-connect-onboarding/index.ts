@@ -50,6 +50,22 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Only doctors may provision a payout (Stripe Connect) account. Without this
+    // gate any patient could self-create a live Connect account + pollute the
+    // doctor_bank_accounts / payout tables.
+    const { data: doctorRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "doctor")
+      .maybeSingle();
+    if (!doctorRole) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Solo doctores pueden configurar cobros" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check if doctor already has a Stripe account
     const { data: bankAccount } = await supabaseAdmin
       .from("doctor_bank_accounts")

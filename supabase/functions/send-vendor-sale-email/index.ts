@@ -1,6 +1,7 @@
 // Llamado tras crear un order. Envía email al vendor con detalles de la venta.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
+import { requireAdminOrCron, AuthError } from "../_shared/auth-guards.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,14 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Internal-only: triggered server-side after an order is created. Requires an
+  // admin JWT or the cron/service secret — never an arbitrary end-user (the
+  // payload exposes the buyer's shipping address / PII).
+  try { await requireAdminOrCron(req); } catch (__e) {
+    if (__e instanceof AuthError) return new Response(JSON.stringify({ error: __e.message }), { status: __e.status ?? 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "auth failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
 
   try {
     const { orderId } = await req.json();

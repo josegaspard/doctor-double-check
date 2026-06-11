@@ -75,7 +75,6 @@ Deno.serve(async (req) => {
 
         const total = earnings.reduce((s: number, e: any) => s + Number(e.net_amount), 0);
         const currency = (earnings[0].currency || "MXN").toLowerCase();
-        const amountCents = Math.round(total * 100);
 
         const { data: pr, error: payoutErr } = await supabaseAdmin
           .from("vendor_payouts")
@@ -92,22 +91,44 @@ Deno.serve(async (req) => {
         if (payoutErr) throw payoutErr;
         payoutRow = pr;
 
-        // Reservar las earnings ANTES del transfer: la query de elegibles filtra
-        // status='pending' AND payout_id IS NULL, así que una vez reservadas no se
-        // vuelven a elegir → no hay doble pago aunque la corrida se repita.
-        const { error: reserveErr } = await supabaseAdmin
+        // Reservar las earnings ATÓMICAMENTE antes del transfer. El filtro extra
+        // status='pending' AND payout_id IS NULL hace que dos corridas concurrentes
+        // no reserven las mismas earnings: la perdedora actualiza 0 filas y no
+        // transfiere (cada corrida usa un payout_id distinto, así que la
+        // idempotencyKey de Stripe NO basta para evitar el doble pago).
+        const { data: reserved, error: reserveErr } = await supabaseAdmin
           .from("vendor_earnings")
           .update({ payout_id: payoutRow.id, status: "reserved" })
-          .in("id", earnings.map((e: any) => e.id));
+          .in("id", earnings.map((e: any) => e.id))
+          .eq("status", "pending")
+          .is("payout_id", null)
+          .select("id, net_amount");
         if (reserveErr) throw reserveErr;
-        reservedIds = earnings.map((e: any) => e.id);
+        reservedIds = (reserved || []).map((e: any) => e.id);
+
+        if (reservedIds.length === 0) {
+          // Otra corrida concurrente ya reservó estas earnings: no transferir.
+          await supabaseAdmin.from("vendor_payouts").update({ status: "failed" }).eq("id", payoutRow.id);
+          continue;
+        }
+
+        // Transferir SÓLO lo que esta corrida reservó de verdad (puede ser un
+        // subconjunto si otra corrida tomó parte de las earnings primero).
+        const reservedTotal = (reserved || []).reduce((s: number, e: any) => s + Number(e.net_amount), 0);
+        const reservedCents = Math.round(reservedTotal * 100);
+        if (reservedIds.length !== earnings.length) {
+          await supabaseAdmin
+            .from("vendor_payouts")
+            .update({ total_amount: reservedTotal, earnings_count: reservedIds.length })
+            .eq("id", payoutRow.id);
+        }
 
         const transfer = await stripe.transfers.create({
-          amount: amountCents,
+          amount: reservedCents,
           currency,
           destination: v.stripe_account_id,
-          metadata: { vendor_id: v.vendor_id, payout_id: payoutRow.id, earnings_count: String(earnings.length) },
-          description: `Marketplace payout — ${earnings.length} ventas`,
+          metadata: { vendor_id: v.vendor_id, payout_id: payoutRow.id, earnings_count: String(reservedIds.length) },
+          description: `Marketplace payout — ${reservedIds.length} ventas`,
         }, { idempotencyKey: `vendor_payout_${payoutRow.id}` });
 
         await supabaseAdmin

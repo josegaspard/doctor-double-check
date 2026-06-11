@@ -57,6 +57,44 @@ Deno.serve(async (req) => {
     const isConsultation = mode === 'consultation';
     logStep("Creating Daily.co room", { liveId, title, enableRecording, mode });
 
+    // ── Authorization: the caller must OWN / participate in this resource ──
+    // Without this, any authenticated user could request an is_owner:true
+    // broadcast token for someone else's live/consultation.
+    let authorized = false;
+    if (isConsultation) {
+      // liveId == consultation id OR clinical_session id (Meetings union)
+      const { data: c } = await supabaseClient
+        .from('consultations').select('id')
+        .eq('id', liveId)
+        .or(`doctor_id.eq.${userId},patient_id.eq.${userId}`)
+        .maybeSingle();
+      if (c) authorized = true;
+      if (!authorized) {
+        const { data: cs } = await supabaseClient
+          .from('clinical_sessions').select('id')
+          .eq('id', liveId).eq('organizer_id', userId).maybeSingle();
+        if (cs) authorized = true;
+      }
+      if (!authorized) {
+        const { data: inv } = await supabaseClient
+          .from('clinical_session_invitations').select('id')
+          .eq('session_id', liveId).eq('doctor_id', userId).maybeSingle();
+        if (inv) authorized = true;
+      }
+    } else {
+      const { data: l } = await supabaseClient
+        .from('lives').select('id')
+        .eq('id', liveId).eq('doctor_id', userId).maybeSingle();
+      if (l) authorized = true;
+    }
+    if (!authorized) {
+      logStep("Authorization denied", { userId, liveId, mode });
+      return new Response(
+        JSON.stringify({ success: false, error: "No autorizado para esta sala" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Create a room in Daily.co
     const roomName = `${isConsultation ? 'call' : 'live'}-${liveId.slice(0, 8)}-${Date.now()}`;
     
