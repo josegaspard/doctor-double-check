@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,7 +84,8 @@ Deno.serve(async (req) => {
 
     let finalPrice = consultationFee * 100; // Convert to cents
     if (userRole?.role === 'resident') {
-      finalPrice = Math.round(finalPrice * 0.5);
+      const pricing = await getSubscriptionPricing(supabaseClient);
+      finalPrice = Math.round(finalPrice * residentMultiplier(pricing));
       logStep("Resident discount applied", { originalPrice: consultationFee * 100, finalPrice });
     }
 

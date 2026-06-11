@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import { Star, Users, TrendingUp, Award, Quote } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLandingStats } from '@/hooks/useLandingStats';
 
 export default function SuccessStories() {
   const { t } = useLanguage();
+  const landingStats = useLandingStats();
 
   const stories = [
     {
@@ -57,19 +59,19 @@ export default function SuccessStories() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
             <div className="text-center">
-              <p className="text-3xl sm:text-5xl font-extrabold text-primary">5,000+</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-primary">{landingStats.active_doctors}</p>
               <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{t('successStoriesPage.stats.activeDoctors')}</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">15M+</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">{landingStats.patients_served}</p>
               <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{t('successStoriesPage.stats.patientsServed')}</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl sm:text-5xl font-extrabold text-primary">98%</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-primary">{landingStats.satisfaction}</p>
               <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{t('successStoriesPage.stats.satisfaction')}</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">24/7</p>
+              <p className="text-3xl sm:text-5xl font-extrabold text-secondary">{landingStats.availability}</p>
               <p className="text-xs sm:text-sm text-foreground/70 font-medium mt-1">{t('successStoriesPage.stats.availability')}</p>
             </div>
           </div>

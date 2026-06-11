@@ -15,6 +15,14 @@ export interface SiteToggles {
   enable_patient_chat: boolean;
   enable_prescriptions: boolean;
   enable_video_calls: boolean;
+  // Kill-switches de secciones completas (2026-06-11). Por defecto ACTIVADAS
+  // (la sección está visible hoy); el admin puede ocultar cada una con 1 switch.
+  enable_marketplace: boolean;
+  enable_lives: boolean;
+  enable_events: boolean;
+  enable_vault: boolean;
+  enable_recordings: boolean;
+  enable_ads: boolean;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -27,6 +35,12 @@ const DEFAULT_TOGGLES: SiteToggles = {
   enable_patient_chat: false,
   enable_prescriptions: false,
   enable_video_calls: false,
+  enable_marketplace: true,
+  enable_lives: true,
+  enable_events: true,
+  enable_vault: true,
+  enable_recordings: true,
+  enable_ads: true,
 };
 
 let cachedToggles: SiteToggles | null = null;

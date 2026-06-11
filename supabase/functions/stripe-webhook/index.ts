@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { getSubscriptionPricing } from "../_shared/pricing.ts";
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -400,7 +401,10 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
   
   logStep("Processing creator subscription", { userId, creatorId, tier });
 
-  const tierPrice = tier === "premium" ? 199 : 99;
+  // Admin-editable price (same site_settings.subscription_pricing as checkout),
+  // converted cents→pesos; falls back to $99/$199 if the setting is missing.
+  const pricing = await getSubscriptionPricing(db);
+  const tierPrice = (tier === "premium" ? pricing.premium_cents : pricing.basic_cents) / 100;
   const expiresAt = new Date();
   expiresAt.setMonth(expiresAt.getMonth() + 1);
 

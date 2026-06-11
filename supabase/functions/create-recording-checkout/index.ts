@@ -1,5 +1,6 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,7 +84,8 @@ Deno.serve(async (req) => {
 
     let finalPrice = recording.price;
     if (roleData?.role === "resident") {
-      finalPrice = recording.price * 0.5;
+      const pricing = await getSubscriptionPricing(supabaseClient);
+      finalPrice = recording.price * residentMultiplier(pricing);
       logStep("Resident discount applied", { originalPrice: recording.price, finalPrice });
     }
 

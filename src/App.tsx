@@ -221,10 +221,10 @@ const App = () => {
                       <Route path="/" element={<Landing />} />
                       <Route path="/app" element={<RoleSelector />} />
                       <Route path="/login" element={<Login />} />
-                      <Route path="/lives" element={<LivesGrid />} />
-                      <Route path="/live/:id" element={<LivePlayer />} />
-                      <Route path="/recordings" element={<RecordingsGrid />} />
-                      <Route path="/recording/:id" element={<RecordingPlayer />} />
+                      <Route path="/lives" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate>} />
+                      <Route path="/live/:id" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate>} />
+                      <Route path="/recordings" element={<ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate>} />
+                      <Route path="/recording/:id" element={<ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingPlayer /></ToggleGate>} />
                       <Route path="/wallet" element={<Wallet />} />
                       <Route path="/wallet/ledger" element={<WalletLedger />} />
                       <Route path="/chat" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><Chat /></ToggleGate>} />
@@ -233,7 +233,7 @@ const App = () => {
                       <Route path="/verify-identity" element={<IdentityVerification />} />
                       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
                       <Route path="/doctor/upload" element={<DoctorUpload />} />
-                      <Route path="/doctor/vault" element={<DoctorVault />} />
+                      <Route path="/doctor/vault" element={<ToggleGate toggleKey="enable_vault" feature="vault"><DoctorVault /></ToggleGate>} />
                       <Route path="/doctor/availability" element={<DoctorAvailability />} />
                       <Route path="/doctor/recordings" element={<DoctorRecordings />} />
                       <Route path="/doctor/content" element={<DoctorContentLibrary />} />
@@ -242,13 +242,13 @@ const App = () => {
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/medical-record" element={<MedicalRecord />} />
-                      <Route path="/vault" element={<Vault />} />
+                      <Route path="/vault" element={<ToggleGate toggleKey="enable_vault" feature="vault"><Vault /></ToggleGate>} />
                       <Route path="/education" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<ClinicalSessions />} />
                       <Route path="/meetings" element={<Meetings />} />
                       <Route path="/foro" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><Foro /></AccessGuard>} />
                       <Route path="/hospital-locator" element={<HospitalLocator />} />
-                      <Route path="/medical-supplies" element={<MedicalSupplies />} />
+                      <Route path="/medical-supplies" element={<ToggleGate toggleKey="enable_marketplace" feature="marketplace"><MedicalSupplies /></ToggleGate>} />
                       <Route path="/my-orders" element={<MyOrders />} />
                       <Route path="/order-success" element={<OrderSuccess />} />
                       <Route path="/double-check" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><DoubleCheck /></ToggleGate>} />
@@ -296,8 +296,8 @@ const App = () => {
                       <Route path="/notifications" element={<Notifications />} />
                       <Route path="/news" element={<MedicalNews />} />
                       <Route path="/news/:slug" element={<NewsArticle />} />
-                      <Route path="/eventos" element={<Eventos />} />
-                      <Route path="/events" element={<Eventos />} />
+                      <Route path="/eventos" element={<ToggleGate toggleKey="enable_events" feature="events"><Eventos /></ToggleGate>} />
+                      <Route path="/events" element={<ToggleGate toggleKey="enable_events" feature="events"><Eventos /></ToggleGate>} />
                       <Route path="/video-call" element={<ToggleGate toggleKey="enable_video_calls" feature="videoCalls"><VideoCall /></ToggleGate>} />
                       <Route path="/prescriptions" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><Prescriptions /></ToggleGate>} />
                       <Route path="/prescriptions/new" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><CreatePrescription /></ToggleGate>} />

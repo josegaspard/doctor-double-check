@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 import { type SiteToggles, saveSiteToggles } from '@/hooks/useSiteToggles';
+import { type LandingStats, LANDING_STATS_DEFAULTS } from '@/hooks/useLandingStats';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -31,6 +32,8 @@ import {
   Save,
   Mail,
   HardDrive,
+  CreditCard,
+  BarChart3,
   Plus,
   Trash2,
   Link2,
@@ -61,6 +64,13 @@ interface ContactInfo {
 interface StoragePricing {
   price_per_gb: number;
   plans: { gb: number; label: string; badge?: string }[];
+}
+
+interface SubscriptionPricing {
+  basic_cents: number;
+  premium_cents: number;
+  resident_discount_pct: number;
+  premium_recording_discount_pct: number;
 }
 
 interface FooterLink {
@@ -110,6 +120,13 @@ export default function AdminSiteSettings() {
       { gb: 10, label: '+10 GB', badge: t('adminSiteSettingsPage.storage.defaultBestValue') },
     ],
   });
+  const [subscriptionPricing, setSubscriptionPricing] = useState<SubscriptionPricing>({
+    basic_cents: 9900,
+    premium_cents: 19900,
+    resident_discount_pct: 50,
+    premium_recording_discount_pct: 20,
+  });
+  const [landingStats, setLandingStats] = useState<LandingStats>(LANDING_STATS_DEFAULTS);
   const [footerLinks, setFooterLinks] = useState<FooterLinksData>({
     platform: [
       { label: t('adminSiteSettingsPage.footer.defaults.platform.doctors'), href: '/for-doctors' },
@@ -143,6 +160,12 @@ export default function AdminSiteSettings() {
     enable_patient_chat: false,
     enable_prescriptions: false,
     enable_video_calls: false,
+    enable_marketplace: true,
+    enable_lives: true,
+    enable_events: true,
+    enable_vault: true,
+    enable_recordings: true,
+    enable_ads: true,
   });
 
   useEffect(() => {
@@ -224,6 +247,28 @@ export default function AdminSiteSettings() {
 
         if (storageData?.value) {
           setStoragePricing(storageData.value as unknown as StoragePricing);
+        }
+
+        // Fetch subscription pricing
+        const { data: subPricingData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'subscription_pricing')
+          .maybeSingle();
+
+        if (subPricingData?.value) {
+          setSubscriptionPricing(prev => ({ ...prev, ...(subPricingData.value as unknown as SubscriptionPricing) }));
+        }
+
+        // Fetch landing stats
+        const { data: landingStatsData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'landing_stats')
+          .maybeSingle();
+
+        if (landingStatsData?.value) {
+          setLandingStats(prev => ({ ...prev, ...(landingStatsData.value as unknown as LandingStats) }));
         }
 
         // Fetch footer links
@@ -386,6 +431,55 @@ export default function AdminSiteSettings() {
     } catch (error) {
       console.error('Error saving storage pricing:', error);
       toast.error(t('adminSiteSettingsPage.storage.saveError'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveSubscriptionPricing = async () => {
+    setIsSaving(true);
+    try {
+      const clean: SubscriptionPricing = {
+        basic_cents: Math.max(0, Math.round(Number(subscriptionPricing.basic_cents) || 0)),
+        premium_cents: Math.max(0, Math.round(Number(subscriptionPricing.premium_cents) || 0)),
+        resident_discount_pct: Math.min(100, Math.max(0, Number(subscriptionPricing.resident_discount_pct) || 0)),
+        premium_recording_discount_pct: Math.min(100, Math.max(0, Number(subscriptionPricing.premium_recording_discount_pct) || 0)),
+      };
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'subscription_pricing',
+          value: clean as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (error) throw error;
+      setSubscriptionPricing(clean);
+      toast.success('Precios de suscripción actualizados');
+    } catch (error) {
+      console.error('Error saving subscription pricing:', error);
+      toast.error('No se pudieron guardar los precios de suscripción');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveLandingStats = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'landing_stats',
+          value: landingStats as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (error) throw error;
+      toast.success('Estadísticas del sitio actualizadas');
+    } catch (error) {
+      console.error('Error saving landing stats:', error);
+      toast.error('No se pudieron guardar las estadísticas');
     } finally {
       setIsSaving(false);
     }
@@ -738,6 +832,105 @@ export default function AdminSiteSettings() {
 
             {/* Storage Pricing Tab */}
             <TabsContent value="storage">
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CreditCard className="w-5 h-5" />
+                    Precios de suscripción y descuentos
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Controla el precio mensual de las suscripciones a creadores y los descuentos. Aplica de inmediato a nuevos cobros (con respaldo a $99/$199 si se deja vacío).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Suscripción Básica (MXN/mes)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={subscriptionPricing.basic_cents / 100}
+                        onChange={(e) => setSubscriptionPricing({ ...subscriptionPricing, basic_cents: Math.round((Number(e.target.value) || 0) * 100) })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Suscripción Premium (MXN/mes)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={subscriptionPricing.premium_cents / 100}
+                        onChange={(e) => setSubscriptionPricing({ ...subscriptionPricing, premium_cents: Math.round((Number(e.target.value) || 0) * 100) })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descuento residente (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={subscriptionPricing.resident_discount_pct}
+                        onChange={(e) => setSubscriptionPricing({ ...subscriptionPricing, resident_discount_pct: Number(e.target.value) || 0 })}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descuento Premium en grabaciones (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={subscriptionPricing.premium_recording_discount_pct}
+                        onChange={(e) => setSubscriptionPricing({ ...subscriptionPricing, premium_recording_discount_pct: Number(e.target.value) || 0 })}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={handleSaveSubscriptionPricing} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar precios de suscripción
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BarChart3 className="w-5 h-5" />
+                    Estadísticas del sitio (Casos de éxito / Empresas)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Cifras mostradas en las páginas de Casos de Éxito y Empresas. Edítalas para que reflejen datos reales y verificables.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { k: 'active_doctors' as const, label: 'Doctores activos' },
+                      { k: 'patients_served' as const, label: 'Pacientes atendidos' },
+                      { k: 'satisfaction' as const, label: 'Satisfacción' },
+                      { k: 'availability' as const, label: 'Disponibilidad' },
+                      { k: 'enterprise_absenteeism' as const, label: 'Empresas: ↓ ausentismo' },
+                      { k: 'enterprise_roi' as const, label: 'Empresas: ROI' },
+                      { k: 'enterprise_satisfaction' as const, label: 'Empresas: satisfacción' },
+                      { k: 'enterprise_support' as const, label: 'Empresas: soporte' },
+                    ].map((f) => (
+                      <div key={f.k} className="space-y-1.5">
+                        <Label className="text-xs">{f.label}</Label>
+                        <Input
+                          value={landingStats[f.k]}
+                          onChange={(e) => setLandingStats({ ...landingStats, [f.k]: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Button onClick={handleSaveLandingStats} disabled={isSaving} className="w-full">
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                    Guardar estadísticas
+                  </Button>
+                </CardContent>
+              </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -1005,6 +1198,12 @@ export default function AdminSiteSettings() {
                     { key: 'enable_patient_chat' as const, label: 'Chat doctor ↔ paciente', desc: 'Activa el chat directo entre médico y paciente. Si está apagado, la función queda temporalmente no disponible en toda la web.' },
                     { key: 'enable_prescriptions' as const, label: 'Recetas médicas', desc: 'Activa la generación y gestión de recetas. Si está apagado, queda temporalmente no disponible en toda la web.' },
                     { key: 'enable_video_calls' as const, label: 'Videollamadas con pacientes', desc: 'Activa las videollamadas directas con pacientes. Si está apagado, queda temporalmente no disponible en toda la web.' },
+                    { key: 'enable_marketplace' as const, label: 'Sección: Tienda / Insumos médicos', desc: 'Muestra u oculta toda la tienda de insumos médicos (Marketplace). Apagado = oculta el menú y la sección queda no disponible.' },
+                    { key: 'enable_lives' as const, label: 'Sección: Transmisiones en vivo', desc: 'Muestra u oculta las transmisiones en vivo. Apagado = oculta el menú y la sección queda no disponible.' },
+                    { key: 'enable_recordings' as const, label: 'Sección: Grabaciones', desc: 'Muestra u oculta la sección de grabaciones. Apagado = oculta el menú y la sección queda no disponible.' },
+                    { key: 'enable_events' as const, label: 'Sección: Eventos', desc: 'Muestra u oculta la sección de eventos. Apagado = la sección queda no disponible.' },
+                    { key: 'enable_vault' as const, label: 'Sección: Expediente / Vault', desc: 'Muestra u oculta el expediente clínico (Vault). Apagado = oculta el menú y la sección queda no disponible.' },
+                    { key: 'enable_ads' as const, label: 'Publicidad (anuncios)', desc: 'Muestra u oculta todos los anuncios (banners, intersticiales, pre-roll) en la web. Apagado = no se muestra ninguna publicidad.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
                     { key: 'show_prescriptions' as const, label: t('adminSiteSettingsPage.toggles.items.prescriptions.label'), desc: t('adminSiteSettingsPage.toggles.items.prescriptions.desc') },

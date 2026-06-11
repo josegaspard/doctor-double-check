@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 
 export type SubscriptionTier = 'free' | 'basic' | 'premium';
 
@@ -23,6 +24,7 @@ export interface Subscription {
 
 export function useSubscriptions() {
   const { supabaseUser } = useAuth();
+  const { premiumRecordingMultiplier } = useSubscriptionPricing();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [subscribers, setSubscribers] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -204,9 +206,9 @@ export function useSubscriptions() {
     return subscriptions.some(s => s.tier === 'premium' && s.isActive);
   };
 
-  // *** NEW: Get discount rate for recordings (20% for Premium) ***
+  // Recording discount for Premium subscribers (admin-editable %).
   const getRecordingDiscount = (creatorId: string): number => {
-    if (hasPremiumTo(creatorId)) return 0.2; // 20% discount
+    if (hasPremiumTo(creatorId)) return 1 - premiumRecordingMultiplier; // e.g. 0.2 = 20% off
     return 0;
   };
 

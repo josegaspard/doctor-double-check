@@ -2,7 +2,7 @@ import React from 'react';
 import { useSiteToggles, type SiteToggles } from '@/hooks/useSiteToggles';
 import FeatureUnavailable from '@/pages/FeatureUnavailable';
 
-type FeatureKey = 'chat' | 'prescriptions' | 'videoCalls';
+type FeatureKey = 'chat' | 'prescriptions' | 'videoCalls' | 'marketplace' | 'lives' | 'events' | 'vault' | 'recordings';
 
 /**
  * Gatea una ruta según un toggle del admin (site_settings/feature_toggles).

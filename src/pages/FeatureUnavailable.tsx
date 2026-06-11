@@ -3,15 +3,20 @@ import { useNavigate, Link } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, ArrowLeft, MessageSquare, FileText, Video, Wrench } from 'lucide-react';
+import { Clock, ArrowLeft, MessageSquare, FileText, Video, Wrench, ShoppingBag, Radio, Calendar, Folder, PlayCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-type FeatureKey = 'chat' | 'prescriptions' | 'videoCalls';
+type FeatureKey = 'chat' | 'prescriptions' | 'videoCalls' | 'marketplace' | 'lives' | 'events' | 'vault' | 'recordings';
 
 const ICONS: Record<FeatureKey, React.ElementType> = {
   chat: MessageSquare,
   prescriptions: FileText,
   videoCalls: Video,
+  marketplace: ShoppingBag,
+  lives: Radio,
+  events: Calendar,
+  vault: Folder,
+  recordings: PlayCircle,
 };
 
 // Fallback en español por si la clave i18n no existe en algún idioma.
@@ -30,6 +35,31 @@ const FALLBACK: Record<FeatureKey, { title: string; description: string }> = {
     title: 'Videollamadas temporalmente no disponibles',
     description:
       'Las videollamadas con pacientes están en mantenimiento. Las reactivaremos muy pronto.',
+  },
+  marketplace: {
+    title: 'Tienda temporalmente no disponible',
+    description:
+      'La tienda de insumos médicos está en mantenimiento. Estará disponible de nuevo muy pronto.',
+  },
+  lives: {
+    title: 'Transmisiones temporalmente no disponibles',
+    description:
+      'Las transmisiones en vivo están en mantenimiento. Las reactivaremos muy pronto.',
+  },
+  events: {
+    title: 'Eventos temporalmente no disponibles',
+    description:
+      'La sección de eventos está en mantenimiento. Estará disponible de nuevo muy pronto.',
+  },
+  vault: {
+    title: 'Expediente temporalmente no disponible',
+    description:
+      'El expediente clínico está en mantenimiento. Estará disponible de nuevo muy pronto.',
+  },
+  recordings: {
+    title: 'Grabaciones temporalmente no disponibles',
+    description:
+      'La sección de grabaciones está en mantenimiento. Estará disponible de nuevo muy pronto.',
   },
 };
 

@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Shield, Users, BarChart3, Headphones, Globe, CheckCircle, Zap, Briefcase, Factory, Truck, Banknote, Store, RadioTower } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLandingStats } from '@/hooks/useLandingStats';
 
 export default function Enterprise() {
   const { t } = useLanguage();
+  const landingStats = useLandingStats();
 
   const features = [
     {
@@ -40,10 +42,10 @@ export default function Enterprise() {
   ];
 
   const stats = [
-    { value: '40%', label: t('enterprisePage.stats.absenteeism') },
-    { value: '3x', label: t('enterprisePage.stats.roi') },
-    { value: '95%', label: t('enterprisePage.stats.satisfaction') },
-    { value: '24/7', label: t('enterprisePage.stats.support') },
+    { value: landingStats.enterprise_absenteeism, label: t('enterprisePage.stats.absenteeism') },
+    { value: landingStats.enterprise_roi, label: t('enterprisePage.stats.roi') },
+    { value: landingStats.enterprise_satisfaction, label: t('enterprisePage.stats.satisfaction') },
+    { value: landingStats.enterprise_support, label: t('enterprisePage.stats.support') },
   ];
 
   // Industrias representativas (placeholders genéricos, sin marcas reales).

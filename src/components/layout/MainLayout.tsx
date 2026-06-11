@@ -293,6 +293,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     if (!toggles.enable_patient_chat) s.add('/chat');
     if (!toggles.enable_prescriptions) s.add('/prescriptions');
     if (!toggles.enable_video_calls) s.add('/video-call');
+    // Kill-switches de secciones: ocultar su entrada de nav cuando se apaga.
+    if (!toggles.enable_lives) s.add('/lives');
+    if (!toggles.enable_recordings) s.add('/recordings');
+    if (!toggles.enable_vault) { s.add('/vault'); s.add('/doctor/vault'); }
+    if (!toggles.enable_marketplace) s.add('/medical-supplies');
     return s;
   }, [toggles]);
 

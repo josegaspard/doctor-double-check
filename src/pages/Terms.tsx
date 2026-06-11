@@ -93,7 +93,7 @@ Nos reservamos el derecho de modificar estos términos en cualquier momento. Los
 
 ## 11. Contacto
 
-Para cualquier consulta sobre estos términos, puede contactarnos a través de la plataforma o enviando un correo electrónico a soporte@medicalmasters.com
+Para cualquier consulta sobre estos términos, puede contactarnos a través de la plataforma o enviando un correo electrónico a contacto@medical-masters.com
   `.trim();
 
   if (isLoading) {

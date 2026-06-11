@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { tContext } from '@/lib/i18n-context';
 import { toast } from 'sonner';
+import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 
 export type TransactionType = 'topup' | 'purchase' | 'refund' | 'subscription' | 'earning';
 export type TransactionStatus = 'initiated' | 'paid' | 'failed';
@@ -33,6 +34,7 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { user, refreshUser } = useAuth();
+  const { residentMultiplier } = useSubscriptionPricing();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -194,15 +196,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Apply 50% discount for residents when checking affordability
+  // Apply resident discount (admin-editable) when checking affordability
   const canAfford = (amount: number): boolean => {
-    const effectiveAmount = user?.role === 'resident' ? amount * 0.5 : amount;
+    const effectiveAmount = user?.role === 'resident' ? amount * residentMultiplier : amount;
     return balance >= effectiveAmount;
   };
 
   // Get effective price (with discount for residents)
   const getEffectivePrice = (amount: number): number => {
-    return user?.role === 'resident' ? amount * 0.5 : amount;
+    return user?.role === 'resident' ? amount * residentMultiplier : amount;
   };
 
   const getTransactionHistory = (): Transaction[] => {

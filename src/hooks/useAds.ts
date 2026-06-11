@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 interface AdConfig {
   is_active: boolean;
@@ -119,6 +120,7 @@ export function useAdPlacements() {
 export function useAdCreative(placementName: string) {
   const { user, role } = useAuth();
   const { language } = useLanguage();
+  const { toggles } = useSiteToggles();
   const [creative, setCreative] = useState<AdCreativeWithFormat | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -243,5 +245,7 @@ export function useAdCreative(placementName: string) {
     });
   }, [creative, user, role, language]);
 
-  return { creative, isActive, isLoading, trackImpression, trackClick };
+  // Kill-switch global de publicidad desde el admin: si está apagado, ningún
+  // anuncio se considera activo (AdBanner/Interstitial/Preroll no se renderizan).
+  return { creative, isActive: isActive && toggles.enable_ads, isLoading, trackImpression, trackClick };
 }

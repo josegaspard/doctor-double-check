@@ -1,6 +1,7 @@
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
+import { getSubscriptionPricing } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,7 +60,11 @@ Deno.serve(async (req) => {
     if (!tier || !['basic', 'premium'].includes(tier)) throw new Error("Invalid tier. Use 'basic' or 'premium'");
 
     const tierConfig = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS];
-    logStep("Subscription request", { creatorId, tier, price: tierConfig.price });
+    // Price is admin-editable (site_settings.subscription_pricing) with a hard
+    // fallback to the historical $99/$199 if the setting is missing/invalid.
+    const pricing = await getSubscriptionPricing(supabaseClient);
+    const unitAmount = tier === 'premium' ? pricing.premium_cents : pricing.basic_cents;
+    logStep("Subscription request", { creatorId, tier, price: unitAmount });
 
     // Get creator info
     const { data: creatorProfile } = await supabaseClient
@@ -92,7 +97,7 @@ Deno.serve(async (req) => {
               name: `${tierConfig.name} - ${creatorName}`,
               description: tierConfig.description,
             },
-            unit_amount: tierConfig.price,
+            unit_amount: unitAmount,
             recurring: {
               interval: "month",
             },
