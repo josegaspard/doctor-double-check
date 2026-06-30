@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { ArrowLeft, Calendar as CalendarIcon, Clock, Stethoscope, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Slot {
@@ -115,6 +116,11 @@ export default function BookAppointment() {
       toast.error(t('bookAppointment.toast.onlyPatients'));
       return;
     }
+    // Consultas solo para México por ahora (cliente 2026-06-29).
+    if (!isConsultationCountryAllowed(user.countryCode)) {
+      toast.error(t('bookAppointment.toastMexicoOnly'));
+      return;
+    }
     setSubmitting(true);
     const { data, error } = await supabase
       .from('appointments')
@@ -195,6 +201,13 @@ export default function BookAppointment() {
         <Button variant="back" size="sm" className="gap-1.5 mb-3" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" /> {t('bookAppointment.back')}
         </Button>
+
+        {!isConsultationCountryAllowed(user?.countryCode) && (
+          <div className="mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground flex items-start gap-2">
+            <Stethoscope className="w-4 h-4 mt-0.5 flex-shrink-0 text-warning" />
+            <span>{t('bookAppointment.mexicoOnlyNotice')}</span>
+          </div>
+        )}
 
         <Card className="mb-4">
           <CardHeader>

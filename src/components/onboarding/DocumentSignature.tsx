@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DocumentSignatureProps {
   signerName: string;
@@ -16,6 +17,9 @@ interface DocumentSignatureProps {
   doctorContractAccepted?: boolean;
   onDoctorContractChange?: (accepted: boolean) => void;
   showDoctorContract?: boolean;
+  codeOfEthicsAccepted?: boolean;
+  onCodeOfEthicsChange?: (accepted: boolean) => void;
+  showCodeOfEthics?: boolean;
 }
 
 export function DocumentSignature({
@@ -28,14 +32,20 @@ export function DocumentSignature({
   doctorContractAccepted,
   onDoctorContractChange,
   showDoctorContract = false,
+  codeOfEthicsAccepted,
+  onCodeOfEthicsChange,
+  showCodeOfEthics = false,
 }: DocumentSignatureProps) {
-  const allSigned = termsAccepted && privacyAccepted && (!showDoctorContract || doctorContractAccepted);
+  const { t } = useLanguage();
+  const allSigned = termsAccepted && privacyAccepted
+    && (!showDoctorContract || doctorContractAccepted)
+    && (!showCodeOfEthics || codeOfEthicsAccepted);
 
   return (
     <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border">
       <div className="flex items-center gap-2">
         <FileText className="w-4 h-4 text-primary" />
-        <h4 className="font-semibold text-sm text-foreground">Firma de documentos</h4>
+        <h4 className="font-semibold text-sm text-foreground">{t('fix20.admin.docSignatureTitle')}</h4>
         {allSigned && (
           <Badge variant="success" className="ml-auto gap-1 text-[10px]">
             <CheckCircle className="w-3 h-3" />
@@ -47,7 +57,7 @@ export function DocumentSignature({
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">Nombre completo (firma digital)</Label>
         <Input
-          placeholder="Tu nombre completo"
+          placeholder={t('fix20.admin.docSignatureNamePlaceholder')}
           value={signerName}
           onChange={(e) => onSignerNameChange(e.target.value)}
           className="h-9"
@@ -95,6 +105,24 @@ export function DocumentSignature({
             />
             <label htmlFor="doctor-contract" className="text-sm text-foreground cursor-pointer">
               Acepto el contrato de prestación de servicios médicos en la plataforma
+            </label>
+          </div>
+        )}
+
+        {showCodeOfEthics && (
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="code-of-ethics"
+              checked={codeOfEthicsAccepted}
+              onCheckedChange={(checked) => onCodeOfEthicsChange?.(checked === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="code-of-ethics" className="text-sm text-foreground cursor-pointer">
+              He leído y acepto el{' '}
+              <Link to="/codigo-etica" target="_blank" className="text-primary underline">
+                Código de Ética
+              </Link>{' '}
+              de Medical Masters
             </label>
           </div>
         )}

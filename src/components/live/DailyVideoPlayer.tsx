@@ -17,10 +17,13 @@ import {
   MonitorOff,
   Volume2,
   VolumeX,
+  Image as ImageIcon,
+  ImageOff,
 } from 'lucide-react';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import logoMmWhite from '@/assets/logo-medical-masters-white.png';
 
 export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
@@ -79,6 +82,10 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   const [error, setError] = useState<string | null>(null);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(false);
   const [viewerAudioMuted, setViewerAudioMuted] = useState(true);
+  // Fondo virtual de marca Medical Masters para el broadcaster (default ON).
+  // El procesador de Daily reemplaza el fondo de la cámara del doctor por el
+  // arte de marca, así lo ven todos los espectadores. Reversible con el botón.
+  const [brandedBg, setBrandedBg] = useState(false);
   // Cada bump reintenta el join (re-ejecuta el effect de abajo). Lo usa el
   // watchdog anti-"Conectando..." infinito y el botón Reintentar del error.
   const [joinAttempt, setJoinAttempt] = useState(0);
@@ -393,6 +400,65 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     setIsVideoOff(newVideoOff);
   }, [isVideoOff]);
 
+  // Aplica (o quita) el fondo virtual de marca a la cámara del doctor. Solo el
+  // broadcaster, y SOLO cuando el doctor lo activa con el botón (OFF por
+  // defecto). El procesador de segmentación de Daily reemplaza el track de
+  // video; en algunos equipos/navegadores eso dejaba la cámara EN NEGRO, así
+  // que: (1) nunca se toca la cámara si nunca se activó, y (2) si el procesador
+  // falla, revertimos a cámara normal y apagamos el toggle. Cliente 2026-06-16.
+  const bgAppliedRef = useRef(false);
+
+  // Reinicia la cámara local (off→on) para RECUPERAR el track si el procesador
+  // de fondo de Daily lo dejó en negro/congelado. Garantía de "nunca se queda
+  // en negro" al activar/desactivar el fondo (bug reportado cliente 2026-06-16).
+  const restartLocalCamera = useCallback(async () => {
+    const call = callRef.current;
+    if (!call) return;
+    try {
+      call.setLocalVideo(false);
+      await new Promise((r) => setTimeout(r, 220));
+      call.setLocalVideo(true);
+    } catch { /* noop */ }
+  }, []);
+
+  const applyVideoBackground = useCallback(async (enabled: boolean) => {
+    const call = callRef.current;
+    if (!call || !isOwner) return;
+    // Si está apagado y nunca se aplicó, NO tocar el pipeline (cámara pristina).
+    if (!enabled && !bgAppliedRef.current) return;
+    try {
+      if (enabled) {
+        const src = typeof window !== 'undefined'
+          ? `${window.location.origin}/live-bg-mm.jpg`
+          : '/live-bg-mm.jpg';
+        await call.updateInputSettings({
+          video: { processor: { type: 'background-image', config: { source: src } } },
+        });
+        bgAppliedRef.current = true;
+      } else {
+        await call.updateInputSettings({ video: { processor: { type: 'none' } } });
+        bgAppliedRef.current = false;
+        // RECUPERACIÓN: al quitar el procesador reiniciamos la cámara para que
+        // NUNCA quede en negro (es justo donde el cliente vio el bug).
+        await restartLocalCamera();
+      }
+    } catch (err) {
+      console.warn('[DAILY] fondo de marca no disponible, revierto a cámara normal:', err);
+      bgAppliedRef.current = false;
+      setBrandedBg(false);
+      try { await call.updateInputSettings({ video: { processor: { type: 'none' } } }); } catch { /* noop */ }
+      await restartLocalCamera();
+      toast.error(t('dailyVideoPlayer.bgUnavailable'));
+    }
+  }, [isOwner, restartLocalCamera, t]);
+
+  // Solo reacciona a CAMBIOS del toggle del fondo (no en cada conexión): el
+  // live arranca siempre con la cámara normal (se ve la persona).
+  useEffect(() => {
+    if (!isOwner || !isConnected) return;
+    applyVideoBackground(brandedBg);
+  }, [isOwner, isConnected, brandedBg, applyVideoBackground]);
+
   const toggleScreenShare = async () => {
     if (!callRef.current) return;
     try {
@@ -539,12 +605,30 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
 
   if (isJoining) {
     return (
-      <div className="aspect-video bg-muted rounded-xl overflow-hidden relative">
-        <Skeleton className="w-full h-full" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <p className="text-muted-foreground">{t('dailyVideoPlayer.connecting')}</p>
+      <div
+        className="aspect-video rounded-xl overflow-hidden relative flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, #0b1d45 0%, #163a83 55%, #227787 100%)' }}
+      >
+        {/* Brillo sutil de marca */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 50% 38%, rgba(174,211,217,0.18) 0%, transparent 60%)' }}
+        />
+        <div className="relative z-10 text-center px-6">
+          <img src={logoMmWhite} alt="Medical Masters" className="h-7 sm:h-9 w-auto mx-auto mb-6 opacity-90 drop-shadow" />
+          {/* Spinner con doble anillo en colores de marca */}
+          <div className="relative w-14 h-14 mx-auto mb-5">
+            <div className="absolute inset-0 rounded-full border-4 border-white/15" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#aed3d9] animate-spin" />
+          </div>
+          <p className="text-white font-semibold tracking-wide">{t('dailyVideoPlayer.connecting')}</p>
+          <p className="text-[#aed3d9]/85 text-xs sm:text-sm mt-1.5">{t('dailyVideoPlayer.connectingHint')}</p>
+          {/* Puntos animados */}
+          <div className="flex items-center justify-center gap-1.5 mt-4">
+            <span className="w-2 h-2 rounded-full bg-[#aed3d9]/80 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#aed3d9]/80 animate-pulse" style={{ animationDelay: '0.2s' }} />
+            <span className="w-2 h-2 rounded-full bg-[#aed3d9]/80 animate-pulse" style={{ animationDelay: '0.4s' }} />
           </div>
         </div>
       </div>
@@ -635,15 +719,19 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                     size="icon"
                     variant={isMuted ? "destructive" : "secondary"}
                     onClick={toggleMute}
+                    title={isMuted ? t('dailyVideoPlayer.tipUnmute') : t('dailyVideoPlayer.tipMute')}
+                    aria-label={isMuted ? t('dailyVideoPlayer.tipUnmute') : t('dailyVideoPlayer.tipMute')}
                     className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
                   >
                     {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   </Button>
-                  
+
                   <Button
                     size="icon"
                     variant={isVideoOff ? "destructive" : "secondary"}
                     onClick={toggleVideo}
+                    title={isVideoOff ? t('dailyVideoPlayer.tipVideoOn') : t('dailyVideoPlayer.tipVideoOff')}
+                    aria-label={isVideoOff ? t('dailyVideoPlayer.tipVideoOn') : t('dailyVideoPlayer.tipVideoOff')}
                     className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
                   >
                     {isVideoOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
@@ -657,12 +745,26 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                         size="icon"
                         variant={isScreenSharing ? "default" : "secondary"}
                         onClick={toggleScreenShare}
+                        title={isScreenSharing ? t('dailyVideoPlayer.tipStopScreenShare') : t('dailyVideoPlayer.tipScreenShare')}
+                        aria-label={isScreenSharing ? t('dailyVideoPlayer.tipStopScreenShare') : t('dailyVideoPlayer.tipScreenShare')}
                         className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
                       >
                         {isScreenSharing ? <MonitorOff className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
                       </Button>
                     );
                   })()}
+
+                  {/* Fondo virtual de marca Medical Masters (on/off) */}
+                  <Button
+                    size="icon"
+                    variant={brandedBg ? "default" : "secondary"}
+                    onClick={() => setBrandedBg((v) => !v)}
+                    title={brandedBg ? t('dailyVideoPlayer.tipBgOff') : t('dailyVideoPlayer.tipBgOn')}
+                    aria-label={brandedBg ? t('dailyVideoPlayer.tipBgOff') : t('dailyVideoPlayer.tipBgOn')}
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    {brandedBg ? <ImageIcon className="w-4 h-4" /> : <ImageOff className="w-4 h-4" />}
+                  </Button>
                 </>
               )}
 
@@ -672,26 +774,32 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                   size="icon"
                   variant={viewerAudioMuted ? "destructive" : "secondary"}
                   onClick={toggleViewerAudio}
+                  title={viewerAudioMuted ? t('dailyVideoPlayer.tipUnmuteViewer') : t('dailyVideoPlayer.tipMuteViewer')}
+                  aria-label={viewerAudioMuted ? t('dailyVideoPlayer.tipUnmuteViewer') : t('dailyVideoPlayer.tipMuteViewer')}
                   className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
                 >
                   {viewerAudioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </Button>
               )}
-              
+
               <Button
                 size="icon"
                 variant="secondary"
                 onClick={handleFullscreenClick}
+                title={resolvedFullscreen ? t('dailyVideoPlayer.tipExitFullscreen') : t('dailyVideoPlayer.tipFullscreen')}
+                aria-label={resolvedFullscreen ? t('dailyVideoPlayer.tipExitFullscreen') : t('dailyVideoPlayer.tipFullscreen')}
                 className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
               >
                 {resolvedFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </Button>
-              
+
               {isOwner && (
                 <Button
                   size="icon"
                   variant="destructive"
                   onClick={leaveCall}
+                  title={t('dailyVideoPlayer.tipLeave')}
+                  aria-label={t('dailyVideoPlayer.tipLeave')}
                   className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
                 >
                   <PhoneOff className="w-4 h-4" />

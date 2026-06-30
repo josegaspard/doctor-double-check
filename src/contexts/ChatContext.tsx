@@ -377,12 +377,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const userType = getUserType();
     if (!userType) return { success: false, error: tContext('contextErrors.invalidUserType') };
 
-    // CRITICAL: Block patient-resident chat
+    // Candados de chat (cliente 2026-06-29):
+    //  - Los pacientes NO pueden chatear entre sí (solo con su doctor).
+    //  - Pacientes ↔ residentes bloqueado.
+    //  - Residentes chatean con doctores y residentes, NO con pacientes.
+    if (userType === 'patient' && participantType === 'patient') {
+      return { success: false, error: tContext('contextErrors.patientPatientBlocked') };
+    }
     if (
       (userType === 'patient' && participantType === 'resident') ||
       (userType === 'resident' && participantType === 'patient')
     ) {
       return { success: false, error: tContext('contextErrors.patientResidentBlocked') };
+    }
+
+    // Residentes: para chatear con un doctor deben estar SUSCRITOS a él
+    // (no pagan, pero deben seguirlo) — cliente 2026-06-29.
+    if (userType === 'resident' && participantType === 'doctor') {
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('subscriber_id', user.id)
+        .eq('creator_id', participantId)
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!sub) {
+        return { success: false, error: tContext('contextErrors.residentMustSubscribe') };
+      }
     }
 
     try {

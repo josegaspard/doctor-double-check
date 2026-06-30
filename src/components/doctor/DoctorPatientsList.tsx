@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +20,7 @@ interface PatientInfo {
 
 export function DoctorPatientsList() {
   const { supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const { toggles } = useSiteToggles();
   const CHAT_ENABLED = toggles.enable_patient_chat;
   const navigate = useNavigate();
@@ -166,13 +168,13 @@ export function DoctorPatientsList() {
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="font-medium text-sm truncate">{patient.name}</p>
                   {patient.tier === 'premium' && (
-                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-semibold">★ Premium</span>
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">★ {t('fix20.pages.patientTierPremium')}</span>
                   )}
                   {patient.tier === 'basic' && (
-                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">Básico</span>
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold">{t('fix20.pages.patientTierBasic')}</span>
                   )}
                   {patient.source === 'subscriber' && patient.tier === 'free' && (
-                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">Seguidor</span>
+                    <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{t('fix20.pages.patientTierFollower')}</span>
                   )}
                 </div>
                 {patient.lastInteraction && (

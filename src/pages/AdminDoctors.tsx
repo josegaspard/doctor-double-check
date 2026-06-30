@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle, Award } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DoctorDocumentsDialog } from '@/components/admin/DoctorDocumentsDialog';
 
 interface DoctorRequest {
   id: string;
@@ -42,6 +43,7 @@ interface DoctorRequest {
   location: string | null;
   status: 'pending' | 'approved' | 'rejected';
   badge_override: string | null;
+  manual_badge: string | null;
   created_at: string;
   cedula_verification_id: string | null;
   consultation_fee: number;
@@ -78,6 +80,9 @@ export default function AdminDoctors() {
     doctor: null,
     action: 'approve',
   });
+  const [docsDoctor, setDocsDoctor] = useState<DoctorRequest | null>(null);
+  // Distintivo a asignar EN EL MISMO momento de la verificación (cliente 2026-06-30)
+  const [approveBadge, setApproveBadge] = useState<'gold' | 'verified' | 'none'>('none');
 
   useEffect(() => {
     if (user?.role !== 'admin') {
@@ -138,9 +143,14 @@ export default function AdminDoctors() {
 
     try {
       const newStatus = actionDialog.action === 'approve' ? 'approved' : 'rejected';
+      // Al aprobar, guardamos el distintivo elegido en el MISMO update (cliente 2026-06-30).
+      const updatePayload: any = { status: newStatus };
+      if (actionDialog.action === 'approve') {
+        updatePayload.manual_badge = approveBadge === 'none' ? null : approveBadge;
+      }
       const { error } = await supabase
         .from('doctor_profiles')
-        .update({ status: newStatus })
+        .update(updatePayload)
         .eq('id', actionDialog.doctor.id);
 
       if (error) throw error;
@@ -186,6 +196,7 @@ export default function AdminDoctors() {
 
   const [togglingNewsId, setTogglingNewsId] = useState<string | null>(null);
   const [updatingBadgeId, setUpdatingBadgeId] = useState<string | null>(null);
+  const [updatingManualBadgeId, setUpdatingManualBadgeId] = useState<string | null>(null);
   const [verifyingCedulaId, setVerifyingCedulaId] = useState<string | null>(null);
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
 
@@ -272,6 +283,29 @@ export default function AdminDoctors() {
       toast({ title: t('common.error'), description: t('adminDoctorsPage.toasts.errorUpdateBadge'), variant: 'destructive' });
     } finally {
       setUpdatingBadgeId(null);
+    }
+  };
+
+  // Distintivo manual (medalla 🥇 / palomita ✔️) — lo asigna el super-admin (cliente 2026-06-30).
+  const updateManualBadge = async (doctor: DoctorRequest, value: 'gold' | 'verified' | 'none') => {
+    setUpdatingManualBadgeId(doctor.id);
+    try {
+      const newValue = value === 'none' ? null : value;
+      const { error } = await supabase
+        .from('doctor_profiles')
+        .update({ manual_badge: newValue } as any)
+        .eq('id', doctor.id);
+      if (error) throw error;
+      toast({
+        title: t('adminDoctorsPage.manualBadge.updated'),
+        description: `${doctor.profile?.name}: ${value === 'gold' ? t('adminDoctorsPage.manualBadge.gold') : value === 'verified' ? t('adminDoctorsPage.manualBadge.verified') : t('adminDoctorsPage.manualBadge.none')}`,
+      });
+      fetchDoctors();
+    } catch (error) {
+      console.error('Error updating manual badge:', error);
+      toast({ title: t('common.error'), description: t('adminDoctorsPage.manualBadge.error'), variant: 'destructive' });
+    } finally {
+      setUpdatingManualBadgeId(null);
     }
   };
 
@@ -510,6 +544,28 @@ export default function AdminDoctors() {
                                 </Select>
                               )}
                             </div>
+                            {/* Distintivo manual: el super-admin elige el icono (cliente 2026-06-30) */}
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-premium/5 border border-premium/20">
+                              <Award className="w-4 h-4 text-premium" />
+                              <Label className="text-xs flex-1">{t('adminDoctorsPage.manualBadge.label')}</Label>
+                              {updatingManualBadgeId === doctor.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Select
+                                  value={doctor.manual_badge || 'none'}
+                                  onValueChange={(v) => updateManualBadge(doctor, v as 'gold' | 'verified' | 'none')}
+                                >
+                                  <SelectTrigger className="w-36 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
+                                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
+                                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-muted/50">
                               <Newspaper className="w-4 h-4 text-primary" />
                               <Label htmlFor={`news-${doctor.id}`} className="text-xs cursor-pointer flex-1">
@@ -529,28 +585,42 @@ export default function AdminDoctors() {
                         )}
                       </div>
                     </div>
-                    {doctor.status === 'pending' && (
-                      <div className="flex gap-2 mt-2 sm:mt-0">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="bg-success hover:bg-success/90 text-success-foreground flex-1 sm:flex-none"
-                          onClick={() => setActionDialog({ open: true, doctor, action: 'approve' })}
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          {t('admin.approve')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="flex-1 sm:flex-none"
-                          onClick={() => setActionDialog({ open: true, doctor, action: 'reject' })}
-                        >
-                          <XCircle className="w-4 h-4 mr-1" />
-                          {t('admin.reject')}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-2 mt-2 sm:mt-0 sm:items-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 w-full sm:w-auto"
+                        onClick={() => setDocsDoctor(doctor)}
+                      >
+                        <FileText className="w-4 h-4" />
+                        {t('doctorDocuments.viewButton')}
+                      </Button>
+                      {doctor.status === 'pending' && (
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="bg-success hover:bg-success/90 text-success-foreground flex-1 sm:flex-none"
+                            onClick={() => {
+                              setApproveBadge((doctor.manual_badge as 'gold' | 'verified' | null) || 'none');
+                              setActionDialog({ open: true, doctor, action: 'approve' });
+                            }}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            {t('admin.approve')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="flex-1 sm:flex-none"
+                            onClick={() => setActionDialog({ open: true, doctor, action: 'reject' })}
+                          >
+                            <XCircle className="w-4 h-4 mr-1" />
+                            {t('admin.reject')}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -571,6 +641,22 @@ export default function AdminDoctors() {
                   : `${actionDialog.doctor?.profile?.name} ${t('admin.doctorRejectMessage')}`}
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {actionDialog.action === 'approve' && (
+              <div className="flex items-center gap-2 mt-1 mb-1 p-3 rounded-md bg-premium/5 border border-premium/20">
+                <Award className="w-4 h-4 text-premium flex-shrink-0" />
+                <Label className="text-sm flex-1">{t('adminDoctorsPage.manualBadge.assignOnVerify')}</Label>
+                <Select value={approveBadge} onValueChange={(v) => setApproveBadge(v as 'gold' | 'verified' | 'none')}>
+                  <SelectTrigger className="w-40 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
+                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
+                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <AlertDialogFooter>
               <AlertDialogCancel>{t('admin.cancel')}</AlertDialogCancel>
               <AlertDialogAction
@@ -582,6 +668,14 @@ export default function AdminDoctors() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Documentos subidos por el doctor (identidad + diplomas + certificaciones) */}
+        <DoctorDocumentsDialog
+          userId={docsDoctor?.user_id ?? null}
+          doctorName={docsDoctor?.profile?.name ?? null}
+          open={!!docsDoctor}
+          onOpenChange={(open) => { if (!open) setDocsDoctor(null); }}
+        />
       </div>
     </MainLayout>
   );

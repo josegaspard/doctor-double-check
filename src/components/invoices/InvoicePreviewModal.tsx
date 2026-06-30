@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/lib/logger';
 
 interface Invoice {
   id: string;
@@ -72,7 +73,7 @@ export function InvoicePreviewModal({ isOpen, onClose, invoice }: InvoicePreview
       
       try {
         const filePath = extractStoragePath(invoice.file_url);
-        console.log('Invoice file_url:', invoice.file_url, '→ path:', filePath);
+        logger.log('Invoice file_url:', invoice.file_url, '→ path:', filePath);
 
         if (!filePath) throw new Error(t('invoicePreviewModal.errorInvalidFilePath'));
 

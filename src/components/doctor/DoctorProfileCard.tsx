@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Camera, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Camera, Loader2, AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { CredentialStatusBadge, type CredentialStatus } from './CredentialStatusBadge';
 
@@ -27,6 +27,7 @@ export function DoctorProfileCard() {
   const [creds, setCreds] = useState<CredentialsState | null>(null);
   const [credsLoading, setCredsLoading] = useState(true);
   const [credsError, setCredsError] = useState<string | null>(null);
+  const [followersCount, setFollowersCount] = useState<number>(0);
 
   const doctorProfile = user?.doctorProfile;
   const initials = (user?.name || 'Dr').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -39,7 +40,7 @@ export function DoctorProfileCard() {
       const { data, error } = await supabase
         .from('doctor_profiles')
         .select(
-          'cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason'
+          'cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason, followers_count'
         )
         .eq('user_id', supabaseUser.id)
         .maybeSingle();
@@ -53,6 +54,7 @@ export function DoctorProfileCard() {
           cofepris_status: (data.cofepris_status as CredentialStatus) ?? null,
           cofepris_rejection_reason: data.cofepris_rejection_reason ?? null,
         });
+        setFollowersCount(Number((data as any).followers_count) || 0);
       } else {
         setCreds(null);
       }
@@ -156,6 +158,9 @@ export function DoctorProfileCard() {
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               <Badge variant="outline" className="text-[10px]">
                 {doctorProfile?.status === 'approved' ? '✓ Aprobado' : doctorProfile?.status || 'Pendiente'}
+              </Badge>
+              <Badge variant="outline" className="text-[10px] gap-1">
+                <Users className="w-2.5 h-2.5" /> {followersCount} seguidores
               </Badge>
               {credsLoading ? (
                 <>

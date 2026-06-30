@@ -4,8 +4,10 @@ import { pt } from './i18n/pt';
 import { fr } from './i18n/fr';
 import { it } from './i18n/it';
 import { de } from './i18n/de';
+import { ca } from './i18n/ca';
+import { zh } from './i18n/zh';
 
-export type SupportedLanguage = 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+export type SupportedLanguage = 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de' | 'ca' | 'zh';
 
 export const translations = {
   es,
@@ -14,6 +16,8 @@ export const translations = {
   fr,
   it,
   de,
+  ca,
+  zh,
 } as const;
 
 export type TranslationKey = keyof typeof translations.es;

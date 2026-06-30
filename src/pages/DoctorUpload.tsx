@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Upload, Video, FileText, Image, ArrowLeft, CheckCircle, AlertTriangle,
-  Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope,
+  Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope, Globe,
 } from 'lucide-react';
 import { ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,7 +62,7 @@ interface UploadedContent {
   isMasterclass?: boolean;
 }
 
-export default function DoctorUpload() {
+export default function DoctorUpload({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { toast } = useToast();
@@ -75,7 +75,7 @@ export default function DoctorUpload() {
   const [category, setCategory] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [audienceType, setAudienceType] = useState<ContentAudience>('all');
-  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
+  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | 'both' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
@@ -122,10 +122,10 @@ export default function DoctorUpload() {
     loadContent();
   }, [user?.id]);
 
-  // Redirect non-doctors
+  // Redirect non-doctors (but not when embedded inside another page, e.g. Education)
   React.useEffect(() => {
-    if (role !== 'doctor') navigate('/lives');
-  }, [role, navigate]);
+    if (!embedded && role !== 'doctor') navigate('/lives');
+  }, [role, navigate, embedded]);
 
   if (role !== 'doctor') return null;
 
@@ -287,16 +287,21 @@ export default function DoctorUpload() {
 
   const deleteCount = deleteTarget ? 1 : selectedIds.size;
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 hidden sm:inline-flex">
-          <ArrowLeft className="w-4 h-4 mr-2" />{t('doctorUploadPage.backToPanel')}
-        </Button>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl'}>
+        {!embedded && (
+          <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 hidden sm:inline-flex">
+            <ArrowLeft className="w-4 h-4 mr-2" />{t('doctorUploadPage.backToPanel')}
+          </Button>
+        )}
 
-        <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
-          <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />{t('doctorUploadPage.pageTitle')}
-        </h1>
+        {!embedded && (
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />{t('doctorUploadPage.pageTitle')}
+          </h1>
+        )}
 
         {/* Verification Warning */}
         {!isApproved && (
@@ -330,7 +335,7 @@ export default function DoctorUpload() {
             {/* Content Target Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-semibold">{t('doctorUploadPage.audienceQuestion')}</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => { setContentTarget('medical'); setAudienceType('professionals'); }}
@@ -358,6 +363,21 @@ export default function DoctorUpload() {
                     <div className="min-w-0 flex-1">
                       <p className={`font-semibold text-sm ${contentTarget === 'patients' ? 'text-primary' : 'text-foreground'}`}>{t('doctorUploadPage.patientsContentLabel')}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.patientsContentSubtitle')}</p>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setContentTarget('both'); setAudienceType('all'); }}
+                  className={`text-left p-3 sm:p-4 rounded-xl border-2 transition-all ${contentTarget === 'both' ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:border-primary/40'}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${contentTarget === 'both' ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`font-semibold text-sm ${contentTarget === 'both' ? 'text-primary' : 'text-foreground'}`}>{t('doctorUploadPage.bothContentLabel')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.bothContentSubtitle')}</p>
                     </div>
                   </div>
                 </button>
@@ -573,6 +593,6 @@ export default function DoctorUpload() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -4,6 +4,7 @@ import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
+import { DmcaBadge } from '@/components/layout/DmcaBadge';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 
 interface Props {
@@ -77,6 +78,7 @@ const HREF_I18N_MAP: Record<string, string> = {
   '/security': 'landingFooter.security',
   '/compliance': 'landingFooter.compliance',
   '/arco': 'landingFooter.arco',
+  '/dmca': 'landingFooter.dmca',
   '/report-issue': 'landingFooter.report',
   '/advertising': 'ads.advertising',
 };
@@ -107,7 +109,15 @@ export function UnifiedFooter({ variant }: Props) {
     : footerLinks.resources;
   const resourcesLinks = resourcesLinksRaw.map(translateLink);
 
-  const legalLinks = footerLinks.legal.map(translateLink);
+  // Garantizar SIEMPRE el enlace de Términos y Condiciones en el footer
+  // (cliente 2026-06-29), aunque un override de site_settings lo haya quitado.
+  const legalWithTerms = footerLinks.legal.some(l => l.href === '/terms')
+    ? footerLinks.legal
+    : [{ label: 'Términos y Condiciones', href: '/terms' }, ...footerLinks.legal];
+  const legalLinksRaw = legalWithTerms.some(l => l.href === '/dmca')
+    ? legalWithTerms
+    : [...legalWithTerms, { label: 'Protección DMCA', href: '/dmca' }];
+  const legalLinks = legalLinksRaw.map(translateLink);
 
   // Copyright: el superadministrador puede sobrescribirlo desde /admin/site-settings
   // (site_settings → footer_links.copyright). Si no lo definió, se usa el texto
@@ -149,12 +159,15 @@ export function UnifiedFooter({ variant }: Props) {
 
           <div className="border-t border-white/30 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-xs text-white font-medium">{copyright}</p>
-            {footerLinks.show_status_badge && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span className="text-success font-bold text-xs">{t('landingFooter.allSystems')}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {footerLinks.show_status_badge && (
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-white font-semibold text-xs">{t('landingFooter.allSystems')}</span>
+                </div>
+              )}
+              <DmcaBadge />
+            </div>
           </div>
         </div>
       </footer>
@@ -162,7 +175,12 @@ export function UnifiedFooter({ variant }: Props) {
   }
 
   return (
-    <footer className="bg-[#227787] pt-12 sm:pt-20 pb-8 sm:pb-10 text-white border-t border-transparent text-sm">
+    <footer
+      className="relative bg-[#227787] pt-14 sm:pt-24 pb-8 sm:pb-10 text-white border-t-0 text-sm"
+      // Un solo bloque: el footer arranca EXACTO con el navy de la sección de arriba (#163a83)
+      // y degrada en SÓLIDO (color→color, sin transparencia) hasta el teal del footer. Sin costura.
+      style={{ backgroundImage: 'linear-gradient(to bottom, #163a83 0px, #1c5a82 110px, #227787 230px)' }}
+    >
       <div className="container mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-10 mb-10 sm:mb-16">
           <div className="col-span-2 md:col-span-2 xl:col-span-2">
@@ -175,19 +193,20 @@ export function UnifiedFooter({ variant }: Props) {
 
           <FooterLinkColumn title={t('landingFooter.platform')} links={platformLinks} />
           <FooterLinkColumn title={t('landingFooter.resources')} links={resourcesLinks} />
-          <FooterLinkColumn title={t('landingFooter.legal')} links={footerLinks.legal} />
+          <FooterLinkColumn title={t('landingFooter.legal')} links={legalLinks} />
         </div>
 
         <div className="border-t border-white/30 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs sm:text-sm text-center sm:text-left text-white font-medium">{copyright}</p>
-          {footerLinks.show_status_badge && (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/25 border border-success/60">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span className="text-success font-bold text-xs">{t('landingFooter.allSystems')}</span>
+          <div className="flex items-center gap-4">
+            {footerLinks.show_status_badge && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-white font-semibold text-xs">{t('landingFooter.allSystems')}</span>
               </div>
-            </div>
-          )}
+            )}
+            <DmcaBadge />
+          </div>
         </div>
       </div>
     </footer>

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
+import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
@@ -164,6 +165,7 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
 
 export default function LivesGrid() {
   const { lives, isLoading, refreshLives, credentialsLoadError, credentialsRetrying, retryCredentials } = useLives();
+  const { data: interests = [] } = useUserInterests();
   const { role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
@@ -193,6 +195,15 @@ export default function LivesGrid() {
     if (selectedCity && (l as any).location !== selectedCity) return false;
     return true;
   });
+
+  // Recomendación (cliente 2026-06-29): cuando el usuario NO eligió un filtro
+  // manual, priorizamos los lives afines a lo que ha buscado (sus intereses).
+  if (!selectedSpecialty && !selectedTag && !selectedCity && interests.length) {
+    filteredLives.sort((a, b) =>
+      interestScore(`${b.title} ${b.specialty}`, interests) -
+      interestScore(`${a.title} ${a.specialty}`, interests)
+    );
+  }
 
   // Track known IDs to detect new ones for animation
   const knownIdsRef = useRef<Set<string>>(new Set());
@@ -397,16 +408,16 @@ export default function LivesGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {selectedSpecialty || selectedTag || selectedCity ? 'No hay lives con estos filtros' : t('lives.noLives')}
+              {selectedSpecialty || selectedTag || selectedCity ? t('lives.noLivesFiltered') : t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground text-sm">
               {selectedSpecialty || selectedTag || selectedCity
-                ? 'Prueba quitando filtros para ver más transmisiones'
+                ? t('lives.noLivesFilteredDesc')
                 : t('lives.noLivesDescription')}
             </p>
             {(selectedSpecialty || selectedTag || selectedCity) && (
               <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); }}>
-                Quitar filtros
+                {t('lives.clearFilters')}
               </Button>
             )}
           </Card>

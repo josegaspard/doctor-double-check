@@ -63,7 +63,7 @@ import { CalendarGrid } from '@/components/availability/CalendarGrid';
 
 type ViewMode = 'month' | 'week' | 'day';
 
-export default function DoctorAvailabilityPage() {
+export default function DoctorAvailabilityPage({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, role, isLoading: isAuthLoading } = useAuth();
   const { language, t } = useLanguage();
@@ -109,21 +109,23 @@ export default function DoctorAvailabilityPage() {
   } | null>(null);
   const [isNotifyingMove, setIsNotifyingMove] = useState(false);
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+
   if (isAuthLoading) {
     return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-12">
+      <Wrapper>
+        <div className={embedded ? 'py-12' : 'container mx-auto px-4 py-12'}>
           <div className="flex items-center justify-center gap-3 text-muted-foreground">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
             <span>{t('common.loading')}</span>
           </div>
         </div>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
   if (role !== 'doctor') {
-    navigate('/lives');
+    if (!embedded) navigate('/lives');
     return null;
   }
 
@@ -324,20 +326,22 @@ export default function DoctorAvailabilityPage() {
     //   live → Metallic Blue (--secondary) — el más prominente
     //   consultation → Blue Lagoon (--primary)
     //   office_hours → Comfort Blue (--accent)
-    live: { color: 'bg-secondary/15 text-secondary', icon: Video, label: 'Live' },
-    consultation: { color: 'bg-primary/10 text-primary', icon: MessageSquare, label: t('availabilityPage.consultation') },
-    office_hours: { color: 'bg-accent/15 text-accent', icon: Clock, label: t('availabilityPage.available') },
+    live: { color: 'bg-[#163a83] text-white', icon: Video, label: 'Live' },
+    consultation: { color: 'bg-[#227787] text-white', icon: MessageSquare, label: t('availabilityPage.consultation') },
+    office_hours: { color: 'bg-[#4f6dad] text-white', icon: Clock, label: t('availabilityPage.available') },
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl'}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <Button variant="back" size="icon" onClick={() => navigate('/lives')} className="hidden sm:flex h-9 w-9 flex-shrink-0">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            {!embedded && (
+              <Button variant="back" size="icon" onClick={() => navigate('/lives')} className="hidden sm:flex h-9 w-9 flex-shrink-0">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
             <div>
               <h1 className="text-xl sm:text-2xl font-bold">{t('availability.title')}</h1>
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -358,7 +362,7 @@ export default function DoctorAvailabilityPage() {
                 {isManaging ? t('manage.done') : t('manage.manage')}
               </Button>
             )}
-            <Button onClick={() => { setSelectedEvent(null); setFormData(prev => ({ ...prev, date: currentDate, title: '', description: '' })); setIsDialogOpen(true); }}>
+            <Button onClick={() => { setSelectedEvent(null); setFormData(prev => ({ ...prev, date: currentDate, title: '', description: '' })); setIsDialogOpen(true); }} className={embedded ? 'bg-live hover:bg-live/90 text-white' : undefined}>
               <Plus className="h-4 w-4 mr-2" />
               {t('availability.schedule')}
             </Button>
@@ -388,17 +392,19 @@ export default function DoctorAvailabilityPage() {
           </Tabs>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-3 mb-4">
+        {/* Legend — pills con fondo de marca sólido para que se distingan
+            claramente (cliente 2026-06-19: "estos colores casi no se ven, ponle un
+            fondo"). El accent original (azul claro 72%) era casi invisible. */}
+        <div className="flex flex-wrap gap-2 mb-4">
           {[
-            { color: 'bg-secondary', label: 'Live' },
-            { color: 'bg-primary', label: t('availabilityPage.consultation') },
-            { color: 'bg-accent', label: t('availabilityPage.available') },
+            { color: 'bg-[#163a83]', label: 'Live' },
+            { color: 'bg-[#227787]', label: t('availabilityPage.consultation') },
+            { color: 'bg-[#4f6dad]', label: t('availabilityPage.available') },
           ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <div className={cn('w-3 h-3 rounded-sm', item.color)} />
+            <span key={item.label} className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-white shadow-sm', item.color)}>
+              <span className="w-2 h-2 rounded-full bg-white/90" />
               {item.label}
-            </div>
+            </span>
           ))}
         </div>
 
@@ -554,9 +560,9 @@ export default function DoctorAvailabilityPage() {
                 <Label className="text-xs sm:text-sm">{t('availabilityPage.type')}</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-secondary border-secondary bg-secondary/15' },
-                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: t('availabilityPage.consultation'), color: 'text-primary border-primary bg-primary/10' },
-                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: t('availabilityPage.available'), color: 'text-accent border-accent bg-accent/15' },
+                    { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-white border-[#163a83] bg-[#163a83]' },
+                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: t('availabilityPage.consultation'), color: 'text-white border-[#227787] bg-[#227787]' },
+                    { value: 'office_hours' as AvailabilityType, icon: Clock, label: t('availabilityPage.available'), color: 'text-white border-[#4f6dad] bg-[#4f6dad]' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -840,6 +846,6 @@ export default function DoctorAvailabilityPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import MainLayout from '@/components/layout/MainLayout';
 import PaywallModal from '@/components/PaywallModal';
 import { HoverPlayCard } from '@/components/recordings/HoverPlayCard';
+import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,12 +42,17 @@ type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 
-export default function RecordingsGrid() {
+export default function RecordingsGrid({ embedded = false }: { embedded?: boolean } = {}) {
+  // embedded=true: se renderiza DENTRO de otra página (p.ej. /education → pestaña
+  // "Contenido premium") sin su propio MainLayout/footer ni el min-h-screen, para
+  // que el contenido se abra abajo igual que Casos clínicos/Reuniones. Cliente 2026-06-22.
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const navigate = useNavigate();
   const { specialtyValues } = useSpecialties();
   const [searchParams] = useSearchParams();
   const doctorFilter = searchParams.get('doctor');
   const { recordings, refreshRecordings } = useLives();
+  const { data: interests = [] } = useUserInterests();
   const { user, role, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -101,6 +107,15 @@ export default function RecordingsGrid() {
       default: return true;
     }
   });
+
+  // Recomendación (cliente 2026-06-30): sin filtro manual, priorizar grabaciones
+  // afines a lo que el usuario ha buscado (sus intereses).
+  if (!searchQuery && !selectedSpecialty && !doctorFilter && !selectedTag && !selectedDoctor && interests.length) {
+    filteredRecordings.sort((a, b) =>
+      interestScore(`${b.title} ${b.specialty}`, interests) -
+      interestScore(`${a.title} ${a.specialty}`, interests)
+    );
+  }
 
   // Prefetch del signed URL en hover. Si el user hace click después, el URL
   // ya está en sessionStorage cache y RecordingPlayer lo aplica al instante.
@@ -208,10 +223,25 @@ export default function RecordingsGrid() {
   ];
 
   return (
-    <MainLayout>
-      <div className="relative min-h-screen overflow-hidden">
-        <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-          {/* Hero Header Card */}
+    <Wrapper>
+      <div className={embedded ? 'relative' : 'relative min-h-screen overflow-hidden'}>
+        <div className={embedded ? 'relative z-10' : 'relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl'}>
+          {/* Hero Header Card — sólo en la página propia /recordings.
+              EMBEBIDO en /education (pestaña "Contenido Premium"): el cliente NO quiere
+              la tarjeta blanca que repite "Contenido Premium"; sólo el botón rojo de subir,
+              igual que "Subir caso clínico" (2026-06-24). */}
+          {embedded ? (
+            (isAuthenticated && role === 'doctor') && (
+              <div className="mb-4">
+                <Link to="/doctor/upload">
+                  <Button size="lg" variant="live" className="w-full sm:w-auto gap-2 min-h-[48px] font-semibold shadow-lg shadow-live/30">
+                    <Upload className="w-5 h-5" />
+                    {t('recordingsGridPage.uploadContent')}
+                  </Button>
+                </Link>
+              </div>
+            )
+          ) : (
           <div className="mb-6 rounded-2xl border-2 border-primary/40 bg-card p-5 sm:p-6 shadow-xl dark:bg-[hsl(223,55%,18%)]">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -230,7 +260,7 @@ export default function RecordingsGrid() {
                   )}
                 </p>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 {isAuthenticated && role === 'doctor' && (
                   <Link to="/doctor/upload">
@@ -251,6 +281,7 @@ export default function RecordingsGrid() {
               </div>
             </div>
           </div>
+          )}
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
@@ -608,6 +639,6 @@ export default function RecordingsGrid() {
         canAfford={canAffordSelected}
         balance={balance}
       />
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -29,6 +29,9 @@ interface VideoCallControlsProps {
   onSwitchCamera?: () => void;
   showChat: boolean;
   isDoctor?: boolean;
+  /** Quién puede compartir pantalla. En reuniones también los residentes (cliente 2026-06-29).
+   *  Si no se pasa, se usa isDoctor para mantener el comportamiento previo en consultas 1:1. */
+  canScreenShare?: boolean;
   /** Mensajes no leídos del chat de la llamada — badge rojo sobre el icono */
   unreadChatCount?: number;
 }
@@ -46,8 +49,12 @@ export function VideoCallControls({
   onSwitchCamera,
   showChat,
   isDoctor = false,
+  canScreenShare,
   unreadChatCount = 0,
 }: VideoCallControlsProps) {
+  // Compartir pantalla: por defecto solo el doctor (consulta 1:1); en reuniones
+  // se pasa canScreenShare=true también para residentes.
+  const allowScreenShare = canScreenShare ?? isDoctor;
   const isMobile = useIsMobile();
   // Botón base con tamaño consistent y touch-target ≥44px (iOS HIG)
   const btnBase = 'rounded-full w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center transition-colors touch-manipulation flex-shrink-0';
@@ -112,8 +119,9 @@ export function VideoCallControls({
           </Button>
         )}
 
-        {/* Screen share: solo doctor + desktop (mobile no soporta bien getDisplayMedia en Safari iOS) */}
-        {isDoctor && !isMobile && (
+        {/* Screen share: doctor (consulta) o doctor/residente (reunión) + desktop
+            (mobile no soporta bien getDisplayMedia en Safari iOS) */}
+        {allowScreenShare && !isMobile && (
           <Button
             variant="ghost"
             size="lg"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -13,12 +13,9 @@ import iconRetransmision from '@/assets/landing/icons/RETRANSMISION.svg';
 import iconGlobal from '@/assets/landing/icons/GLOBAL.svg';
 import iconMedicos from '@/assets/landing/icons/MEDICOS.svg';
 import iconStream from '@/assets/landing/icons/STREAM.svg';
-import doctor1 from '@/assets/landing/people/doctor1.jpg';
-import doctor2 from '@/assets/landing/people/doctor2.jpg';
-import doctor3 from '@/assets/landing/people/doctor3.jpg';
-import doctor4 from '@/assets/landing/people/online-consult.jpg';
 import surgeryPhoto from '@/assets/landing/people/surgery.jpg';
-import doctorLivePhoto from '@/assets/landing/people/live-drmike.png';
+import doctorLivePhoto from '@/assets/landing/people/live-doctor.jpeg';
+import livesGridPhoto from '@/assets/landing/people/fotos-lives.jpg';
 import {
   ArrowRight,
   Star,
@@ -39,12 +36,17 @@ import {
   Video,
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 
 export default function Landing() {
   const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
 
   const [showDemoModal, setShowDemoModal] = useState(false);
+
+  // Video del home: SIN autoplay (cliente 2026-06-29). Se reproduce solo cuando
+  // el usuario pulsa play en los controles nativos del <video>.
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Scroll effect for navbar
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function Landing() {
 
 
   return (
-    <div className="font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#227787] selection:text-white">
+    <div className="landing-page font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#227787] selection:text-white">
       {/* Demo Video Modal */}
       <DemoVideoModal open={showDemoModal} onOpenChange={setShowDemoModal} />
 
@@ -69,8 +71,8 @@ export default function Landing() {
       </div>
 
       {/* Navigation */}
-      <nav className={`fixed w-full z-50 transition-all duration-500 top-0 border-b ${scrolled ? 'border-gray-100' : 'border-transparent'}`}>
-        <div className={`absolute inset-0 transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-lg shadow-sm' : 'bg-transparent'}`} />
+      <nav className={`landing-nav fixed w-full z-50 transition-all duration-500 top-0 ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="landing-nav-surface absolute inset-0 transition-all duration-500" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
           <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
             <Link to="/" className="flex items-center gap-2 group">
@@ -88,6 +90,8 @@ export default function Landing() {
                 <a href="#reviews" className={`px-5 py-2 text-sm font-medium rounded-full transition-all ${scrolled ? 'text-gray-700 hover:bg-gray-200' : 'text-white hover:bg-white/20'}`}>{t('landing.nav.reviews')}</a>
               </div>
 
+              <LanguageSwitcher unstyled className={`mr-3 rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`} />
+
               <Link
                 to="/app"
                 className="relative overflow-hidden group bg-[#227787] hover:bg-white text-white hover:text-[#163a83] font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(0,118,139,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] border border-transparent hover:border-[#163a83]"
@@ -98,16 +102,19 @@ export default function Landing() {
               </Link>
             </div>
 
-            <Link
-              to="/app"
-              className={`lg:hidden font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
-                scrolled
-                  ? 'bg-[#227787] text-white'
-                  : 'bg-white/20 backdrop-blur-md text-white border border-white/30'
-              }`}
-            >
-              {t('landing.nav.enter')}
-            </Link>
+            <div className="lg:hidden flex items-center gap-2">
+              <LanguageSwitcher unstyled className={`rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`} />
+              <Link
+                to="/app"
+                className={`font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
+                  scrolled
+                    ? 'bg-[#227787] text-white'
+                    : 'bg-white/20 backdrop-blur-md text-white border border-white/30'
+                }`}
+              >
+                {t('landing.nav.enter')}
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -160,8 +167,17 @@ export default function Landing() {
               </div>
 
               <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
-                {t('landing.hero.titleLine1')}<br />{t('landing.hero.titleLine2')}<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#227787] to-[#839ed5]">{t('landing.hero.titleLine3')}</span>
+                {t('landing.hero.titleLine1')}<br />
+                {/* titleLine3 vacío (cliente 2026-06-19: quitar "VIP") → el gradiente
+                    pasa a la línea 2 para que el título no quede sin acento. */}
+                {t('landing.hero.titleLine3') ? (
+                  <>
+                    {t('landing.hero.titleLine2')}<br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#227787] to-[#839ed5]">{t('landing.hero.titleLine3')}</span>
+                  </>
+                ) : (
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#aed3d9] via-[#227787] to-[#839ed5]">{t('landing.hero.titleLine2')}</span>
+                )}
               </h1>
 
               <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 font-light leading-relaxed">
@@ -171,23 +187,6 @@ export default function Landing() {
                 {t('landing.hero.description')}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-1">
-                <Link
-                  to="/app"
-                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-bold text-white bg-[#227787] rounded-full shadow-[0_0_30px_rgba(0,118,139,0.45)] hover:bg-[#00879f] hover:shadow-[0_0_45px_rgba(0,118,139,0.7)] hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2 -ml-0.5 rotate-[-45deg]" />
-                  <span>{t('landing.hero.ctaPrimary')}</span>
-                </Link>
-                <button
-                  onClick={() => setShowDemoModal(true)}
-                  className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-white border border-white/25 rounded-full hover:bg-white/10 hover:border-white/50 transition-all backdrop-blur-md group"
-                >
-                  <PlayCircle className="w-4 h-4 mr-2 text-[#aed3d9] group-hover:scale-110 transition-transform" />
-                  {t('landing.hero.ctaSecondary')}
-                </button>
-              </div>
-
               {/* Mobile stat chips — restaurados 2026-06-02 con SOLO títulos (sin números). */}
               <div className="grid grid-cols-3 gap-2 mt-3 md:hidden">
                 {[
@@ -195,11 +194,30 @@ export default function Landing() {
                   { img: iconMedicos, label: t('landing.hero.activeDoctors') },
                   { img: iconStream, label: t('landing.hero.streaming') },
                 ].map((s, i) => (
-                  <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2 rounded-xl border border-white/15 shadow-xl flex flex-col items-center text-center gap-1">
+                  <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2.5 rounded-xl border border-white/15 shadow-lg flex flex-col items-center text-center gap-1.5">
                     <img src={s.img} alt="" className="w-5 h-5" />
                     <p className="text-[9px] leading-tight text-slate-200 font-semibold">{s.label}</p>
                   </div>
                 ))}
+              </div>
+
+              {/* CTA móvil — el hero no tenía botón de acción en móvil (cliente 2026-06-17). Solo móvil; desktop intacto. */}
+              <div className="flex flex-col gap-2.5 pt-1 md:hidden">
+                <Link
+                  to="/app"
+                  className="group inline-flex items-center justify-center gap-2 w-full bg-[#227787] hover:bg-[#1a606e] active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-full shadow-[0_10px_30px_-6px_rgba(34,119,135,0.65)] ring-1 ring-[#aed3d9]/30 transition-all text-sm uppercase tracking-wider"
+                >
+                  {t('landing.hero.ctaPrimary')}
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowDemoModal(true)}
+                  className="inline-flex items-center justify-center gap-2 w-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-full border border-white/25 transition-all text-sm"
+                >
+                  <PlayCircle className="w-4 h-4 text-[#aed3d9]" />
+                  {t('landing.hero.ctaSecondary')}
+                </button>
               </div>
             </div>
 
@@ -209,30 +227,17 @@ export default function Landing() {
 
           {/* Floating cards — absolute over the whole hero, spread to extreme left/right so the doctor stays clear */}
           <div className="hidden md:block absolute inset-0 pointer-events-none z-10">
-            {/* TOP LEFT-OF-DOCTOR — Recuadro de llamada estilo FaceTime con 4 fotos de perfil.
-                Restaurado 2026-06-02: fotos reales en vez de iniciales (fallback a iniciales si la imagen falla). */}
-            <div className="absolute top-[172px] xl:top-[188px] left-1/2 xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 xl:translate-x-0 hidden xl:block pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] 2xl:w-[170px]" style={{ animationDuration: '7s' }}>
-              <div className="grid grid-cols-2 gap-1">
-                {[
-                  { img: doctor1, from: '#839ed5', to: '#163a83', initials: 'CM' },
-                  { img: doctor2, from: '#227787', to: '#0b1d45', initials: 'LF' },
-                  { img: doctor3, from: '#aed3d9', to: '#227787', initials: 'MR' },
-                  { img: doctor4, from: '#163a83', to: '#839ed5', initials: 'JP' },
-                ].map((d, i) => (
-                  <div key={i} className="aspect-video rounded flex items-center justify-center text-white text-[9px] font-bold relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${d.from}, ${d.to})` }}>
-                    <span className="absolute inset-0 flex items-center justify-center opacity-90">{d.initials}</span>
-                    <img
-                      src={d.img}
-                      alt=""
-                      loading="lazy"
-                      className="relative w-full h-full object-cover object-top"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                    />
-                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-white/60" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[10px] text-white/75 font-medium mt-1.5">{t('landing.hero.doctorsOnline')}</p>
+            {/* MID LEFT-OF-DOCTOR — Tarjeta tipo FaceTime: 4 médicos en directo.
+                Reposicionada 2026-06-16 (cliente): DEBAJO de la barra de stats y a la izquierda del doctor,
+                igual que el diseño de referencia (no en la esquina superior, ya no choca con el titular). */}
+            <div className="absolute top-[160px] lg:top-[168px] xl:top-[184px] left-1/2 lg:left-[47%] xl:left-[44%] 2xl:left-[40%] -translate-x-1/2 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[170px] lg:w-[190px]" style={{ animationDuration: '6s' }}>
+              <img
+                src={livesGridPhoto}
+                alt=""
+                loading="lazy"
+                className="block w-full h-auto"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
             </div>
 
             {/* Right-side cards — restauradas 2026-06-02 con fotos ilustrativas y SIN números/datos. */}
@@ -244,23 +249,22 @@ export default function Landing() {
                   src={doctorLivePhoto}
                   alt=""
                   loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover object-top"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1 z-10">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
-                </span>
               </div>
             </div>
 
-            {/* MID RIGHT — Signos Vitales (sin número de bpm, solo waveform + texto) */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] lg:w-[170px]" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
+            {/* MID RIGHT — Signos Vitales (sin número de bpm, solo waveform + texto).
+                z-20 + posición al 42% para que NUNCA quede oculta detrás de la tarjeta
+                de Retransmisión Quirúrgica en pantallas de menor altura (fix 2026-06-29). */}
+            <div className="absolute top-[42%] -translate-y-1/2 right-3 lg:right-6 xl:right-10 z-20 pointer-events-auto bg-white/10 backdrop-blur-xl p-2.5 lg:p-3 rounded-xl border border-white/15 shadow-2xl animate-float w-[150px] lg:w-[170px]" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-[11px] font-medium text-white/85">{t('landing.hero.vitalSigns')}</span>
-                <HeartPulse className="w-3 h-3 text-rose-300" />
+                <HeartPulse className="w-3 h-3 text-primary" />
               </div>
               <p className="text-[9px] text-slate-300/80 mb-1">{t('landing.hero.realTime')}</p>
-              <svg className="w-full h-6 text-rose-300 mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-full h-6 text-primary mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
               </svg>
             </div>
@@ -282,7 +286,7 @@ export default function Landing() {
               <div className="p-2">
                 <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
                 <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  <span className="w-1 h-1 rounded-full bg-primary" />
                   {t('landing.hero.watchingNow')}
                 </p>
               </div>
@@ -297,7 +301,7 @@ export default function Landing() {
                 ))}
               </div>
               <p className="text-[9px] text-slate-300/80 flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                 {t('landing.hero.realTime')}
               </p>
             </div>
@@ -340,7 +344,6 @@ export default function Landing() {
               <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
               <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
               <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><HeartPulse className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.paymentsMxn')}</span>
             </div>
           ))}
         </div>
@@ -416,14 +419,16 @@ export default function Landing() {
               </p>
             </div>
 
+            {/* Video del Home SIN autoplay (cliente 2026-06-29): se reproduce SOLO al
+                dar clic en el botón play de los controles nativos, con sonido. */}
             <div className="relative w-full max-w-5xl mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-black">
               <video
-                autoPlay
-                muted
-                loop
+                ref={videoRef}
+                controls
                 playsInline
+                preload="metadata"
                 className="w-full aspect-video object-cover"
-                src="https://gestomarketing.com.mx/wp-content/uploads/2026/03/Video_de_Landing_Page_Hiperrealista-1-1.mp4"
+                src="/landing-inmersiva.mp4"
               />
             </div>
           </div>
@@ -525,7 +530,6 @@ export default function Landing() {
               {[
                 { title: t('landing.includes.video.title'), desc: t('landing.includes.video.desc'), icon: <Video className="w-5 h-5" /> },
                 { title: t('landing.includes.lives.title'), desc: t('landing.includes.lives.desc'), icon: <PlayCircle className="w-5 h-5" /> },
-                { title: t('landing.includes.prescriptions.title'), desc: t('landing.includes.prescriptions.desc'), icon: <Check className="w-5 h-5" /> },
                 { title: t('landing.includes.records.title'), desc: t('landing.includes.records.desc'), icon: <Lock className="w-5 h-5" /> },
                 { title: t('landing.includes.hospitals.title'), desc: t('landing.includes.hospitals.desc'), icon: <Hospital className="w-5 h-5" /> },
                 { title: t('landing.includes.verification.title'), desc: t('landing.includes.verification.desc'), icon: <ShieldCheck className="w-5 h-5" /> },
@@ -540,80 +544,10 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Pricing / Modelo de negocio REAL */}
-        <section id="pricing" className="py-24 bg-gradient-to-b from-[#0b1d45] to-[#163a83] relative overflow-hidden">
-          <div className="container mx-auto px-6 relative z-10">
-            <div className="text-center mb-16">
-              <span className="text-[#aed3d9] font-bold tracking-widest text-xs uppercase mb-4 block">{t('landing.pricing.eyebrow')}</span>
-              <h2 className="text-4xl font-bold text-white mb-4">{t('landing.pricing.title')}</h2>
-              <p className="text-slate-300 max-w-2xl mx-auto">
-                {t('landing.pricing.subtitle')}
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Pacientes */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#227787]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.patients.title')}</h3>
-                <div className="my-4">
-                  <span className="text-4xl font-bold text-white">{t('landing.pricing.patients.price')}</span>
-                  <span className="text-slate-400"> {t('landing.pricing.patients.priceSuffix')}</span>
-                </div>
-                <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.patients.desc')}</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.patients.cta')}</Link>
-                <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature1')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature2')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature3')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.patients.feature4')}</li>
-                </ul>
-              </div>
-
-              {/* Doctores */}
-              <div className="bg-gradient-to-b from-[#227787] to-[#163a83] rounded-3xl p-8 border-2 border-[#aed3d9]/50 shadow-2xl relative transform scale-105 z-10">
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-400 text-xs font-bold text-black rounded-full uppercase tracking-wider">{t('landing.pricing.doctors.popularBadge')}</span>
-                <h3 className="text-xl font-bold text-white">{t('landing.pricing.doctors.title')}</h3>
-                <div className="my-4">
-                  <span className="text-4xl font-bold text-white">{t('landing.pricing.doctors.price')}</span>
-                  <span className="text-blue-100"> {t('landing.pricing.doctors.priceSuffix')}</span>
-                </div>
-                <p className="text-blue-100 text-sm mb-6">{t('landing.pricing.doctors.desc')}</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl bg-white text-[#163a83] text-center font-bold hover:shadow-xl transition-all">{t('landing.pricing.doctors.cta')}</Link>
-                <ul className="mt-8 space-y-3 text-sm text-blue-50">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature1')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature2')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature3')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature4')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#aed3d9] flex-shrink-0" /> {t('landing.pricing.doctors.feature5')}</li>
-                </ul>
-              </div>
-
-              {/* Residentes */}
-              <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 hover:border-[#227787]/50 transition-all duration-300">
-                <h3 className="text-xl font-bold text-[#aed3d9]">{t('landing.pricing.residents.title')}</h3>
-                <div className="my-4">
-                  <span className="text-4xl font-bold text-white">{t('landing.pricing.residents.price')}</span>
-                  <span className="text-slate-400"> {t('landing.pricing.residents.priceSuffix')}</span>
-                </div>
-                <p className="text-slate-400 text-sm mb-6">{t('landing.pricing.residents.desc')}</p>
-                <Link to="/app" className="block w-full py-3 rounded-xl border border-white/20 text-center font-bold hover:bg-white/10 text-white transition-all">{t('landing.pricing.residents.cta')}</Link>
-                <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature1')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature2')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature3')}</li>
-                  <li className="flex gap-2 items-center"><Check className="w-4 h-4 text-[#227787] flex-shrink-0" /> {t('landing.pricing.residents.feature4')}</li>
-                </ul>
-              </div>
-            </div>
-
-            <p className="text-center text-slate-400 text-xs mt-10 max-w-2xl mx-auto">
-               {t('landing.pricing.disclaimer')}
-            </p>
-          </div>
-        </section>
+        {/* Sección "Modelo transparente" (precios) ELIMINADA por completo a pedido del cliente 2026-06-17. */}
 
         {/* Final CTA */}
-        <section className="py-32 relative overflow-hidden bg-[#163a83] border-t border-white/10">
+        <section className="py-32 relative overflow-hidden bg-[#163a83]">
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#227787]/30 rounded-full blur-[120px]" />
             <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#839ed5]/20 rounded-full blur-[80px]" />
@@ -627,22 +561,30 @@ export default function Landing() {
                {t('landing.finalCta.subtitle')}
             </p>
 
-            <div className="flex flex-col md:flex-row justify-center gap-6">
-              <Link
-                to="/app"
-                className="px-10 py-5 bg-white text-[#163a83] font-bold text-lg rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(255,255,255,0.6)] hover:scale-105 transition-all duration-300"
-              >
-                {t('landing.finalCta.ctaPrimary')}
-              </Link>
-              <Link to="/contact" className="px-10 py-5 border border-white/30 text-white font-bold text-lg rounded-full hover:bg-white/10 transition-all">
-                {t('landing.finalCta.ctaSecondary')}
-              </Link>
-            </div>
+            {/* Los DOS botones CTA de abajo ELIMINADOS a pedido del cliente 2026-06-16:
+                el único acceso a la app queda en el botón de la barra superior. */}
 
             <p className="mt-8 text-sm text-blue-200/60">
                {t('landing.finalCta.footnote')}
             </p>
           </div>
+
+          {/* Borde SUPERIOR uniforme (mismo efecto que el footer, ahora arriba): tapa el blob
+              teal y deja el borde de arriba en #163a83 puro a lo ancho, para que se una SIN
+              costura con la sección de precios de arriba (que termina en ese mismo navy). */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-56"
+            style={{ backgroundImage: 'linear-gradient(to top, rgba(22,58,131,0) 0%, #163a83 78%)' }}
+          />
+
+          {/* Borde inferior uniforme: tapa los blobs y deja el fondo en #163a83 puro a lo ancho,
+              para que el footer (que arranca en ese mismo navy) se una SIN costura. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-56"
+            style={{ backgroundImage: 'linear-gradient(to bottom, rgba(22,58,131,0) 0%, #163a83 78%)' }}
+          />
         </section>
       </main>
 

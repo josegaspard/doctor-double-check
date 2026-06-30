@@ -217,6 +217,10 @@ export default function VideoCall() {
   const consultationId = searchParams.get('consultation');
   const autoJoin = searchParams.get('autojoin') === '1';
   const isDoctor = role === 'doctor';
+  // Reunión multi-médico (no consulta 1:1): trae meetingId en la URL.
+  const isMeeting = !!searchParams.get('meetingId');
+  // En reuniones, doctores Y residentes pueden compartir pantalla (cliente 2026-06-29).
+  const canScreenShare = isDoctor || (isMeeting && role === 'resident');
 
   const {
     callState,
@@ -671,6 +675,7 @@ export default function VideoCall() {
               onSwitchCamera={switchCamera}
               showChat={showChat}
               isDoctor={isDoctor}
+              canScreenShare={canScreenShare}
               unreadChatCount={unreadChatCount}
             />
           </>
@@ -791,6 +796,7 @@ export default function VideoCall() {
                     onSwitchCamera={switchCamera}
                     showChat={showChat}
                     isDoctor={isDoctor}
+                    canScreenShare={canScreenShare}
                   />
                 </div>
                 {/* Lateral patient record panel — doctor only, desktop */}

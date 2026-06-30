@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +19,7 @@ import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle
 import { AppRole as UserRole } from '@/types/database';
 import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -31,7 +33,17 @@ export default function Login() {
   const { t } = useLanguage();
   
   const preferredRole = (location.state as any)?.preferredRole || 'patient';
-  
+
+  // Insignia de rol (cliente 2026-06-26): login y registro deben verse DISTINTOS según
+  // el rol elegido en /app (paciente/residente/doctor). Cada rol = ícono + degradado de marca propio.
+  const ROLE_META = {
+    patient: { Icon: User, labelKey: 'roles.patient', gradient: 'linear-gradient(120deg, #227787 0%, #2a6a86 100%)' },
+    doctor: { Icon: Stethoscope, labelKey: 'roles.doctor', gradient: 'linear-gradient(120deg, #163a83 0%, #227787 100%)' },
+    resident: { Icon: GraduationCap, labelKey: 'roles.resident', gradient: 'linear-gradient(120deg, #227787 0%, #839ed5 100%)' },
+  } as const;
+  const roleMeta = ROLE_META[preferredRole as keyof typeof ROLE_META] || ROLE_META.patient;
+  const RoleBadgeIcon = roleMeta.Icon;
+
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -44,8 +56,18 @@ export default function Login() {
   const [registerRole, setRegisterRole] = useState<Exclude<UserRole, 'visitor' | 'admin'>>(preferredRole);
   const [registerSpecialty, setRegisterSpecialty] = useState('');
   const [registerInstitution, setRegisterInstitution] = useState('');
+  const [registerCountry, setRegisterCountry] = useState('');
+  const [registerCedula, setRegisterCedula] = useState('');
+  const [registerHospital, setRegisterHospital] = useState('');
+  const [registerUniversity, setRegisterUniversity] = useState('');
+  const [registerDoctorCode, setRegisterDoctorCode] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Casillas de aceptación obligatorias en el registro (pedido cliente 2026-06-30):
+  // T&C + Privacidad para TODOS; Código de Ética solo doctor/residente.
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [acceptedEthics, setAcceptedEthics] = useState(false);
+  const needsEthics = registerRole === 'doctor' || registerRole === 'resident';
 
   // MIGRATION 2026-05-08: OAuth temporalmente deshabilitado hasta que el cliente
   // tenga su propio OAuth client en Google Cloud. Flip a true para reactivar.
@@ -171,13 +193,28 @@ export default function Login() {
       return;
     }
 
+    // Aceptación legal obligatoria
+    if (!acceptedLegal) {
+      setRegisterError(t('login.mustAcceptLegal'));
+      return;
+    }
+    if (needsEthics && !acceptedEthics) {
+      setRegisterError(t('login.mustAcceptEthics'));
+      return;
+    }
+
     const result = await register({
       email: registerEmail,
       password: registerPassword,
       name: registerName,
       role: registerRole,
       specialty: registerSpecialty,
-      institution: registerInstitution,
+      institution: registerHospital || registerUniversity || registerInstitution,
+      country: registerCountry,
+      cedula: registerCedula,
+      hospital: registerHospital,
+      university: registerUniversity,
+      doctorCode: registerDoctorCode,
     });
 
     if (result.success) {
@@ -212,6 +249,20 @@ export default function Login() {
       {/* Main */}
       <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
         <div className="w-full max-w-md">
+          {/* Insignia de rol (cliente 2026-06-26): muestra con qué rol estás entrando.
+              El super admin entra por "Soy Médico" y el routing lo manda a /admin. */}
+          <div
+            className="mb-4 flex items-center gap-3 rounded-xl px-4 py-3 text-white shadow-lg"
+            style={{ backgroundImage: roleMeta.gradient }}
+          >
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25">
+              <RoleBadgeIcon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-white/75">{t('login.accessAs')}</p>
+              <p className="text-base font-bold leading-tight truncate">{t(roleMeta.labelKey)}</p>
+            </div>
+          </div>
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
@@ -376,7 +427,7 @@ export default function Login() {
                         <Label htmlFor="name">{t('login.name')}</Label>
                         <Input
                           id="name"
-                          placeholder="Dr. Juan Pérez"
+                          placeholder={t('fix20.pages.loginNamePlaceholder')}
                           value={registerName}
                           onChange={(e) => setRegisterName(e.target.value)}
                           required
@@ -408,47 +459,117 @@ export default function Login() {
                         <PasswordStrength password={registerPassword} />
                       </div>
                       
+                      {/* Campos por rol (cliente 2026-06-26): el PACIENTE no ve NADA de doctor
+                          (ni código de doctor, ni cédula, ni especialidad/hospital/universidad).
+                          Residente: especialidad + universidad + código de doctor (sin cédula de médico).
+                          Doctor: el set completo. El rol se eligió antes en /app (insignia arriba). */}
                       <div className="space-y-2">
-                        <Label>{t('login.role')}</Label>
-                        <Select value={registerRole} onValueChange={(v) => setRegisterRole(v as any)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="patient">{t('roles.patient')}</SelectItem>
-                            <SelectItem value="doctor">{t('roles.doctor')}</SelectItem>
-                            <SelectItem value="resident">{t('roles.resident')}</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label>{t('login.country')}</Label>
+                        <Input
+                          value={registerCountry}
+                          onChange={(e) => setRegisterCountry(e.target.value)}
+                        />
                       </div>
-                      
+
+                      {/* Especialidad: doctor y residente */}
                       {(registerRole === 'doctor' || registerRole === 'resident') && (
                         <div className="space-y-2">
                           <Label>{t('login.specialty')}</Label>
                           <Input
-                            placeholder="Ej: Cardiología"
+                            placeholder={t('fix20.pages.loginSpecialtyPlaceholder')}
                             value={registerSpecialty}
                             onChange={(e) => setRegisterSpecialty(e.target.value)}
                           />
                         </div>
                       )}
-                      
-                      {registerRole === 'resident' && (
+
+                      {/* Cédula profesional + Hospital: SOLO doctor */}
+                      {registerRole === 'doctor' && (
+                        <>
+                          <div className="space-y-2">
+                            <Label>{t('login.cedula')}</Label>
+                            <Input
+                              value={registerCedula}
+                              onChange={(e) => setRegisterCedula(e.target.value)}
+                            />
+                            <CedulaVerifyLink country={registerCountry} className="pt-0.5" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{t('login.hospital')}</Label>
+                            <Input
+                              value={registerHospital}
+                              onChange={(e) => setRegisterHospital(e.target.value)}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Universidad/Institución: doctor y residente */}
+                      {(registerRole === 'doctor' || registerRole === 'resident') && (
                         <div className="space-y-2">
-                          <Label>{t('login.institution')}</Label>
+                          <Label>{t('login.university')}</Label>
                           <Input
-                            placeholder="Ej: Hospital General"
-                            value={registerInstitution}
-                            onChange={(e) => setRegisterInstitution(e.target.value)}
+                            value={registerUniversity}
+                            onChange={(e) => setRegisterUniversity(e.target.value)}
                           />
                         </div>
                       )}
-                      
+
+                      {/* Código de doctor: doctor y residente — NUNCA paciente */}
+                      {(registerRole === 'doctor' || registerRole === 'resident') && (
+                        <div className="space-y-2">
+                          <Label>{t('login.doctorCode')} <span className="text-muted-foreground font-normal">({t('login.optional')})</span></Label>
+                          <Input
+                            value={registerDoctorCode}
+                            onChange={(e) => setRegisterDoctorCode(e.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      {/* Casillas de aceptación obligatorias (cliente 2026-06-30). */}
+                      <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                          <Checkbox
+                            id="accept-legal"
+                            checked={acceptedLegal}
+                            onCheckedChange={(v) => setAcceptedLegal(v === true)}
+                            className="mt-0.5"
+                          />
+                          <span className="text-xs sm:text-sm leading-snug text-muted-foreground">
+                            {t('login.readAndAccept')}{' '}
+                            <Link to="/terms" target="_blank" className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">
+                              {t('login.termsOfService')}
+                            </Link>{' '}
+                            {t('login.and')}{' '}
+                            <Link to="/privacy" target="_blank" className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">
+                              {t('login.privacyPolicy')}
+                            </Link>.
+                          </span>
+                        </label>
+
+                        {needsEthics && (
+                          <label className="flex items-start gap-2.5 cursor-pointer">
+                            <Checkbox
+                              id="accept-ethics"
+                              checked={acceptedEthics}
+                              onCheckedChange={(v) => setAcceptedEthics(v === true)}
+                              className="mt-0.5"
+                            />
+                            <span className="text-xs sm:text-sm leading-snug text-muted-foreground">
+                              {t('login.readAndAcceptEthics')}{' '}
+                              <Link to="/codigo-etica" target="_blank" className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80">
+                                {t('codeOfEthics.title')}
+                              </Link>.
+                            </span>
+                          </label>
+                        )}
+                      </div>
+
                       {registerError && (
                         <p className="text-sm text-destructive">{registerError}</p>
                       )}
-                      
-                      <Button type="submit" className="w-full" disabled={isLoading}>
+
+                      <Button type="submit" className="w-full" disabled={isLoading || !acceptedLegal || (needsEthics && !acceptedEthics)}>
                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.createAccount')}
                       </Button>
                     </form>

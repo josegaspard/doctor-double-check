@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Search, Stethoscope, UserPlus, X, Globe, Lock, Languages } from 'lucide-react';
+import { Loader2, Search, Stethoscope, UserPlus, X, Globe, Lock, Languages, Award } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
@@ -50,10 +50,18 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
   const { specialtiesList: SPECIALTIES } = useSpecialties();
   const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
+  // ¿El creador es doctor con medalla? Habilita la opción "reunión solo medallas".
+  const [isGoldDoctor, setIsGoldDoctor] = useState(false);
+  useEffect(() => {
+    if (role !== 'doctor' || !user?.id) { setIsGoldDoctor(false); return; }
+    supabase.from('doctor_profiles').select('manual_badge').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setIsGoldDoctor((data as any)?.manual_badge === 'gold'));
+  }, [role, user?.id]);
   const [form, setForm] = useState({
     title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
     meetingType: 'case_discussion' as 'case_discussion' | 'resident_class',
     isPublic: false,
+    goldOnly: false,
     translateEnabled: false,
     translateTargetLang: 'en',
   });
@@ -73,12 +81,13 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           : '',
         meetingType: editing.meetingType || 'case_discussion',
         isPublic: editing.isPublic ?? false,
+        goldOnly: (editing as any).goldOnly ?? false,
         translateEnabled: editing.translateEnabled ?? false,
         translateTargetLang: editing.translateTargetLang ?? 'en',
       });
     } else {
       setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
-        meetingType: 'case_discussion', isPublic: false, translateEnabled: false, translateTargetLang: 'en' });
+        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en' });
     }
   }, [open, editing?.id]);
 
@@ -177,6 +186,40 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
     setSelectedInvitees(prev => prev.filter(d => d.id !== id));
   };
 
+  // Notificar a los invitados de una reunión: campanilla (tabla notifications,
+  // type 'system' permitido para doctores aprobados) + push best-effort.
+  // El correo de reunión requiere una edge function dedicada (pendiente de deploy).
+  const notifyInvitees = async (
+    invitees: { id: string; name?: string }[],
+    sessionId: string,
+    meetingTitle: string,
+  ) => {
+    if (!invitees.length || !user?.id) return;
+    const title = t('meetingCreateDialog.notifyTitle');
+    const message = t('meetingCreateDialog.notifyMessage').replace('{title}', meetingTitle || '');
+    const rows = invitees.map(inv => ({
+      user_id: inv.id,
+      type: 'system' as const,
+      title,
+      message,
+      data: { kind: 'meeting_invite', session_id: sessionId, meeting_title: meetingTitle },
+    }));
+    try {
+      const { error } = await supabase.from('notifications').insert(rows as any);
+      if (error) console.error('Error notifying invitees (bell):', error);
+      // Push best-effort (no bloquea si falla).
+      await supabase.functions.invoke('send-push-notification', {
+        body: { user_ids: invitees.map(i => i.id), title, body: message, url: '/meetings' },
+      }).catch(() => {});
+      // Correo best-effort (requiere desplegar la función send-meeting-invite-email).
+      await supabase.functions.invoke('send-meeting-invite-email', {
+        body: { session_id: sessionId, invitee_ids: invitees.map(i => i.id) },
+      }).catch(() => {});
+    } catch (e) {
+      console.error('notifyInvitees error:', e);
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.title.trim() || !form.specialty || !user?.id) return;
     setIsCreating(true);
@@ -194,6 +237,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             scheduled_at: form.scheduledAt || null,
             meeting_type: form.meetingType,
             is_public: form.isPublic,
+            gold_only: form.goldOnly,
             translate_enabled: form.translateEnabled,
             translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
           } as any)
@@ -209,6 +253,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             invitee_name: doc.name,
           }));
           await supabase.from('clinical_session_invitations').insert(newInvitations as any);
+          await notifyInvitees(selectedInvitees, editing.id, form.title);
         }
 
         toast.success(t('meetingCreateDialog.toastUpdated'));
@@ -225,6 +270,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             organizer_id: user.id,
             meeting_type: form.meetingType,
             is_public: form.isPublic,
+            gold_only: form.goldOnly,
             translate_enabled: form.translateEnabled,
             translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
           } as any)
@@ -243,6 +289,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             .from('clinical_session_invitations')
             .insert(invitations as any);
           if (invError) console.error('Error creating invitations:', invError);
+          await notifyInvitees(selectedInvitees, session.id, form.title);
         }
 
         toast.success(t('meetingCreateDialog.toastCreated'));
@@ -250,7 +297,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
 
       onOpenChange(false);
       setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
-        meetingType: 'case_discussion', isPublic: false, translateEnabled: false, translateTargetLang: 'en' });
+        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
@@ -333,7 +380,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
           <div className="rounded-lg border border-border p-3 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-2">
-                {form.isPublic ? <Globe className="w-4 h-4 mt-0.5 text-emerald-600" /> : <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />}
+                {form.isPublic ? <Globe className="w-4 h-4 mt-0.5 text-primary" /> : <Lock className="w-4 h-4 mt-0.5 text-muted-foreground" />}
                 <div>
                   <p className="text-sm font-medium">{form.isPublic ? t('meetingCreateDialog.visibilityPublicTitle') : t('meetingCreateDialog.visibilityPrivateTitle')}</p>
                   <p className="text-xs text-muted-foreground">
@@ -349,6 +396,24 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
                 aria-label={t('meetingCreateDialog.visibilityToggleAria')}
               />
             </div>
+
+            {/* Reunión exclusiva entre medallas — solo visible para doctores con 🥇 (cliente 2026-06-29). */}
+            {isGoldDoctor && (
+              <div className="flex items-start justify-between gap-3 pt-3 border-t border-border">
+                <div className="flex items-start gap-2">
+                  <Award className="w-4 h-4 mt-0.5 text-premium" />
+                  <div>
+                    <p className="text-sm font-medium">{t('meetingCreateDialog.goldOnlyTitle')}</p>
+                    <p className="text-xs text-muted-foreground">{t('meetingCreateDialog.goldOnlyDescription')}</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={form.goldOnly}
+                  onCheckedChange={(v) => setForm({ ...form, goldOnly: v })}
+                  aria-label={t('meetingCreateDialog.goldOnlyTitle')}
+                />
+              </div>
+            )}
 
             <div className="flex items-start justify-between gap-3 pt-3 border-t border-border">
               <div className="flex items-start gap-2">

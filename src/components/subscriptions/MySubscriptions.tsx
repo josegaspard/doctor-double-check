@@ -76,7 +76,7 @@ export function MySubscriptions() {
     switch (tier) {
       case 'premium':
         return (
-          <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white gap-1">
+          <Badge className="bg-gradient-to-r from-primary to-secondary text-white gap-1">
             <Crown className="w-3 h-3" />
             {t('mySubscriptions.tierPremium')}
           </Badge>

@@ -20,11 +20,10 @@ import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
 import {
   User, Heart, Wine, Syringe, Upload, Calculator,
-  Loader2, Save, FileText, Stethoscope, Download, ShieldCheck,
+  Loader2, Save, FileText, Stethoscope, ShieldCheck,
   Check, CloudOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { exportClinicalSummary } from '@/lib/exportClinicalSummary';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'No sé'];
 
@@ -519,23 +518,8 @@ export default function MedicalRecord() {
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {(role === 'patient' || role === 'doctor' || role === 'resident') && hasRecord && (
-              <Button
-                onClick={() => exportClinicalSummary({
-                  patient: { name: user?.name || t('medicalRecordPage.header.patientFallback'), email: user?.email || '' },
-                  data,
-                  language,
-                })}
-                size="sm"
-                variant="outline"
-                className="gap-1.5 h-9 px-3 flex-1 sm:flex-initial bg-card"
-                title={t('medicalRecordPage.header.downloadTitle')}
-              >
-                <Download className="w-4 h-4" />
-                <span>{t('medicalRecordPage.header.download')}</span>
-              </Button>
-            )}
-            <Button onClick={handleSave} disabled={isSaving} size="sm" className="gap-2 h-9 px-3 flex-1 sm:flex-initial">
+            {/* Botón "Descargar" eliminado a pedido del cliente (2026-06-24). */}
+            <Button onClick={handleSave} disabled={isSaving} variant="live" size="sm" className="gap-2 h-9 px-3 flex-1 sm:flex-initial">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {t('medicalRecordPage.header.save')}
             </Button>
@@ -824,16 +808,19 @@ export default function MedicalRecord() {
                 ].map(item => {
                   const boolKey = `family_${item.key}` as keyof ClinicalData;
                   const detailKey = `family_${item.key}_detail` as keyof ClinicalData;
-                  const isDiabetes = item.key === 'diabetes';
-                  // For diabetes, parse detail as JSON {type, relationship, notes}
-                  let dbDetail: { type?: string; relationship?: string; notes?: string } = {};
-                  if (isDiabetes) {
-                    const raw = (data[detailKey] as string) || '';
-                    try { dbDetail = raw ? JSON.parse(raw) : {}; } catch { dbDetail = { notes: raw }; }
-                  }
-                  const setDbDetail = (patch: Partial<typeof dbDetail>) => {
-                    const next = { ...dbDetail, ...patch };
-                    update(detailKey, JSON.stringify(next));
+                  // Detalle como JSON {relationship, notes} para TODAS las enfermedades
+                  // familiares (cliente 2026-06-19: "Parentesco familiar" + "Detalles
+                  // adicionales" en todas, no solo diabetes; sin el campo "Tipo de
+                  // diabetes"). Compat: si el valor guardado era texto plano (versión
+                  // anterior), se interpreta como las notas.
+                  let famDetail: { relationship?: string; notes?: string } = {};
+                  const rawDetail = (data[detailKey] as string) || '';
+                  try {
+                    const parsed = rawDetail ? JSON.parse(rawDetail) : {};
+                    famDetail = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : { notes: rawDetail };
+                  } catch { famDetail = { notes: rawDetail }; }
+                  const setFamDetail = (patch: Partial<typeof famDetail>) => {
+                    update(detailKey, JSON.stringify({ ...famDetail, ...patch }));
                   };
                   return (
                     <div key={item.key} className="space-y-2">
@@ -845,52 +832,34 @@ export default function MedicalRecord() {
                         />
                       </div>
                       {data[boolKey] && (
-                        isDiabetes ? (
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div>
-                                <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.diabetesType')}</Label>
-                                <Input
-                                  className="h-9 text-xs"
-                                  placeholder={t('medicalRecordPage.family.diabetesTypePlaceholder')}
-                                  value={dbDetail.type || ''}
-                                  onChange={e => setDbDetail({ type: e.target.value })}
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.relationship')}</Label>
-                                <Select value={dbDetail.relationship || ''} onValueChange={v => setDbDetail({ relationship: v })}>
-                                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="father">{t('medicalRecordPage.relatives.father')}</SelectItem>
-                                    <SelectItem value="mother">{t('medicalRecordPage.relatives.mother')}</SelectItem>
-                                    <SelectItem value="sibling">{t('medicalRecordPage.relatives.sibling')}</SelectItem>
-                                    <SelectItem value="grandparent">{t('medicalRecordPage.relatives.grandparent')}</SelectItem>
-                                    <SelectItem value="uncle_aunt">{t('medicalRecordPage.relatives.uncle_aunt')}</SelectItem>
-                                    <SelectItem value="cousin">{t('medicalRecordPage.relatives.cousin')}</SelectItem>
-                                    <SelectItem value="child">{t('medicalRecordPage.relatives.child')}</SelectItem>
-                                    <SelectItem value="other">{t('medicalRecordPage.relatives.other')}</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
+                        <div className="space-y-2">
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.relationship')}</Label>
+                            <Select value={famDetail.relationship || ''} onValueChange={v => setFamDetail({ relationship: v })}>
+                              <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('medicalRecordPage.personal.selectPlaceholder')} /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="father">{t('medicalRecordPage.relatives.father')}</SelectItem>
+                                <SelectItem value="mother">{t('medicalRecordPage.relatives.mother')}</SelectItem>
+                                <SelectItem value="sibling">{t('medicalRecordPage.relatives.sibling')}</SelectItem>
+                                <SelectItem value="grandparent">{t('medicalRecordPage.relatives.grandparent')}</SelectItem>
+                                <SelectItem value="uncle_aunt">{t('medicalRecordPage.relatives.uncle_aunt')}</SelectItem>
+                                <SelectItem value="cousin">{t('medicalRecordPage.relatives.cousin')}</SelectItem>
+                                <SelectItem value="child">{t('medicalRecordPage.relatives.child')}</SelectItem>
+                                <SelectItem value="other">{t('medicalRecordPage.relatives.other')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.family.additionalDetails')}</Label>
                             <Textarea
                               placeholder={t('medicalRecordPage.family.additionalDetails')}
-                              value={dbDetail.notes || ''}
-                              onChange={e => setDbDetail({ notes: e.target.value })}
+                              value={famDetail.notes || ''}
+                              onChange={e => setFamDetail({ notes: e.target.value })}
                               rows={2}
                               className="text-sm"
                             />
                           </div>
-                        ) : (
-                          <Textarea
-                            placeholder={`${t('medical.familyDetailPrefix')} ${item.label.toLowerCase()}...`}
-                            value={data[detailKey] as string}
-                            onChange={e => update(detailKey, e.target.value)}
-                            rows={2}
-                            className="text-sm"
-                          />
-                        )
+                        </div>
                       )}
                     </div>
                   );
@@ -1260,7 +1229,7 @@ export default function MedicalRecord() {
 
         {/* Floating save */}
         <div className="fixed bottom-20 sm:bottom-6 right-4 z-40 sm:hidden">
-          <Button onClick={handleSave} disabled={isSaving} size="icon" className="w-12 h-12 rounded-full shadow-lg">
+          <Button onClick={handleSave} disabled={isSaving} variant="live" size="icon" className="w-12 h-12 rounded-full shadow-lg">
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           </Button>
         </div>

@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-05-19-i18n-full
+// SW_VERSION: 2026-06-30-batch28-casillas-aceptacion-registro
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

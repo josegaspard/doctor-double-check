@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
 import {
-  MessageSquare,
   Video,
   Users,
   Calendar,
@@ -81,11 +81,13 @@ const cards: ForoCard[] = [
   },
 ];
 
+// Paleta de marca Medical Masters (cliente 2026-06-16: "todo con la paleta de la web").
+// Antes usaba emerald/amber/rose fuera de marca; ahora navy/teal/azul-claro/cyan.
 const TONE_CLASSES: Record<ForoCard['tone'], string> = {
   doctor:   'from-[#163a83]/15 to-[#227787]/10 text-[#163a83]',
-  resident: 'from-emerald-500/15 to-emerald-700/10 text-emerald-700',
-  event:    'from-amber-500/15 to-amber-700/10 text-amber-700',
-  live:     'from-rose-500/15 to-rose-700/10 text-rose-700',
+  resident: 'from-[#839ed5]/25 to-[#163a83]/10 text-[#163a83]',
+  event:    'from-[#227787]/18 to-[#0b1d45]/10 text-[#227787]',
+  live:     'from-[#aed3d9]/30 to-[#227787]/12 text-[#227787]',
 };
 
 interface LiveNow {
@@ -117,6 +119,7 @@ interface UpcomingEvent {
 export default function Foro() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { role } = useAuth();
   const locale = language === 'es' ? esLocale : enUS;
 
   const [livesNow, setLivesNow] = useState<LiveNow[]>([]);
@@ -171,55 +174,14 @@ export default function Foro() {
   return (
     <MainLayout>
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-5xl">
-        <header className="mb-6 sm:mb-10 text-center sm:text-left rounded-2xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-xl p-5 sm:p-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#163a83]/12 text-[#163a83] dark:bg-cyan-400/15 dark:text-cyan-200 text-xs font-semibold mb-3">
-            <MessageSquare className="w-3.5 h-3.5" /> {t('foroPage.badge')}
-          </div>
-          <h1 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-            {t('foroPage.heroTitle')}
-          </h1>
-          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-200 mt-2 max-w-2xl">
-            {t('foroPage.heroSubtitle')}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
-            <Button onClick={() => navigate('/meetings?new=1')} className="gap-1.5">
-              <Calendar className="w-4 h-4" /> {t('foroPage.createMeeting')}
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/lives?new=1')} className="gap-1.5 bg-white/90 dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20">
-              <Radio className="w-4 h-4" /> {t('foroPage.startLive')}
-            </Button>
-          </div>
-
-          {/* Stats reales del foro */}
-          <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
-              <p className="text-lg sm:text-2xl font-bold text-[#163a83] dark:text-cyan-200">{loading ? '…' : stats.doctors}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo5')}</p>
-            </div>
-            <div className="rounded-lg bg-rose-500/10 backdrop-blur p-2 sm:p-3 text-center border border-rose-500/30">
-              <p className="text-lg sm:text-2xl font-bold text-rose-700 dark:text-rose-300 flex items-center justify-center gap-1">
-                {stats.liveNow > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />}
-                {loading ? '…' : stats.liveNow}
-              </p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo6')}</p>
-            </div>
-            <div className="rounded-lg bg-white/80 dark:bg-white/10 backdrop-blur p-2 sm:p-3 text-center">
-              <p className="text-lg sm:text-2xl font-bold text-emerald-700 dark:text-emerald-300">{loading ? '…' : stats.upcoming}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('autoI18n.clForo7')}</p>
-            </div>
-            <div className="rounded-lg bg-amber-500/10 backdrop-blur p-2 sm:p-3 text-center border border-amber-500/30">
-              <p className="text-lg sm:text-2xl font-bold text-amber-700 dark:text-amber-300">{loading ? '…' : stats.events}</p>
-              <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-300">{t('eventos.foroBlock.statLabel')}</p>
-            </div>
-          </div>
-        </header>
+        {/* Cabecera (título, subtítulo, botones y contadores) eliminada por petición del cliente 2026-06-17. */}
 
         {/* Lives en vivo ahora */}
         {livesNow.length > 0 && (
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 {t('autoI18n.clForo6')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/lives')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
@@ -229,15 +191,15 @@ export default function Foro() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {livesNow.map((live) => (
                 <Card key={live.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/live/${live.id}`)}>
-                  <div className="aspect-video bg-gradient-to-br from-rose-500/20 to-rose-700/30 relative overflow-hidden">
+                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/30 relative overflow-hidden">
                     {live.thumbnail_url ? (
                       <img src={live.thumbnail_url} alt={live.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Radio className="w-10 h-10 text-rose-700/40" />
+                        <Radio className="w-10 h-10 text-primary/40" />
                       </div>
                     )}
-                    <Badge className="absolute top-2 left-2 bg-rose-500 hover:bg-rose-500 text-white gap-1">
+                    <Badge className="absolute top-2 left-2 bg-primary hover:bg-primary text-white gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       LIVE
                     </Badge>
@@ -262,7 +224,7 @@ export default function Foro() {
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-300" />
+                <Calendar className="w-4 h-4 text-secondary dark:text-secondary" />
                 {t('autoI18n.clForo9')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/meetings')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
@@ -273,9 +235,9 @@ export default function Foro() {
               {upcoming.map((m) => (
                 <Card key={m.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/meetings?id=${m.id}`)}>
                   <CardContent className="p-3 sm:p-4 flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-emerald-500/15 flex flex-col items-center justify-center flex-shrink-0">
-                      <p className="text-[10px] uppercase text-emerald-700 dark:text-emerald-300 font-semibold leading-none">{format(new Date(m.scheduled_at), 'MMM', { locale })}</p>
-                      <p className="text-base font-bold text-emerald-700 dark:text-emerald-300 leading-none mt-0.5">{format(new Date(m.scheduled_at), 'd')}</p>
+                    <div className="w-11 h-11 rounded-lg bg-secondary/15 flex flex-col items-center justify-center flex-shrink-0">
+                      <p className="text-[10px] uppercase text-secondary dark:text-secondary font-semibold leading-none">{format(new Date(m.scheduled_at), 'MMM', { locale })}</p>
+                      <p className="text-base font-bold text-secondary dark:text-secondary leading-none mt-0.5">{format(new Date(m.scheduled_at), 'd')}</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm line-clamp-1">{m.title}</p>
@@ -297,7 +259,7 @@ export default function Foro() {
           <div className="mb-6 sm:mb-8">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-300" />
+                <Megaphone className="w-4 h-4 text-secondary dark:text-secondary" />
                 {t('eventos.foroBlock.title')}
               </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/eventos')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
@@ -308,9 +270,9 @@ export default function Foro() {
               {upcomingEvents.map((e) => (
                 <Card key={e.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eventos')}>
                   <CardContent className="p-3 sm:p-4 flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-amber-500/15 border border-amber-500/30 flex flex-col items-center justify-center flex-shrink-0">
-                      <p className="text-[10px] uppercase text-amber-700 dark:text-amber-300 font-semibold leading-none">{format(new Date(e.event_date), 'MMM', { locale })}</p>
-                      <p className="text-lg font-bold text-amber-700 dark:text-amber-300 leading-none mt-0.5">{format(new Date(e.event_date), 'd')}</p>
+                    <div className="w-12 h-12 rounded-lg bg-secondary/15 border border-secondary/30 flex flex-col items-center justify-center flex-shrink-0">
+                      <p className="text-[10px] uppercase text-secondary dark:text-secondary font-semibold leading-none">{format(new Date(e.event_date), 'MMM', { locale })}</p>
+                      <p className="text-lg font-bold text-secondary dark:text-secondary leading-none mt-0.5">{format(new Date(e.event_date), 'd')}</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm line-clamp-2 leading-snug">{e.title}</p>
@@ -356,12 +318,16 @@ export default function Foro() {
           })}
         </div>
 
-        <div className="mt-10 p-4 sm:p-6 rounded-xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg">
-          <p className="text-sm font-semibold mb-1 text-slate-900 dark:text-white">{t('foroPage.comingSoonTitle')}</p>
-          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
-            {t('foroPage.comingSoonBody')}
-          </p>
-        </div>
+        {/* Aviso "Próximamente en el Foro" SOLO para residentes (cliente 2026-06-19):
+            el resto de roles (doctor, paciente, admin, visitante) no debe verlo. */}
+        {role === 'resident' && (
+          <div className="mt-10 p-4 sm:p-6 rounded-xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg">
+            <p className="text-sm font-semibold mb-1 text-slate-900 dark:text-white">{t('foroPage.comingSoonTitle')}</p>
+            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+              {t('foroPage.comingSoonBody')}
+            </p>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

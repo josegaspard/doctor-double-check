@@ -15,7 +15,9 @@ import {
   ArrowRight,
   CheckCircle,
   AlertCircle,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface EarningsData {
@@ -38,6 +40,8 @@ export function EarningsCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [earnings, setEarnings] = useState<EarningsData | null>(null);
   const [recentPayouts, setRecentPayouts] = useState<PayoutData[]>([]);
+  // Dinero OCULTO por defecto: solo se ve al pulsar el ojo (cliente 2026-06-16).
+  const [showAmounts, setShowAmounts] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -86,6 +90,8 @@ export function EarningsCard() {
     }).format(amount);
   };
 
+  const money = (amount: number) => (showAmounts ? formatCurrency(amount) : '$ ••••••');
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
@@ -122,6 +128,14 @@ export function EarningsCard() {
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
           <span className="flex-1">{t('autoI18n.earningsCard4')}</span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowAmounts(v => !v); }}
+            className="p-1 rounded-md hover:bg-muted text-muted-foreground"
+            aria-label={showAmounts ? 'Ocultar montos' : 'Mostrar montos'}
+          >
+            {showAmounts ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </CardTitle>
       </CardHeader>
@@ -136,7 +150,7 @@ export function EarningsCard() {
               </span>
             </div>
             <p className="text-base sm:text-xl font-bold text-success">
-              {formatCurrency(earnings?.pending_earnings || 0)}
+              {money(earnings?.pending_earnings || 0)}
             </p>
           </div>
           <div className="p-2.5 sm:p-3 bg-primary/10 rounded-lg border border-primary/20">
@@ -147,7 +161,7 @@ export function EarningsCard() {
               </span>
             </div>
             <p className="text-base sm:text-xl font-bold text-primary">
-              {formatCurrency(earnings?.total_earnings || 0)}
+              {money(earnings?.total_earnings || 0)}
             </p>
           </div>
         </div>
@@ -175,7 +189,7 @@ export function EarningsCard() {
                 <div key={payout.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2">
                     <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs sm:text-sm font-medium">{formatCurrency(payout.amount)}</span>
+                    <span className="text-xs sm:text-sm font-medium">{money(payout.amount)}</span>
                   </div>
                   {getStatusBadge(payout.status)}
                 </div>

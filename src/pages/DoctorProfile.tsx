@@ -21,9 +21,11 @@ import { ArrowLeft, Stethoscope, Star, Award, MessageSquare, Video, MapPin, User
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { ManualBadge } from '@/components/doctor/ManualBadge';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -47,6 +49,7 @@ interface DoctorData {
   officeDays?: string[];
   countryFlag?: string;
   isIdentityVerified?: boolean;
+  manualBadge?: string | null;
 }
 
 interface LiveData {
@@ -139,6 +142,7 @@ export default function DoctorProfile() {
           officeDays: doctorProfile.office_days || undefined,
           countryFlag: doctorProfile.country_flag || undefined,
           isIdentityVerified: (doctorProfile as any).is_identity_verified || false,
+          manualBadge: (doctorProfile as any).manual_badge ?? null,
         });
 
         const { data: liveData } = await supabase
@@ -176,6 +180,7 @@ export default function DoctorProfile() {
             location: dpData.location || undefined,
             followersCount: dpData.followers_count,
             avatarUrl: profileData.avatar_url || undefined,
+            manualBadge: (dpData as any).manual_badge ?? null,
           });
         }
       }
@@ -273,6 +278,12 @@ export default function DoctorProfile() {
     }
 
     if (!doctor) return;
+
+    // Consultas solo para México por ahora (cliente 2026-06-29).
+    if (!isConsultationCountryAllowed(user.countryCode)) {
+      toast.error(t('bookAppointment.toastMexicoOnly'));
+      return;
+    }
 
     // Patient chat globally disabled by admin toggle → block EVERY chat-start
     // path (resident, doctor-direct, free, and paid) before any DB session is
@@ -536,6 +547,7 @@ export default function DoctorProfile() {
 
                 {/* Badges — minimal on mobile */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
+                  <ManualBadge badge={doctor.manualBadge} size="sm" />
                   <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
                   {doctor.isIdentityVerified && (
                     <Badge variant="verified" className="gap-1 text-xs">

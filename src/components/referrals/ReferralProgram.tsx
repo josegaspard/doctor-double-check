@@ -78,10 +78,6 @@ export function ReferralProgram() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {t('autoI18n.referral6')}
-          </p>
-
           {myCode ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -100,10 +96,6 @@ export function ReferralProgram() {
                 <div className="flex items-center gap-1.5 text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>{myCode.usesCount} {t('autoI18n.referral7')}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Wallet className="w-4 h-4" />
-                  <span>${myCode.usesCount * 50} MXN {t('autoI18n.referral8')}</span>
                 </div>
               </div>
             </div>

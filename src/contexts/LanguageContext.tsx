@@ -12,7 +12,7 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const SUPPORTED: readonly SupportedLanguage[] = ['es', 'en', 'pt', 'fr', 'it', 'de'] as const;
+const SUPPORTED: readonly SupportedLanguage[] = ['es', 'en', 'pt', 'fr', 'it', 'de', 'ca', 'zh'] as const;
 
 // Admin text overrides (site_settings.text_overrides): { [lang]: { [i18nKey]: text } }.
 // Lets the admin reword ANY landing/UI string without a deploy. A missing/empty

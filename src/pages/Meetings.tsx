@@ -34,7 +34,7 @@ export interface Meeting {
   invitationStatus?: MeetingStatus;
 }
 
-export default function Meetings() {
+export default function Meetings({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t } = useLanguage();
@@ -58,10 +58,10 @@ export default function Meetings() {
         .eq('id', meeting.id)
         .eq('organizer_id', user?.id || '');
       if (error) throw error;
-      toast.success('Reunión eliminada');
+      toast.success(t('fix20.chat.meetingDeleted'));
       await fetchMeetings();
     } catch (err: any) {
-      toast.error(err.message || 'No se pudo eliminar la reunión');
+      toast.error(err.message || t('fix20.chat.meetingDeleteError'));
     }
   };
 
@@ -109,7 +109,7 @@ export default function Meetings() {
           status: s.status as MeetingStatus,
           scheduledAt: s.scheduled_at ? new Date(s.scheduled_at) : undefined,
           organizerId: s.organizer_id,
-          organizerName: profilesMap[s.organizer_id] || 'Organizador',
+          organizerName: profilesMap[s.organizer_id] || t('fix20.chat.organizer'),
           meetingNotes: (s as any).meeting_notes || undefined,
           meetingSummary: (s as any).meeting_summary || undefined,
           dailyRoomUrl: (s as any).daily_room_url || undefined,
@@ -130,7 +130,7 @@ export default function Meetings() {
             ? new Date(inv.clinical_sessions.scheduled_at)
             : undefined,
           organizerId: inv.clinical_sessions.organizer_id,
-          organizerName: profilesMap[inv.clinical_sessions.organizer_id] || 'Organizador',
+          organizerName: profilesMap[inv.clinical_sessions.organizer_id] || t('fix20.chat.organizer'),
           dailyRoomUrl: inv.clinical_sessions.daily_room_url || undefined,
           dailyRoomName: inv.clinical_sessions.daily_room_name || undefined,
           createdAt: new Date(inv.clinical_sessions.created_at),
@@ -149,7 +149,7 @@ export default function Meetings() {
   }, [fetchMeetings]);
 
   if (!allowedRoles.includes(role || '')) {
-    return <Navigate to="/lives" replace />;
+    return embedded ? null : <Navigate to="/lives" replace />;
   }
 
   const handleRespond = async (sessionId: string, accept: boolean) => {
@@ -240,20 +240,23 @@ export default function Meetings() {
     .filter(m => m.status === 'completed')
     .sort((a, b) => (b.createdAt.getTime()) - (a.createdAt.getTime()));
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl'}>
         <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
-              <Video className="w-6 h-6 text-primary" />
-              {t('meetings.title')}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('meetings.subtitle')}
-            </p>
-          </div>
-          <Button onClick={() => setShowCreate(true)} className="gap-2" size="sm">
+          {!embedded && (
+            <div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold flex items-center gap-2">
+                <Video className="w-6 h-6 text-primary" />
+                {t('meetings.title')}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t('meetings.subtitle')}
+              </p>
+            </div>
+          )}
+          <Button onClick={() => setShowCreate(true)} className={`gap-2${embedded ? ' bg-live hover:bg-live/90 text-white' : ''}`} size="sm">
             <Plus className="w-4 h-4" />
             {t('meetings.newMeeting')}
           </Button>
@@ -300,7 +303,7 @@ export default function Meetings() {
               <div className="text-center py-12">
                 <CalendarDays className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">{t('meetings.noUpcoming')}</p>
-                <Button variant="outline" className="mt-4 gap-2" onClick={() => setShowCreate(true)}>
+                <Button variant={embedded ? 'default' : 'outline'} className={`mt-4 gap-2${embedded ? ' bg-live hover:bg-live/90 text-white' : ''}`} onClick={() => setShowCreate(true)}>
                   <Plus className="w-4 h-4" />
                   {t('meetings.schedule')}
                 </Button>
@@ -344,6 +347,6 @@ export default function Meetings() {
           } : null}
         />
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

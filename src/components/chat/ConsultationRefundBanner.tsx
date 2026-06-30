@@ -73,13 +73,13 @@ export function ConsultationRefundBanner({
   };
 
   return (
-    <div className="mx-3 my-2 rounded-lg border border-warning/30 bg-warning dark:bg-warning/30 p-3 flex items-start gap-3">
+    <div className="mx-3 my-2 rounded-lg border border-warning/30 bg-warning/10 p-3 flex items-start gap-3">
       <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
       <div className="flex-1 text-sm">
-        <p className="font-medium text-warning dark:text-warning">
+        <p className="font-medium text-foreground">
           El doctor no ha respondido en más de 72 horas
         </p>
-        <p className="text-warning/80 dark:text-warning/70 text-xs mt-0.5">
+        <p className="text-muted-foreground text-xs mt-0.5">
           Puedes solicitar un reembolso completo a tu saldo.
         </p>
       </div>
@@ -88,7 +88,7 @@ export function ConsultationRefundBanner({
         variant="outline"
         onClick={handleRefund}
         disabled={isRequesting}
-        className="border-warning text-warning hover:bg-warning dark:text-warning dark:hover:bg-warning/50 gap-1.5"
+        className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary gap-1.5"
       >
         {isRequesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wallet className="w-3.5 h-3.5" />}
         Reembolsar

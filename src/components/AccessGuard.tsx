@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,7 +31,18 @@ export default function AccessGuard({
   const navigate = useNavigate();
   const [auditOpen, setAuditOpen] = useState(false);
 
-  if (isLoading) {
+  // Si el usuario NO tiene sesión (p. ej. acaba de cerrar sesión estando en una
+  // página protegida), NO mostramos "Acceso denegado": lo llevamos al landing con
+  // una pantalla de carga (cliente 2026-06-19). Las páginas tipo 'login' (que
+  // invitan a iniciar sesión en línea) conservan su prompt.
+  const loggedOutRedirect = !isLoading && !isAuthenticated && fallbackType !== 'login';
+  useEffect(() => {
+    if (loggedOutRedirect) {
+      navigate('/', { replace: true });
+    }
+  }, [loggedOutRedirect, navigate]);
+
+  if (isLoading || loggedOutRedirect) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

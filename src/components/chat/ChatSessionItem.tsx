@@ -170,7 +170,7 @@ export function ChatSessionItem({
                 size="icon"
                 className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive flex-shrink-0"
                 onClick={onDelete}
-                title="Eliminar chat"
+                title={t('fix20.chat.deleteChat')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </Button>

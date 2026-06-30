@@ -28,7 +28,6 @@ import {
 import {
   Menu,
   Video,
-  PlayCircle,
   MessageSquare,
   Folder,
   User,
@@ -83,52 +82,50 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // ===== Primary nav (first items shown on desktop top-bar) =====
+  // ===== Orden del menú definido por el cliente (2026-06-29) =====
+  //   1. Lives  2. MM Education  3. Chat  4. Mis Pacientes  5. Directorio Médico
+  //   6. Marketplace  7. Historial Clínico  8. Foro  9. Panel
+  // Lo que no entra en la barra superior se colapsa en el botón "Más".
+  // News y Recetas quedan en el "Más" (no forman parte del orden core del cliente).
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.content', shortLabelKey: 'nav.contentShort', href: '/content', icon: Folder, roles: ['patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_content_medical' },
-  // Contenido Premium oculto para visitors públicos por petición del cliente 2026-05-18.
-  { labelKey: 'nav.recordings', href: '/recordings', icon: PlayCircle, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['doctor', 'resident', 'admin'] },
+  { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
-  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'] },
-  // ===== Secondary nav (collapsed into "More" on desktop) =====
-  // Doctor "Más" order (client request 2026-05-18):
-  //   1. Mis Pacientes  2. Directorio Médico  3. Reuniones  4. Material Médico  5. Panel
-  //   Localizar Hospital queda oculto.
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  // Directorio Médico oculto para visitors públicos por petición del cliente 2026-05-18.
   { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.medicalSupplies', href: '/medical-supplies', icon: Package, roles: ['doctor', 'resident'] },
-  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
-  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
+  // Marketplace / venta de productos RESTAURADO (cliente 2026-06-29), gateado por enable_marketplace.
+  // Fuera del perfil de médico/residente (cliente 2026-06-30): solo lo ve el paciente.
+  { labelKey: 'nav.marketplace', href: '/medical-supplies', icon: ShoppingBag, roles: ['patient'], toggleKey: 'enable_marketplace' },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
-  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'show_prescriptions' },
+  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
-  // Hidden per client request 2026-05-18 — page still reachable by direct URL.
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
+  // Panel SIEMPRE después de Foro (cliente 2026-06-25/29).
+  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  // ===== Hidden — accesibles por URL pero fuera del menú =====
+  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'], hidden: true },
+  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'], hidden: true },
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'], hidden: true },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
 // Bottom tab items per role — only 4 fixed tabs, 5th is "More"
 function getBottomTabs(role: string | undefined, t: (key: string) => string) {
-  const common = [
-    { label: t('nav.lives'), href: '/lives', icon: Radio },
-  ];
+  // Cliente 2026-06-17: "Contenido Premium" (/recordings) RETIRADO de la barra inferior;
+  // ahora se accede desde "Contenido premium" dentro de /education. Lives queda primero.
+  const lives = { label: t('nav.lives'), href: '/lives', icon: Radio };
 
   if (role === 'doctor') {
     return [
-      ...common,
+      lives,
       { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
+      { label: t('nav.soyMedico'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
-      { label: t('nav.dashboard'), href: '/doctor/dashboard', icon: LayoutDashboard },
     ];
   }
 
   if (role === 'patient') {
     return [
-      ...common,
-      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
+      lives,
       { label: t('nav.doctors'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
     ];
@@ -136,8 +133,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
 
   if (role === 'admin') {
     return [
-      ...common,
-      { label: t('nav.recordingsShort'), href: '/recordings', icon: PlayCircle },
+      lives,
       { label: t('nav.doctors'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.admin'), href: '/admin', icon: Settings },
     ];
@@ -147,17 +143,18 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   // por petición del cliente 2026-05-18; el visitor solo ve Lives + News.
   if (role === 'visitor' || !role) {
     return [
-      ...common,
+      lives,
       { label: t('nav.news'), href: '/news', icon: Calendar },
     ];
   }
 
-  // resident
+  // resident — "Reuniones" se movió dentro de MM Education (cliente 2026-06-16);
+  // en su lugar el directorio médico en la barra inferior.
   return [
-    ...common,
+    lives,
     { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
+    { label: t('nav.soyMedico'), href: '/doctors', icon: Stethoscope },
     { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
-    { label: t('nav.meetings'), href: '/meetings', icon: Calendar },
   ];
 }
 
@@ -322,8 +319,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     return filteredNavItems.filter(item => !bottomTabHrefs.includes(item.href));
   }, [filteredNavItems, bottomTabs]);
 
+  // Cliente 2026-06-29 (revierte 2026-06-22): TODOS los roles, incluidos los
+  // doctores, usan el botón "Más"/"+" cuando no caben todos los items en la barra
+  // (primeros N visibles + el resto dentro de "Más"). Así el menú no se satura.
+  const showAllNav = false;
+
   const handleLogout = () => {
+    // Llevar al landing inmediatamente al cerrar sesión (cliente 2026-06-19):
+    // así no se alcanza a ver el "Acceso denegado" de las páginas protegidas.
     logout();
+    navigate('/', { replace: true });
   };
 
   const getRoleBadge = () => {
@@ -439,7 +444,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                           <Link to="/wallet" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/wallet' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                             <Wallet className="w-5 h-5" />
-                            {t('nav.wallet')} (<AnimatedBalance balance={balance} />)
+                            {t('nav.wallet')}
                           </Link>
                         )}
                         {(role === 'patient' || role === 'resident') && hasCampaigns && (
@@ -463,25 +468,26 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Sheet>
 
               {/* Logo on mobile - small */}
-              <Link to="/lives" className="flex sm:hidden items-center">
+              <Link to="/" className="flex sm:hidden items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo on tablet - compact */}
-              <Link to="/lives" className="hidden sm:flex md:hidden items-center">
+              <Link to="/" className="hidden sm:flex md:hidden items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo - desktop+ */}
-              <Link to="/lives" className="hidden md:flex items-center">
+              <Link to="/" className="hidden md:flex items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 lg:h-7 xl:h-8 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>
 
-            {/* Tablet Nav (md only): 3 primarios + Más con items 3+ */}
+            {/* Tablet Nav (md only): 3 primarios + Más con items 3+.
+                Doctor (showAllNav): TODOS los items, con scroll horizontal, sin Más. */}
             <nav className="hidden md:flex lg:hidden items-center flex-1 justify-center mx-1 min-w-0">
-              <div className="flex items-center gap-2 min-w-0">
-                {filteredNavItems.slice(0, 3).map((item) => {
+              <div className={`flex items-center gap-2 min-w-0 ${showAllNav ? 'w-full overflow-x-auto [&::-webkit-scrollbar]:hidden' : ''}`}>
+                {(showAllNav ? filteredNavItems : filteredNavItems.slice(0, 3)).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
@@ -499,7 +505,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
-                {filteredNavItems.length > 3 && (
+                {!showAllNav && filteredNavItems.length > 3 && (
                   <MoreNavPopover
                     items={filteredNavItems.slice(3)}
                     t={t}
@@ -516,8 +522,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 aparezca para cualquier rol que tenga al menos 6 items en su
                 navegación filtrada. */}
             <nav className="hidden lg:flex items-center flex-1 justify-start mx-1 lg:mx-2 min-w-0">
-              <div className="flex items-center gap-2 min-w-0">
-                {filteredNavItems.slice(0, 5).map((item) => {
+              <div className={`flex items-center gap-2 min-w-0 ${showAllNav ? 'w-full overflow-x-auto [&::-webkit-scrollbar]:hidden' : ''}`}>
+                {(showAllNav ? filteredNavItems : filteredNavItems.slice(0, 5)).map((item) => {
                   const isActive = location.pathname === item.href;
                   const isPanelItem = item.href === '/doctor/dashboard';
                   return (
@@ -535,7 +541,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
-                {filteredNavItems.length > 5 && (
+                {!showAllNav && filteredNavItems.length > 5 && (
                   <MoreNavPopover
                     items={filteredNavItems.slice(5)}
                     t={t}
@@ -560,11 +566,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {/* Wallet — superficie clara: usa clase semántica, sin variant outline.
                   Doctor también ve la wallet (puede cargar saldo y comprar contenido de colegas). */}
               {(role === 'patient' || role === 'resident' || role === 'doctor') && (
-                <Link to="/wallet" className="hidden sm:flex items-center app-header-surface-button">
-                    <span className="app-header-control gap-1.5 px-2.5 font-semibold text-xs">
-                    <Wallet className="w-3.5 h-3.5" />
-                    <span className="hidden xl:inline"><AnimatedBalance balance={balance} /></span>
-                    <span className="xl:hidden"><AnimatedBalance balance={balance} /></span>
+                <Link to="/wallet" aria-label={t('nav.wallet')} className="hidden sm:flex items-center app-header-surface-button">
+                    {/* Solo el icono de wallet — sin mostrar el monto en el header (cliente 2026-06-16). */}
+                    <span className="app-header-control px-2.5">
+                    <Wallet className="w-4 h-4" />
                   </span>
                 </Link>
               )}
@@ -800,18 +805,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
                       </Link>
                     )}
-                    {(role === 'doctor' || role === 'resident') && (
-                      <Link
-                        to="/my-orders"
-                        onClick={() => setMoreSheetOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          location.pathname === '/my-orders' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        <ShoppingBag className="w-5 h-5" />
-                        <span className="text-sm font-medium">{t('nav.myOrders')}</span>
-                      </Link>
-                    )}
+                    {/* "Mis Pedidos" (marketplace Material Médico) ELIMINADO — cliente 2026-06-16. */}
                     {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                       <Link
                         to="/wallet"
@@ -822,7 +816,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       >
                         <Wallet className="w-5 h-5 text-primary" />
                         <span className="text-sm font-medium">{t('nav.wallet')}</span>
-                        <span className="ml-auto text-xs font-semibold text-muted-foreground">${balance.toLocaleString()}</span>
+                        {/* Saldo oculto en el wallet (cliente 2026-06-16): solo nombre + icono. */}
                       </Link>
                     )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (

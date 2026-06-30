@@ -27,6 +27,7 @@ import { PushNotificationToggle } from '@/components/notifications/PushNotificat
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
 import { ReferralProgram } from '@/components/referrals/ReferralProgram';
 import { MfaSettings } from '@/components/settings/MfaSettings';
+import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -163,14 +164,16 @@ export default function Settings() {
                   { code: 'fr', flag: '🇫🇷', key: 'settings.french' },
                   { code: 'it', flag: '🇮🇹', key: 'settings.italian' },
                   { code: 'de', flag: '🇩🇪', key: 'settings.german' },
+                  { code: 'ca', flag: '', key: 'settings.catalan' },
+                  { code: 'zh', flag: '🇨🇳', key: 'settings.chinese' },
                 ] as const).map((l) => (
                   <Button
                     key={l.code}
                     variant={language === l.code ? 'default' : 'outline'}
                     onClick={() => setLanguage(l.code)}
-                    className="w-full"
+                    className="w-full gap-2"
                   >
-                    {l.flag} {t(l.key)}
+                    {l.code === 'ca' ? <SenyeraIcon /> : <span>{l.flag}</span>} {t(l.key)}
                   </Button>
                 ))}
               </div>

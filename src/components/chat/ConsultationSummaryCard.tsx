@@ -25,11 +25,11 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
 
   const sendByEmail = async () => {
     if (!summary) return;
-    const to = prompt('Email destinatario:');
+    const to = prompt(t('fix20.chat.emailPrompt'));
     if (!to) return;
     const trimmed = to.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast.error('Email inválido');
+      toast.error(t('fix20.chat.emailInvalid'));
       return;
     }
     const lines: string[] = [];
@@ -43,11 +43,11 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
         body: { to: trimmed, subject: 'Resumen médico — Medical Masters', body, kind: 'summary' },
       });
       if (error) throw error;
-      toast.success('Resumen enviado por email');
+      toast.success(t('fix20.chat.summarySent'));
     } catch {
       const subject = encodeURIComponent('Resumen médico — Medical Masters');
       window.location.href = `mailto:${trimmed}?subject=${subject}&body=${encodeURIComponent(body)}`;
-      toast.message('Abriendo tu cliente de correo (servicio de email no configurado).');
+      toast.message(t('fix20.chat.summaryEmailFallback'));
     } finally {
       setSending(false);
     }
@@ -109,7 +109,7 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
         <div className="pt-2 flex justify-end">
           <Button size="sm" variant="outline" onClick={sendByEmail} disabled={sending} className="gap-1.5">
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-            Enviar por email
+            {t('fix20.chat.sendByEmail')}
           </Button>
         </div>
       </CardContent>

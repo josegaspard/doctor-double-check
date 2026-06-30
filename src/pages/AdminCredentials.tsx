@@ -20,7 +20,10 @@ import {
   Clock,
   Loader2,
   ShieldCheck,
+  FileText,
+  EyeOff,
 } from 'lucide-react';
+import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 
 interface CredentialItem {
   id: string;
@@ -48,6 +51,8 @@ interface CredentialItem {
   end_date?: string;
   is_current?: boolean;
   description?: string;
+  // Uploaded supporting file (diploma / certificate) in the doctor-credentials bucket
+  document_url?: string | null;
   // Joined
   doctor_name?: string;
 }
@@ -62,6 +67,7 @@ export default function AdminCredentials() {
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
+  const [openDocs, setOpenDocs] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (role && role !== 'admin') {
@@ -147,6 +153,31 @@ export default function AdminCredentials() {
           </div>
           <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />{t('adminCredentials.pendingBadge')}</Badge>
         </div>
+
+        {/* Documento de soporte subido por el doctor (diploma / certificado) */}
+        {item.document_url ? (
+          <div className="mt-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs h-8"
+              onClick={() => setOpenDocs(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+            >
+              {openDocs[item.id] ? <EyeOff className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+              {openDocs[item.id] ? t('adminCredentials.hideDocument') : t('adminCredentials.viewDocument')}
+            </Button>
+            {openDocs[item.id] && (
+              <div className="mt-2 rounded-lg border border-border overflow-hidden">
+                <InlineFileViewer fileUrl={item.document_url} bucket="doctor-credentials" />
+              </div>
+            )}
+          </div>
+        ) : (table === 'doctor_education' || table === 'doctor_certifications') ? (
+          <p className="mt-3 text-xs text-muted-foreground flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5" /> {t('adminCredentials.noDocument')}
+          </p>
+        ) : null}
+
         <Textarea
           placeholder={t('adminCredentials.notesPlaceholder')}
           className="mt-3 text-xs"

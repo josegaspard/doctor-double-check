@@ -4,6 +4,7 @@ import { Camera, Loader2, X, Check, RotateCcw } from 'lucide-react';
 import Cropper, { Area } from 'react-easy-crop';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -75,6 +76,7 @@ const createCroppedImage = async (
 };
 
 export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChange }: AvatarUploadProps) {
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
@@ -96,13 +98,13 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Por favor selecciona una imagen válida');
+      toast.error(t('fix20.admin.avatarInvalidType'));
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no debe superar 5MB');
+      toast.error(t('fix20.admin.avatarTooLarge'));
       return;
     }
 
@@ -151,10 +153,10 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
 
       setPreviewUrl(publicUrl);
       onAvatarChange(publicUrl);
-      toast.success('Foto de perfil actualizada');
+      toast.success(t('fix20.admin.avatarUpdated'));
     } catch (error: any) {
       console.error('Avatar upload error:', error);
-      toast.error('Error al subir la imagen');
+      toast.error(t('fix20.admin.avatarUploadError'));
     } finally {
       setIsUploading(false);
       setImageToCrop(null);
@@ -248,11 +250,11 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
           className="gap-2"
         >
           <Camera className="w-4 h-4" />
-          {previewUrl ? 'Cambiar foto' : 'Subir foto'}
+          {previewUrl ? t('fix20.admin.avatarChange') : t('fix20.admin.avatarUpload')}
         </Button>
 
         <p className="text-xs text-muted-foreground text-center">
-          Opcional • JPG, PNG hasta 5MB
+          {t('fix20.admin.avatarHint')}
         </p>
       </motion.div>
 
@@ -260,7 +262,7 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
       <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Ajustar foto de perfil</DialogTitle>
+            <DialogTitle>{t('fix20.admin.avatarCropTitle')}</DialogTitle>
           </DialogHeader>
           
           <div className="relative w-full h-64 bg-muted rounded-lg overflow-hidden">
@@ -308,7 +310,7 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
               variant="outline"
               onClick={handleCropCancel}
             >
-              Cancelar
+              {t('fix20.admin.avatarCropCancel')}
             </Button>
             <Button
               type="button"
@@ -316,7 +318,7 @@ export function AvatarUpload({ userId, userName, currentAvatarUrl, onAvatarChang
               className="gap-2"
             >
               <Check className="w-4 h-4" />
-              Confirmar
+              {t('fix20.admin.avatarCropConfirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

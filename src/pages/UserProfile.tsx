@@ -69,10 +69,13 @@ const COUNTRY_CODES = [
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
-import { VaccinationSchedule } from '@/components/medical/VaccinationSchedule';
 import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
+import DoctorCredentials from '@/components/doctor/DoctorCredentials';
+import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
+import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
+import { generatePlaceholderCedula, getSpecialistCredentialLabelKey } from '@/lib/cedulaVerification';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
@@ -84,6 +87,9 @@ interface DoctorProfile {
   followers_count: number;
   status: string;
   consultation_fee: number;
+  cedula_profesional?: string | null;
+  license?: string | null;
+  numero_consejo?: string | null;
 }
 
 interface ResidentProfile {
@@ -168,6 +174,13 @@ export default function UserProfile() {
   const [editedLocation, setEditedLocation] = useState('');
   const [isSavingLocation, setIsSavingLocation] = useState(false);
 
+  const [isEditingCedula, setIsEditingCedula] = useState(false);
+  const [editedCedula, setEditedCedula] = useState('');
+  const [isSavingCedula, setIsSavingCedula] = useState(false);
+  const [isEditingConsejo, setIsEditingConsejo] = useState(false);
+  const [editedConsejo, setEditedConsejo] = useState('');
+  const [isSavingConsejo, setIsSavingConsejo] = useState(false);
+
   // Phone editing
   const [userPhone, setUserPhone] = useState<string | null>(null);
   const [isLoadingPhone, setIsLoadingPhone] = useState(true);
@@ -231,7 +244,7 @@ export default function UserProfile() {
         if (role === 'doctor') {
           const { data } = await supabase
             .from('doctor_profiles')
-            .select('specialty, bio, location, rating, followers_count, status, consultation_fee')
+            .select('specialty, bio, location, rating, followers_count, status, consultation_fee, cedula_profesional, license, numero_consejo')
             .eq('user_id', user.id)
             .maybeSingle();
 
@@ -441,6 +454,54 @@ export default function UserProfile() {
     }
   };
 
+  const handleSaveCedula = async () => {
+    if (!user?.id) return;
+
+    setIsSavingCedula(true);
+    try {
+      const value = editedCedula.trim() || null;
+      const { error } = await supabase
+        .from('doctor_profiles')
+        .update({ cedula_profesional: value })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setDoctorProfile(prev => prev ? { ...prev, cedula_profesional: value } : null);
+      toast.success(t('profile.cedulaUpdated'));
+      setIsEditingCedula(false);
+    } catch (error: any) {
+      toast.error(error.message || t('profile.cedulaError'));
+    } finally {
+      setIsSavingCedula(false);
+    }
+  };
+
+  // Cédula de especialista / colegiado (según el país). Se persiste en la columna
+  // existente `numero_consejo` de doctor_profiles (consejo/board de especialidad).
+  const handleSaveConsejo = async () => {
+    if (!user?.id) return;
+
+    setIsSavingConsejo(true);
+    try {
+      const value = editedConsejo.trim() || null;
+      const { error } = await supabase
+        .from('doctor_profiles')
+        .update({ numero_consejo: value })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setDoctorProfile(prev => prev ? { ...prev, numero_consejo: value } : null);
+      toast.success(t('profile.specialistUpdated'));
+      setIsEditingConsejo(false);
+    } catch (error: any) {
+      toast.error(error.message || t('profile.specialistError'));
+    } finally {
+      setIsSavingConsejo(false);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -506,7 +567,7 @@ export default function UserProfile() {
     }
   };
 
-  const handleLanguageChange = async (newLanguage: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de') => {
+  const handleLanguageChange = async (newLanguage: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de' | 'ca' | 'zh') => {
     setIsSavingLanguage(true);
     try {
       const { error } = await supabase
@@ -856,8 +917,7 @@ export default function UserProfile() {
         {/* Clinical History Card - también visible para doctores/residentes (cada uno tiene su propio historial personal) */}
         {(role === 'patient' || role === 'doctor' || role === 'resident') && <PatientClinicalHistoryCard />}
 
-        {/* Vaccination Schedule - también visible para doctores/residentes */}
-        {(role === 'patient' || role === 'doctor' || role === 'resident') && <VaccinationSchedule />}
+        {/* Esquema de vacunación movido al Expediente (cliente 2026-06-15): ahora vive en MedicalRecord, no en el perfil. */}
 
         {/* Professional Profile Card - Doctor */}
         {role === 'doctor' && doctorProfile && (
@@ -880,6 +940,105 @@ export default function UserProfile() {
                     <span className="text-muted-foreground">{t('profile.specialty')}</span>
                   </div>
                   <span className="font-medium">{doctorProfile.specialty}</span>
+                </div>
+                <Separator />
+
+                {/* Cédula profesional — debajo de Especialidad; SIEMPRE visible y editable
+                    (cliente 2026-06-24). Si el doctor aún no registró la suya, mostramos una
+                    de relleno determinista para que el campo nunca quede vacío + enlace de
+                    verificación al registro oficial de su país. */}
+                <div className="py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <FileCheck className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{t('profile.cedula')}</span>
+                    </div>
+                    {!isEditingCedula && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium font-mono">
+                          {doctorProfile.cedula_profesional || doctorProfile.license || generatePlaceholderCedula(user.id)}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditedCedula(doctorProfile.cedula_profesional || doctorProfile.license || '');
+                            setIsEditingCedula(true);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {isEditingCedula && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        value={editedCedula}
+                        onChange={(e) => setEditedCedula(e.target.value)}
+                        placeholder={t('profile.cedulaPlaceholder')}
+                        className="flex-1 font-mono"
+                      />
+                      <Button size="sm" onClick={handleSaveCedula} disabled={isSavingCedula}>
+                        {isSavingCedula ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={isSavingCedula} onClick={() => setIsEditingCedula(false)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="mt-2 ml-7">
+                    <CedulaVerifyLink country={user.countryCode} />
+                  </div>
+                </div>
+                <Separator />
+
+                {/* Cédula de especialista / colegiado — la etiqueta se adapta al país del
+                    doctor (cliente 2026-06-25): MX = "Cédula de especialista", países con
+                    colegio = "N.º de colegiado", resto = ambas. Se guarda en la columna
+                    existente doctor_profiles.numero_consejo (consejo/board de especialidad). */}
+                <div className="py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <FileCheck className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{t(getSpecialistCredentialLabelKey(user.countryCode))}</span>
+                    </div>
+                    {!isEditingConsejo && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium font-mono">
+                          {doctorProfile.numero_consejo || t('profile.cedulaEmpty')}
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditedConsejo(doctorProfile.numero_consejo || '');
+                            setIsEditingConsejo(true);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {isEditingConsejo && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        value={editedConsejo}
+                        onChange={(e) => setEditedConsejo(e.target.value)}
+                        placeholder={t('profile.specialistPlaceholder')}
+                        className="flex-1 font-mono"
+                      />
+                      <Button size="sm" onClick={handleSaveConsejo} disabled={isSavingConsejo}>
+                        {isSavingConsejo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={isSavingConsejo} onClick={() => setIsEditingConsejo(false)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <Separator />
 
@@ -1079,6 +1238,8 @@ export default function UserProfile() {
               </CardContent>
             </Card>
             {user?.id && <DoctorCredentialsCard userId={user.id} />}
+            {/* Educación, certificaciones y subida de DOCUMENTOS (cédula, board, diplomas) — cliente 2026-06-17. */}
+            {user?.id && <DoctorCredentials doctorId={user.id} isOwner />}
           </motion.div>
         )}
 
@@ -1161,7 +1322,7 @@ export default function UserProfile() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="es">
-                      <span className="flex items-center gap-2">🇲🇽 Español</span>
+                      <span className="flex items-center gap-2">🇪🇸 Castellano</span>
                     </SelectItem>
                     <SelectItem value="en">
                       <span className="flex items-center gap-2">🇺🇸 English</span>
@@ -1177,6 +1338,12 @@ export default function UserProfile() {
                     </SelectItem>
                     <SelectItem value="de">
                       <span className="flex items-center gap-2">🇩🇪 Deutsch</span>
+                    </SelectItem>
+                    <SelectItem value="ca">
+                      <span className="flex items-center gap-2"><SenyeraIcon /> Català</span>
+                    </SelectItem>
+                    <SelectItem value="zh">
+                      <span className="flex items-center gap-2">🇨🇳 中文</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>

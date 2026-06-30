@@ -22,7 +22,7 @@ export function MySubscribedDoctorsCard() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const tierBadge = (tier: string) => {
-    if (tier === 'premium') return <Crown className="w-3 h-3 text-amber-500" />;
+    if (tier === 'premium') return <Crown className="w-3 h-3 text-primary" />;
     if (tier === 'basic') return <Star className="w-3 h-3 text-primary" />;
     return <Heart className="w-3 h-3 text-pink-500" />;
   };

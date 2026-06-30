@@ -33,7 +33,7 @@ export default function PsychologyDirectory() {
         p_page: 1,
         p_page_size: 50,
         p_search: '',
-        p_specialty: 'Psiquiatría',
+        p_specialty: 'Psicología',
         p_location: '',
       });
       if (!error) setDoctors(data || []);
@@ -61,7 +61,7 @@ export default function PsychologyDirectory() {
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero Section */}
-        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-secondary/10 via-secondary/5 to-fuchsia-500/10 border border-secondary/30 dark:border-secondary/30">
+        <div className="mb-6 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-secondary/10 via-secondary/5 to-secondary/10 border border-secondary/30 dark:border-secondary/30">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center">
               <Brain className="w-6 h-6 text-secondary dark:text-secondary" />

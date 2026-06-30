@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { RatingStars } from './RatingStars';
 import { Loader2, Star } from 'lucide-react';
 
@@ -32,6 +33,7 @@ export function RatingDialog({
   onRated,
 }: RatingDialogProps) {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,8 +41,8 @@ export function RatingDialog({
   const handleSubmit = async () => {
     if (rating === 0) {
       toast({
-        title: 'Selecciona una calificación',
-        description: 'Por favor selecciona al menos 1 estrella',
+        title: t('fix20.chat.ratingSelectTitle'),
+        description: t('fix20.chat.ratingSelectDesc'),
         variant: 'destructive',
       });
       return;
@@ -49,7 +51,7 @@ export function RatingDialog({
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No autenticado');
+      if (!user) throw new Error(t('fix20.chat.notAuthenticated'));
 
       // Check if already rated (prevent duplicate)
       const { data: existing } = await supabase
@@ -61,8 +63,8 @@ export function RatingDialog({
 
       if (existing) {
         toast({
-          title: 'Ya calificaste esta consulta',
-          description: 'Tu calificación ya fue registrada anteriormente',
+          title: t('fix20.chat.ratingAlreadyTitle'),
+          description: t('fix20.chat.ratingAlreadyDesc'),
         });
         onRated?.();
         onClose();
@@ -83,8 +85,8 @@ export function RatingDialog({
         // Handle unique constraint violation gracefully
         if (error.code === '23505' || error.message?.includes('unique')) {
           toast({
-            title: 'Ya calificaste esta consulta',
-            description: 'Tu calificación ya fue registrada anteriormente',
+            title: t('fix20.chat.ratingAlreadyTitle'),
+            description: t('fix20.chat.ratingAlreadyDesc'),
           });
           onRated?.();
           onClose();
@@ -94,8 +96,8 @@ export function RatingDialog({
       }
 
       toast({
-        title: '¡Gracias por tu calificación!',
-        description: 'Tu opinión ayuda a otros pacientes',
+        title: t('fix20.chat.ratingThanksTitle'),
+        description: t('fix20.chat.ratingThanksDesc'),
       });
 
       onRated?.();
@@ -103,8 +105,8 @@ export function RatingDialog({
     } catch (error: any) {
       console.error('Rating error:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo guardar la calificación',
+        title: t('fix20.chat.ratingErrorTitle'),
+        description: error.message || t('fix20.chat.ratingErrorDesc'),
         variant: 'destructive',
       });
     } finally {
@@ -112,7 +114,7 @@ export function RatingDialog({
     }
   };
 
-  const ratingLabels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+  const ratingLabels = ['', t('fix20.chat.ratingVeryBad'), t('fix20.chat.ratingBad'), t('fix20.chat.ratingRegular'), t('fix20.chat.ratingGood'), t('fix20.chat.ratingExcellent')];
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -120,10 +122,10 @@ export function RatingDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="w-5 h-5 text-warning" />
-            Califica tu consulta
+            {t('fix20.chat.ratingDialogTitle')}
           </DialogTitle>
           <DialogDescription>
-            ¿Cómo fue tu experiencia con {doctorName}?
+            {t('fix20.chat.ratingDialogDesc')} {doctorName}?
           </DialogDescription>
         </DialogHeader>
 
@@ -146,10 +148,10 @@ export function RatingDialog({
           {/* Comment */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Comentario (opcional)
+              {t('fix20.chat.ratingCommentLabel')}
             </label>
             <Textarea
-              placeholder="Cuéntanos más sobre tu experiencia..."
+              placeholder={t('fix20.chat.ratingCommentPlaceholder')}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
@@ -163,20 +165,20 @@ export function RatingDialog({
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-            Ahora no
+            {t('fix20.chat.ratingNotNow')}
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={isSubmitting || rating === 0}
             className="w-full sm:w-auto"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Enviando...
+                {t('fix20.chat.ratingSending')}
               </>
             ) : (
-              'Enviar calificación'
+              t('fix20.chat.ratingSubmit')
             )}
           </Button>
         </DialogFooter>

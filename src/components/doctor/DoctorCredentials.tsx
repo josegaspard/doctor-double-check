@@ -29,7 +29,11 @@ import {
   CheckCircle,
   XCircle,
   FileText,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from 'lucide-react';
+import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 import { toast } from 'sonner';
 
 interface Education {
@@ -111,6 +115,17 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
   const [eduForm, setEduForm] = useState({ institution: '', degree: '', field_of_study: '', start_year: '', end_year: '', description: '' });
   const [certForm, setCertForm] = useState({ name: '', issuing_organization: '', issue_date: '', expiry_date: '', credential_id: '' });
   const [expForm, setExpForm] = useState({ title: '', organization: '', location: '', start_date: '', end_date: '', is_current: false, description: '' });
+  // Archivos de documento adjunto (cédula, board, diploma…) para educación y certificaciones.
+  const [eduFile, setEduFile] = useState<File | null>(null);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  // Documentos cuyo visor está abierto (solo el dueño puede verlos; bucket privado).
+  const [shownDocs, setShownDocs] = useState<Set<string>>(new Set());
+  const toggleDoc = (id: string) =>
+    setShownDocs(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   useEffect(() => {
     fetchCredentials();
@@ -199,9 +214,9 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     }
   };
 
-  const handleUploadDocument = async (file: File, type: string, itemId: string) => {
-    const filePath = `${doctorId}/${type}_${itemId}_${Date.now()}.${file.name.split('.').pop()}`;
-    const { error } = await supabase.storage.from('doctor-credentials').upload(filePath, file);
+  const handleUploadDocument = async (file: File, type: string): Promise<string | null> => {
+    const filePath = `${doctorId}/${type}_${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from('doctor-credentials').upload(filePath, file, { upsert: true });
     if (error) {
       toast.error(t('doctorCredentialsComponent.toastUploadError'));
       return null;
@@ -213,6 +228,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     if (!eduForm.institution || !eduForm.degree) { toast.error(t('doctorCredentialsComponent.toastFillRequired')); return; }
     setIsSaving(true);
     try {
+      let document_url: string | null = null;
+      if (eduFile) {
+        document_url = await handleUploadDocument(eduFile, 'education');
+        if (!document_url) { setIsSaving(false); return; }
+      }
       const { error } = await supabase.from('doctor_education' as any).insert({
         doctor_id: doctorId,
         institution: eduForm.institution,
@@ -221,11 +241,13 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         start_year: eduForm.start_year ? parseInt(eduForm.start_year) : null,
         end_year: eduForm.end_year ? parseInt(eduForm.end_year) : null,
         description: eduForm.description || null,
+        document_url,
       });
       if (error) throw error;
       toast.success(t('doctorCredentialsComponent.toastEducationAdded'));
       setShowEduDialog(false);
       setEduForm({ institution: '', degree: '', field_of_study: '', start_year: '', end_year: '', description: '' });
+      setEduFile(null);
       fetchCredentials();
     } catch (error: any) {
       toast.error(error.message || t('doctorCredentialsComponent.toastAddError'));
@@ -238,6 +260,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     if (!certForm.name || !certForm.issuing_organization) { toast.error(t('doctorCredentialsComponent.toastFillRequired')); return; }
     setIsSaving(true);
     try {
+      let document_url: string | null = null;
+      if (certFile) {
+        document_url = await handleUploadDocument(certFile, 'certification');
+        if (!document_url) { setIsSaving(false); return; }
+      }
       const { error } = await supabase.from('doctor_certifications' as any).insert({
         doctor_id: doctorId,
         name: certForm.name,
@@ -245,11 +272,13 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         issue_date: certForm.issue_date || null,
         expiry_date: certForm.expiry_date || null,
         credential_id: certForm.credential_id || null,
+        document_url,
       });
       if (error) throw error;
       toast.success(t('doctorCredentialsComponent.toastCertificationAdded'));
       setShowCertDialog(false);
       setCertForm({ name: '', issuing_organization: '', issue_date: '', expiry_date: '', credential_id: '' });
+      setCertFile(null);
       fetchCredentials();
     } catch (error: any) {
       toast.error(error.message || t('doctorCredentialsComponent.toastAddError'));
@@ -318,6 +347,18 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         )}
       </CardHeader>
       <CardContent>
+        {/* Nota de privacidad — el cliente pidió dejar MUY claro que los documentos
+            subidos (título, cédula, colegiado, board) sólo los ven el propio doctor
+            y el equipo de Medical Masters. Cliente 2026-06-22. */}
+        {isOwner && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {t('doctorCredentialsComponent.privacyNote')}
+            </p>
+          </div>
+        )}
+
         {/* Alerta visible sólo al propio doctor cuando alguna credencial oficial fue rechazada */}
         {isOwner && (credCedulaStatus === 'rejected' || credCofeprisStatus === 'rejected') && (
           <div className="mb-4 space-y-2">
@@ -433,6 +474,22 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                         <p className="text-xs text-muted-foreground">{edu.start_year || '?'} — {edu.end_year || t('doctorCredentialsComponent.present')}</p>
                       )}
                       {edu.description && <p className="text-xs mt-1">{edu.description}</p>}
+                      {edu.document_url && (
+                        <div className="mt-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs text-success flex items-center gap-1"><FileText className="w-3 h-3" /> {t('doctorCredentialsComponent.documentAttached')}</p>
+                            {isOwner && (
+                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs gap-1" onClick={() => toggleDoc(edu.id)}>
+                                {shownDocs.has(edu.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                {shownDocs.has(edu.id) ? t('doctorCredentialsComponent.hideDocument') : t('doctorCredentialsComponent.viewDocument')}
+                              </Button>
+                            )}
+                          </div>
+                          {isOwner && shownDocs.has(edu.id) && (
+                            <InlineFileViewer fileUrl={edu.document_url} bucket="doctor-credentials" className="rounded-md overflow-hidden mt-2" />
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {isOwner && statusBadge(edu.status, t)}
@@ -476,6 +533,22 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                       {cert.issue_date && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.issuedLabel')}: {cert.issue_date}</p>}
                       {cert.expiry_date && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.expiresLabel')}: {cert.expiry_date}</p>}
                       {cert.credential_id && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.idLabel')}: {cert.credential_id}</p>}
+                      {cert.document_url && (
+                        <div className="mt-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs text-success flex items-center gap-1"><FileText className="w-3 h-3" /> {t('doctorCredentialsComponent.documentAttached')}</p>
+                            {isOwner && (
+                              <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs gap-1" onClick={() => toggleDoc(cert.id)}>
+                                {shownDocs.has(cert.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                {shownDocs.has(cert.id) ? t('doctorCredentialsComponent.hideDocument') : t('doctorCredentialsComponent.viewDocument')}
+                              </Button>
+                            )}
+                          </div>
+                          {isOwner && shownDocs.has(cert.id) && (
+                            <InlineFileViewer fileUrl={cert.document_url} bucket="doctor-credentials" className="rounded-md overflow-hidden mt-2" />
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       {isOwner && statusBadge(cert.status, t)}
@@ -552,9 +625,14 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
               <div><Label className="text-xs">{t('doctorCredentialsComponent.endYearLabel')}</Label><Input type="number" value={eduForm.end_year} onChange={e => setEduForm({...eduForm, end_year: e.target.value})} placeholder="2016" /></div>
             </div>
             <div><Label className="text-xs">{t('doctorCredentialsComponent.descriptionLabel')}</Label><Textarea value={eduForm.description} onChange={e => setEduForm({...eduForm, description: e.target.value})} placeholder={t('doctorCredentialsComponent.descriptionPlaceholder')} /></div>
+            <div>
+              <Label className="text-xs flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {t('doctorCredentialsComponent.documentLabel')}</Label>
+              <Input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setEduFile(e.target.files?.[0] || null)} />
+              <p className="text-xs text-muted-foreground mt-1">{t('doctorCredentialsComponent.documentHint')}</p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEduDialog(false)}>{t('doctorCredentialsComponent.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setShowEduDialog(false); setEduFile(null); }}>{t('doctorCredentialsComponent.cancel')}</Button>
             <Button onClick={handleAddEducation} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('doctorCredentialsComponent.save')}</Button>
           </DialogFooter>
         </DialogContent>
@@ -572,9 +650,14 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
               <div><Label className="text-xs">{t('doctorCredentialsComponent.expiryDateLabel')}</Label><Input type="date" value={certForm.expiry_date} onChange={e => setCertForm({...certForm, expiry_date: e.target.value})} /></div>
             </div>
             <div><Label className="text-xs">{t('doctorCredentialsComponent.credentialIdLabel')}</Label><Input value={certForm.credential_id} onChange={e => setCertForm({...certForm, credential_id: e.target.value})} placeholder="ABC-12345" /></div>
+            <div>
+              <Label className="text-xs flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {t('doctorCredentialsComponent.documentLabel')}</Label>
+              <Input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setCertFile(e.target.files?.[0] || null)} />
+              <p className="text-xs text-muted-foreground mt-1">{t('doctorCredentialsComponent.documentHint')}</p>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCertDialog(false)}>{t('doctorCredentialsComponent.cancel')}</Button>
+            <Button variant="outline" onClick={() => { setShowCertDialog(false); setCertFile(null); }}>{t('doctorCredentialsComponent.cancel')}</Button>
             <Button onClick={handleAddCertification} disabled={isSaving}>{isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t('doctorCredentialsComponent.save')}</Button>
           </DialogFooter>
         </DialogContent>

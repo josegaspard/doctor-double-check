@@ -27,6 +27,7 @@ import {
   Linkedin,
   Youtube,
   FileText,
+  Scale,
   Shield,
   Loader2,
   Save,
@@ -134,6 +135,7 @@ export default function AdminSiteSettings() {
 
   const [termsContent, setTermsContent] = useState('');
   const [privacyContent, setPrivacyContent] = useState('');
+  const [codeOfEthicsContent, setCodeOfEthicsContent] = useState('');
   const [securityContent, setSecurityContent] = useState('');
   const [complianceContent, setComplianceContent] = useState('');
   const [arcoContent, setArcoContent] = useState('');
@@ -193,9 +195,6 @@ export default function AdminSiteSettings() {
   const [featureToggles, setFeatureToggles] = useState<SiteToggles>({
     show_news_section: false,
     show_content_medical: false,
-    show_prescriptions: false,
-    live_chat_free: true,
-    show_transaction_history: false,
     app_background: 'image',
     enable_patient_chat: false,
     enable_prescriptions: false,
@@ -253,6 +252,18 @@ export default function AdminSiteSettings() {
         if (privacyData?.value) {
           const privacy = privacyData.value as unknown as LegalContent;
           setPrivacyContent(privacy.content || '');
+        }
+
+        // Fetch código de ética
+        const { data: ethicsData } = await supabase
+          .from('site_settings')
+          .select('value')
+          .eq('id', 'code_of_ethics')
+          .single();
+
+        if (ethicsData?.value) {
+          const ethics = ethicsData.value as unknown as LegalContent;
+          setCodeOfEthicsContent(ethics.content || '');
         }
 
         // Páginas legales adicionales (Seguridad / Cumplimiento / ARCO)
@@ -431,6 +442,30 @@ export default function AdminSiteSettings() {
     }
   };
 
+  const handleSaveCodeOfEthics = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          id: 'code_of_ethics',
+          value: {
+            content: codeOfEthicsContent,
+            lastUpdated: new Date().toISOString(),
+          } as unknown as Json,
+          updated_by: supabaseUser?.id,
+        });
+
+      if (error) throw error;
+      toast.success(t('adminSiteSettingsPage.codeOfEthics.updated'));
+    } catch (error) {
+      console.error('Error saving code of ethics:', error);
+      toast.error(t('adminSiteSettingsPage.codeOfEthics.saveError'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSavePrivacy = async () => {
     setIsSaving(true);
     try {
@@ -468,10 +503,10 @@ export default function AdminSiteSettings() {
           updated_by: supabaseUser?.id,
         });
       if (error) throw error;
-      toast.success('Página actualizada');
+      toast.success(t('fix20.admin.pageUpdated'));
     } catch (error) {
       console.error('Error saving legal page:', error);
-      toast.error('Error al guardar la página');
+      toast.error(t('fix20.admin.pageUpdateError'));
     } finally {
       setIsSaving(false);
     }
@@ -539,10 +574,10 @@ export default function AdminSiteSettings() {
 
       if (error) throw error;
       setSubscriptionPricing(clean);
-      toast.success('Precios de suscripción actualizados');
+      toast.success(t('fix20.admin.subscriptionPricingUpdated'));
     } catch (error) {
       console.error('Error saving subscription pricing:', error);
-      toast.error('No se pudieron guardar los precios de suscripción');
+      toast.error(t('fix20.admin.subscriptionPricingError'));
     } finally {
       setIsSaving(false);
     }
@@ -560,10 +595,10 @@ export default function AdminSiteSettings() {
         });
 
       if (error) throw error;
-      toast.success('Estadísticas del sitio actualizadas');
+      toast.success(t('fix20.admin.landingStatsUpdated'));
     } catch (error) {
       console.error('Error saving landing stats:', error);
-      toast.error('No se pudieron guardar las estadísticas');
+      toast.error(t('fix20.admin.landingStatsError'));
     } finally {
       setIsSaving(false);
     }
@@ -584,10 +619,10 @@ export default function AdminSiteSettings() {
         .upsert({ id: 'app_config', value: clean as unknown as Json, updated_by: supabaseUser?.id });
       if (error) throw error;
       setAppConfig(clean);
-      toast.success('Configuración general actualizada');
+      toast.success(t('fix20.admin.appConfigUpdated'));
     } catch (error) {
       console.error('Error saving app config:', error);
-      toast.error('No se pudo guardar la configuración');
+      toast.error(t('fix20.admin.appConfigError'));
     } finally {
       setIsSaving(false);
     }
@@ -600,10 +635,10 @@ export default function AdminSiteSettings() {
         .from('site_settings')
         .upsert({ id: 'email_branding', value: emailBranding as unknown as Json, updated_by: supabaseUser?.id });
       if (error) throw error;
-      toast.success('Branding de correos actualizado');
+      toast.success(t('fix20.admin.emailBrandingUpdated'));
     } catch (error) {
       console.error('Error saving email branding:', error);
-      toast.error('No se pudo guardar el branding de correos');
+      toast.error(t('fix20.admin.emailBrandingError'));
     } finally {
       setIsSaving(false);
     }
@@ -632,10 +667,10 @@ export default function AdminSiteSettings() {
         .upsert({ id: 'text_overrides', value: clean as unknown as Json, updated_by: supabaseUser?.id });
       if (error) throw error;
       setTextOverrides(clean);
-      toast.success('Textos actualizados (recarga la página para verlos)');
+      toast.success(t('fix20.admin.textOverridesUpdated'));
     } catch (error) {
       console.error('Error saving text overrides:', error);
-      toast.error('No se pudieron guardar los textos');
+      toast.error(t('fix20.admin.textOverridesError'));
     } finally {
       setIsSaving(false);
     }
@@ -650,10 +685,10 @@ export default function AdminSiteSettings() {
         .upsert({ id: 'extra_specialties', value: clean as unknown as Json, updated_by: supabaseUser?.id });
       if (error) throw error;
       setExtraSpecialties(clean);
-      toast.success('Especialidades actualizadas');
+      toast.success(t('fix20.admin.specialtiesUpdated'));
     } catch (error) {
       console.error('Error saving extra specialties:', error);
-      toast.error('No se pudieron guardar las especialidades');
+      toast.error(t('fix20.admin.specialtiesError'));
     } finally {
       setIsSaving(false);
     }
@@ -735,6 +770,10 @@ export default function AdminSiteSettings() {
               <TabsTrigger value="terms" className="gap-2 text-xs">
                 <FileText className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.terms')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="ethics" className="gap-2 text-xs">
+                <Scale className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.ethics')}</span>
               </TabsTrigger>
               <TabsTrigger value="privacy" className="gap-2 text-xs">
                 <Shield className="w-4 h-4" />
@@ -894,6 +933,36 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     {t('adminSiteSettingsPage.terms.save')}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Código de Ética Tab */}
+            <TabsContent value="ethics">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Scale className="w-5 h-5" />
+                    {t('adminSiteSettingsPage.codeOfEthics.title')}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {t('adminSiteSettingsPage.codeOfEthics.description')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <RichTextLegalEditor
+                    content={codeOfEthicsContent}
+                    onChange={setCodeOfEthicsContent}
+                    placeholder={t('adminSiteSettingsPage.codeOfEthics.description')}
+                  />
+                  <Button onClick={handleSaveCodeOfEthics} disabled={isSaving} className="w-full">
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    {t('adminSiteSettingsPage.codeOfEthics.save')}
                   </Button>
                 </CardContent>
               </Card>
@@ -1533,7 +1602,7 @@ export default function AdminSiteSettings() {
                   </div>
 
                   {[
-                    { key: 'enable_patient_chat' as const, label: 'Chat doctor ↔ paciente', desc: 'Activa el chat directo entre médico y paciente. Si está apagado, la función queda temporalmente no disponible en toda la web.' },
+                    { key: 'enable_patient_chat' as const, label: 'Orientación médica (chat médico ↔ paciente)', desc: 'Activa la Orientación médica: el chat/consulta directa entre médico y paciente. Si la apagas, la Orientación médica queda temporalmente no disponible en toda la web.' },
                     { key: 'enable_prescriptions' as const, label: 'Recetas médicas', desc: 'Activa la generación y gestión de recetas. Si está apagado, queda temporalmente no disponible en toda la web.' },
                     { key: 'enable_video_calls' as const, label: 'Videollamadas con pacientes', desc: 'Activa las videollamadas directas con pacientes. Si está apagado, queda temporalmente no disponible en toda la web.' },
                     { key: 'enable_marketplace' as const, label: 'Sección: Tienda / Insumos médicos', desc: 'Muestra u oculta toda la tienda de insumos médicos (Marketplace). Apagado = oculta el menú y la sección queda no disponible.' },
@@ -1544,9 +1613,6 @@ export default function AdminSiteSettings() {
                     { key: 'enable_ads' as const, label: 'Publicidad (anuncios)', desc: 'Muestra u oculta todos los anuncios (banners, intersticiales, pre-roll) en la web. Apagado = no se muestra ninguna publicidad.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
-                    { key: 'show_prescriptions' as const, label: t('adminSiteSettingsPage.toggles.items.prescriptions.label'), desc: t('adminSiteSettingsPage.toggles.items.prescriptions.desc') },
-                    { key: 'live_chat_free' as const, label: t('adminSiteSettingsPage.toggles.items.liveChatFree.label'), desc: t('adminSiteSettingsPage.toggles.items.liveChatFree.desc') },
-                    { key: 'show_transaction_history' as const, label: t('adminSiteSettingsPage.toggles.items.transactionHistory.label'), desc: t('adminSiteSettingsPage.toggles.items.transactionHistory.desc') },
                   ].map((toggle) => (
                     <div key={toggle.key} className="flex items-center justify-between p-4 rounded-lg border border-border">
                       <div>

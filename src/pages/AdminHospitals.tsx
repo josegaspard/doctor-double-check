@@ -323,8 +323,8 @@ export default function AdminHospitals() {
               <div><Label>{t('autoI18n.clAdminHosp29')}</Label><Input value={form.hours} onChange={e => setForm(f => ({ ...f, hours: e.target.value }))} placeholder="Urgencias 24h" /></div>
               <div><Label>{t('autoI18n.clAdminHosp30')}</Label><Input value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>Latitud</Label><Input type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} /></div>
-                <div><Label>Longitud</Label><Input type="number" step="any" value={form.lng} onChange={e => setForm(f => ({ ...f, lng: e.target.value }))} /></div>
+                <div><Label>{t('fix20.admin.latitude')}</Label><Input type="number" step="any" value={form.lat} onChange={e => setForm(f => ({ ...f, lat: e.target.value }))} /></div>
+                <div><Label>{t('fix20.admin.longitude')}</Label><Input type="number" step="any" value={form.lng} onChange={e => setForm(f => ({ ...f, lng: e.target.value }))} /></div>
               </div>
               <div><Label>{t('autoI18n.clAdminHosp31')}</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} /></div>
               <div className="flex items-center gap-2">

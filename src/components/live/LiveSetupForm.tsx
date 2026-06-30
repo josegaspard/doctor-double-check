@@ -49,7 +49,7 @@ export interface LiveConfig {
   chatMode: 'free' | 'paid_only' | 'mixed';
   chatPrice: number;
   chatHighlightSeconds: number;
-  contentTarget: 'medical' | 'patients';
+  contentTarget: 'medical' | 'patients' | 'both';
   translateEnabled: boolean;
   translateTargetLang: string;
 }
@@ -105,7 +105,8 @@ function ChatModeCard({ icon: Icon, title, description, selected, onClick }: Cha
 export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const { t } = useLanguage();
   const { specialtiesList: SPECIALTIES } = useSpecialties();
-  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | null>(null);
+  // Audiencia: ahora se pueden seleccionar AMBAS (médico + pacientes) → 'both'. Cliente 2026-06-17.
+  const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | 'both' | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [specialty, setSpecialty] = useState('');
@@ -136,6 +137,24 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  // Toggle independiente de cada audiencia: permite tener las DOS activas a la vez ('both').
+  const toggleMedical = () => {
+    setContentTarget(prev =>
+      prev === 'medical' ? null :
+      prev === 'patients' ? 'both' :
+      prev === 'both' ? 'patients' :
+      'medical'
+    );
+  };
+  const togglePatients = () => {
+    setContentTarget(prev =>
+      prev === 'patients' ? null :
+      prev === 'medical' ? 'both' :
+      prev === 'both' ? 'medical' :
+      'patients'
+    );
   };
 
   const handleThumbnailSelect = (file: File) => {
@@ -190,17 +209,18 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               icon={Stethoscope}
               title={t('liveSetupForm.audienceMedicalTitle')}
               description={t('liveSetupForm.audienceMedicalDescription')}
-              selected={contentTarget === 'medical'}
-              onClick={() => setContentTarget('medical')}
+              selected={contentTarget === 'medical' || contentTarget === 'both'}
+              onClick={toggleMedical}
             />
             <ChatModeCard
               icon={Users}
               title={t('liveSetupForm.audiencePatientsTitle')}
               description={t('liveSetupForm.audiencePatientsDescription')}
-              selected={contentTarget === 'patients'}
-              onClick={() => setContentTarget('patients')}
+              selected={contentTarget === 'patients' || contentTarget === 'both'}
+              onClick={togglePatients}
             />
           </div>
+          <p className="text-xs text-muted-foreground -mt-1">{t('liveSetupForm.audienceBothHint')}</p>
         </section>
 
         {contentTarget && (<>

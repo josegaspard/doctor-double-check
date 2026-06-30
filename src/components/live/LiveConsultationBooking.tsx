@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
@@ -67,6 +68,11 @@ export function LiveConsultationBooking({
 
   const handlePurchase = async () => {
     if (!user || !message.trim()) return;
+    // Consultas solo para México por ahora (cliente 2026-06-29).
+    if (!isConsultationCountryAllowed(user.countryCode)) {
+      toast.error(t('bookAppointment.toastMexicoOnly'));
+      return;
+    }
     if (limitReached) {
       toast.error('El doctor ha alcanzado el límite de orientaciones para este live');
       return;

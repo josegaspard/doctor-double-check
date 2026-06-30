@@ -155,95 +155,61 @@ export function AddPatientModal({ open, onOpenChange, onAdded }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="registered">{t('addPatientModal.tabRegistered')}</TabsTrigger>
-            <TabsTrigger value="external">{t('addPatientModal.tabExternal')}</TabsTrigger>
-          </TabsList>
+        <div className="space-y-3 pt-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={term}
+              onChange={e => setTerm(e.target.value)}
+              placeholder={t('addPatientModal.searchPlaceholder')}
+              className="pl-9 pr-9 h-11"
+              autoFocus
+              maxLength={100}
+            />
+            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
+          </div>
 
-          <TabsContent value="registered" className="space-y-3 pt-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={term}
-                onChange={e => setTerm(e.target.value)}
-                placeholder={t('addPatientModal.searchPlaceholder')}
-                className="pl-9 pr-9 h-11"
-                autoFocus
-                maxLength={100}
-              />
-              {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />}
-            </div>
-
-            <div className="space-y-1.5 max-h-80 overflow-auto -mx-1 px-1">
-              {term.trim().length === 0 && (
-                <div className="text-center py-6">
-                  <Search className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-                  <p className="text-xs text-muted-foreground">{t('addPatientModal.searchHint')}</p>
-                </div>
-              )}
-              {!searching && term.trim().length > 0 && results.length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-sm text-muted-foreground">{t('addPatientModal.noResultsFor')} "<strong>{term}</strong>"</p>
-                  <p className="text-xs text-muted-foreground mt-1">{t('addPatientModal.noResultsHint')}</p>
-                </div>
-              )}
-              {results.map((r) => {
-                const alreadyInvited = invitedIds.has(r.user_id);
-                return (
-                  <div key={r.user_id} className="flex items-center gap-2 p-2.5 rounded-md border border-border hover:bg-muted/40 transition-colors">
-                    <Avatar className="h-9 w-9 flex-shrink-0">
-                      <AvatarImage src={r.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {(r.name || r.email || '?').slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{r.name || t('addPatientModal.noName')}</p>
-                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={alreadyInvited ? 'outline' : 'default'}
-                      disabled={alreadyInvited}
-                      onClick={() => handleInvite(r)}
-                      className="flex-shrink-0 gap-1"
-                    >
-                      {alreadyInvited ? <><Check className="w-3.5 h-3.5" /> {t('addPatientModal.sent')}</> : <><Send className="w-3.5 h-3.5" /> {t('addPatientModal.invite')}</>}
-                    </Button>
+          <div className="space-y-1.5 max-h-80 overflow-auto -mx-1 px-1">
+            {term.trim().length === 0 && (
+              <div className="text-center py-6">
+                <Search className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-xs text-muted-foreground">{t('addPatientModal.searchHint')}</p>
+              </div>
+            )}
+            {!searching && term.trim().length > 0 && results.length === 0 && (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">{t('addPatientModal.noResultsFor')} "<strong>{term}</strong>"</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('addPatientModal.noResultsHint')}</p>
+              </div>
+            )}
+            {results.map((r) => {
+              const alreadyInvited = invitedIds.has(r.user_id);
+              return (
+                <div key={r.user_id} className="flex items-center gap-2 p-2.5 rounded-md border border-border hover:bg-muted/40 transition-colors">
+                  <Avatar className="h-9 w-9 flex-shrink-0">
+                    <AvatarImage src={r.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                      {(r.name || r.email || '?').slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{r.name || t('addPatientModal.noName')}</p>
+                    <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                   </div>
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="external" className="space-y-3 pt-3">
-            <div className="space-y-1.5">
-              <Label>{t('addPatientModal.fullNameLabel')}</Label>
-              <Input value={extName} onChange={e => setExtName(e.target.value)} maxLength={120} placeholder={t('addPatientModal.fullNamePlaceholder')} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label>{t('addPatientModal.emailLabel')}</Label>
-                <Input value={extEmail} onChange={e => setExtEmail(e.target.value)} maxLength={255} type="email" placeholder={t('addPatientModal.optional')} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{t('addPatientModal.phoneLabel')}</Label>
-                <Input value={extPhone} onChange={e => setExtPhone(e.target.value)} maxLength={30} placeholder={t('addPatientModal.optional')} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{t('addPatientModal.notesLabel')}</Label>
-              <Input value={extNotes} onChange={e => setExtNotes(e.target.value)} maxLength={500} placeholder={t('addPatientModal.notesPlaceholder')} />
-            </div>
-            <DialogFooter className="pt-2">
-              <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('addPatientModal.cancel')}</Button>
-              <Button onClick={handleAddExternal} disabled={saving || !extName.trim()}>
-                {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />} {t('addPatientModal.savePatient')}
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-        </Tabs>
+                  <Button
+                    size="sm"
+                    variant={alreadyInvited ? 'outline' : 'default'}
+                    disabled={alreadyInvited}
+                    onClick={() => handleInvite(r)}
+                    className="flex-shrink-0 gap-1"
+                  >
+                    {alreadyInvited ? <><Check className="w-3.5 h-3.5" /> {t('addPatientModal.sent')}</> : <><Send className="w-3.5 h-3.5" /> {t('addPatientModal.invite')}</>}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { ExtendedUser } from './types';
 import { fetchUserProfile } from './fetchUserProfile';
+import { logger } from '@/lib/logger';
 
 function getCachedUser(): ExtendedUser | null {
   try {
@@ -75,12 +76,12 @@ export function useAuthState() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[Auth] Event:', event, 'Provider:', session?.user?.app_metadata?.provider);
+      logger.log('[Auth] Event:', event, 'Provider:', session?.user?.app_metadata?.provider);
       setSupabaseUser(session?.user ?? null);
 
       // TOKEN_REFRESHED: just update supabaseUser, no need to re-validate
       if (event === 'TOKEN_REFRESHED') {
-        console.log('[Auth] Token refreshed, keeping session');
+        logger.log('[Auth] Token refreshed, keeping session');
         return;
       }
 
@@ -128,9 +129,9 @@ export function useAuthState() {
         if (shouldRedirect) {
           if (event === 'SIGNED_IN') {
             // Fresh login: check onboarding status
-            console.log('[Auth] SIGNED_IN redirect - Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
+            logger.log('[Auth] SIGNED_IN redirect - Role:', profile?.role, 'OnboardingCompleted:', profile?.onboardingCompleted);
             if (!profile?.onboardingCompleted) {
-              console.log('[Auth] Redirecting to onboarding');
+              logger.log('[Auth] Redirecting to onboarding');
               window.location.replace('/onboarding');
               return;
             }
@@ -138,7 +139,7 @@ export function useAuthState() {
 
           // Both SIGNED_IN (with completed onboarding) and INITIAL_SESSION: redirect to dashboard
           if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            console.log('[Auth] Redirecting based on role:', profile?.role);
+            logger.log('[Auth] Redirecting based on role:', profile?.role);
             if (profile?.role === 'doctor') {
               window.location.replace('/doctor/dashboard');
             } else if (profile?.role === 'admin') {

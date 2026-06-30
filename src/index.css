@@ -1018,9 +1018,54 @@
   background-color: #227787;
   background-attachment: fixed;
 }
+/* ============================================================
+   MÓVIL (≤768px): el fondo del globo recompuesto en VERTICAL.
+   ------------------------------------------------------------
+   PROBLEMA (cliente 2026-06-22, "en móvil se ve pésimo"): el raster
+   `app-bg.jpg` es PANORÁMICO (1672×941, globo a la derecha sobre mucho campo
+   negativo). `.app-bg-image` es `min-h-screen flex` → crece con TODO el
+   contenido de la página. En móvil usábamos `background-attachment: scroll`,
+   así que `background-size: cover` escalaba el raster para cubrir la ALTURA
+   COMPLETA de la página (no el viewport) → el globo quedaba zoomeado a un tamaño
+   enorme y sólo se veía una franja vertical recortada y agobiante detrás del
+   contenido. Recentrar el `background-position` (intento previo) no lo arregla.
+
+   SOLUCIÓN: un asset VERTICAL dedicado (`app-bg-mobile.*`, 1080×1920, derivado
+   del MISMO globo/colores del brandbook → globo arriba, campo oscuro calmado
+   abajo para que las tarjetas se lean encima) pintado DIRECTAMENTE sobre el
+   fondo de `.app-bg-image` con `background-size: 100% auto` (ancho 100%, alto
+   proporcional = SIN zoom) + `no-repeat` y el navy del asset rellenando el
+   resto hacia abajo. El globo queda arriba (zona hero) y se desvanece al campo
+   oscuro; debajo, navy liso para que el contenido se lea. Se evita a propósito
+   `::before { position: fixed }` + z-index negativo: esa capa NO compone de
+   forma fiable (el globo desaparecía). Esto es background normal → renderiza
+   idéntico en todos los navegadores. Scrollea con la página (igual que el
+   `scroll` que ya se usaba). El `::after` teal del footer se mantiene. */
 @media (max-width: 768px) {
   .app-bg-image {
-    background-attachment: scroll;
+    background-color: #02101a !important; /* navy del asset = relleno sin costura */
+    background-attachment: scroll !important;
+    background-position: top center !important;
+    background-repeat: no-repeat !important;
+    /* Capa 1 (arriba): fundido teal header→body. Capa 2: globo vertical.
+       Doble declaración = fallback: navegadores sin `image-set` ignoran la 2ª y
+       se quedan con el JPG de la 1ª (toda la regla se descarta si UN valor es
+       inválido, por eso no se mezclan en una sola línea). */
+    background-image:
+      linear-gradient(to bottom,
+        hsl(189 60% 33%) 0,
+        hsl(189 60% 33% / 0.5) 6rem,
+        hsla(189 60% 33% / 0) 16rem),
+      url("/app-bg-mobile.jpg?v=20260622") !important;
+    background-image:
+      linear-gradient(to bottom,
+        hsl(189 60% 33%) 0,
+        hsl(189 60% 33% / 0.5) 6rem,
+        hsla(189 60% 33% / 0) 16rem),
+      image-set(
+        url("/app-bg-mobile.webp?v=20260622") type("image/webp"),
+        url("/app-bg-mobile.jpg?v=20260622") type("image/jpeg")) !important;
+    background-size: 100% 100%, 100% auto !important;
   }
 }
 
@@ -1053,16 +1098,44 @@
    para borrar el corte duro donde el globo chocaba con el footer macizo. */
 .app-bg-image footer {
   background-color: transparent !important;
+  /* SOLO el borde SUPERIOR (el que toca el contenido) se difumina a transparente
+     y se funde con el globo; de ahí hacia abajo es teal SÓLIDO. NADA de
+     transparencia abajo (cliente 2026-06-15). */
   background-image: linear-gradient(
     to bottom,
     hsl(189 60% 33% / 0) 0%,
-    hsl(189 60% 33% / 0.45) 28%,
-    hsl(189 60% 33% / 0.86) 64%,
-    hsl(189 60% 33%) 100%
+    hsl(189 60% 33% / 0.45) 22%,
+    hsl(189 60% 33% / 0.86) 50%,
+    hsl(189 60% 33%) 72%
   ) !important;
   border-top: 0 !important;
   -webkit-backdrop-filter: blur(11px) saturate(1.06);
   backdrop-filter: blur(11px) saturate(1.06);
+}
+
+/* UNIFICAR la zona baja con el footer (cliente 2026-06-16, "que parezca un solo
+   bloque, sin línea"): el mismo principio que funcionó en la HOME — hacer la
+   superficie de ARRIBA uniforme. Aquí el globo es desigual (brillante a la
+   derecha, oscuro a la izquierda) así que un fundido por alpha deja costura.
+   Esta capa funde el globo a teal SÓLIDO (#227787 = hsl(189 60% 33%)) en toda la
+   franja inferior donde vive el footer → el footer queda sobre teal sólido y se
+   lee como continuación, sin seam. Va DETRÁS del contenido (z-0); el footer y el
+   main (z-10) quedan por encima. */
+.app-bg-image::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42rem;
+  background-image: linear-gradient(
+    to top,
+    hsl(189 60% 33%) 0%,
+    hsl(189 60% 33%) 76%,
+    hsl(189 60% 33% / 0) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* SOLO links y botones GHOST del header reciben blanco; outline/default/etc. NO. */
@@ -1189,9 +1262,74 @@
 .app-bg-image > footer {
   border-top: 0 !important;
   background-color: transparent !important;
+  /* Por encima de la capa .app-bg-image::after que funde el globo a teal sólido. */
+  position: relative;
+  z-index: 1;
 }
 .app-bg-image > footer .border-t {
   border-top-color: transparent !important;
+}
+
+/* ---------- 3b. Home (Landing.tsx) header + footer DIFUMINADOS (cliente 2026-06-15) ---------- */
+/* El cliente quiere en la HOME el mismo efecto que en /login: el footer se
+   funde con la sección superior (transparente arriba → teal abajo + blur) y la
+   barra de navegación, al hacer scroll, se vuelve un cristal esmerilado que se
+   desvanece a transparente en su borde inferior (el que da al contenido).
+   La home NO vive bajo .app-bg-image (su diseño es claro), por eso se replica
+   aquí scoped a .landing-page / .landing-nav para NO alterar el login ni otras
+   páginas que reusan UnifiedFooter. */
+/* Footer de la HOME = mismo color teal del footer de /login (#227787), pero
+   DIFUMINADO solo en el borde superior (donde toca el contenido) hasta volverse
+   teal SÓLIDO abajo. Arranca en navy #163a83 (= color exacto de la sección Final
+   CTA de arriba, así se funde sin línea ni blanco) y baja a teal. OPACO a
+   propósito: nunca se ve el blanco de la página. Scoped a .landing-page (no toca
+   /login, que usa .app-bg-image footer). Cliente 2026-06-15. */
+.landing-page > footer {
+  border-top: 0 !important;
+  /* DOS cosas a la vez (cliente 2026-06-15):
+     1) DEGRADADO visible navy→teal en el cuerpo (sobre la página clara tiene que
+        ser opaco; si fuera transparente se vería blanco). Es el degradado que
+        funcionó.
+     2) Borde SUPERIOR transparente DE VERDAD, igual que el header: el `mask`
+        desvanece la parte de arriba a transparente. El footer se sube 4rem para
+        solapar el navy de la sección de arriba, así esa zona transparente cae
+        SOBRE el navy y nunca se ve la página clara. Abajo: teal sólido. */
+  background-color: #227787 !important;
+  /* El borde de ARRIBA arranca con el MISMO color de la sección de arriba
+     (Final CTA = #163a83), así la unión es invisible y "parece transparente";
+     de ahí baja en un degradado suave y largo hasta teal sólido. Sin máscara ni
+     solape → cero blanco, cero costura. Idea del cliente 2026-06-15. */
+  background-image: linear-gradient(
+    to bottom,
+    #163a83 0%,
+    #18496f 22%,
+    #1d5f79 44%,
+    #227787 70%
+  ) !important;
+}
+.landing-page > footer .border-t {
+  border-top-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Barra de navegación de la home: transparente sobre el hero; al hacer scroll
+   se vuelve cristal esmerilado translúcido y se desvanece a transparente en su
+   borde inferior con una pluma (mask), sin línea/sombra dura. El texto/logo
+   viven en una capa hermana (z-10), así la máscara solo difumina el fondo. */
+.landing-nav-surface {
+  background: transparent;
+}
+.landing-nav.is-scrolled .landing-nav-surface {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.72) 54%,
+    rgba(255, 255, 255, 0.40) 82%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  -webkit-backdrop-filter: blur(14px) saturate(1.08);
+  backdrop-filter: blur(14px) saturate(1.08);
+  -webkit-mask-image: linear-gradient(to bottom, #000 74%, rgba(0, 0, 0, 0.4) 100%);
+  mask-image: linear-gradient(to bottom, #000 74%, rgba(0, 0, 0, 0.4) 100%);
 }
 
 /* ---------- 4. Headings sueltos ---------- */

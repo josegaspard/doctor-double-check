@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
@@ -73,6 +74,8 @@ export default function AdminVerifications() {
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
   const [rejectionReason, setRejectionReason] = useState('');
+  // Distintivo/medalla que el super-admin asigna en el MISMO paso de verificación (cliente 2026-06-30).
+  const [badgeChoice, setBadgeChoice] = useState<'gold' | 'verified' | 'none'>('none');
   const [isProcessing, setIsProcessing] = useState(false);
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('pending');
@@ -143,6 +146,7 @@ export default function AdminVerifications() {
     setSelectedVerification(verification);
     setActionType(action);
     setRejectionReason('');
+    setBadgeChoice('none');
     setIsActionDialogOpen(true);
   };
 
@@ -179,6 +183,12 @@ export default function AdminVerifications() {
           .from('profiles')
           .update({ is_identity_verified: true })
           .eq('id', selectedVerification.user_id);
+
+        // Asignar (o quitar) el distintivo manual en el mismo acto de verificación.
+        await supabase
+          .from('doctor_profiles')
+          .update({ manual_badge: badgeChoice === 'none' ? null : badgeChoice } as any)
+          .eq('user_id', selectedVerification.user_id);
       }
 
       try {
@@ -589,6 +599,27 @@ export default function AdminVerifications() {
                   placeholder={t('adminVerifications.rejectionReasonPlaceholder')}
                   className="mt-2"
                 />
+              </div>
+            )}
+
+            {/* Distintivo/medalla en el mismo paso de verificación (cliente 2026-06-30):
+                el super-admin elige aquí qué medallita poner — o ninguna. */}
+            {actionType === 'approve' && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                  {t('adminDoctorsPage.manualBadge.assignOnVerify')}
+                </label>
+                <Select value={badgeChoice} onValueChange={(v) => setBadgeChoice(v as 'gold' | 'verified' | 'none')}>
+                  <SelectTrigger className="mt-2 h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
+                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
+                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

@@ -10,6 +10,12 @@
       ]
     },
     {
+      "source": "/(favicon.ico|favicon.png|favicon-16.png|favicon-32.png|apple-touch-icon.png|icon-16.png|icon-32.png|icon-72.png|icon-96.png|icon-128.png|icon-144.png|icon-152.png|icon-192.png|icon-384.png|icon-512.png|manifest.json)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },

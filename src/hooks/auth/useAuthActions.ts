@@ -73,6 +73,11 @@ export function useAuthActions(
             institution: data.institution,
             license: data.license,
             year: data.year,
+            country: data.country,
+            cedula_profesional: data.cedula,
+            hospital: data.hospital,
+            university: data.university,
+            doctor_code: data.doctorCode,
           },
         },
       });

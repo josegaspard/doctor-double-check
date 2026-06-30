@@ -26,6 +26,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Receipt,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
@@ -49,6 +51,7 @@ export default function Wallet() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTopUpAnimation, setShowTopUpAnimation] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState(0);
+  const [showBalance, setShowBalance] = useState(false);
   const prevBalanceRef = useRef(balance);
 
   useEffect(() => {
@@ -147,8 +150,8 @@ export default function Wallet() {
                   <Banknote className="w-4 h-4 text-success" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm text-card-foreground">Ganancias por cobrar</p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">Lo que generas como doctor (consultas, suscripciones, contenido). Se transfiere a tu banco.</p>
+                  <p className="font-semibold text-sm text-card-foreground">{t('fix20.pages.walletEarningsTitle')}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">{t('fix20.pages.walletEarningsDesc')}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/25">
@@ -156,8 +159,8 @@ export default function Wallet() {
                   <ShoppingCart className="w-4 h-4 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm text-card-foreground">Saldo wallet (para gastar)</p>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">Lo que cargas con tarjeta para comprar contenido premium, suscribirte a colegas o pedir segundas opiniones.</p>
+                  <p className="font-semibold text-sm text-card-foreground">{t('fix20.pages.walletSpendTitle')}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">{t('fix20.pages.walletSpendDesc')}</p>
                 </div>
               </div>
             </div>
@@ -175,17 +178,31 @@ export default function Wallet() {
         <Card className="bg-gradient-to-br from-primary via-primary to-secondary text-primary-foreground relative overflow-hidden mb-4 sm:mb-6 shadow-xl shadow-primary/30 border-0">
           <CardContent className="p-5 sm:p-8">
             <p className="text-primary-foreground/80 text-xs sm:text-sm mb-1 font-medium">
-              {role === 'doctor' ? 'Saldo wallet (para gastar)' : t('wallet.balance')}
+              {role === 'doctor' ? t('fix20.pages.walletSpendTitle') : t('wallet.balance')}
             </p>
-            <motion.p
-              key={balance}
-              initial={{ scale: 1 }}
-              animate={showTopUpAnimation ? { scale: [1, 1.08, 1] } : {}}
-              transition={{ duration: 0.5 }}
-              className="text-4xl sm:text-5xl font-bold tracking-tight"
-            >
-              ${balance.toLocaleString()} <span className="text-xl sm:text-2xl font-normal opacity-70">MXN</span>
-            </motion.p>
+            <div className="flex items-center gap-3">
+              <motion.p
+                key={balance}
+                initial={{ scale: 1 }}
+                animate={showTopUpAnimation ? { scale: [1, 1.08, 1] } : {}}
+                transition={{ duration: 0.5 }}
+                className="text-4xl sm:text-5xl font-bold tracking-tight"
+              >
+                {showBalance ? (
+                  <>${balance.toLocaleString()} <span className="text-xl sm:text-2xl font-normal opacity-70">MXN</span></>
+                ) : (
+                  <span className="tracking-widest">•••••• <span className="text-xl sm:text-2xl font-normal opacity-70">MXN</span></span>
+                )}
+              </motion.p>
+              <button
+                type="button"
+                onClick={() => setShowBalance((v) => !v)}
+                aria-label={showBalance ? t('fix20.pages.walletHideBalance') : t('fix20.pages.walletShowBalance')}
+                className="flex-shrink-0 p-2 rounded-full bg-white/15 hover:bg-white/25 transition-colors"
+              >
+                {showBalance ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
             <p className="text-primary-foreground/60 text-xs sm:text-sm mt-2 truncate">{user?.name}</p>
             {role === 'resident' && (
               <div className="mt-3 px-2.5 py-1 bg-white/20 rounded-full text-xs inline-flex items-center gap-1">
@@ -342,7 +359,7 @@ export default function Wallet() {
         <div className="mt-4 text-center">
           <Button variant="outline" onClick={() => navigate('/wallet/ledger')} className="gap-2">
             <Receipt className="w-4 h-4" />
-            Ver historial completo de movimientos
+            {t('fix20.pages.walletFullHistory')}
           </Button>
         </div>
       </div>

@@ -397,7 +397,17 @@ export default function MedicalSupplies() {
                     })}
                   </div>
                 )}
-                {!loading && filteredProducts.length === 0 && <p className="text-center text-muted-foreground py-12">{t('medicalSuppliesPage.product.noResults')}</p>}
+                {!loading && filteredProducts.length === 0 && (
+                  <div className="flex flex-col items-center justify-center text-center py-16 px-4">
+                    <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                      <Package className="w-7 h-7 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground mb-1">{t('medicalSuppliesPage.product.noResults')}</p>
+                    <Button variant="outline" size="sm" className="mt-3" onClick={clearFilters}>
+                      {t('medicalSuppliesPage.filters.clearFilters')}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </>

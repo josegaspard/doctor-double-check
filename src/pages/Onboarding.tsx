@@ -79,6 +79,7 @@ interface ValidationErrors {
   termsAccepted?: string;
   privacyAccepted?: string;
   doctorContract?: string;
+  codeOfEthics?: string;
 }
 const triggerConfetti = () => {
   const duration = 3000;
@@ -209,6 +210,8 @@ export default function Onboarding() {
   const [specialty, setSpecialty] = useState('');
   const [institution, setInstitution] = useState('');
   const [license, setLicense] = useState('');
+  // Distintivo que el médico elige al verificarse (cliente 2026-06-29):
+  // 'gold' = 🥇 medalla dorada, 'verified' = ✔️ palomita, null = ninguno.
   const [year, setYear] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
@@ -257,6 +260,8 @@ export default function Onboarding() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [doctorContractAccepted, setDoctorContractAccepted] = useState(false);
+  // Código de Ética: obligatorio SOLO para médicos antes de ingresar (cliente 2026-06-29).
+  const [codeOfEthicsAccepted, setCodeOfEthicsAccepted] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedProgress = useRef(false);
   
@@ -312,10 +317,11 @@ export default function Onboarding() {
       if (!termsAccepted) errors.termsAccepted = t('onboardingPage.validationAcceptTerms');
       if (!privacyAccepted) errors.privacyAccepted = t('onboardingPage.validationAcceptPrivacy');
       if (selectedRole === 'doctor' && !doctorContractAccepted) errors.doctorContract = t('onboardingPage.validationAcceptDoctorContract');
+      if (selectedRole === 'doctor' && !codeOfEthicsAccepted) errors.codeOfEthics = t('onboardingPage.validationAcceptCodeOfEthics');
     }
 
     return errors;
-  }, [selectedRole, specialty, license, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted]);
+  }, [selectedRole, specialty, license, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted, codeOfEthicsAccepted]);
 
   const isFormValid = Object.keys(validateForm).length === 0;
 
@@ -590,6 +596,10 @@ export default function Onboarding() {
           signatures.push({ type: 'doctor_contract', version: '1.0' });
         }
 
+        if (selectedRole === 'doctor' && codeOfEthicsAccepted) {
+          signatures.push({ type: 'code_of_ethics', version: '1.0' });
+        }
+
         for (const sig of signatures) {
           await supabase.from('document_signatures').insert({
             user_id: supabaseUser.id,
@@ -764,9 +774,9 @@ export default function Onboarding() {
         </header>
 
         {/* Welcome Content */}
-        <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
-          <motion.div 
-            className="w-full max-w-lg text-center"
+        <main className="flex-1 container mx-auto px-4 py-8 sm:py-12 flex items-start justify-center overflow-y-auto">
+          <motion.div
+            className="w-full max-w-lg text-center pb-10 sm:pb-14"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -881,8 +891,8 @@ export default function Onboarding() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
-        <div className="w-full max-w-lg">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-12 flex items-start justify-center overflow-y-auto">
+        <div className="w-full max-w-lg pb-10 sm:pb-14">
           {/* Progress Indicator */}
           <motion.div 
             className="mb-4 sm:mb-8"
@@ -1204,62 +1214,29 @@ export default function Onboarding() {
 
                       <motion.div className="space-y-3" variants={itemVariants}>
                         <Label className="text-base font-medium">{t('onboarding.selectRole')}</Label>
-                        <RadioGroup 
-                          value={selectedRole} 
-                          onValueChange={(v) => handleRoleSelect(v as OnboardingRole)}
-                          className="grid gap-3"
-                        >
+                        {/* Selector de rol QUITADO (cliente 2026-06-16): el rol ya se eligió en
+                            /app (médico/paciente/etc.), aquí solo se MUESTRA, no se puede cambiar. */}
+                        <div className="grid gap-3">
                           {[
                             { value: 'patient', icon: User, label: t('onboarding.patient'), desc: t('onboarding.patientDesc') },
                             { value: 'doctor', icon: Stethoscope, label: t('onboarding.doctor'), desc: t('onboarding.doctorDesc') },
                             { value: 'resident', icon: GraduationCap, label: t('onboarding.resident'), desc: t('onboarding.residentDesc') }
-                          ].map((role, index) => (
-                            <motion.div
+                          ].filter(role => role.value === selectedRole).map((role) => (
+                            <div
                               key={role.value}
-                              variants={itemVariants}
-                              whileHover={{ scale: 1.02, x: 4 }}
-                              whileTap={{ scale: 0.98 }}
-                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                              className="flex items-center gap-4 p-4 rounded-lg border-2 border-primary bg-primary/5"
                             >
-                              <Label
-                                htmlFor={role.value}
-                                className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                                  selectedRole === role.value 
-                                    ? 'border-primary bg-primary/5' 
-                                    : 'border-border hover:border-primary/50'
-                                }`}
-                              >
-                                <RadioGroupItem value={role.value} id={role.value} className="sr-only" />
-                                <motion.div 
-                                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
-                                    selectedRole === role.value ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                                  }`}
-                                  animate={{ 
-                                    scale: selectedRole === role.value ? 1.1 : 1,
-                                    rotate: selectedRole === role.value ? [0, -5, 5, 0] : 0
-                                  }}
-                                  transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                                >
-                                  <role.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                                </motion.div>
-                                <div className="flex-1">
-                                  <p className="font-medium">{role.label}</p>
-                                  <p className="text-sm text-muted-foreground">{role.desc}</p>
-                                </div>
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ 
-                                    scale: selectedRole === role.value ? 1 : 0,
-                                    opacity: selectedRole === role.value ? 1 : 0
-                                  }}
-                                  transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                                >
-                                  <CheckCircle className="w-5 h-5 text-primary" />
-                                </motion.div>
-                              </Label>
-                            </motion.div>
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center bg-primary text-primary-foreground">
+                                <role.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-medium">{role.label}</p>
+                                <p className="text-sm text-muted-foreground">{role.desc}</p>
+                              </div>
+                              <CheckCircle className="w-5 h-5 text-primary" />
+                            </div>
                           ))}
-                        </RadioGroup>
+                        </div>
                       </motion.div>
 
                       <motion.div variants={itemVariants}>
@@ -1428,6 +1405,9 @@ export default function Onboarding() {
                         </motion.div>
                       )}
 
+                      {/* El distintivo (medalla/palomita) lo asigna el SUPER-ADMIN al verificar
+                          el perfil (cliente 2026-06-30), NO el propio doctor. Ver AdminDoctors. */}
+
                       {/* Identity Verification with Veriff (doctors & residents) */}
                       {(selectedRole === 'doctor' || selectedRole === 'resident') && supabaseUser && (
                         <motion.div variants={itemVariants} className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
@@ -1582,9 +1562,12 @@ export default function Onboarding() {
                           doctorContractAccepted={doctorContractAccepted}
                           onDoctorContractChange={setDoctorContractAccepted}
                           showDoctorContract={selectedRole === 'doctor'}
+                          codeOfEthicsAccepted={codeOfEthicsAccepted}
+                          onCodeOfEthicsChange={setCodeOfEthicsAccepted}
+                          showCodeOfEthics={selectedRole === 'doctor'}
                         />
                         <AnimatePresence>
-                          {(validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract) && (
+                          {(validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract || validationErrors.codeOfEthics) && (
                             <motion.p 
                               className="text-sm text-destructive flex items-center gap-1 mt-2"
                               initial={{ opacity: 0, y: -10, height: 0 }}
@@ -1593,7 +1576,7 @@ export default function Onboarding() {
                               transition={{ type: "spring", stiffness: 500, damping: 30 }}
                             >
                               <AlertCircle className="w-3 h-3" />
-                              {validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract}
+                              {validationErrors.signerName || validationErrors.termsAccepted || validationErrors.privacyAccepted || validationErrors.doctorContract || validationErrors.codeOfEthics}
                             </motion.p>
                           )}
                         </AnimatePresence>

@@ -43,7 +43,7 @@ export default function VendorEarnings() {
   const fmt = (n: number) => Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (loading) return <MainLayout><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
-  if (!vendor) return <MainLayout><div className="container mx-auto p-6 text-center">No vendor found</div></MainLayout>;
+  if (!vendor) return <MainLayout><div className="container mx-auto p-6 text-center">{t('fix20.pages.vendorNotFound')}</div></MainLayout>;
 
   return (
     <MainLayout>

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
-import { MessageSquare, Loader2 } from 'lucide-react';
+import { MessageSquare, Loader2, Award, BadgeCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
@@ -33,6 +33,13 @@ export default function Chat() {
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
   const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors' | 'providers'>(role === 'resident' ? 'doctors' : 'all');
+  // Distintivo del doctor (medalla/palomita) para mostrar acceso a su chat exclusivo.
+  const [myBadge, setMyBadge] = useState<'gold' | 'verified' | null>(null);
+  useEffect(() => {
+    if (role !== 'doctor' || !user?.id) return;
+    supabase.from('doctor_profiles').select('manual_badge').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setMyBadge(((data as any)?.manual_badge as 'gold' | 'verified' | null) ?? null));
+  }, [role, user?.id]);
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
@@ -91,7 +98,7 @@ export default function Chat() {
         .maybeSingle();
 
       if (!session) {
-        toast.error('No se encontró la conversación');
+        toast.error(t('fix20.chat.sessionNotFound'));
         return;
       }
 
@@ -391,6 +398,17 @@ export default function Chat() {
             <span>Chat</span>
           </h1>
           <div className="flex items-center gap-2">
+            {(myBadge === 'gold' || myBadge === 'verified') && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate('/badge-chat')}
+                className={`gap-1.5 font-semibold ${myBadge === 'gold' ? 'border-premium/40 text-premium hover:bg-premium/10' : 'border-primary/40 text-primary hover:bg-primary/10'}`}
+              >
+                {myBadge === 'gold' ? <Award className="w-4 h-4" /> : <BadgeCheck className="w-4 h-4" />}
+                <span className="hidden sm:inline">{myBadge === 'gold' ? t('badgeChat.goldRoom') : t('badgeChat.verifiedRoom')}</span>
+              </Button>
+            )}
             {activeSessions.length > 0 && (
               <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md text-[11px] sm:text-xs font-bold whitespace-nowrap">
                 <span className="relative flex w-2 h-2">

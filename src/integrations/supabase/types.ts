@@ -1576,6 +1576,7 @@ export type Database = {
           available_now: boolean | null
           available_until: string | null
           badge_override: string | null
+          manual_badge: string | null
           bio: string | null
           can_publish_news: boolean
           cedula_profesional: string | null
@@ -1627,6 +1628,7 @@ export type Database = {
           available_now?: boolean | null
           available_until?: string | null
           badge_override?: string | null
+          manual_badge?: string | null
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
@@ -1678,6 +1680,7 @@ export type Database = {
           available_now?: boolean | null
           available_until?: string | null
           badge_override?: string | null
+          manual_badge?: string | null
           bio?: string | null
           can_publish_news?: boolean
           cedula_profesional?: string | null
@@ -5388,6 +5391,31 @@ export type Database = {
       }
     }
     Functions: {
+      verify_expediente_otp: {
+        Args: {
+          p_patient_id: string
+          p_code: string
+        }
+        Returns: boolean
+      }
+      join_live_viewer: {
+        Args: {
+          p_live_id: string
+        }
+        Returns: undefined
+      }
+      leave_live_viewer: {
+        Args: {
+          p_live_id: string
+        }
+        Returns: undefined
+      }
+      purchase_storage_with_wallet: {
+        Args: {
+          p_extra_gb: number
+        }
+        Returns: Json
+      }
       book_live_consultation: {
         Args: {
           p_amount: number

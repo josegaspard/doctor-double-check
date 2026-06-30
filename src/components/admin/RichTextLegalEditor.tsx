@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -23,6 +24,7 @@ interface RichTextLegalEditorProps {
 }
 
 export function RichTextLegalEditor({ content, onChange, placeholder }: RichTextLegalEditorProps) {
+  const { t } = useLanguage();
   const [isUploading, setIsUploading] = React.useState(false);
 
   const editor = useEditor({
@@ -54,7 +56,7 @@ export function RichTextLegalEditor({ content, onChange, placeholder }: RichText
       const { data: { publicUrl } } = supabase.storage.from('thumbnails').getPublicUrl(path);
       return publicUrl;
     } catch {
-      toast.error('Error al subir imagen');
+      toast.error(t('fix20.admin.imageUploadError'));
       return null;
     } finally {
       setIsUploading(false);

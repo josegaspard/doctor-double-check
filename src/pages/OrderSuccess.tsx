@@ -109,7 +109,7 @@ export default function OrderSuccess() {
             <ShoppingBag className="w-4 h-4" />
             {t('autoI18n.orderSuccess8')}
           </Button>
-          <Button onClick={() => navigate('/medical-supplies')} variant="outline" className="w-full gap-2" size="lg">
+          <Button onClick={() => navigate('/lives')} variant="outline" className="w-full gap-2" size="lg">
             <ArrowRight className="w-4 h-4" />
             {t('autoI18n.orderSuccess9')}
           </Button>

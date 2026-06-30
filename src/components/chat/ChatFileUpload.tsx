@@ -1,6 +1,7 @@
 import React, { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ export interface ChatFileUploadRef {
 export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>(
   function ChatFileUpload({ sessionId, onFileUploaded }, ref) {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -35,14 +37,14 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        toast.error('El archivo no puede superar 10MB');
+        toast.error(t('fix20.chat.fileTooLarge'));
         return;
       }
 
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
       if (!allowedTypes.includes(file.type)) {
-        toast.error('Solo se permiten imágenes y PDFs');
+        toast.error(t('fix20.chat.fileTypeNotAllowed'));
         return;
       }
 
@@ -98,7 +100,7 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
 
         if (signedUrlData?.signedUrl) {
           onFileUploaded(signedUrlData.signedUrl, selectedFile.name, selectedFile.type);
-          toast.success('Archivo adjuntado');
+          toast.success(t('fix20.chat.fileAttached'));
         }
 
         // Reset
@@ -107,7 +109,7 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error: any) {
         console.error('Upload error:', error);
-        toast.error(error.message || 'Error al subir archivo');
+        toast.error(error.message || t('fix20.chat.fileUploadError'));
       } finally {
         setIsUploading(false);
         setUploadProgress(0);
@@ -154,7 +156,7 @@ export const ChatFileUpload = forwardRef<ChatFileUploadRef, ChatFileUploadProps>
             ) : (
               <>
                 <Button size="sm" onClick={uploadFile} disabled={isUploading}>
-                  Enviar
+                  {t('fix20.chat.fileSend')}
                 </Button>
                 <Button size="icon" variant="ghost" onClick={clearSelection}>
                   <X className="w-4 h-4" />

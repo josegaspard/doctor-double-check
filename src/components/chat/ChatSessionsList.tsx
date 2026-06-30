@@ -75,9 +75,9 @@ export function ChatSessionsList({
     if (!deleteConfirmId) return;
     const result = await deleteSession(deleteConfirmId);
     if (result.success) {
-      toast.success('Chat eliminado');
+      toast.success(t('fix20.chat.chatDeleted'));
     } else {
-      toast.error(result.error || 'Error al eliminar');
+      toast.error(result.error || t('fix20.chat.deleteError'));
     }
     setDeleteConfirmId(null);
   };
@@ -109,10 +109,10 @@ export function ChatSessionsList({
     setIsBulkDeleting(true);
     const result = await deleteSessions(Array.from(selectedIds));
     if (result.success) {
-      toast.success(`${selectedIds.size} chat(s) eliminado(s)`);
+      toast.success(`${selectedIds.size} chat(s) eliminado(s)`); // interpolated — skipped per i18n rules
       exitSelectionMode();
     } else {
-      toast.error(result.error || 'Error al eliminar');
+      toast.error(result.error || t('fix20.chat.deleteError'));
     }
     setIsBulkDeleting(false);
     setShowBulkDeleteConfirm(false);
@@ -160,7 +160,7 @@ export function ChatSessionsList({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar doctor o tema..."
+            placeholder={t('fix20.chat.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-11 text-base"
@@ -247,7 +247,7 @@ export function ChatSessionsList({
             ) : searchQuery.trim() ? (
               <div className="text-center py-8 text-muted-foreground text-xs">
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p>No se encontraron resultados para "{searchQuery}"</p>
+                <p>{t('fix20.chat.noSearchResults')} "{searchQuery}"</p>
               </div>
             ) : (
               <EmptyState type="no-sessions" activeTab={activeTab} />

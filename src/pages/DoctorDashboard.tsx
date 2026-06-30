@@ -23,7 +23,6 @@ import { DoctorAnalytics } from '@/components/doctor/DoctorAnalytics';
 import { FundHoldsCard } from '@/components/doctor/FundHoldsCard';
 import { DoctorDashboardHeader } from '@/components/doctor/DoctorDashboardHeader';
 import { DoctorStatsGrid } from '@/components/doctor/DoctorStatsGrid';
-import { DoctorQuickActions } from '@/components/doctor/DoctorQuickActions';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
 import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
@@ -107,6 +106,9 @@ export default function DoctorDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-5 sm:space-y-6">
+            {/* ── BUSCAR PACIENTE (movido arriba a pedido del cliente 2026-06-15) ── */}
+            <DoctorPatientSearch />
+
             {/* ── MI PRÁCTICA ── */}
             <section className="space-y-3">
               <SectionHeader>{t('doctorDashboardPage.sections.myPractice')}</SectionHeader>
@@ -116,12 +118,6 @@ export default function DoctorDashboard() {
                 vaultFilesCount={accessibleVaultFiles.length}
                 rating={doctorProfile?.rating || 0}
               />
-            </section>
-
-            {/* ── ACCIONES RÁPIDAS ── */}
-            <section className="space-y-3">
-              <SectionHeader>{t('doctorDashboardPage.sections.quickActions')}</SectionHeader>
-              <DoctorQuickActions isApproved={isApproved} userId={user?.id} canPublishNews={canPublishNews} />
             </section>
 
             {/* ── SOLICITUDES DE RESIDENTES ── */}
@@ -136,7 +132,6 @@ export default function DoctorDashboard() {
             {/* ── PACIENTES ── */}
             <section className="space-y-3">
               <SectionHeader>{t('doctorDashboardPage.sections.patients')}</SectionHeader>
-              <DoctorPatientSearch />
               <DoctorPatientsList />
             </section>
 
@@ -179,8 +174,8 @@ export default function DoctorDashboard() {
                   </Card>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
+                  {/* Disponibilidad (OfficeHoursConfig) quitada a pedido del cliente 2026-06-16. */}
                   <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-                    <OfficeHoursConfig />
                     <SignatureUpload />
                   </div>
                   <EmailTrendsChart />

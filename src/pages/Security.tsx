@@ -5,6 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const securityFeatures = [
   {
@@ -47,6 +48,7 @@ const certifications = [
 ];
 
 export default function Security() {
+  const { t } = useLanguage();
   // El superadministrador puede sobrescribir esta página desde
   // /admin/site-settings (pestaña Páginas). Si no, se muestra el contenido
   // por defecto de abajo.
@@ -77,7 +79,7 @@ export default function Security() {
         <main className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-14 pb-8 sm:pb-12 max-w-3xl">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Seguridad</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{t('fix20.pages.securityTitle')}</CardTitle>
             </CardHeader>
             <CardContent className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(customContent) }} />
@@ -98,13 +100,13 @@ export default function Security() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">Seguridad</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('fix20.pages.securityTitle')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Tu seguridad es nuestra <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">prioridad</span>
+              {t('fix20.pages.securityHeroTitle')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-light to-white">{t('fix20.pages.securityHeroTitleHighlight')}</span>
             </h1>
             <p className="text-sm sm:text-lg text-light/90 max-w-xl mx-auto px-4">
-              Protegemos tu información médica con los más altos estándares de seguridad de la industria.
+              {t('fix20.pages.securityHeroSubtitle')}
             </p>
           </div>
         </div>
@@ -131,7 +133,7 @@ export default function Security() {
       <section className="py-12 sm:py-20 bg-card">
         <div className="container mx-auto px-4 sm:px-6">
           <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-8 sm:mb-12">
-            Certificaciones y Cumplimiento
+            {t('fix20.pages.securityCertificationsTitle')}
           </h2>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto">
@@ -151,15 +153,15 @@ export default function Security() {
       {/* Commitment */}
       <section className="py-12 sm:py-20 bg-gradient-to-br from-secondary to-primary">
         <div className="container mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">Nuestro Compromiso</h2>
+          <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('fix20.pages.securityCommitmentTitle')}</h2>
           <p className="text-light/90 mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base">
-            Nos comprometemos a mantener los más altos estándares de seguridad y privacidad. Si tienes preguntas sobre nuestras prácticas de seguridad, no dudes en contactarnos.
+            {t('fix20.pages.securityCommitmentDesc')}
           </p>
           <Link
             to="/contact"
             className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-primary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
           >
-            Contactar Seguridad
+            {t('fix20.pages.securityContactBtn')}
           </Link>
         </div>
       </section>

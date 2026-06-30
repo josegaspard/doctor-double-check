@@ -6,9 +6,6 @@ export type AppBackgroundMode = 'image' | 'white';
 export interface SiteToggles {
   show_news_section: boolean;
   show_content_medical: boolean;
-  show_prescriptions: boolean;
-  live_chat_free: boolean;
-  show_transaction_history: boolean;
   app_background: AppBackgroundMode;
   // Funciones activables/desactivables desde el admin (estilo "publicidad").
   // Por defecto DESACTIVADAS (2026-06-02, petición del cliente).
@@ -28,9 +25,6 @@ export interface SiteToggles {
 const DEFAULT_TOGGLES: SiteToggles = {
   show_news_section: false,
   show_content_medical: false,
-  show_prescriptions: false,
-  live_chat_free: true,
-  show_transaction_history: false,
   app_background: 'image',
   enable_patient_chat: false,
   enable_prescriptions: false,

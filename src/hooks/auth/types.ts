@@ -64,6 +64,11 @@ export interface RegisterData {
   institution?: string;
   license?: string;
   year?: number;
+  country?: string;
+  cedula?: string;
+  hospital?: string;
+  university?: string;
+  doctorCode?: string;
 }
 
 export interface AuthContextType {

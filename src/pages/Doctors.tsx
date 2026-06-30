@@ -41,6 +41,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { ManualBadge } from '@/components/doctor/ManualBadge';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 
@@ -119,6 +120,7 @@ interface DoctorRow {
   total_count: number;
   country_code: string | null;
   country_flag: string | null;
+  manual_badge: string | null;
 }
 
 import { useSpecialties } from '@/hooks/useSpecialties';
@@ -381,7 +383,7 @@ export default function Doctors() {
       setTotalCount(rows.length > 0 ? Number(rows[0].total_count) : 0);
     } catch (error) {
       console.error('Error fetching doctors:', error);
-      toast.error('Error al cargar doctores');
+      toast.error(t('fix20.pages.doctorsLoadError'));
     } finally {
       setIsLoading(false);
     }
@@ -437,7 +439,7 @@ export default function Doctors() {
                   options={specialtyOptions}
                   value={selectedSpecialty === 'Todas' ? '' : selectedSpecialty}
                   onChange={(val) => setSelectedSpecialty(val || 'Todas')}
-                  placeholder="Especialidad"
+                  placeholder={t('fix20.pages.doctorsSpecialtyPlaceholder')}
                   searchPlaceholder="Buscar especialidad..."
                   icon={Stethoscope}
                   allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
@@ -454,7 +456,7 @@ export default function Doctors() {
                   options={cityOptions}
                   value={locationFilter}
                   onChange={setLocationFilter}
-                  placeholder="Ciudad"
+                  placeholder={t('fix20.pages.doctorsCityPlaceholder')}
                   searchPlaceholder="Buscar ciudad..."
                   icon={MapPin}
                   allLabel={t('doctors.specAll') === 'All' ? 'All' : 'Todas'}
@@ -487,7 +489,7 @@ export default function Doctors() {
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                aria-label="Limpiar búsqueda"
+                aria-label={t('fix20.pages.doctorsClearSearch')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors z-10"
               >
                 <X className="w-3.5 h-3.5" />
@@ -498,9 +500,9 @@ export default function Doctors() {
             variant={nearbyMode ? "default" : "outline"}
             size="icon"
             className={`flex-shrink-0 h-11 w-11 shadow-sm ${nearbyMode ? '' : 'bg-card hover:bg-muted'}`}
-            title="Cerca de mí"
+            title={t('fix20.pages.doctorsNearMe')}
             onClick={handleNearbyToggle}
-            aria-label="Cerca de mí"
+            aria-label={t('fix20.pages.doctorsNearMe')}
           >
             <MapPin className={`w-4 h-4 ${nearbyMode ? 'text-primary-foreground' : ''}`} />
           </Button>
@@ -737,7 +739,8 @@ export default function Doctors() {
                   </Badge>
                   <Button
                     size="sm"
-                    className="h-9 px-3 text-xs gap-1.5 bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-secondary-foreground font-semibold shadow-md whitespace-nowrap"
+                    variant="live"
+                    className="h-9 px-3 text-xs gap-1.5 font-semibold shadow-md whitespace-nowrap"
                     onClick={(e) => { e.stopPropagation(); navigate('/emergency'); }}
                   >
                     <Plus className="w-3.5 h-3.5" strokeWidth={3} />
@@ -902,11 +905,20 @@ export default function Doctors() {
                                   aria-label={t('doctors.identityVerified') || 'Identidad verificada'}
                                 />
                               )}
+                              {/* Etiqueta "Conectado" junto al punto verde (cliente 2026-06-16:
+                                  el símbolo verde solo no se entiende). */}
+                              {isAvailable && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-success/15 text-success text-[10px] font-semibold px-1.5 py-0.5 shrink-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                                  {t('doctors.connected')}
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-primary/80 font-medium mb-1 line-clamp-1 sm:line-clamp-2">
                               {doctor.specialty}
                             </p>
                             <div className="flex flex-wrap items-center gap-1 max-w-full">
+                              <ManualBadge badge={doctor.manual_badge} size="sm" />
                               <DoctorBadge
                                 type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)}
                                 size="sm"

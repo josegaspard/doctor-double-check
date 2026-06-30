@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
+import logoWhite from '@/assets/logo-medical-masters-white.png';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,8 @@ export default function LivePlayer() {
   const [showChat, setShowChat] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [consultationFee, setConsultationFee] = useState(0);
+  const [doctorCedula, setDoctorCedula] = useState<string | null>(null);
+  const [doctorEmail, setDoctorEmail] = useState<string | null>(null);
   const [liveInteraction, setLiveInteraction] = useState<{ chat_enabled: boolean; max_paid_chats: number | null; paid_chats_count: number }>({ chat_enabled: true, max_paid_chats: null, paid_chats_count: 0 });
   const [showShareModal, setShowShareModal] = useState(false);
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
@@ -157,13 +160,23 @@ export default function LivePlayer() {
   // Fetch consultation fee & live interaction limits
   useEffect(() => {
     if (!live?.doctorId) return;
-    supabase.from('doctor_profiles').select('consultation_fee').eq('user_id', live.doctorId).single().then(({ data }) => {
-      if (data) setConsultationFee(Number(data.consultation_fee) || 0);
+    supabase.from('doctor_profiles').select('consultation_fee, cedula_profesional').eq('user_id', live.doctorId).single().then(({ data }) => {
+      if (data) {
+        setConsultationFee(Number(data.consultation_fee) || 0);
+        setDoctorCedula((data as any).cedula_profesional || null);
+      }
     });
     if (id) {
       supabase.from('lives').select('chat_enabled, max_paid_chats, paid_chats_count').eq('id', id).single().then(({ data }) => {
         if (data) setLiveInteraction({ chat_enabled: data.chat_enabled, max_paid_chats: data.max_paid_chats, paid_chats_count: data.paid_chats_count });
       });
+      // Email público del doctor que transmite (decisión del cliente 2026-06-16:
+      // visible para TODOS los espectadores). Función SECURITY DEFINER que solo
+      // devuelve el email del doctor de ESTE live. Si la función no existe aún
+      // o no hay email, simplemente no se muestra.
+      supabase.rpc('get_live_doctor_email', { p_live_id: id }).then(({ data }) => {
+        if (data) setDoctorEmail(String(data));
+      }).catch(() => {});
     }
   }, [live?.doctorId, id]);
 
@@ -507,6 +520,27 @@ export default function LivePlayer() {
                   className={mobileFullscreen ? 'relative bg-black overflow-hidden group w-full h-full' : undefined}
                 />
                 <DynamicWatermark email={user?.email} userId={user?.id} />
+                {/* Logo Medical Masters (marca del live, transparente) arriba-izquierda — cliente 2026-06-15 */}
+                <img src={logoWhite} alt="Medical Masters" className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
+                {/* Lower-third con datos del doctor abajo a la derecha:
+                    nombre, especialidad, cédula profesional y correo (cliente
+                    2026-06-16: el correo es visible para TODOS los espectadores). */}
+                <div className="absolute bottom-3 right-3 z-20 max-w-[80%] rounded-lg bg-black/55 backdrop-blur-sm px-3 py-1.5 text-right pointer-events-none">
+                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{live.doctorName}</p>
+                  {live.specialty && (
+                    <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{live.specialty}</p>
+                  )}
+                  {(live.doctorCedula || doctorCedula) && (
+                    <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">
+                      {t('livePlayerPage.cedulaProfShort')} <span className="font-mono">{live.doctorCedula || doctorCedula}</span>
+                    </p>
+                  )}
+                  {doctorEmail && (
+                    <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight truncate">
+                      <span className="font-mono">{doctorEmail}</span>
+                    </p>
+                  )}
+                </div>
                 <LiveVisitorGate isVisitor={role === 'visitor' || !user} livePath={`/live/${id}`} freeSeconds={60} />
               </div>
             ) : (

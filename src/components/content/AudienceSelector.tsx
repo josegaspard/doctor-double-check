@@ -40,6 +40,23 @@ export function AudienceSelector({ value, onChange, disabled }: AudienceSelector
           </div>
         </Label>
 
+        {/* Opción "Pacientes" (cliente 2026-06-16): junto con "Ambos" (all) y "Profesionales". */}
+        <Label
+          htmlFor="audience-patients"
+          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+            value === 'patients' ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <RadioGroupItem value="patients" id="audience-patients" />
+          <UserCheck className="h-5 w-5 text-[#227787]" />
+          <div>
+            <p className="font-medium">{t('audienceSelector.patients')}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('audienceSelector.patientsDescription')}
+            </p>
+          </div>
+        </Label>
+
         <Label
           htmlFor="audience-professionals"
           className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${

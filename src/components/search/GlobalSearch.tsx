@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Search, Stethoscope, PlayCircle, Video, X, Loader2, Folder, ArrowRight, TrendingUp, Sparkles } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
@@ -48,7 +49,9 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 export function GlobalSearch() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
+  const lastLoggedRef = useRef('');
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -130,6 +133,14 @@ export function GlobalSearch() {
 
         setResults(searchResults);
         setActiveIndex(-1);
+
+        // Registrar la búsqueda para el algoritmo de recomendación (cliente 2026-06-29).
+        // Solo usuarios logueados, términos ≥3, sin repetir el mismo término seguido.
+        if (user?.id && searchTerm.length >= 3 && lastLoggedRef.current !== searchTerm) {
+          lastLoggedRef.current = searchTerm;
+          const topSpecialty = searchResults.find(r => r.specialty)?.specialty || null;
+          (supabase.from('search_events' as any) as any).insert({ user_id: user.id, query: searchTerm, specialty: topSpecialty }).then(() => {}, () => {});
+        }
       } catch (error) {
         console.error('Search error:', error);
       } finally {

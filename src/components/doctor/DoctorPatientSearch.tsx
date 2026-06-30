@@ -92,15 +92,25 @@ export function DoctorPatientSearch() {
   if (role !== 'doctor') return null;
 
   return (
-    <Card>
+    <Card className="bg-card shadow-md border border-primary/40 ring-1 ring-primary/10">
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <Search className="w-4 h-4 text-primary" />
-          {t('doctorPatientSearch.title')}
-        </CardTitle>
-        <CardDescription className="text-xs">
-          {t('doctorPatientSearch.description')}
-        </CardDescription>
+        {/* Misma combinación de colores que el banner "Doctores Disponibles Ahora"
+            (cliente 2026-06-16): tarjeta clara + borde/ring primary, círculo de icono
+            primary con punto pulsante secondary, título foreground, subtítulo muted. */}
+        <div className="flex items-start gap-2.5">
+          <div className="relative w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md">
+            <Search className="w-5 h-5 text-primary-foreground" strokeWidth={2.5} />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-secondary ring-2 ring-card animate-pulse" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-sm sm:text-base font-bold text-foreground leading-tight">
+              {t('doctorPatientSearch.title')}
+            </CardTitle>
+            <CardDescription className="text-[11px] sm:text-xs text-muted-foreground leading-snug mt-0.5">
+              {t('doctorPatientSearch.description')}
+            </CardDescription>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <Input
@@ -129,7 +139,7 @@ export function DoctorPatientSearch() {
               </div>
               <Button
                 size="sm"
-                variant="outline"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => startConversation(p)}
                 disabled={starting === p.user_id}
               >

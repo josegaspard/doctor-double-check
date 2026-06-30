@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useVault } from '@/contexts/VaultContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -71,6 +72,12 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
 
   const handleWalletPayment = async () => {
     if (!user) return;
+
+    // Consultas solo para México por ahora (cliente 2026-06-29).
+    if (!isConsultationCountryAllowed(user.countryCode)) {
+      toast.error(t('bookAppointment.toastMexicoOnly'));
+      return;
+    }
 
     setStep('processing');
     setIsProcessing(true);

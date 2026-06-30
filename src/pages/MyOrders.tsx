@@ -263,7 +263,7 @@ export default function MyOrders() {
             </div>
             <h3 className="font-semibold mb-1">{t('autoI18n.myOrders12')}</h3>
             <p className="text-sm text-muted-foreground mb-4">{t('autoI18n.myOrders13')}</p>
-            <Button onClick={() => navigate('/medical-supplies')} className="gap-2">
+            <Button onClick={() => navigate('/lives')} className="gap-2">
               <ArrowRight className="w-4 h-4" /> {t('autoI18n.myOrders14')}
             </Button>
           </div>
@@ -519,7 +519,7 @@ export default function MyOrders() {
         {/* CTA at bottom */}
         {orders.length > 0 && (
           <div className="mt-6 text-center">
-            <Button variant="outline" size="sm" onClick={() => navigate('/medical-supplies')} className="gap-2 text-xs">
+            <Button variant="outline" size="sm" onClick={() => navigate('/lives')} className="gap-2 text-xs">
               <ArrowRight className="w-3.5 h-3.5" />
               {t('autoI18n.myOrders52')}
             </Button>
