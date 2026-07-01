@@ -58,7 +58,6 @@ import {
   Megaphone,
   MapPin,
   Package,
-  ShoppingBag,
   GraduationCap,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
@@ -92,9 +91,9 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  // Marketplace / venta de productos RESTAURADO (cliente 2026-06-29), gateado por enable_marketplace.
-  // Fuera del perfil de médico/residente (cliente 2026-06-30): solo lo ve el paciente.
-  { labelKey: 'nav.marketplace', href: '/medical-supplies', icon: ShoppingBag, roles: ['patient'], toggleKey: 'enable_marketplace' },
+  // Marketplace / venta de productos RETIRADO del menú del paciente (cliente 2026-06-30):
+  // ya no lo ve ningún rol (antes era solo paciente). La ruta /medical-supplies y el panel
+  // de admin siguen existiendo; solo se quitó la entrada de navegación.
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
@@ -817,6 +816,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <Wallet className="w-5 h-5 text-primary" />
                         <span className="text-sm font-medium">{t('nav.wallet')}</span>
                         {/* Saldo oculto en el wallet (cliente 2026-06-16): solo nombre + icono. */}
+                      </Link>
+                    )}
+                    {(role === 'resident' || role === 'doctor') && (
+                      <Link
+                        to="/marketplace"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/marketplace' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Package className="w-5 h-5" />
+                        <span className="text-sm font-medium">Marketplace</span>
                       </Link>
                     )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
