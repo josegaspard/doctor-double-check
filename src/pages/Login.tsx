@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,11 +37,18 @@ export default function Login() {
   // Insignia de rol (cliente 2026-06-26): login y registro deben verse DISTINTOS según
   // el rol elegido en /app (paciente/residente/doctor). Cada rol = ícono + degradado de marca propio.
   const ROLE_META = {
-    patient: { Icon: User, labelKey: 'roles.patient', gradient: 'linear-gradient(120deg, #227787 0%, #2a6a86 100%)' },
-    doctor: { Icon: Stethoscope, labelKey: 'roles.doctor', gradient: 'linear-gradient(120deg, #163a83 0%, #227787 100%)' },
-    resident: { Icon: GraduationCap, labelKey: 'roles.resident', gradient: 'linear-gradient(120deg, #227787 0%, #839ed5 100%)' },
+    patient: { Icon: User, labelKey: 'roles.patient', accent: '#227787', gradient: 'linear-gradient(120deg, #227787 0%, #2a6a86 100%)' },
+    doctor: { Icon: Stethoscope, labelKey: 'roles.doctor', accent: '#163a83', gradient: 'linear-gradient(120deg, #163a83 0%, #227787 100%)' },
+    resident: { Icon: GraduationCap, labelKey: 'roles.resident', accent: '#5566b5', gradient: 'linear-gradient(120deg, #227787 0%, #839ed5 100%)' },
   } as const;
-  const roleMeta = ROLE_META[preferredRole as keyof typeof ROLE_META] || ROLE_META.patient;
+  type BarRole = keyof typeof ROLE_META;
+  // Barra de acceso seleccionada. Por defecto la que llega desde /app (RoleSelector);
+  // si se entró por el botón genérico, default 'patient' pero el usuario puede cambiarla
+  // con el selector de abajo. La cuenta DEBE coincidir con la barra (cliente 2026-06-30).
+  const [selectedRole, setSelectedRole] = useState<BarRole>(
+    (['patient', 'doctor', 'resident'].includes(preferredRole) ? preferredRole : 'patient') as BarRole
+  );
+  const roleMeta = ROLE_META[selectedRole] || ROLE_META.patient;
   const RoleBadgeIcon = roleMeta.Icon;
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -68,6 +75,11 @@ export default function Login() {
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [acceptedEthics, setAcceptedEthics] = useState(false);
   const needsEthics = registerRole === 'doctor' || registerRole === 'resident';
+
+  // El registro siempre crea la cuenta con el rol de la barra seleccionada.
+  useEffect(() => {
+    setRegisterRole(selectedRole);
+  }, [selectedRole]);
 
   // MIGRATION 2026-05-08: OAuth temporalmente deshabilitado hasta que el cliente
   // tenga su propio OAuth client en Google Cloud. Flip a true para reactivar.
@@ -144,8 +156,25 @@ export default function Login() {
     setLoginError('');
     setResetEmailSent(false);
     
+    // Segregación por barra de rol (cliente 2026-06-30): la cuenta debe corresponder a la
+    // barra elegida. El gate en useAuthState evita que el auto-redirect lleve a un usuario
+    // con rol equivocado a su panel; aquí mostramos el aviso y cerramos la sesión.
+    try { sessionStorage.setItem('mm_role_gate', selectedRole); } catch {}
+
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
+      const actualRole = result.role;
+      const allowed = selectedRole === 'doctor'
+        ? (actualRole === 'doctor' || actualRole === 'admin')
+        : actualRole === selectedRole;
+      if (!allowed) {
+        await supabase.auth.signOut();
+        setLoginError(
+          (t('login.roleMismatch') || 'Estas credenciales no corresponden al acceso de {role}. Cambia de tipo de acceso e inténtalo de nuevo.')
+            .replace('{role}', t(roleMeta.labelKey))
+        );
+        return;
+      }
       const { data: sessionData } = await supabase.auth.getSession();
       const uid = sessionData.session?.user?.id;
       if (uid) {
@@ -155,6 +184,7 @@ export default function Login() {
         navigate('/lives');
       }
     } else {
+      try { sessionStorage.removeItem('mm_role_gate'); } catch {}
       // Traducimos el mensaje crudo de Supabase ("Invalid login credentials", etc.)
       // al idioma activo. Si no reconocemos el error, cae al genérico traducido.
       setLoginError(translateAuthError(result.error, t));
@@ -263,6 +293,36 @@ export default function Login() {
               <p className="text-base font-bold leading-tight truncate">{t(roleMeta.labelKey)}</p>
             </div>
           </div>
+
+          {/* Selector de barra de acceso (cliente 2026-06-30): cada barra solo acepta su
+              propio rol. Permite cambiar de acceso sin volver al selector de /app. */}
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {(Object.keys(ROLE_META) as BarRole[]).map((r) => {
+              const meta = ROLE_META[r];
+              const Icon = meta.Icon;
+              const active = selectedRole === r;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => { setSelectedRole(r); setLoginError(''); }}
+                  aria-pressed={active ? 'true' : 'false'}
+                  style={active
+                    ? { backgroundImage: meta.gradient, borderColor: 'transparent' }
+                    : { borderColor: meta.accent }}
+                  className={`flex flex-col items-center justify-center gap-1 rounded-lg border-2 px-2 py-2 text-xs font-semibold transition-all ${
+                    active
+                      ? 'text-white shadow-md'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 hover:shadow-sm'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" style={active ? undefined : { color: meta.accent }} />
+                  <span className="leading-none">{t(meta.labelKey)}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
