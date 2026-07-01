@@ -1,10 +1,9 @@
 export const FEATURE_FLAGS = {
   marketplaceVendors: false,
   // Marketplace reventa dr↔dr con fee de intermediación (cliente 2026-07-01).
-  // OFF hasta aplicar la migración 20260701_marketplace_intro_fee_flow.sql + desplegar
-  // las edge functions de Stripe. Con esto en false, rutas/nav del nuevo marketplace
-  // quedan ocultas y prod no se ve afectado.
-  marketplaceFeeModel: false,
+  // ACTIVADO 2026-07-01: migración aplicada + edge functions desplegadas. El marketplace
+  // reventa dr↔dr con fee está vivo (rutas /marketplace y nav visibles para dr/residentes).
+  marketplaceFeeModel: true,
 } as const;
 
 // NOTA: chat / recetas / videollamadas ya NO se controlan aquí.
