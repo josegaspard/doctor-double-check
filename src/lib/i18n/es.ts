@@ -799,6 +799,8 @@ export const es = {
     doctorCode: 'Código de doctor',
     optional: 'opcional',
     accessAs: 'Acceso como',
+    roleMismatch: 'Estas credenciales no corresponden al acceso de {role}. Cambia el tipo de acceso e inténtalo de nuevo.',
+    roleMismatchSwitch: 'Esta cuenta corresponde al acceso de {role}. Te cambiamos al acceso correcto: ingresa de nuevo.',
     title: 'Iniciar Sesión',
     loginDescription: 'Ingresa con tu cuenta para continuar',
     email: 'Correo electrónico',

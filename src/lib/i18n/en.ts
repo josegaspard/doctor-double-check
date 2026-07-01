@@ -799,6 +799,8 @@ export const en = {
     doctorCode: 'Doctor code',
     optional: 'optional',
     accessAs: 'Access as',
+    roleMismatch: 'These credentials do not match {role} access. Switch the access type and try again.',
+    roleMismatchSwitch: 'This account belongs to {role} access. We switched you to the correct access — sign in again.',
     title: 'Log In',
     loginDescription: 'Sign in to your account to continue',
     email: 'Email',

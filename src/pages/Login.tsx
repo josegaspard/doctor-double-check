@@ -169,10 +169,22 @@ export default function Login() {
         : actualRole === selectedRole;
       if (!allowed) {
         await supabase.auth.signOut();
-        setLoginError(
-          (t('login.roleMismatch') || 'Estas credenciales no corresponden al acceso de {role}. Cambia de tipo de acceso e inténtalo de nuevo.')
-            .replace('{role}', t(roleMeta.labelKey))
-        );
+        // La cuenta es válida pero se ingresó en la barra equivocada. Detectamos la barra
+        // correcta y cambiamos a ella automáticamente (admin usa la barra "Médico"), dejando
+        // el correo/contraseña puestos para que solo tenga que reintentar (cliente 2026-07-01).
+        const correctRole = (actualRole === 'admin' ? 'doctor' : actualRole) as BarRole;
+        if (correctRole && ROLE_META[correctRole]) {
+          setSelectedRole(correctRole);
+          setLoginError(
+            (t('login.roleMismatchSwitch') || 'Esta cuenta corresponde al acceso de {role}. Te cambiamos al acceso correcto: ingresa de nuevo.')
+              .replace('{role}', t(ROLE_META[correctRole].labelKey))
+          );
+        } else {
+          setLoginError(
+            (t('login.roleMismatch') || 'Estas credenciales no corresponden al acceso de {role}. Cambia de tipo de acceso e inténtalo de nuevo.')
+              .replace('{role}', t(roleMeta.labelKey))
+          );
+        }
         return;
       }
       const { data: sessionData } = await supabase.auth.getSession();
