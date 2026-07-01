@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { FEATURE_FLAGS } from '@/lib/featureFlags';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
@@ -818,7 +819,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {/* Saldo oculto en el wallet (cliente 2026-06-16): solo nombre + icono. */}
                       </Link>
                     )}
-                    {(role === 'resident' || role === 'doctor') && (
+                    {FEATURE_FLAGS.marketplaceFeeModel && (role === 'resident' || role === 'doctor') && (
                       <Link
                         to="/marketplace"
                         onClick={() => setMoreSheetOpen(false)}
