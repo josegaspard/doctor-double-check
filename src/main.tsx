@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { ChunkErrorBoundary } from "./components/ChunkErrorBoundary";
 import App from "./App.tsx";
 // Self-hosted fonts (bundled by Vite, hashed assets → SRI-safe by same-origin)
 // Replaces the Google Fonts CDN dependency flagged by OWASP ZAP for missing SRI.
@@ -56,7 +57,13 @@ if (typeof window !== 'undefined') {
 enforceBrowserSessionGuard().finally(() => {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <App />
+      {/* ErrorBoundary en la RAÍZ (cliente 2026-07-01): si algo crashea POR ENCIMA de
+          los providers (Auth/Language/Theme) el árbol quedaba en pantalla blanca total
+          sin nada que lo capture. Envolver aquí garantiza que cualquier error muestre un
+          mensaje con "Ver detalles técnicos" + botón de recarga, nunca un blanco. */}
+      <ChunkErrorBoundary>
+        <App />
+      </ChunkErrorBoundary>
     </React.StrictMode>
   );
 });
