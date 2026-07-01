@@ -50,9 +50,11 @@ export default function Chat() {
     return sessions.filter(s => {
       // Determine the "other" participant type
       const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
+      // Chats del marketplace (con interés de producto) = "Proveedores".
+      const isProviderChat = !!s.marketplaceInterestId;
       if (chatFilter === 'patients') return otherType === 'patient';
-      if (chatFilter === 'doctors') return otherType === 'doctor' || otherType === 'resident';
-      if (chatFilter === 'providers') return (otherType as string) === 'vendor';
+      if (chatFilter === 'doctors') return (otherType === 'doctor' || otherType === 'resident') && !isProviderChat;
+      if (chatFilter === 'providers') return isProviderChat;
       return true;
     });
   };

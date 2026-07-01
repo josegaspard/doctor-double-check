@@ -28,6 +28,9 @@ export interface ChatSession {
   status: ChatStatus;
   isDoubleCheck: boolean;
   originalConsultationId?: string;
+  // Conversación nacida del marketplace (cliente 2026-07-01): si viene con un
+  // interés de producto, es un chat con "proveedor" (para el filtro del chat).
+  marketplaceInterestId?: string | null;
   createdAt: Date;
   // Office hours (from doctor)
   officeHoursStart?: string;
@@ -206,6 +209,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             status: s.status as ChatStatus,
             isDoubleCheck: s.is_double_check,
             originalConsultationId: s.original_consultation_id || undefined,
+            marketplaceInterestId: s.marketplace_interest_id || null,
             createdAt: new Date(s.created_at),
             officeHoursStart: details?.doctor_office_hours_start ?? doc?.office_hours_start ?? undefined,
             officeHoursEnd: details?.doctor_office_hours_end ?? doc?.office_hours_end ?? undefined,
@@ -442,6 +446,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             status: existing.status as ChatStatus,
             isDoubleCheck: existing.is_double_check,
             originalConsultationId: existing.original_consultation_id || undefined,
+            marketplaceInterestId: existing.marketplace_interest_id || null,
             createdAt: new Date(existing.created_at),
           },
         };
@@ -478,6 +483,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           unreadCount: 0,
           status: newSession.status as ChatStatus,
           isDoubleCheck: newSession.is_double_check,
+          marketplaceInterestId: newSession.marketplace_interest_id || null,
           createdAt: new Date(newSession.created_at),
         },
       };
