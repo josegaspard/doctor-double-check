@@ -474,6 +474,31 @@ export default function AdminDoctors() {
                           </p>
                         )}
 
+                        {/* Información COMPLETA del registro (cliente 2026-07-01): el admin ve
+                            TODO lo que el doctor ingresó al verificarse, para decidir con contexto. */}
+                        <div className="mt-2 p-2.5 rounded-md bg-muted/40 border border-border/60 space-y-1">
+                          <p className="text-[11px] font-semibold text-foreground/80 uppercase tracking-wide">
+                            {t('adminDoctorsPage.fullInfo.title') || 'Información del registro'}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                            <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.specialty') || 'Especialidad'}:</b> {doctor.specialty || '—'}</span>
+                            <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.cedula') || 'Cédula'}:</b> {doctor.cedula_profesional || doctor.license || '—'}</span>
+                            {doctor.numero_consejo && (
+                              <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.consejo') || 'N.º de consejo'}:</b> {doctor.numero_consejo}</span>
+                            )}
+                            <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.fee') || 'Honorario'}:</b> ${Number(doctor.consultation_fee || 0).toLocaleString()}</span>
+                            {doctor.location && (
+                              <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.location') || 'Ubicación'}:</b> {doctor.location}</span>
+                            )}
+                            <span><b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.registered') || 'Registrado'}:</b> {new Date(doctor.created_at).toLocaleDateString()}</span>
+                          </div>
+                          {doctor.bio && (
+                            <p className="text-xs text-muted-foreground pt-0.5">
+                              <b className="text-foreground/70">{t('adminDoctorsPage.fullInfo.bio') || 'Semblanza'}:</b> {doctor.bio}
+                            </p>
+                          )}
+                        </div>
+
                         {/* Admin SEP Verification Button */}
                         {!doctor.cedula_verification?.is_verified && (doctor.license || doctor.cedula_profesional) && (
                           <div className="mt-2 space-y-2">

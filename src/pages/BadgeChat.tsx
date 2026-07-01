@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Award, BadgeCheck, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Award, ShieldCheck, Send, Loader2, ArrowLeft } from 'lucide-react';
 
 interface BadgeMsg {
   id: string;
@@ -109,7 +109,7 @@ export default function BadgeChat() {
   }
 
   const isGold = badge === 'gold';
-  const RoomIcon = isGold ? Award : BadgeCheck;
+  const RoomIcon = isGold ? Award : ShieldCheck;
   const roomTitle = isGold ? t('badgeChat.goldRoom') : t('badgeChat.verifiedRoom');
 
   return (

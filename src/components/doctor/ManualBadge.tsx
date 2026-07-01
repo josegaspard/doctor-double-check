@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, BadgeCheck } from 'lucide-react';
+import { Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -15,7 +15,7 @@ interface ManualBadgeProps {
 /**
  * Distintivo manual elegido por el médico al verificarse (cliente 2026-06-29):
  *   'gold'     = 🥇 Medalla dorada (especialista con trayectoria)
- *   'verified' = ✔️ Palomita      (líder de opinión)
+ *   'verified' = 🛡️ Escudo verificado (líder de opinión) — antes palomita (cliente 2026-07-01)
  */
 export function ManualBadge({ badge, size = 'md', iconOnly = false, className }: ManualBadgeProps) {
   const { t } = useLanguage();
@@ -29,7 +29,7 @@ export function ManualBadge({ badge, size = 'md', iconOnly = false, className }:
   const iconSizes = { sm: 'w-2.5 h-2.5', md: 'w-3.5 h-3.5', lg: 'w-4 h-4' };
 
   const isGold = badge === 'gold';
-  const Icon = isGold ? Award : BadgeCheck;
+  const Icon = isGold ? Award : ShieldCheck;
   const label = isGold ? t('onboardingPage.badgeGold') : t('onboardingPage.badgeVerified');
   const colors = isGold
     ? 'bg-premium/15 text-premium border-premium/30'

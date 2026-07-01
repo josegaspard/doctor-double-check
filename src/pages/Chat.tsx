@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
-import { MessageSquare, Loader2, Award, BadgeCheck, Users, User, Stethoscope, Store } from 'lucide-react';
+import { MessageSquare, Loader2, Award, ShieldCheck, Users, User, Stethoscope, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
@@ -405,7 +405,7 @@ export default function Chat() {
                 onClick={() => navigate('/badge-chat')}
                 className={`gap-1.5 font-semibold ${myBadge === 'gold' ? 'border-premium/40 text-premium hover:bg-premium/10' : 'border-primary/40 text-primary hover:bg-primary/10'}`}
               >
-                {myBadge === 'gold' ? <Award className="w-4 h-4" /> : <BadgeCheck className="w-4 h-4" />}
+                {myBadge === 'gold' ? <Award className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                 <span className="hidden sm:inline">{myBadge === 'gold' ? t('badgeChat.goldRoom') : t('badgeChat.verifiedRoom')}</span>
               </Button>
             )}
@@ -429,19 +429,21 @@ export default function Chat() {
             y color de marca por tipo, según los permisos del rol. Solo doctores ven a
             pacientes; residentes chatean con doctores/residentes y proveedores. */}
         {(role === 'doctor' || role === 'resident') && (() => {
-          // Cada rol ve solo las pestañas que sus permisos habilitan. Color = paleta de marca.
+          // Chips SÓLIDOS de color de marca (se leen sobre cualquier fondo, claro u oscuro).
+          // Cada color se eligió con buen contraste sobre texto blanco. El activo va a full
+          // con anillo/sombra; los inactivos atenuados. Cada rol ve solo lo que sus permisos permiten.
           const allTabs = [
-            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#227787' },
-            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#839ED5' },
-            { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' },
-            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#C79A00' },
+            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#227787' }, // teal
+            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#5E79C0' }, // comfort blue
+            { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' }, // navy
+            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#B0810A' }, // gold
           ] as const;
           const visibleKeys = role === 'doctor'
             ? ['all', 'patients', 'doctors', 'providers']
             : ['doctors', 'providers']; // residente: sin pacientes (bloqueado por permisos)
           const tabs = allTabs.filter(tt => visibleKeys.includes(tt.key));
           return (
-            <div className="flex gap-1.5 mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
+            <div className="flex gap-2 mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
               {tabs.map(({ key, label, Icon, color }) => {
                 const active = chatFilter === key;
                 return (
@@ -450,10 +452,12 @@ export default function Chat() {
                     type="button"
                     onClick={() => setChatFilter(key as typeof chatFilter)}
                     aria-pressed={active ? 'true' : 'false'}
-                    style={active
-                      ? { backgroundColor: color, borderColor: color, color: '#fff' }
-                      : { borderColor: `${color}59`, color }}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs font-semibold whitespace-nowrap transition-all hover:shadow-sm"
+                    style={{ backgroundColor: color, color: '#fff' }}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 h-8 text-xs font-semibold whitespace-nowrap transition-all ${
+                      active
+                        ? 'opacity-100 shadow-md ring-2 ring-white/40 scale-[1.03]'
+                        : 'opacity-45 hover:opacity-80'
+                    }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     {label}
