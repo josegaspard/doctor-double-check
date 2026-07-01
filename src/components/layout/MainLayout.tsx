@@ -92,9 +92,13 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
   { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  // Marketplace / venta de productos RETIRADO del menú del paciente (cliente 2026-06-30):
-  // ya no lo ve ningún rol (antes era solo paciente). La ruta /medical-supplies y el panel
-  // de admin siguen existiendo; solo se quitó la entrada de navegación.
+  // Marketplace de venta de PRODUCTOS al paciente RETIRADO (cliente 2026-06-30): /medical-supplies
+  // ya no aparece en el menú de ningún rol.
+  // Marketplace REVENTA dr↔dr con fee (cliente 2026-07-01): posición 6 del orden del cliente.
+  // Visible SOLO para doctores y residentes; se agrega abajo condicionado al feature flag.
+  ...(FEATURE_FLAGS.marketplaceFeeModel
+    ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor', 'resident'] } as NavItem]
+    : []),
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
