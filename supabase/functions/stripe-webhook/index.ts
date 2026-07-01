@@ -110,6 +110,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "marketplace_purchase" && session.payment_status === "paid") {
         await handleMarketplacePurchase(db, session);
       }
+      if (session.metadata?.type === "marketplace_interest_fee" && session.payment_status === "paid") {
+        await handleMarketplaceInterestFee(db, session);
+      }
       if (session.metadata?.type === "ad_campaign" && session.payment_status === "paid") {
         await handleAdPurchaseCompleted(db, session);
       }
@@ -1236,6 +1239,109 @@ async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, s
   }
 
   logStep("Marketplace purchase completed", { buyerId, productId, orderId: order?.id });
+}
+
+// FEE de intermediación pagado (cliente 2026-07-01): el comprador pagó el fee → apartamos
+// el producto para él y abrimos el chat con el proveedor. El vendedor cobra el producto por
+// fuera; la plataforma solo cobró el fee (a la cuenta del super admin, sin Connect).
+async function handleMarketplaceInterestFee(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const interestId = session.metadata!.interest_id;
+  const buyerId = session.metadata!.buyer_id;
+  const productId = session.metadata!.product_id;
+  const vendorId = session.metadata!.vendor_id;
+  const feeAmount = parseFloat(session.metadata!.fee_amount || "0");
+  logStep("Processing marketplace interest fee", { interestId, buyerId, productId, feeAmount });
+
+  // Idempotencia: si ya está pagado, no repetir.
+  const { data: existing } = await db
+    .from("product_interests")
+    .select("id, status, chat_session_id")
+    .eq("id", interestId)
+    .single();
+  if (!existing) { logStep("Interest not found", { interestId }); return; }
+  if (existing.status === "paid" && existing.chat_session_id) {
+    logStep("Interest already processed", { interestId }); return;
+  }
+
+  // Datos del vendedor (su user_id para el chat) y del producto.
+  const { data: vendor } = await db
+    .from("marketplace_vendors").select("user_id, name").eq("id", vendorId).single();
+  const { data: product } = await db
+    .from("marketplace_products").select("name").eq("id", productId).single();
+
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent : (session.payment_intent as any)?.id ?? null;
+
+  // Config para el tiempo de apartado.
+  const { data: cfg } = await db.from("marketplace_config").select("reserve_hours").eq("id", true).single();
+  const reserveHours = Number(cfg?.reserve_hours ?? 72);
+  const now = new Date();
+  const reservedUntil = new Date(now.getTime() + reserveHours * 3600 * 1000);
+
+  // Abrir chat entre comprador y proveedor (ambos doctor/residente).
+  let chatSessionId: string | null = existing.chat_session_id ?? null;
+  if (!chatSessionId && vendor?.user_id) {
+    const typeOf = async (uid: string): Promise<"doctor" | "resident"> => {
+      const { data: rr } = await db.from("user_roles").select("role").eq("user_id", uid);
+      const rs = (rr || []).map((r: { role: string }) => r.role);
+      return rs.includes("resident") && !rs.includes("doctor") ? "resident" : "doctor";
+    };
+    const p1Type = await typeOf(buyerId);
+    const p2Type = await typeOf(vendor.user_id);
+    const { data: chat, error: chatErr } = await db
+      .from("chat_sessions")
+      .insert({
+        participant1_id: buyerId,
+        participant1_type: p1Type,
+        participant2_id: vendor.user_id,
+        participant2_type: p2Type,
+        status: "active",
+        last_message: `Interés en: ${product?.name || "producto"}`,
+        last_message_at: now.toISOString(),
+        marketplace_interest_id: interestId,
+      })
+      .select("id")
+      .single();
+    if (chatErr) logStep("Error creating marketplace chat (non-critical)", { error: chatErr.message });
+    chatSessionId = chat?.id ?? null;
+  }
+
+  // Marcar interés pagado + enlazar chat.
+  await db.from("product_interests").update({
+    status: "paid",
+    paid_at: now.toISOString(),
+    stripe_payment_intent_id: paymentIntentId,
+    chat_session_id: chatSessionId,
+  }).eq("id", interestId);
+
+  // Apartar el producto para el comprador.
+  await db.from("marketplace_products").update({
+    reserved_by: buyerId,
+    reserved_at: now.toISOString(),
+    reserved_until: reservedUntil.toISOString(),
+    reserved_interest_id: interestId,
+  }).eq("id", productId);
+
+  // Notificar al proveedor y al comprador.
+  const { data: buyer } = await db.from("profiles").select("name").eq("id", buyerId).single();
+  if (vendor?.user_id) {
+    await db.from("notifications").insert({
+      user_id: vendor.user_id,
+      type: "system",
+      title: "🤝 Nuevo interesado en tu producto",
+      message: `${buyer?.name || "Un colega"} apartó "${product?.name || "tu producto"}". Abre el chat para cerrar la venta.`,
+      data: { url: "/chat", interest_id: interestId },
+    });
+  }
+  await db.from("notifications").insert({
+    user_id: buyerId,
+    type: "system",
+    title: "✅ Producto apartado",
+    message: `Apartaste "${product?.name || "el producto"}". Ya puedes chatear con ${vendor?.name || "el proveedor"}.`,
+    data: { url: "/chat", interest_id: interestId },
+  });
+
+  logStep("Marketplace interest fee completed", { interestId, chatSessionId, feeAmount });
 }
 
 // Restore stock + mark order abandoned when a marketplace checkout expires.

@@ -109,6 +109,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       modules: [
         { id: 'hospitals', icon: Building2, href: '/admin/hospitals', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash40'), desc: t('autoI18n.clAdminDash41') },
         { id: 'marketplace', icon: Package, href: '/admin/marketplace', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash42'), desc: t('autoI18n.clAdminDash43') },
+        { id: 'marketplace-fee', icon: Package, href: '/admin/marketplace-fee', color: 'text-primary', borderColor: 'border-l-primary', title: 'Marketplace — Fee', desc: 'Cuota de intermediación, aprobar vendedores y ver fees cobrados' },
         { id: 'featured', icon: Star, href: '/admin/featured', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash44'), desc: t('autoI18n.clAdminDash45') },
       ],
     },
