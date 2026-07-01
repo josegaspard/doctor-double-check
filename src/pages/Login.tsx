@@ -156,37 +156,12 @@ export default function Login() {
     setLoginError('');
     setResetEmailSent(false);
     
-    // Segregación por barra de rol (cliente 2026-06-30): la cuenta debe corresponder a la
-    // barra elegida. El gate en useAuthState evita que el auto-redirect lleve a un usuario
-    // con rol equivocado a su panel; aquí mostramos el aviso y cerramos la sesión.
-    try { sessionStorage.setItem('mm_role_gate', selectedRole); } catch {}
+    // Gate de rol DESACTIVADO (2026-07-01): estaba bloqueando logins legítimos. Toda cuenta
+    // válida entra directo a su panel según su rol real, sin importar la barra elegida.
+    try { sessionStorage.removeItem('mm_role_gate'); } catch {}
 
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
-      const actualRole = result.role;
-      const allowed = selectedRole === 'doctor'
-        ? (actualRole === 'doctor' || actualRole === 'admin')
-        : actualRole === selectedRole;
-      if (!allowed) {
-        await supabase.auth.signOut();
-        // La cuenta es válida pero se ingresó en la barra equivocada. Detectamos la barra
-        // correcta y cambiamos a ella automáticamente (admin usa la barra "Médico"), dejando
-        // el correo/contraseña puestos para que solo tenga que reintentar (cliente 2026-07-01).
-        const correctRole = (actualRole === 'admin' ? 'doctor' : actualRole) as BarRole;
-        if (correctRole && ROLE_META[correctRole]) {
-          setSelectedRole(correctRole);
-          setLoginError(
-            (t('login.roleMismatchSwitch') || 'Esta cuenta corresponde al acceso de {role}. Te cambiamos al acceso correcto: ingresa de nuevo.')
-              .replace('{role}', t(ROLE_META[correctRole].labelKey))
-          );
-        } else {
-          setLoginError(
-            (t('login.roleMismatch') || 'Estas credenciales no corresponden al acceso de {role}. Cambia de tipo de acceso e inténtalo de nuevo.')
-              .replace('{role}', t(roleMeta.labelKey))
-          );
-        }
-        return;
-      }
       const { data: sessionData } = await supabase.auth.getSession();
       const uid = sessionData.session?.user?.id;
       if (uid) {

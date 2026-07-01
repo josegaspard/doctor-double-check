@@ -118,6 +118,11 @@ export function useAuthState() {
           return;
         }
 
+        // Gate de rol DESACTIVADO (2026-07-01): la segregación por "barra" cerraba sesión
+        // a logins legítimos y dejaba al usuario fuera. Solo limpiamos el flag; toda cuenta
+        // válida entra a su panel según su rol real. (Reactivar solo si se rehace bien.)
+        try { sessionStorage.removeItem('mm_role_gate'); } catch {}
+
         setUserAndCache(profile);
         setIsLoading(false);
 
