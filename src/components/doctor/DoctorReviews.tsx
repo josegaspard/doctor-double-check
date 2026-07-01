@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RatingStars } from '@/components/ratings/RatingStars';
-import { Star, MessageSquare, Loader2, ChevronDown } from 'lucide-react';
+import { Star, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
@@ -129,12 +129,6 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
               </span>
             </div>
             <RatingStars rating={review.rating} size="sm" />
-            {review.comment && (
-              <p className="text-sm text-muted-foreground flex items-start gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                {review.comment}
-              </p>
-            )}
           </div>
         ))}
         {visibleCount < reviews.length && (

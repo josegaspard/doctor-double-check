@@ -9,7 +9,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RatingStars } from './RatingStars';
@@ -35,7 +34,6 @@ export function RatingDialog({
   const { toast } = useToast();
   const { t } = useLanguage();
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -78,7 +76,6 @@ export function RatingDialog({
           patient_id: user.id,
           doctor_id: doctorId,
           rating,
-          comment: comment.trim() || null,
         });
 
       if (error) {
@@ -143,23 +140,6 @@ export function RatingDialog({
                 {ratingLabels[rating]}
               </p>
             )}
-          </div>
-
-          {/* Comment */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              {t('fix20.chat.ratingCommentLabel')}
-            </label>
-            <Textarea
-              placeholder={t('fix20.chat.ratingCommentPlaceholder')}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-              maxLength={500}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {comment.length}/500
-            </p>
           </div>
         </div>
 

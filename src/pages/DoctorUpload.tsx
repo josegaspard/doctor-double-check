@@ -122,14 +122,15 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
     loadContent();
   }, [user?.id]);
 
-  // Redirect non-doctors (but not when embedded inside another page, e.g. Education)
+  // Redirect non-creators (doctores y residentes pueden subir contenido; no cuando va
+  // embebido dentro de otra página, p.ej. Educación).
   React.useEffect(() => {
-    if (!embedded && role !== 'doctor') navigate('/lives');
+    if (!embedded && role !== 'doctor' && role !== 'resident') navigate('/lives');
   }, [role, navigate, embedded]);
 
-  if (role !== 'doctor') return null;
+  if (role !== 'doctor' && role !== 'resident') return null;
 
-  const isApproved = user?.doctorProfile?.status === 'approved';
+  const isApproved = user?.doctorProfile?.status === 'approved' || user?.residentProfile?.status === 'approved';
 
   const getFileType = (file: File): 'video' | 'pdf' | 'image' | 'presentation' => {
     if (file.type.includes('video')) return 'video';

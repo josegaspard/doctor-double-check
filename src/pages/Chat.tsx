@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
-import { MessageSquare, Loader2, Award, BadgeCheck } from 'lucide-react';
+import { MessageSquare, Loader2, Award, BadgeCheck, Users, User, Stethoscope, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
@@ -425,47 +425,44 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Chat filter tabs for doctor/resident */}
-        {(role === 'doctor' || role === 'resident') && (
-          <div className="flex gap-1.5 mb-2 px-2 sm:px-0 flex-shrink-0">
-            {role === 'doctor' && (
-              <>
-                <Button
-                  variant={chatFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => setChatFilter('all')}
-                >
-                  {t('chat.filterAll')}
-                </Button>
-                <Button
-                  variant={chatFilter === 'patients' ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs h-8"
-                  onClick={() => setChatFilter('patients')}
-                >
-                  {t('chat.filterPatients')}
-                </Button>
-              </>
-            )}
-            <Button
-              variant={chatFilter === 'doctors' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs h-8"
-              onClick={() => setChatFilter('doctors')}
-            >
-              {t('chat.filterDoctors')}
-            </Button>
-            <Button
-              variant={chatFilter === 'providers' ? 'default' : 'outline'}
-              size="sm"
-              className="text-xs h-8"
-              onClick={() => setChatFilter('providers')}
-            >
-              {t('chat.filterProviders')}
-            </Button>
-          </div>
-        )}
+        {/* Filtro de chat por tipo de contacto (cliente 2026-07-01): segmentado, con icono
+            y color de marca por tipo, según los permisos del rol. Solo doctores ven a
+            pacientes; residentes chatean con doctores/residentes y proveedores. */}
+        {(role === 'doctor' || role === 'resident') && (() => {
+          // Cada rol ve solo las pestañas que sus permisos habilitan. Color = paleta de marca.
+          const allTabs = [
+            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#227787' },
+            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#839ED5' },
+            { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' },
+            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#C79A00' },
+          ] as const;
+          const visibleKeys = role === 'doctor'
+            ? ['all', 'patients', 'doctors', 'providers']
+            : ['doctors', 'providers']; // residente: sin pacientes (bloqueado por permisos)
+          const tabs = allTabs.filter(tt => visibleKeys.includes(tt.key));
+          return (
+            <div className="flex gap-1.5 mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
+              {tabs.map(({ key, label, Icon, color }) => {
+                const active = chatFilter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setChatFilter(key as typeof chatFilter)}
+                    aria-pressed={active ? 'true' : 'false'}
+                    style={active
+                      ? { backgroundColor: color, borderColor: color, color: '#fff' }
+                      : { borderColor: `${color}59`, color }}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 h-8 text-xs font-semibold whitespace-nowrap transition-all hover:shadow-sm"
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
           <ChatSessionsList

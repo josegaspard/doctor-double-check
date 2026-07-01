@@ -242,7 +242,7 @@ export default function LivesGrid() {
           </div>
           
           <div className="flex items-center gap-2">
-            {role === 'doctor' && (
+            {(role === 'doctor' || role === 'resident') && (
               <Link to="/doctor/go-live">
                 <Button className="gap-2 bg-live hover:bg-live/90 text-white">
                   <Plus className="w-4 h-4" />

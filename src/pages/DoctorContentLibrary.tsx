@@ -128,7 +128,7 @@ export default function DoctorContentLibrary() {
 
   useEffect(() => { fetchContents(); }, [fetchContents]);
 
-  if (role !== 'doctor' && role !== 'admin') {
+  if (role !== 'doctor' && role !== 'resident' && role !== 'admin') {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">

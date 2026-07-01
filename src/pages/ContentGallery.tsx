@@ -452,7 +452,7 @@ export default function ContentGallery() {
               </h1>
               <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
             </div>
-            {user && user.role === 'doctor' && (
+            {user && (user.role === 'doctor' || user.role === 'resident') && (
               <Link to="/doctor/upload">
                 <Button variant="live" className="gap-2">
                   <Upload className="w-4 h-4" />

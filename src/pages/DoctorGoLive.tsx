@@ -525,7 +525,7 @@ export default function DoctorGoLive() {
     );
   }
 
-  if (role !== 'doctor') {
+  if (role !== 'doctor' && role !== 'resident') {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
