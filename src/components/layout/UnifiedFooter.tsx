@@ -102,7 +102,12 @@ export function UnifiedFooter({ variant }: Props) {
   const platformLinksRaw = footerLinks.platform.some(l => l.href === '/for-residents')
     ? footerLinks.platform
     : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
-  const platformLinks = platformLinksRaw.map(translateLink);
+  // Garantizar SIEMPRE el enlace al Portal de proveedores en el footer
+  // (cliente 2026-07-02: va aquí, NO en el menú "Más").
+  const platformWithVendors = platformLinksRaw.some(l => l.href === '/vendor/dashboard')
+    ? platformLinksRaw
+    : [...platformLinksRaw, { label: 'Portal de proveedores', href: '/vendor/dashboard' }];
+  const platformLinks = platformWithVendors.map(translateLink);
 
   const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
