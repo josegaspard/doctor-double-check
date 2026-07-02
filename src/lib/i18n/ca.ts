@@ -689,6 +689,7 @@ export const ca = {
     "login": "Iniciar sessió",
     "doctors": "Doctors",
     "soyMedico": "Directori mèdic",
+    "soyMedicoShort": "Directori",
     "foro": "Fòrum Medical Masters",
     "education": "Medical Masters Education",
     "educationShort": "MM Education",

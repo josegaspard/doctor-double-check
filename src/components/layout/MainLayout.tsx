@@ -123,7 +123,9 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     return [
       lives,
       { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
-      { label: t('nav.soyMedico'), href: '/doctors', icon: Stethoscope },
+      // Etiqueta CORTA ("Directorio"): "Directorio Médico" completo se partía en
+      // dos líneas / se cortaba feo dentro del tab de ~70px de la barra inferior.
+      { label: t('nav.soyMedicoShort'), href: '/doctors', icon: Stethoscope },
       { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
     ];
   }
@@ -158,7 +160,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   return [
     lives,
     { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
-    { label: t('nav.soyMedico'), href: '/doctors', icon: Stethoscope },
+    { label: t('nav.soyMedicoShort'), href: '/doctors', icon: Stethoscope },
     { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
   ];
 }
@@ -676,7 +678,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <Link
                   key={tab.href}
                   to={tab.href}
-                  className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors active:scale-95 ${
+                  className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 h-full transition-colors active:scale-95 ${
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
@@ -688,7 +690,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </span>
                     )}
                   </div>
-                  <span className={`text-[10px] font-medium leading-tight ${isActive ? 'text-primary' : ''}`}>
+                  {/* Una sola línea SIEMPRE: sin truncate/nowrap las etiquetas largas
+                      se partían en dos líneas y desalineaban toda la barra. */}
+                  <span className={`text-[10px] font-medium leading-tight max-w-full truncate whitespace-nowrap px-0.5 ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
                 </Link>

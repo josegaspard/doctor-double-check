@@ -690,6 +690,7 @@ export const zh = {
     "login": "登录",
     "doctors": "医生",
     "soyMedico": "医生目录",
+    "soyMedicoShort": "医生目录",
     "foro": "Medical Masters 论坛",
     "education": "Medical Masters Education",
     "educationShort": "MM Education",

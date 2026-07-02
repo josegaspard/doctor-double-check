@@ -437,7 +437,7 @@ export default function Chat() {
             neutro; el activo se pinta con su color de marca, los inactivos quedan en
             texto neutro). Solo doctores ven a pacientes; residentes chatean con
             doctores/residentes y proveedores. */}
-        {(role === 'doctor' || role === 'resident') && (() => {
+        {(role === 'doctor' || role === 'resident') && !showMobileChat && (() => {
           // Colores de marca oscurecidos para que el texto blanco del chip activo
           // cumpla contraste WCAG (≥4.5:1).
           const allTabs = [
@@ -464,10 +464,14 @@ export default function Chat() {
             }).length;
           };
           return (
-            <div className="mb-3 px-2 sm:px-0 flex-shrink-0 overflow-x-auto scrollbar-hide">
+            <div className="mb-3 px-2 sm:px-0 flex-shrink-0">
               {/* Contenedor SÓLIDO (bg-card): sobre el fondo teal del brandbook un
-                  bg-muted translúcido se fundía y mataba el contraste del texto. */}
-              <div className="inline-flex items-center gap-1 rounded-full bg-card border border-border shadow-sm p-1.5">
+                  bg-muted translúcido se fundía y mataba el contraste del texto.
+                  Móvil: grid full-width (todas las opciones visibles a la vez, sin
+                  scroll horizontal); sm+: pills en línea como antes. */}
+              <div
+                className={`grid w-full ${tabs.length === 2 ? 'grid-cols-2' : 'grid-cols-4'} sm:flex sm:w-auto sm:max-w-max items-stretch sm:items-center gap-1 rounded-2xl sm:rounded-full bg-card border border-border shadow-sm p-1 sm:p-1.5`}
+              >
                 {tabs.map(({ key, label, Icon, color }) => {
                   const active = chatFilter === key;
                   const count = countFor(key);
@@ -478,7 +482,7 @@ export default function Chat() {
                       onClick={() => setChatFilter(key as typeof chatFilter)}
                       aria-pressed={active}
                       style={active ? { backgroundColor: color, color: '#fff' } : undefined}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold whitespace-nowrap transition-all ${
+                      className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 rounded-xl sm:rounded-full px-1 sm:px-4 py-1.5 sm:py-0 sm:h-9 min-w-0 text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all ${
                         active
                           ? 'shadow-sm'
                           : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
@@ -486,11 +490,23 @@ export default function Chat() {
                     >
                       {/* Icono inactivo en currentColor: los hex de marca desaparecían
                           sobre el muted del dark mode (navy sobre navy ≈ 1.2:1). */}
-                      <Icon className="w-4 h-4" />
-                      {label}
+                      <span className="relative inline-flex shrink-0">
+                        <Icon className="w-4 h-4" />
+                        {/* Móvil: contador como burbuja sobre el icono (no cabe en línea). */}
+                        {count > 0 && (
+                          <span
+                            className={`sm:hidden absolute -top-1.5 -right-2.5 min-w-[15px] h-[15px] px-0.5 inline-flex items-center justify-center rounded-full text-[9px] font-bold leading-none ${
+                              active ? 'bg-white/30 text-white' : 'bg-foreground/15 text-foreground/80'
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </span>
+                      <span className="max-w-full truncate leading-tight">{label}</span>
                       {count > 0 && (
                         <span
-                          className={`min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none ${
+                          className={`hidden sm:inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full text-[10px] font-bold leading-none ${
                             active ? 'bg-white/25 text-white' : 'bg-foreground/10 text-foreground/70'
                           }`}
                         >

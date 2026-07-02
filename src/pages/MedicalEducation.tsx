@@ -289,31 +289,34 @@ export default function MedicalEducation() {
             propia pestaña clara — Casos clínicos · Reuniones · Mi calendario · Premium —
             en lugar de una sola página larga con secciones anidadas. */}
         <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
-            <TabsList className="inline-flex h-auto w-auto gap-1.5 bg-white/95 backdrop-blur-md ring-1 ring-[#163a83]/10 shadow-lg shadow-[#0b1d45]/25 p-1.5 rounded-2xl">
+          {/* Móvil: grid 2×2 full-width (los 4 tabs visibles a la vez, sin scroll
+              horizontal que cortaba la barra feo); sm+: pills en línea como antes.
+              Paciente solo ve 1 tab → una columna a lo ancho. */}
+          <div className="mb-6">
+            <TabsList className={`grid w-full ${isPatient ? 'grid-cols-1' : 'grid-cols-2'} sm:flex sm:w-auto sm:max-w-max h-auto gap-1.5 bg-white/95 backdrop-blur-md ring-1 ring-[#163a83]/10 shadow-lg shadow-[#0b1d45]/25 p-1.5 rounded-2xl`}>
               {/* "Contenido premium" como PESTAÑA: al pulsarla se abre TODO el contenido
                   premium (grabaciones) ABAJO, igual que Casos clínicos / Reuniones /
                   Calendario — ya no navega a /recordings. Cliente 2026-06-22. */}
-              <TabsTrigger value="premium" className="gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
+              <TabsTrigger value="premium" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
                 <Folder className="w-4 h-4" />
-                <span className="whitespace-nowrap">{t('nav.recordings')}</span>
+                <span className="whitespace-nowrap truncate">{t('nav.recordings')}</span>
               </TabsTrigger>
               {!isPatient && (
-                <TabsTrigger value="feed" className="gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
+                <TabsTrigger value="feed" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
                   <GraduationCap className="w-4 h-4" />
-                  <span className="whitespace-nowrap">{t('medicalEducationPage.tabCases')}</span>
+                  <span className="whitespace-nowrap truncate">{t('medicalEducationPage.tabCases')}</span>
                 </TabsTrigger>
               )}
               {(role === 'doctor' || role === 'resident') && (
-                <TabsTrigger value="meetings" className="gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
+                <TabsTrigger value="meetings" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
                   <Video className="w-4 h-4" />
-                  <span className="whitespace-nowrap">{t('meetings.title')}</span>
+                  <span className="whitespace-nowrap truncate">{t('meetings.title')}</span>
                 </TabsTrigger>
               )}
               {(role === 'doctor' || role === 'resident') && (
-                <TabsTrigger value="calendar" className="gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
+                <TabsTrigger value="calendar" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
                   <CalendarDays className="w-4 h-4" />
-                  <span className="whitespace-nowrap">{t('medicalEducationPage.tabCalendar')}</span>
+                  <span className="whitespace-nowrap truncate">{t('medicalEducationPage.tabCalendar')}</span>
                 </TabsTrigger>
               )}
             </TabsList>

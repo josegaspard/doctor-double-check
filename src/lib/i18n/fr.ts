@@ -689,6 +689,7 @@ export const fr = {
     "login": "Se connecter",
     "doctors": "Médecins",
     "soyMedico": "Annuaire des Médecins",
+    "soyMedicoShort": "Annuaire",
     "foro": "Forum Medical Masters",
     "education": "Medical Masters Education",
     "educationShort": "MM Education",

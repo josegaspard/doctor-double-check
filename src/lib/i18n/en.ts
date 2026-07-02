@@ -689,6 +689,7 @@ export const en = {
     login: 'Log In',
     doctors: 'Doctors',
     soyMedico: "I'm a Doctor",
+    soyMedicoShort: 'Directory',
     foro: 'Medical Masters Forum',
     education: 'Medical Masters Education',
     educationShort: 'MM Education',
