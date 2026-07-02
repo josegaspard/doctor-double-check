@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   ArrowLeft, Loader2, Presentation, CalendarDays, Radio, Video,
-  Star, Pencil, Archive, ArchiveRestore, Plus, PlayCircle, Clock, Film,
+  Star, Pencil, Archive, ArchiveRestore, Plus, PlayCircle, Clock, Film, Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
@@ -150,6 +150,17 @@ export default function CongressDetail() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  // Eliminar: solo organizador o admin (política RLS de DELETE). Las reuniones y
+  // grabaciones NO se borran, solo dejan de estar agrupadas (FK ON DELETE SET NULL).
+  const canDelete = !!user && !!congress && (congress.organizer_id === user.id || isAdmin);
+  const handleDelete = async () => {
+    if (!congress || !window.confirm(t('congresses.confirmDelete'))) return;
+    const { error } = await (supabase as any).from('congresses').delete().eq('id', congress.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t('congresses.deletedToast'));
+    navigate('/congresos');
+  };
 
   const handleArchiveToggle = async () => {
     if (!congress) return;
@@ -322,6 +333,12 @@ export default function CongressDetail() {
                       ? <><ArchiveRestore className="w-3.5 h-3.5" />{t('congresses.unarchive')}</>
                       : <><Archive className="w-3.5 h-3.5" />{t('congresses.archive')}</>}
                   </Button>
+                  {canDelete && (
+                    <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={handleDelete}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {t('congresses.delete')}
+                    </Button>
+                  )}
                 </>
               )}
             </div>

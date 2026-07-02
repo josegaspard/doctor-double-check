@@ -150,6 +150,7 @@ const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const Congresses = React.lazy(() => import("./pages/Congresses"));
 const CongressDetail = React.lazy(() => import("./pages/CongressDetail"));
+const AdminCongresses = React.lazy(() => import("./pages/AdminCongresses"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
 const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 const Foro = React.lazy(() => import("./pages/Foro"));
@@ -328,6 +329,7 @@ const App = () => {
                       <Route path="/admin/hospitals" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminHospitals /></AccessGuard>} />
                       <Route path="/admin/marketplace" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplace /></AccessGuard>} />
                       <Route path="/admin/marketplace-fee" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplaceFee /></AccessGuard>} />
+                      <Route path="/admin/congresses" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCongresses /></AccessGuard>} />
                       {FEATURE_FLAGS.marketplaceFeeModel && <Route path="/marketplace" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalMarketplace /></AccessGuard>} />}
                       <Route path="/admin/accounting" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAccounting /></AccessGuard>} />
                       {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','resident','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />}

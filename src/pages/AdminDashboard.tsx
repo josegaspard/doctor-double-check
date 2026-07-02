@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck,
+  ClipboardCheck, Presentation,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -92,6 +92,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       modules: [
         { id: 'news', icon: Newspaper, href: '/admin/news', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash24'), desc: t('autoI18n.clAdminDash25') },
         { id: 'events', icon: Megaphone, href: '/admin/events', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash26'), desc: t('autoI18n.clAdminDash27') },
+        // Congresos (cliente 2026-07-02): administración total de congresos por el super admin.
+        { id: 'congresses', icon: Presentation, href: '/admin/congresses', color: 'text-primary', borderColor: 'border-l-primary', title: t('congresses.adminTitle'), desc: t('congresses.adminSubtitle') },
         { id: 'ranks', icon: ShieldCheck, href: '/admin/ranks', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash28'), desc: t('autoI18n.clAdminDash29') },
         { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-accent', borderColor: 'border-l-accent', title: t('autoI18n.clAdminDash30'), desc: t('autoI18n.clAdminDash31') },
         { id: 'site-settings', icon: Settings, href: '/admin/site-settings', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash32'), desc: t('autoI18n.clAdminDash33') },
