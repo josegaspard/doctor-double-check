@@ -93,15 +93,21 @@ export default function Chat() {
       await refreshSessions();
 
       // Verificar que la sesión existe + el usuario es participante (RLS)
-      const { data: session } = await supabase
+      const { data: session } = await (supabase as any)
         .from('chat_sessions')
-        .select('id, status')
+        .select('id, status, marketplace_interest_id')
         .eq('id', sessionParam)
         .maybeSingle();
 
       if (!session) {
         toast.error(t('fix20.chat.sessionNotFound'));
         return;
+      }
+
+      // Si es un chat del marketplace (con proveedor), mover el filtro a
+      // "Proveedores" para que la sesión no quede oculta en la lista.
+      if (session.marketplace_interest_id && (role === 'doctor' || role === 'resident')) {
+        setChatFilter('providers');
       }
 
       // Cambiar a la tab correcta según status
@@ -427,13 +433,11 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Filtro de chat por tipo de contacto (cliente 2026-07-01): segmentado, con icono
-            y color de marca por tipo, según los permisos del rol. Solo doctores ven a
-            pacientes; residentes chatean con doctores/residentes y proveedores. */}
+        {/* Filtro de chat por tipo de contacto: control segmentado (un solo contenedor
+            neutro; el activo se pinta con su color de marca, los inactivos quedan en
+            texto neutro). Solo doctores ven a pacientes; residentes chatean con
+            doctores/residentes y proveedores. */}
         {(role === 'doctor' || role === 'resident') && (() => {
-          // Chips SÓLIDOS de color de marca (se leen sobre cualquier fondo, claro u oscuro).
-          // Cada color se eligió con buen contraste sobre texto blanco. El activo va a full
-          // con anillo/sombra; los inactivos atenuados. Cada rol ve solo lo que sus permisos permiten.
           const allTabs = [
             { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#227787' }, // teal
             { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#5E79C0' }, // comfort blue
@@ -444,28 +448,53 @@ export default function Chat() {
             ? ['all', 'patients', 'doctors', 'providers']
             : ['doctors', 'providers']; // residente: sin pacientes (bloqueado por permisos)
           const tabs = allTabs.filter(tt => visibleKeys.includes(tt.key));
+          // Contador de chats activos por tipo (independiente del filtro seleccionado).
+          const countFor = (key: string) => {
+            const actives = allSessions.filter(s => s.status === 'active');
+            if (key === 'all') return actives.length;
+            return actives.filter(s => {
+              const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
+              const isProviderChat = !!s.marketplaceInterestId;
+              if (key === 'patients') return otherType === 'patient';
+              if (key === 'doctors') return (otherType === 'doctor' || otherType === 'resident') && !isProviderChat;
+              if (key === 'providers') return isProviderChat;
+              return false;
+            }).length;
+          };
           return (
-            <div className="flex gap-2 mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
-              {tabs.map(({ key, label, Icon, color }) => {
-                const active = chatFilter === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setChatFilter(key as typeof chatFilter)}
-                    aria-pressed={active ? 'true' : 'false'}
-                    style={{ backgroundColor: color, color: '#fff' }}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 h-8 text-xs font-semibold whitespace-nowrap transition-all ${
-                      active
-                        ? 'opacity-100 shadow-md ring-2 ring-white/40 scale-[1.03]'
-                        : 'opacity-45 hover:opacity-80'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </button>
-                );
-              })}
+            <div className="mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
+              <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 border border-border/60 p-1">
+                {tabs.map(({ key, label, Icon, color }) => {
+                  const active = chatFilter === key;
+                  const count = countFor(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setChatFilter(key as typeof chatFilter)}
+                      aria-pressed={active}
+                      style={active ? { backgroundColor: color, color: '#fff' } : undefined}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 sm:px-3.5 h-8 text-xs font-semibold whitespace-nowrap transition-all ${
+                        active
+                          ? 'shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" style={!active ? { color } : undefined} />
+                      {label}
+                      {count > 0 && (
+                        <span
+                          className={`min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none ${
+                            active ? 'bg-white/25 text-white' : 'bg-foreground/10 text-foreground/70'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })()}

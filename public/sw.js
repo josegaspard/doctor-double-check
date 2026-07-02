@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-01-batch32-marketplace-ordenes-sin-pago
+// SW_VERSION: 2026-07-02-batch33-portal-proveedores
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

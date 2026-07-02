@@ -1,5 +1,7 @@
 export const FEATURE_FLAGS = {
-  marketplaceVendors: false,
+  // Portal de proveedores (postulación con T&C + fee, aprobación admin,
+  // carga de productos con visto bueno del super admin). ACTIVADO 2026-07-02.
+  marketplaceVendors: true,
   // Marketplace reventa dr↔dr con fee de intermediación (cliente 2026-07-01).
   // ACTIVADO 2026-07-01: migración aplicada + edge functions desplegadas. El marketplace
   // reventa dr↔dr con fee está vivo (rutas /marketplace y nav visibles para dr/residentes).

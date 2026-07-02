@@ -84,12 +84,6 @@ export default function MedicalMarketplace() {
   const [actingOrderId, setActingOrderId] = useState<string | null>(null);
   const [payingFeeId, setPayingFeeId] = useState<string | null>(null);
 
-  // Diálogo "Quiero vender"
-  const [sellOpen, setSellOpen] = useState(false);
-  const [sellTerms, setSellTerms] = useState(false);
-  const [sellForm, setSellForm] = useState({ name: '', phone: '', location: '', legal_name: '', tax_id: '' });
-  const [submittingSell, setSubmittingSell] = useState(false);
-
   // Diálogo "Publicar producto" (vendedor aprobado)
   const [pubOpen, setPubOpen] = useState(false);
   const [pubForm, setPubForm] = useState({ name: '', price: '', description: '', image_url: '' });
@@ -117,6 +111,7 @@ export default function MedicalMarketplace() {
       const { data: prods } = await sb.from('marketplace_products')
         .select('id, name, description, price, currency, image_url, vendor_id, category, stock, brand_id, reserved_by, reserved_until, created_at, marketplace_vendors(name), marketplace_brands(name)')
         .eq('is_active', true)
+        .eq('approval_status', 'approved') // solo productos aprobados por el admin
         .order('created_at', { ascending: false });
       setProducts((prods || []).map((p: any) => ({ ...p, vendorName: p.marketplace_vendors?.name, brandName: p.marketplace_brands?.name })));
 
@@ -127,7 +122,7 @@ export default function MedicalMarketplace() {
         // Mis órdenes como comprador (activas o concretadas)
         // OJO: hint de FK obligatorio — product_interests↔marketplace_products tiene
         // dos relaciones (product_id y reserved_interest_id) y PostgREST no desambigua solo.
-        const orderCols = 'id, status, fee_status, fee_amount, product_price, currency, created_at, completed_at, product_id, buyer_id, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name)';
+        const orderCols = 'id, status, fee_status, fee_amount, product_price, currency, created_at, completed_at, product_id, buyer_id, chat_session_id, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name)';
         const { data: mine } = await sb.from('product_interests')
           .select(orderCols)
           .eq('buyer_id', user.id)
@@ -251,13 +246,18 @@ export default function MedicalMarketplace() {
         title: '📋 Orden de compra enviada',
         description: 'El proveedor ya fue notificado. Te abrimos el chat para acordar los detalles.',
       });
-      navigate('/chat');
+      // Abrir DIRECTO la conversación con el proveedor (no solo la bandeja).
+      navigate(data?.chat_session_id ? `/chat?session=${data.chat_session_id}` : '/chat');
     } catch (e: any) {
       toast({ title: 'No se pudo enviar la orden', description: e.message || 'Error', variant: 'destructive' });
     } finally {
       setSendingId(null);
     }
   };
+
+  // Abre el chat directo de la orden (sesión comprador↔proveedor) o la bandeja si no hay.
+  const goToOrderChat = (o: { chat_session_id?: string | null }) =>
+    navigate(o?.chat_session_id ? `/chat?session=${o.chat_session_id}` : '/chat');
 
   // Vendedor concreta la venta (sin pago de por medio) o cualquiera cancela la orden.
   const orderAction = async (orderId: string, action: 'complete' | 'cancel') => {
@@ -310,35 +310,6 @@ export default function MedicalMarketplace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const submitSell = async () => {
-    if (!sellTerms || !sellForm.name.trim()) {
-      toast({ title: 'Faltan datos', description: 'Completa el nombre del negocio y acepta los términos.', variant: 'destructive' });
-      return;
-    }
-    setSubmittingSell(true);
-    try {
-      const { error } = await sb.from('marketplace_vendors').insert({
-        user_id: user!.id,
-        name: sellForm.name.trim(),
-        phone: sellForm.phone || null,
-        location: sellForm.location || null,
-        legal_name: sellForm.legal_name || null,
-        tax_id: sellForm.tax_id || null,
-        status: 'pending',
-        terms_accepted_at: new Date().toISOString(),
-      });
-      if (error) throw error;
-      toast({ title: '✅ Solicitud enviada', description: 'Un administrador revisará tu verificación de negocio.' });
-      setSellOpen(false);
-      setSellTerms(false);
-      load();
-    } catch (e: any) {
-      toast({ title: 'No se pudo enviar', description: e.message, variant: 'destructive' });
-    } finally {
-      setSubmittingSell(false);
-    }
-  };
-
   const publishProduct = async () => {
     const price = Number(pubForm.price);
     if (!pubForm.name.trim() || !Number.isFinite(price) || price <= 0) {
@@ -358,7 +329,7 @@ export default function MedicalMarketplace() {
         stock: 1,
       });
       if (error) throw error;
-      toast({ title: '✅ Producto publicado', description: 'Ya aparece en el marketplace.' });
+      toast({ title: '📦 Producto enviado a revisión', description: 'El administrador lo aprobará antes de que aparezca en el marketplace.' });
       setPubOpen(false);
       setPubForm({ name: '', price: '', description: '', image_url: '' });
       load();
@@ -477,17 +448,27 @@ export default function MedicalMarketplace() {
             <Store className="w-6 h-6 text-primary" />
             <h1 className="font-heading text-2xl font-bold">Marketplace médico</h1>
           </div>
-          {/* CTA vendedor según su estado */}
+          {/* CTA vendedor según su estado — la postulación completa vive en el Portal de proveedores */}
           {!vendor && (
-            <Button onClick={() => setSellOpen(true)} variant="outline" className="gap-2">
+            <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2">
               <PackagePlus className="w-4 h-4" /> Quiero vender
             </Button>
           )}
           {vendor?.status === 'pending' && (
             <Badge variant="secondary" className="gap-1 h-9 px-3"><Clock className="w-3.5 h-3.5" /> Verificación en revisión</Badge>
           )}
+          {vendor?.status === 'rejected' && (
+            <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2 border-destructive/40 text-destructive hover:text-destructive">
+              <XCircle className="w-4 h-4" /> Solicitud rechazada — corregir
+            </Button>
+          )}
           {vendor?.status === 'approved' && (
-            <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Publicar producto</Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2">
+                <Store className="w-4 h-4" /> Portal del proveedor
+              </Button>
+              <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Publicar producto</Button>
+            </div>
           )}
         </div>
         <p className="text-sm text-muted-foreground mb-4">Compra y vende material entre colegas. Al mostrar interés se envía una orden de compra al proveedor y se abre el chat para acordar los pormenores — no pagas nada dentro de la plataforma.</p>
@@ -558,7 +539,7 @@ export default function MedicalMarketplace() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {o.status === 'ordered' && (
                         <>
-                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
                             <MessageCircle className="w-3.5 h-3.5" /> Chat
                           </Button>
                           <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'complete')}>
@@ -606,7 +587,7 @@ export default function MedicalMarketplace() {
                       {o.status === 'ordered' ? (
                         <>
                           <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" /> Orden enviada</Badge>
-                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
                             <MessageCircle className="w-3.5 h-3.5" /> Chat
                           </Button>
                           <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
@@ -616,7 +597,7 @@ export default function MedicalMarketplace() {
                       ) : (
                         <>
                           <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada</Badge>
-                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
                             <MessageCircle className="w-3.5 h-3.5" /> Chat
                           </Button>
                         </>
@@ -676,7 +657,7 @@ export default function MedicalMarketplace() {
                             {mine(p) ? (
                               <Badge variant="outline" className="w-full justify-center py-1">Tu producto</Badge>
                             ) : myOrders.some(o => o.product_id === p.id && o.status === 'ordered') ? (
-                              <Button type="button" size="sm" variant="outline" className="w-full gap-1.5" onClick={() => navigate('/chat')}>
+                              <Button type="button" size="sm" variant="outline" className="w-full gap-1.5" onClick={() => goToOrderChat(myOrders.find(o => o.product_id === p.id && o.status === 'ordered'))}>
                                 <MessageCircle className="w-4 h-4" /> Orden enviada — ver chat
                               </Button>
                             ) : reserved ? (
@@ -727,37 +708,6 @@ export default function MedicalMarketplace() {
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo Quiero vender (verificación de negocio) */}
-      <Dialog open={sellOpen} onOpenChange={setSellOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> Solicitar verificación de negocio</DialogTitle>
-            <DialogDescription>Un administrador revisará tus datos. Al aprobarte podrás publicar productos.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1"><Label>Nombre del negocio *</Label><Input value={sellForm.name} onChange={e => setSellForm(f => ({ ...f, name: e.target.value }))} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label>Teléfono</Label><Input value={sellForm.phone} onChange={e => setSellForm(f => ({ ...f, phone: e.target.value }))} /></div>
-              <div className="space-y-1"><Label>Ubicación</Label><Input value={sellForm.location} onChange={e => setSellForm(f => ({ ...f, location: e.target.value }))} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label>Razón social</Label><Input value={sellForm.legal_name} onChange={e => setSellForm(f => ({ ...f, legal_name: e.target.value }))} /></div>
-              <div className="space-y-1"><Label>RFC / Tax ID</Label><Input value={sellForm.tax_id} onChange={e => setSellForm(f => ({ ...f, tax_id: e.target.value }))} /></div>
-            </div>
-            <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
-              <Checkbox checked={sellTerms} onCheckedChange={(v) => setSellTerms(!!v)} className="mt-0.5" />
-              <span>Acepto los <b>términos y condiciones</b> para vendedores.</span>
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSellOpen(false)}>Cancelar</Button>
-            <Button disabled={submittingSell} onClick={submitSell} className="gap-2">
-              {submittingSell ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />} Enviar solicitud
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Diálogo Publicar producto */}
       <Dialog open={pubOpen} onOpenChange={setPubOpen}>
         <DialogContent className="sm:max-w-md">
@@ -770,6 +720,7 @@ export default function MedicalMarketplace() {
             <div className="space-y-1"><Label>Descripción</Label><Textarea rows={3} value={pubForm.description} onChange={e => setPubForm(f => ({ ...f, description: e.target.value }))} /></div>
             <div className="space-y-1"><Label>URL de imagen</Label><Input value={pubForm.image_url} onChange={e => setPubForm(f => ({ ...f, image_url: e.target.value }))} /></div>
             <p className="text-xs text-muted-foreground flex items-start gap-1.5"><Tag className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> Al concretar una venta pagarás a la plataforma un fee del {Math.round(feeRate * 100)}% del precio{pubForm.price && Number(pubForm.price) > 0 ? ` (≈ $${feeFor(Number(pubForm.price)).toLocaleString()})` : ''}. El comprador no paga nada aquí.</p>
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><ShieldCheck className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> El producto pasa por revisión del administrador antes de aparecer publicado.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPubOpen(false)}>Cancelar</Button>

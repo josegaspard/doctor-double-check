@@ -120,11 +120,19 @@ serve(async (req) => {
 
       const { data: product, error: prodErr } = await db
         .from("marketplace_products")
-        .select("id, name, price, currency, image_url, vendor_id, is_active, marketplace_vendors(name, user_id)")
+        .select("id, name, price, currency, image_url, vendor_id, is_active, approval_status, marketplace_vendors(name, user_id, status)")
         .eq("id", product_id)
         .single();
       if (prodErr || !product) throw new Error("Producto no encontrado");
       if (!product.is_active) throw new Error("Producto no disponible");
+      // Solo se puede ordenar sobre productos aprobados por el administrador
+      // y de proveedores con verificación vigente.
+      if ((product as any).approval_status && (product as any).approval_status !== "approved") {
+        throw new Error("Este producto aún está en revisión del administrador");
+      }
+      if ((product as any).marketplace_vendors?.status && (product as any).marketplace_vendors.status !== "approved") {
+        throw new Error("El proveedor de este producto no está verificado");
+      }
       const vendorUserId = (product as any).marketplace_vendors?.user_id as string | undefined;
       const vendorName = (product as any).marketplace_vendors?.name as string | undefined;
       if (vendorUserId === user.id) throw new Error("No puedes ordenar tu propio producto");

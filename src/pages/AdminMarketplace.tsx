@@ -118,7 +118,8 @@ function ProductsTab({ es }: { es: boolean }) {
     setSaving(true);
     const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, brand_id: form.brand_id || null, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
     if (editingId) await supabase.from('marketplace_products').update(payload).eq('id', editingId);
-    else await supabase.from('marketplace_products').insert(payload);
+    // Lo que carga el propio admin nace aprobado (la revisión es para proveedores).
+    else await supabase.from('marketplace_products').insert({ ...payload, approval_status: 'approved', approved_at: new Date().toISOString() });
     setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
   };
 

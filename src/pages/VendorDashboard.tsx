@@ -14,11 +14,13 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
   Plus, Pencil, Trash2, Package, ShoppingCart, BarChart3, Loader2, Store,
   Building2, Phone, Globe, MapPin, FileCheck, ChevronRight, CheckCircle2,
-  Clock, TrendingUp, DollarSign, Eye, EyeOff, ArrowRight,
+  Clock, TrendingUp, DollarSign, Eye, EyeOff, ArrowRight, XCircle,
+  MessageCircle, BadgeDollarSign, ClipboardList, ShieldAlert,
 } from 'lucide-react';
 
 // ─── Sub-components ──────────────────────────────────────────
@@ -75,29 +77,43 @@ interface RegFormData {
 
 const emptyRegForm: RegFormData = { name: '', description: '', website: '', phone: '', location: '', tax_id: '', contact_email: '', logo_url: '' };
 
-function RegistrationStepper({ es, user, onComplete }: { es: boolean; user: any; onComplete: () => void }) {
+function RegistrationStepper({ es, user, feeRate, existing, onComplete }: { es: boolean; user: any; feeRate: number; existing?: any; onComplete: () => void }) {
   const { t } = useLanguage();
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<RegFormData>(emptyRegForm);
+  const [form, setForm] = useState<RegFormData>(existing ? {
+    name: existing.name || '', description: existing.description || '', website: existing.website || '',
+    phone: existing.phone || '', location: existing.location || '', tax_id: existing.tax_id || '',
+    contact_email: existing.payout_email || '', logo_url: existing.logo_url || '',
+  } : emptyRegForm);
+  const [termsOk, setTermsOk] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof RegFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const steps = [t('autoI18n.vendorDash9'), t('autoI18n.vendorDash10'), t('autoI18n.vendorDash11'), t('autoI18n.vendorDash12')];
+  const feePct = Math.round(feeRate * 10000) / 100;
 
   const canNext = () => {
     if (step === 1) return !!form.name.trim();
     if (step === 2) return !!form.phone.trim() || !!form.contact_email.trim();
+    if (step === 3) return termsOk;
     return true;
   };
 
   const handleSubmit = async () => {
     if (!user) return;
+    if (!termsOk) { toast.error('Debes aceptar los términos y el fee de la plataforma.'); return; }
     setSaving(true);
-    const { error } = await supabase.from('marketplace_vendors').insert({
-      user_id: user.id, name: form.name, description: form.description || null,
+    const payload = {
+      name: form.name, description: form.description || null,
       website: form.website || null, phone: form.phone || null,
-      location: form.location || null, status: 'pending',
-    } as any);
+      location: form.location || null, tax_id: form.tax_id || null,
+      logo_url: form.logo_url || null, payout_email: form.contact_email || null,
+      status: 'pending',
+      terms_accepted_at: new Date().toISOString(),
+    };
+    const { error } = existing
+      ? await (supabase as any).from('marketplace_vendors').update(payload).eq('id', existing.id)
+      : await (supabase as any).from('marketplace_vendors').insert({ ...payload, user_id: user.id });
     if (error) toast.error(error.message);
     else { toast.success(t('autoI18n.vendorDash13')); onComplete(); }
     setSaving(false);
@@ -150,10 +166,22 @@ function RegistrationStepper({ es, user, onComplete }: { es: boolean; user: any;
           {step === 3 && (
             <>
               <h2 className="text-lg font-semibold flex items-center gap-2"><FileCheck className="w-5 h-5 text-primary" />{t('autoI18n.vendorDash30')}</h2>
-              <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
-                <p>{t('autoI18n.vendorDash31')}</p>
-                <p className="font-medium text-foreground">{t('autoI18n.vendorDash32')}</p>
+              {/* Términos COMPLETOS del programa de proveedores, incluido el fee. */}
+              <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2.5 max-h-64 overflow-y-auto">
+                <p className="font-semibold text-foreground">Términos del programa de proveedores de Medical Masters</p>
+                <p>1. <b className="text-foreground">Verificación.</b> Tu solicitud será revisada por el equipo de Medical Masters. Solo los proveedores aprobados pueden publicar productos.</p>
+                <p>2. <b className="text-foreground">Fee de intermediación ({feePct}%).</b> Publicar productos es gratis. Cuando concretes una venta a través de la plataforma, pagarás a Medical Masters un fee del <b className="text-foreground">{feePct}% del precio del producto</b>. El pago del producto lo acuerdas directamente con el comprador; la plataforma no lo procesa ni lo retiene.</p>
+                <p>3. <b className="text-foreground">Revisión de productos.</b> Cada producto que publiques pasa por aprobación del administrador antes de ser visible en el marketplace.</p>
+                <p>4. <b className="text-foreground">Veracidad.</b> Te comprometes a que la información de tu negocio y de tus productos (precio, stock, estado, fotografías) sea real y esté vigente.</p>
+                <p>5. <b className="text-foreground">Conducta.</b> Toda la comunicación con compradores ocurre por el chat de la plataforma. El incumplimiento de estos términos o del <a href="/codigo-etica" className="text-primary underline">código de ética</a> puede resultar en la suspensión de tu cuenta de proveedor.</p>
+                <p>6. <b className="text-foreground">Fees pendientes.</b> Los fees generados por ventas concretadas son exigibles aunque el cobro al comprador ocurra fuera de la plataforma. Un proveedor con fees vencidos puede ser suspendido.</p>
               </div>
+              <label className="flex items-start gap-2.5 rounded-lg border border-primary/30 bg-primary/5 p-3 cursor-pointer">
+                <Checkbox checked={termsOk} onCheckedChange={v => setTermsOk(v === true)} className="mt-0.5" />
+                <span className="text-sm">
+                  Acepto los términos del programa de proveedores y el <b>fee de intermediación del {feePct}%</b> por cada venta concretada, así como los <a href="/terms" className="text-primary underline" onClick={e => e.stopPropagation()}>Términos y Condiciones</a> de Medical Masters.
+                </span>
+              </label>
             </>
           )}
           {step === 4 && (
@@ -232,25 +260,45 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [feeOrders, setFeeOrders] = useState<any[]>([]); // órdenes del marketplace de intermediación
+  const [feeRate, setFeeRate] = useState(0.1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', description: '', category: '', price: '', image_url: '', stock: '0', is_active: true });
   const [saving, setSaving] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [actingOrderId, setActingOrderId] = useState<string | null>(null);
 
   const fetchVendor = async () => {
     if (!user) return;
     setLoading(true);
+    const { data: cfg } = await (supabase as any).from('marketplace_config').select('fee_rate').eq('id', true).maybeSingle();
+    if (cfg?.fee_rate != null) setFeeRate(Number(cfg.fee_rate));
     const { data } = await supabase.from('marketplace_vendors').select('*').eq('user_id', user.id).limit(1);
     if (data && data.length > 0) {
       const v = data[0] as any;
       setVendor(v);
-      const [{ data: prods }, { data: ords }] = await Promise.all([
+      // OJO: hint de FK obligatorio en product_interests↔marketplace_products
+      // (dos relaciones: product_id y reserved_interest_id).
+      const [{ data: prods }, { data: ords }, { data: fos }] = await Promise.all([
         supabase.from('marketplace_products').select('*').eq('vendor_id', v.id).order('created_at', { ascending: false }),
         supabase.from('marketplace_orders').select('*, marketplace_products(name)').eq('vendor_id', v.id).order('created_at', { ascending: false }),
+        (supabase as any).from('product_interests')
+          .select('id, status, fee_status, fee_amount, product_price, currency, created_at, buyer_id, chat_session_id, marketplace_products!product_interests_product_id_fkey(name)')
+          .eq('vendor_id', v.id)
+          .in('status', ['ordered', 'completed'])
+          .order('created_at', { ascending: false }),
       ]);
       setProducts((prods as any[]) || []);
       setOrders((ords as any[]) || []);
+      const feeRows = (fos as any[]) || [];
+      const buyerIds = Array.from(new Set(feeRows.map(o => o.buyer_id)));
+      if (buyerIds.length > 0) {
+        const { data: bp } = await (supabase as any).from('profiles_public').select('id, name').in('id', buyerIds);
+        const names = new Map(((bp as any[]) || []).map(p => [p.id, p.name]));
+        feeRows.forEach(o => { o.buyerName = names.get(o.buyer_id) || null; });
+      }
+      setFeeOrders(feeRows);
     }
     setLoading(false);
   };
@@ -260,12 +308,43 @@ export default function VendorDashboard() {
   const handleSaveProduct = async () => {
     if (!form.name || !vendor) return;
     setSaving(true);
-    const payload = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: vendor.id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
-    if (editingId) await supabase.from('marketplace_products').update(payload as any).eq('id', editingId);
-    else await supabase.from('marketplace_products').insert(payload as any);
+    const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: vendor.id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
+    if (editingId) {
+      // Un producto rechazado que se corrige vuelve a revisión del admin.
+      const prev = products.find(p => p.id === editingId);
+      if (prev?.approval_status === 'rejected') { payload.approval_status = 'pending'; payload.approval_note = null; }
+      await supabase.from('marketplace_products').update(payload).eq('id', editingId);
+    } else {
+      // Nuevo producto: entra en revisión (approval_status default 'pending').
+      await supabase.from('marketplace_products').insert(payload);
+    }
     const { data } = await supabase.from('marketplace_products').select('*').eq('vendor_id', vendor.id).order('created_at', { ascending: false });
     setProducts((data as any[]) || []);
-    setSaving(false); setDialogOpen(false); toast.success(t('autoI18n.vendorDash47'));
+    setSaving(false); setDialogOpen(false);
+    toast.success(editingId ? t('autoI18n.vendorDash47') : 'Producto enviado a revisión. El administrador lo aprobará antes de publicarse.');
+  };
+
+  // Acciones sobre órdenes del marketplace de intermediación (misma edge
+  // function que /marketplace: concretar, cancelar, pagar fee).
+  const feeOrderAction = async (orderId: string, action: 'complete' | 'cancel' | 'pay_fee') => {
+    setActingOrderId(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke('marketplace-order', {
+        body: action === 'pay_fee' ? { action, interest_id: orderId } : { action, interest_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (action === 'pay_fee') {
+        if (data?.url) { window.location.href = data.url; return; }
+        throw new Error('No se recibió el enlace de pago');
+      }
+      toast.success(action === 'complete' ? '🤝 Venta concretada. Recuerda pagar el fee de la plataforma.' : 'Orden cancelada.');
+      fetchVendor();
+    } catch (e: any) {
+      toast.error(e.message || 'Error');
+    } finally {
+      setActingOrderId(null);
+    }
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -291,13 +370,43 @@ export default function VendorDashboard() {
   if (!vendor && !showRegistration) {
     return <MainLayout><VendorHero es={es} onStart={() => setShowRegistration(true)} /></MainLayout>;
   }
-  if (!vendor && showRegistration) {
-    return <MainLayout><RegistrationStepper es={es} user={user} onComplete={() => { setShowRegistration(false); fetchVendor(); }} /></MainLayout>;
+  if ((!vendor || vendor.status === 'rejected') && showRegistration) {
+    return <MainLayout><RegistrationStepper es={es} user={user} feeRate={feeRate} existing={vendor || undefined} onComplete={() => { setShowRegistration(false); fetchVendor(); }} /></MainLayout>;
   }
 
   // Pending
   if (vendor.status === 'pending') {
     return <MainLayout><PendingState es={es} /></MainLayout>;
+  }
+
+  // Rechazado: mostrar el motivo y permitir corregir y reenviar la postulación.
+  if (vendor.status === 'rejected') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12 max-w-lg">
+          <Card className="border-destructive/30">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                <ShieldAlert className="w-8 h-8 text-destructive" />
+              </div>
+              <h1 className="text-xl font-bold mb-2">Tu solicitud fue rechazada</h1>
+              <p className="text-sm text-muted-foreground mb-4">
+                El administrador revisó tu postulación como proveedor y no fue aprobada por ahora.
+              </p>
+              {vendor.notes && (
+                <div className="bg-muted/50 rounded-lg p-3 text-sm text-left mb-4">
+                  <p className="font-semibold text-foreground mb-1">Nota del administrador:</p>
+                  <p className="text-muted-foreground">{vendor.notes}</p>
+                </div>
+              )}
+              <Button onClick={() => setShowRegistration(true)} className="gap-2">
+                <Pencil className="w-4 h-4" /> Corregir y volver a postular
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
   }
 
   // Approved — Dashboard
@@ -372,7 +481,15 @@ export default function VendorDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{p.name}</p>
                       <p className="text-xs text-muted-foreground">${p.price} MXN · Stock: {p.stock}</p>
-                      {p.category && <Badge variant="secondary" className="text-[10px] mt-1">{p.category}</Badge>}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {p.category && <Badge variant="secondary" className="text-[10px]">{p.category}</Badge>}
+                        {p.approval_status === 'pending' && <Badge variant="secondary" className="text-[10px] gap-0.5 bg-amber-100 text-amber-800 border border-amber-300"><Clock className="w-2.5 h-2.5" />En revisión</Badge>}
+                        {p.approval_status === 'approved' && <Badge variant="outline" className="text-[10px] gap-0.5 text-success border-success/40"><CheckCircle2 className="w-2.5 h-2.5" />Aprobado</Badge>}
+                        {p.approval_status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-0.5"><XCircle className="w-2.5 h-2.5" />Rechazado</Badge>}
+                      </div>
+                      {p.approval_status === 'rejected' && p.approval_note && (
+                        <p className="text-[11px] text-destructive mt-1">Motivo: {p.approval_note} — edítalo para reenviarlo a revisión.</p>
+                      )}
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active)} title={p.is_active ? 'Desactivar' : 'Activar'}>
                       {p.is_active ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
@@ -388,6 +505,50 @@ export default function VendorDashboard() {
 
           {/* Orders Tab */}
           <TabsContent value="orders">
+            {/* Órdenes del marketplace de intermediación (sin prepago; fee al concretar) */}
+            {feeOrders.length > 0 && (
+              <Card className="mb-4 border-primary/30">
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-1"><ClipboardList className="w-4 h-4 text-primary" /> Órdenes de compra del marketplace</h3>
+                  <p className="text-xs text-muted-foreground mb-3">El comprador ordena sin pagar en la plataforma; acuerdan por chat y al concretar la venta pagas el fee del {Math.round(feeRate * 100)}%.</p>
+                  <div className="space-y-2">
+                    {feeOrders.map(o => (
+                      <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{o.marketplace_products?.name || 'Producto'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {o.buyerName || 'Comprador'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate(o.chat_session_id ? `/chat?session=${o.chat_session_id}` : '/chat')}>
+                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                          </Button>
+                          {o.status === 'ordered' && (
+                            <>
+                              <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'complete')}>
+                                {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Concretar venta
+                              </Button>
+                              <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'cancel')}>
+                                <XCircle className="w-3.5 h-3.5" /> Cancelar
+                              </Button>
+                            </>
+                          )}
+                          {o.status === 'completed' && o.fee_status === 'pending' && (
+                            <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'pay_fee')}>
+                              {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} Pagar fee ${Number(o.fee_amount).toLocaleString()}
+                            </Button>
+                          )}
+                          {o.status === 'completed' && o.fee_status === 'paid' && (
+                            <Badge variant="outline" className="gap-1 text-success border-success/40"><CheckCircle2 className="w-3 h-3" /> Concretada · fee pagado</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <div className="space-y-2">
               {orders.map(o => (
                 <Card key={o.id}>

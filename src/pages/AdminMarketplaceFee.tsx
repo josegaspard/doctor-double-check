@@ -66,7 +66,17 @@ export default function AdminMarketplaceFee() {
 
   const [vendors, setVendors] = useState<VendorRow[]>([]);
   const [interests, setInterests] = useState<InterestRow[]>([]);
+  const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [actingId, setActingId] = useState<string | null>(null);
+
+  // Campanilla al usuario afectado (RLS: el admin puede insertar notificaciones type=system).
+  const notifyUser = async (userId: string, title: string, message: string, url: string) => {
+    try {
+      await sb.from('notifications').insert({ user_id: userId, type: 'system', title, message, data: { url } });
+    } catch (e) {
+      console.error('[AdminMarketplaceFee] notify error', e);
+    }
+  };
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -112,6 +122,14 @@ export default function AdminMarketplaceFee() {
       setInterests((ints || []).map((i: any) => ({
         ...i, product: i.marketplace_products || null, vendor: i.marketplace_vendors || null,
       })));
+
+      // Productos pendientes de aprobación del super admin
+      const { data: pp } = await sb
+        .from('marketplace_products')
+        .select('id, name, description, price, currency, image_url, category, stock, created_at, approval_status, marketplace_vendors(id, name, user_id)')
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: true });
+      setPendingProducts(pp || []);
     } catch (e) {
       console.error('[AdminMarketplaceFee] load error', e);
     } finally {
@@ -145,16 +163,73 @@ export default function AdminMarketplaceFee() {
     }
   };
 
-  const setVendorStatus = async (v: VendorRow, status: 'approved' | 'pending') => {
+  const setVendorStatus = async (v: VendorRow, status: 'approved' | 'pending' | 'rejected') => {
+    let note: string | null = null;
+    if (status === 'rejected') {
+      note = window.prompt('Motivo del rechazo (se le mostrará al proveedor):') || null;
+      if (note === null) return; // canceló el prompt
+    }
     setActingId(v.id);
     try {
-      const { error } = await sb.from('marketplace_vendors').update({ status }).eq('id', v.id);
+      const payload: any = { status };
+      if (status === 'rejected') payload.notes = note;
+      const { error } = await sb.from('marketplace_vendors').update(payload).eq('id', v.id);
       if (error) throw error;
       toast({
-        title: status === 'approved' ? '✅ Vendedor aprobado' : 'Vendedor en revisión',
-        description: `${v.name || v.profile?.name || 'Vendedor'} — ${status === 'approved' ? 'ya puede publicar productos.' : 'vuelto a pendiente.'}`,
+        title: status === 'approved' ? '✅ Proveedor aprobado' : status === 'rejected' ? 'Proveedor rechazado' : 'Proveedor en revisión',
+        description: `${v.name || v.profile?.name || 'Proveedor'} — ${status === 'approved' ? 'ya puede publicar productos.' : status === 'rejected' ? 'se le notificó el rechazo.' : 'vuelto a pendiente.'}`,
       });
-      setVendors(prev => prev.map(x => x.id === v.id ? { ...x, status } : x));
+      // Notificar al postulante el resultado de su solicitud.
+      if (v.user_id) {
+        if (status === 'approved') {
+          await notifyUser(v.user_id, '🎉 ¡Eres proveedor aprobado!',
+            `Tu negocio "${v.name || ''}" fue aprobado. Ya puedes publicar productos en el marketplace desde tu portal de proveedor.`,
+            '/vendor/dashboard');
+        } else if (status === 'rejected') {
+          await notifyUser(v.user_id, 'Tu solicitud de proveedor fue rechazada',
+            `${note ? `Motivo: ${note}. ` : ''}Puedes corregir tus datos y volver a postular desde el portal de proveedores.`,
+            '/vendor/dashboard');
+        }
+      }
+      setVendors(prev => prev.map(x => x.id === v.id ? { ...x, status, notes: status === 'rejected' ? note : x.notes } : x));
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setActingId(null);
+    }
+  };
+
+  // Aprobar / rechazar PRODUCTOS cargados por los proveedores.
+  const setProductApproval = async (p: any, status: 'approved' | 'rejected') => {
+    let note: string | null = null;
+    if (status === 'rejected') {
+      note = window.prompt('Motivo del rechazo (se le mostrará al proveedor):') || null;
+      if (note === null) return;
+    }
+    setActingId(p.id);
+    try {
+      const { error } = await sb.from('marketplace_products').update({
+        approval_status: status,
+        approval_note: note,
+        approved_at: status === 'approved' ? new Date().toISOString() : null,
+        approved_by: user?.id,
+      }).eq('id', p.id);
+      if (error) throw error;
+      toast({
+        title: status === 'approved' ? '✅ Producto aprobado' : 'Producto rechazado',
+        description: `"${p.name}" ${status === 'approved' ? 'ya es visible en el marketplace.' : '— se notificó al proveedor.'}`,
+      });
+      const vendorUserId = p.marketplace_vendors?.user_id;
+      if (vendorUserId) {
+        if (status === 'approved') {
+          await notifyUser(vendorUserId, '✅ Producto aprobado',
+            `Tu producto "${p.name}" fue aprobado y ya aparece en el marketplace.`, '/vendor/dashboard');
+        } else {
+          await notifyUser(vendorUserId, 'Producto rechazado',
+            `Tu producto "${p.name}" fue rechazado.${note ? ` Motivo: ${note}.` : ''} Edítalo en tu portal para reenviarlo a revisión.`, '/vendor/dashboard');
+        }
+      }
+      setPendingProducts(prev => prev.filter((x: any) => x.id !== p.id));
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
     } finally {
@@ -279,11 +354,18 @@ export default function AdminMarketplaceFee() {
                         </div>
                         {v.description && <p className="text-xs text-muted-foreground mt-0.5">{v.description}</p>}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {v.status !== 'approved' ? (
-                          <Button size="sm" className="gap-1.5 h-8" disabled={actingId === v.id} onClick={() => setVendorStatus(v, 'approved')}>
-                            {actingId === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}Aprobar
-                          </Button>
+                          <>
+                            <Button size="sm" className="gap-1.5 h-8" disabled={actingId === v.id} onClick={() => setVendorStatus(v, 'approved')}>
+                              {actingId === v.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}Aprobar
+                            </Button>
+                            {v.status !== 'rejected' && (
+                              <Button size="sm" variant="ghost" className="gap-1.5 h-8 text-destructive hover:text-destructive" disabled={actingId === v.id} onClick={() => setVendorStatus(v, 'rejected')}>
+                                <XCircle className="w-3.5 h-3.5" />Rechazar
+                              </Button>
+                            )}
+                          </>
                         ) : (
                           <Button size="sm" variant="outline" className="gap-1.5 h-8" disabled={actingId === v.id} onClick={() => setVendorStatus(v, 'pending')}>
                             <Clock className="w-3.5 h-3.5" />Revocar
@@ -311,7 +393,45 @@ export default function AdminMarketplaceFee() {
               </CardContent>
             </Card>
 
-            {/* 3. Órdenes de compra, ventas concretadas y fees */}
+            {/* 3. Productos por aprobar (cargados por proveedores) */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Store className="w-4 h-4 text-primary" />Productos por aprobar
+                  {pendingProducts.length > 0 && <Badge variant="secondary">{pendingProducts.length} pendiente(s)</Badge>}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {pendingProducts.length === 0 && <p className="text-sm text-muted-foreground py-2">No hay productos esperando revisión.</p>}
+                {pendingProducts.map((p: any) => (
+                  <div key={p.id} className="rounded-lg border border-border p-3 flex items-start gap-3 flex-wrap">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-16 h-16 rounded-lg object-cover border border-border flex-shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0"><Store className="w-6 h-6 text-muted-foreground" /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.marketplace_vendors?.name || 'Proveedor'} · ${Number(p.price).toLocaleString()} {p.currency || 'MXN'} · Stock: {p.stock}
+                        {p.category ? ` · ${p.category}` : ''}
+                      </p>
+                      {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button type="button" size="sm" className="gap-1.5 h-8" disabled={actingId === p.id} onClick={() => setProductApproval(p, 'approved')}>
+                        {actingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}Aprobar
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" className="gap-1.5 h-8 text-destructive hover:text-destructive" disabled={actingId === p.id} onClick={() => setProductApproval(p, 'rejected')}>
+                        <XCircle className="w-3.5 h-3.5" />Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* 4. Órdenes de compra, ventas concretadas y fees */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Órdenes y fees</CardTitle>

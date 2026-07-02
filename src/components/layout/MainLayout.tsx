@@ -60,6 +60,7 @@ import {
   MapPin,
   Package,
   GraduationCap,
+  Store,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -833,6 +834,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       >
                         <Package className="w-5 h-5" />
                         <span className="text-sm font-medium">Marketplace</span>
+                      </Link>
+                    )}
+                    {FEATURE_FLAGS.marketplaceVendors && (role === 'resident' || role === 'doctor') && (
+                      <Link
+                        to="/vendor/dashboard"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/vendor/dashboard' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Store className="w-5 h-5" />
+                        <span className="text-sm font-medium">Portal de proveedores</span>
                       </Link>
                     )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (

@@ -29,6 +29,7 @@ const ACCOUNT_LABELS_ES: Record<string, string> = {
   liability_vendor_payable: 'Adeudo a vendors',
   liability_user_wallet: 'Saldo de usuarios (wallets)',
   expense_stripe_fee: 'Gastos comisiones Stripe',
+  receivable_marketplace_fee: 'Fees marketplace por cobrar',
   tax_iva_payable: 'IVA por pagar',
   shipping_collected: 'Envío recaudado',
   refund_expense: 'Reembolsos pagados',
@@ -47,6 +48,7 @@ export default function AdminAccounting() {
   const [summary, setSummary] = useState<SummaryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [recent, setRecent] = useState<any[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => { if (role && role !== 'admin') navigate('/'); }, [role, navigate]);
@@ -55,13 +57,27 @@ export default function AdminAccounting() {
     setLoading(true);
     const fromIso = new Date(from).toISOString();
     const toIso = new Date(new Date(to).getTime() + 24 * 60 * 60 * 1000).toISOString();
-    const [{ data: sum, error: sumErr }, { data: rec }] = await Promise.all([
+    // OJO: hint de FK obligatorio en product_interests↔marketplace_products
+    // (dos relaciones: product_id y reserved_interest_id).
+    const [{ data: sum, error: sumErr }, { data: rec }, { data: buys }] = await Promise.all([
       (supabase as any).rpc('get_accounting_summary', { p_from: fromIso, p_to: toIso }),
       (supabase as any).from('accounting_ledger').select('*').gte('created_at', fromIso).lt('created_at', toIso).order('created_at', { ascending: false }).limit(100),
+      (supabase as any).from('product_interests')
+        .select('id, status, fee_status, fee_amount, fee_rate, product_price, currency, created_at, completed_at, buyer_id, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name)')
+        .gte('created_at', fromIso).lt('created_at', toIso)
+        .order('created_at', { ascending: false }).limit(200),
     ]);
     if (sumErr) toast.error(sumErr.message);
     setSummary(sum || []);
     setRecent(rec || []);
+    const buyRows = (buys as any[]) || [];
+    const buyerIds = Array.from(new Set(buyRows.map(b => b.buyer_id).filter(Boolean)));
+    if (buyerIds.length > 0) {
+      const { data: bp } = await (supabase as any).from('profiles').select('id, name').in('id', buyerIds);
+      const names = new Map(((bp as any[]) || []).map(p => [p.id, p.name]));
+      buyRows.forEach(b => { b.buyerName = names.get(b.buyer_id) || null; });
+    }
+    setPurchases(buyRows);
     setLoading(false);
   };
   useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
@@ -165,6 +181,7 @@ export default function AdminAccounting() {
           <TabsList>
             <TabsTrigger value="summary">{t('autoI18n.clAdminAccount16')}</TabsTrigger>
             <TabsTrigger value="entries">{t('autoI18n.clAdminAccount17')}</TabsTrigger>
+            <TabsTrigger value="purchases">Compras marketplace</TabsTrigger>
           </TabsList>
           <TabsContent value="summary">
             <Card>
@@ -217,6 +234,65 @@ export default function AdminAccounting() {
                       </tr>
                     ))}
                     {recent.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">{t('autoI18n.clAdminAccount28')}</td></tr>}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="purchases">
+            {/* Compras del marketplace de intermediación: cada orden con su fee.
+                Los asientos contables (venta concretada / fee cobrado) se generan
+                solos por trigger y aparecen en las otras pestañas. */}
+            <Card className="mb-3">
+              <CardContent className="p-3 sm:p-4 flex flex-wrap gap-6">
+                {(() => {
+                  const completed = purchases.filter(p => p.status === 'completed' || p.status === 'paid');
+                  const gross = completed.reduce((a, p) => a + Number(p.product_price || 0), 0);
+                  const feesPaid = purchases.filter(p => p.fee_status === 'paid').reduce((a, p) => a + Number(p.fee_amount || 0), 0);
+                  const feesPending = completed.filter(p => p.fee_status === 'pending').reduce((a, p) => a + Number(p.fee_amount || 0), 0);
+                  return (
+                    <>
+                      <div><p className="text-lg font-bold font-mono">{fmt(gross)}</p><p className="text-[11px] text-muted-foreground">ventas concretadas (bruto)</p></div>
+                      <div><p className="text-lg font-bold font-mono text-success">{fmt(feesPaid)}</p><p className="text-[11px] text-muted-foreground">fees cobrados</p></div>
+                      <div><p className="text-lg font-bold font-mono text-warning">{fmt(feesPending)}</p><p className="text-[11px] text-muted-foreground">fees por cobrar</p></div>
+                      <div><p className="text-lg font-bold font-mono">{purchases.length}</p><p className="text-[11px] text-muted-foreground">órdenes en el periodo</p></div>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="text-left p-2 font-semibold">Fecha</th>
+                      <th className="text-left p-2 font-semibold">Producto</th>
+                      <th className="text-left p-2 font-semibold hidden sm:table-cell">Proveedor</th>
+                      <th className="text-left p-2 font-semibold hidden sm:table-cell">Comprador</th>
+                      <th className="text-right p-2 font-semibold">Precio</th>
+                      <th className="text-right p-2 font-semibold">Fee</th>
+                      <th className="text-left p-2 font-semibold">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {purchases.map(p => (
+                      <tr key={p.id} className="border-t hover:bg-muted/20">
+                        <td className="p-2 text-xs text-muted-foreground whitespace-nowrap">{new Date(p.created_at).toLocaleDateString('es-MX')}</td>
+                        <td className="p-2 text-xs">{p.marketplace_products?.name || '—'}</td>
+                        <td className="p-2 text-xs hidden sm:table-cell">{p.marketplace_vendors?.name || '—'}</td>
+                        <td className="p-2 text-xs hidden sm:table-cell">{p.buyerName || '—'}</td>
+                        <td className="p-2 text-right text-xs font-mono">{fmt(Number(p.product_price))}</td>
+                        <td className="p-2 text-right text-xs font-mono">{fmt(Number(p.fee_amount))} <span className="text-muted-foreground">({Math.round(Number(p.fee_rate) * 100)}%)</span></td>
+                        <td className="p-2 text-xs">
+                          {p.status === 'ordered' && <Badge variant="secondary" className="text-[10px]">Orden activa</Badge>}
+                          {(p.status === 'completed' || p.status === 'paid') && p.fee_status === 'paid' && <Badge variant="verified" className="text-[10px]">Concretada · fee cobrado</Badge>}
+                          {p.status === 'completed' && p.fee_status === 'pending' && <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300">Concretada · fee por cobrar</Badge>}
+                          {(p.status === 'cancelled' || p.status === 'expired') && <Badge variant="destructive" className="text-[10px]">Cancelada</Badge>}
+                        </td>
+                      </tr>
+                    ))}
+                    {purchases.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Sin compras del marketplace en el periodo.</td></tr>}
                   </tbody>
                 </table>
               </CardContent>
