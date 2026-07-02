@@ -60,6 +60,7 @@ import {
   MapPin,
   Package,
   GraduationCap,
+  Presentation,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -99,6 +100,9 @@ const navItems: NavItem[] = [
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor', 'resident'] } as NavItem]
     : []),
+  // Congresos (cliente 2026-07-02): serie de conferencias de varios doctores;
+  // visible para todos los roles (la gente los ve en vivo y revive las grabaciones).
+  { labelKey: 'nav.congresses', href: '/congresos', icon: Presentation, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },

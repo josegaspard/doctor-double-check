@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -29,6 +30,7 @@ import {
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Congress, fetchOpenCongresses } from '@/lib/congresses';
 
 interface LiveSetupFormProps {
   onStartLive: (config: LiveConfig) => Promise<void>;
@@ -52,6 +54,9 @@ export interface LiveConfig {
   contentTarget: 'medical' | 'patients' | 'both';
   translateEnabled: boolean;
   translateTargetLang: string;
+  // Congresos (cliente 2026-07-02): el live queda guardado dentro del congreso
+  // elegido y su grabación se archiva ahí al terminar.
+  congressId: string | null;
 }
 
 function SectionHeader({ number, icon: Icon, title, subtitle }: { number: number; icon: React.ElementType; title: string; subtitle?: string }) {
@@ -127,6 +132,17 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
   const [translateTargetLang, setTranslateTargetLang] = useState<string>('en');
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
+  // Congresos abiertos + preselección vía ?congress= (viniendo del detalle del congreso).
+  const [congressId, setCongressId] = useState<string>('');
+  const [congresses, setCongresses] = useState<Congress[]>([]);
+  useEffect(() => {
+    fetchOpenCongresses().then(list => {
+      setCongresses(list);
+      const preset = new URLSearchParams(window.location.search).get('congress');
+      if (preset && list.some(c => c.id === preset)) setCongressId(preset);
+    }).catch(() => setCongresses([]));
+  }, []);
+
   const addTag = () => {
     const trimmed = tagInput.trim().toLowerCase();
     if (trimmed && !tags.includes(trimmed) && tags.length < 5) {
@@ -182,6 +198,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
       contentTarget: contentTarget || 'patients',
       translateEnabled,
       translateTargetLang,
+      congressId: congressId || null,
     });
   };
 
@@ -326,6 +343,28 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
               {t('liveSetupForm.specialtyHelp')}
             </p>
           </div>
+
+          {/* Congreso (cliente 2026-07-02): transmitir esta conferencia dentro de un congreso. */}
+          {congresses.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-semibold">{t('congresses.meetingCongressLabel')}</Label>
+              <Select
+                value={congressId || 'none'}
+                onValueChange={(v) => setCongressId(v === 'none' ? '' : v)}
+              >
+                <SelectTrigger><SelectValue placeholder={t('congresses.meetingCongressNone')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('congresses.meetingCongressNone')}</SelectItem>
+                  {congresses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {congressId && (
+                <p className="text-[11px] text-muted-foreground leading-snug">{t('congresses.liveCongressHint')}</p>
+              )}
+            </div>
+          )}
         </section>
 
         <div className="border-t border-border" />

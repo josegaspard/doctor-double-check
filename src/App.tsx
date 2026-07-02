@@ -148,6 +148,8 @@ const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory")
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
+const Congresses = React.lazy(() => import("./pages/Congresses"));
+const CongressDetail = React.lazy(() => import("./pages/CongressDetail"));
 const EmergencyDoctors = React.lazy(() => import("./pages/EmergencyDoctors"));
 const HospitalLocator = React.lazy(() => import("./pages/HospitalLocator"));
 const Foro = React.lazy(() => import("./pages/Foro"));
@@ -253,6 +255,10 @@ const App = () => {
                       <Route path="/education" element={<AccessGuard allowedRoles={['patient', 'doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><ClinicalSessions /></AccessGuard>} />
                       <Route path="/meetings" element={<Meetings />} />
+                      {/* Congresos (cliente 2026-07-02): series de conferencias de varios doctores. */}
+                      <Route path="/congresos" element={<Congresses />} />
+                      <Route path="/congreso/:id" element={<CongressDetail />} />
+                      <Route path="/congresses" element={<Navigate to="/congresos" replace />} />
                       <Route path="/foro" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><Foro /></AccessGuard>} />
                       <Route path="/hospital-locator" element={<HospitalLocator />} />
                       {/* Marketplace / venta de productos RESTAURADO (cliente 2026-06-29).

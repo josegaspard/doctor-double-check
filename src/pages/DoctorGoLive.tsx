@@ -230,6 +230,7 @@ export default function DoctorGoLive() {
           chat_highlight_seconds: config.chatHighlightSeconds,
           translate_enabled: config.translateEnabled,
           translate_target_lang: config.translateEnabled ? config.translateTargetLang : null,
+          congress_id: config.congressId || null,
         } as any)
         .select()
         .single();

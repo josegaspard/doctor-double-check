@@ -32,6 +32,7 @@ export interface Meeting {
   dailyRoomName?: string;
   createdAt: Date;
   invitationStatus?: MeetingStatus;
+  congressId?: string | null;
 }
 
 export default function Meetings({ embedded = false }: { embedded?: boolean } = {}) {
@@ -115,6 +116,7 @@ export default function Meetings({ embedded = false }: { embedded?: boolean } = 
           dailyRoomUrl: (s as any).daily_room_url || undefined,
           dailyRoomName: (s as any).daily_room_name || undefined,
           createdAt: new Date(s.created_at),
+          congressId: (s as any).congress_id || null,
         })));
       }
 
@@ -344,6 +346,7 @@ export default function Meetings({ embedded = false }: { embedded?: boolean } = 
             caseSummary: editingMeeting.caseSummary,
             scheduledAt: editingMeeting.scheduledAt,
             meetingType: undefined,
+            congressId: editingMeeting.congressId,
           } : null}
         />
       </div>

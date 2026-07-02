@@ -19,11 +19,15 @@ import { toast } from 'sonner';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
+import { Congress, fetchOpenCongresses } from '@/lib/congresses';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  // Congresos (cliente 2026-07-02): si la reunión nace desde un congreso,
+  // llega preseleccionado y la reunión queda guardada dentro de él.
+  defaultCongressId?: string;
   editing?: {
     id: string;
     title: string;
@@ -35,6 +39,7 @@ interface Props {
     isPublic?: boolean;
     translateEnabled?: boolean;
     translateTargetLang?: string | null;
+    congressId?: string | null;
   } | null;
 }
 
@@ -45,7 +50,7 @@ interface InviteeDoc {
   inviteeType?: 'doctor' | 'resident' | 'patient';
 }
 
-export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: Props) {
+export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, defaultCongressId }: Props) {
   const { user, role } = useAuth();
   const { specialtiesList: SPECIALTIES } = useSpecialties();
   const { t } = useLanguage();
@@ -64,8 +69,16 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
     goldOnly: false,
     translateEnabled: false,
     translateTargetLang: 'en',
+    congressId: '' as string,
   });
   const isEditing = !!editing;
+
+  // Congresos abiertos para el selector "guardar esta reunión en un congreso".
+  const [congresses, setCongresses] = useState<Congress[]>([]);
+  useEffect(() => {
+    if (!open) return;
+    fetchOpenCongresses().then(setCongresses).catch(() => setCongresses([]));
+  }, [open]);
 
   // Pre-fill form on edit mode open
   useEffect(() => {
@@ -84,12 +97,14 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
         goldOnly: (editing as any).goldOnly ?? false,
         translateEnabled: editing.translateEnabled ?? false,
         translateTargetLang: editing.translateTargetLang ?? 'en',
+        congressId: editing.congressId || '',
       });
     } else {
       setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
-        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en' });
+        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en',
+        congressId: defaultCongressId || '' });
     }
-  }, [open, editing?.id]);
+  }, [open, editing?.id, defaultCongressId]);
 
   // Doctor search for invitations
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,6 +255,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             gold_only: form.goldOnly,
             translate_enabled: form.translateEnabled,
             translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
+            congress_id: form.congressId || null,
           } as any)
           .eq('id', editing.id)
           .eq('organizer_id', user.id);
@@ -273,6 +289,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
             gold_only: form.goldOnly,
             translate_enabled: form.translateEnabled,
             translate_target_lang: form.translateEnabled ? form.translateTargetLang : null,
+            congress_id: form.congressId || null,
           } as any)
           .select('id')
           .single();
@@ -297,7 +314,8 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
 
       onOpenChange(false);
       setForm({ title: '', description: '', specialty: '', caseSummary: '', scheduledAt: '',
-        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en' });
+        meetingType: 'case_discussion', isPublic: false, goldOnly: false, translateEnabled: false, translateTargetLang: 'en',
+        congressId: defaultCongressId || '' });
       setSelectedInvitees([]);
       onCreated();
     } catch (error: any) {
@@ -333,6 +351,29 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing }: 
               </SelectContent>
             </Select>
           </div>
+
+          {/* Congreso (cliente 2026-07-02): la reunión queda guardada dentro del
+              congreso elegido, sin importar quién la cree. */}
+          {(congresses.length > 0 || form.congressId) && (
+            <div>
+              <Label className="text-xs font-medium">{t('congresses.meetingCongressLabel')}</Label>
+              <Select
+                value={form.congressId || 'none'}
+                onValueChange={(v) => setForm({ ...form, congressId: v === 'none' ? '' : v })}
+              >
+                <SelectTrigger><SelectValue placeholder={t('congresses.meetingCongressNone')} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('congresses.meetingCongressNone')}</SelectItem>
+                  {congresses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.congressId && (
+                <p className="text-[11px] text-muted-foreground mt-1">{t('congresses.meetingCongressHint')}</p>
+              )}
+            </div>
+          )}
 
           <div>
             <Label className="text-xs font-medium">{t('meetingCreateDialog.specialtyLabel')}</Label>
