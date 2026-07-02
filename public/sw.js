@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-01-batch30-marketplace-nav-drdr
+// SW_VERSION: 2026-07-01-batch31-marketplace-filtros
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

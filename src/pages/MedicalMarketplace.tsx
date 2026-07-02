@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,12 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Slider } from '@/components/ui/slider';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Store, Loader2, HandHeart, ShieldCheck, Clock, Tag, Plus, PackagePlus, Lock, CheckCircle,
+  Search, SlidersHorizontal, X, Sparkles, Package, Boxes,
 } from 'lucide-react';
 
 interface Product {
@@ -26,10 +31,17 @@ interface Product {
   currency: string | null;
   image_url: string | null;
   vendor_id: string;
+  category: string | null;
+  stock: number;
+  brand_id: string | null;
   reserved_by: string | null;
   reserved_until: string | null;
   vendorName?: string | null;
+  brandName?: string | null;
+  created_at?: string;
 }
+
+type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'name';
 
 export default function MedicalMarketplace() {
   const navigate = useNavigate();
@@ -60,6 +72,17 @@ export default function MedicalMarketplace() {
   const [pubForm, setPubForm] = useState({ name: '', price: '', description: '', image_url: '' });
   const [publishing, setPublishing] = useState(false);
 
+  // ===== Filtros =====
+  const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState('all');
+  const [filterBrand, setFilterBrand] = useState('all');
+  const [filterInStock, setFilterInStock] = useState(false);
+  const [filterAvailable, setFilterAvailable] = useState(false); // ocultar apartados
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
+  const [sortMode, setSortMode] = useState<SortMode>('newest');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [quick, setQuick] = useState<string>(''); // chip rápido activo
+
   const canUse = role === 'doctor' || role === 'resident' || role === 'admin';
 
   const load = useCallback(async () => {
@@ -69,10 +92,10 @@ export default function MedicalMarketplace() {
       if (cfg?.fee_rate != null) setFeeRate(Number(cfg.fee_rate));
 
       const { data: prods } = await sb.from('marketplace_products')
-        .select('id, name, description, price, currency, image_url, vendor_id, reserved_by, reserved_until, marketplace_vendors(name)')
+        .select('id, name, description, price, currency, image_url, vendor_id, category, stock, brand_id, reserved_by, reserved_until, created_at, marketplace_vendors(name), marketplace_brands(name)')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-      setProducts((prods || []).map((p: any) => ({ ...p, vendorName: p.marketplace_vendors?.name })));
+      setProducts((prods || []).map((p: any) => ({ ...p, vendorName: p.marketplace_vendors?.name, brandName: p.marketplace_brands?.name })));
 
       if (user?.id) {
         const { data: v } = await sb.from('marketplace_vendors').select('id, status').eq('user_id', user.id).maybeSingle();
@@ -86,6 +109,78 @@ export default function MedicalMarketplace() {
   }, [user?.id]);
 
   useEffect(() => { if (canUse) load(); else setLoading(false); }, [canUse, load]);
+
+  // Opciones dinámicas para los selects (a partir de lo que realmente hay)
+  const categories = useMemo(
+    () => Array.from(new Set(products.map(p => p.category).filter(Boolean) as string[])).sort(),
+    [products],
+  );
+  const brands = useMemo(() => {
+    const m = new Map<string, string>();
+    products.forEach(p => { if (p.brand_id && p.brandName) m.set(p.brand_id, p.brandName); });
+    return Array.from(m, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
+  const maxPrice = useMemo(() => Math.max(...products.map(p => p.price || 0), 1000), [products]);
+
+  const activeFilterCount = useMemo(() => {
+    let c = 0;
+    if (filterCat !== 'all') c++;
+    if (filterBrand !== 'all') c++;
+    if (filterInStock) c++;
+    if (filterAvailable) c++;
+    if (priceRange[0] > 0 || priceRange[1] < maxPrice) c++;
+    if (search) c++;
+    return c;
+  }, [filterCat, filterBrand, filterInStock, filterAvailable, priceRange, search, maxPrice]);
+
+  const clearFilters = () => {
+    setFilterCat('all'); setFilterBrand('all'); setFilterInStock(false); setFilterAvailable(false);
+    setPriceRange([0, maxPrice]); setSortMode('newest'); setSearch(''); setQuick('');
+  };
+
+  const isReservedNow = (p: Product) => !!(p.reserved_by && p.reserved_until && new Date(p.reserved_until) > new Date());
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      if (filterCat !== 'all' && p.category !== filterCat) return false;
+      if (filterBrand !== 'all' && p.brand_id !== filterBrand) return false;
+      if (filterInStock && (p.stock ?? 0) <= 0) return false;
+      if (filterAvailable && isReservedNow(p)) return false;
+      if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
+      if (search) {
+        const s = search.toLowerCase();
+        return p.name.toLowerCase().includes(s)
+          || (p.description || '').toLowerCase().includes(s)
+          || (p.vendorName || '').toLowerCase().includes(s)
+          || (p.brandName || '').toLowerCase().includes(s);
+      }
+      return true;
+    }).sort((a, b) => {
+      if (sortMode === 'price_asc') return a.price - b.price;
+      if (sortMode === 'price_desc') return b.price - a.price;
+      if (sortMode === 'name') return a.name.localeCompare(b.name);
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+  }, [products, filterCat, filterBrand, filterInStock, filterAvailable, priceRange, search, sortMode]);
+
+  // Chips rápidos inteligentes
+  const applyQuick = (key: string) => {
+    if (quick === key) { clearFilters(); return; }
+    clearFilters();
+    setQuick(key);
+    if (key === 'available') setFilterAvailable(true);
+    else if (key === 'instock') setFilterInStock(true);
+    else if (key === 'budget') setPriceRange([0, 1000]);
+    else if (key === 'mid') setPriceRange([1000, 10000]);
+    else if (key === 'premium') setPriceRange([10000, maxPrice]);
+    else if (key.startsWith('cat:')) setFilterCat(key.slice(4));
+  };
+
+  const topCats = useMemo(() => {
+    const counts = new Map<string, number>();
+    products.forEach(p => { if (p.category) counts.set(p.category, (counts.get(p.category) || 0) + 1); });
+    return Array.from(counts, ([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n).slice(0, 4);
+  }, [products]);
 
   const startInterest = async () => {
     if (!interestProduct || !interestTerms) return;
@@ -168,6 +263,90 @@ export default function MedicalMarketplace() {
   const isReserved = (p: Product) => p.reserved_by && p.reserved_until && new Date(p.reserved_until) > new Date();
   const mine = (p: Product) => vendor && p.vendor_id === vendor.id;
 
+  const filterPanel = (
+    <div className="space-y-5">
+      {/* Categoría */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categoría</p>
+        <Select value={filterCat} onValueChange={(v) => { setFilterCat(v); setQuick(''); }}>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las categorías</SelectItem>
+            {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Marca */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Marca</p>
+        <Select value={filterBrand} onValueChange={(v) => { setFilterBrand(v); setQuick(''); }}>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas las marcas</SelectItem>
+            {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <hr className="border-border/50" />
+
+      {/* Precio */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Precio (MXN)</p>
+        <div className="flex gap-2 mb-2">
+          <Input type="number" placeholder="Min" value={priceRange[0] || ''} onChange={e => { setPriceRange([Number(e.target.value) || 0, priceRange[1]]); setQuick(''); }} className="h-8 text-xs" />
+          <Input type="number" placeholder="Max" value={priceRange[1] || ''} onChange={e => { setPriceRange([priceRange[0], Number(e.target.value) || maxPrice]); setQuick(''); }} className="h-8 text-xs" />
+        </div>
+        <Slider value={priceRange} onValueChange={([a, b]) => { setPriceRange([a, b]); setQuick(''); }} min={0} max={maxPrice} step={50} className="py-2" />
+        <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
+          <span>${priceRange[0].toLocaleString()}</span>
+          <span>${priceRange[1].toLocaleString()}</span>
+        </div>
+      </div>
+
+      <hr className="border-border/50" />
+
+      {/* Unidades / disponibilidad */}
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Con unidades en stock</p>
+        <Switch checked={filterInStock} onCheckedChange={(v) => { setFilterInStock(v); setQuick(''); }} />
+      </div>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ocultar apartados</p>
+        <Switch checked={filterAvailable} onCheckedChange={(v) => { setFilterAvailable(v); setQuick(''); }} />
+      </div>
+
+      <hr className="border-border/50" />
+
+      {/* Ordenar */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Ordenar por</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {([
+            { value: 'newest', label: 'Recientes' },
+            { value: 'price_asc', label: 'Precio ↑' },
+            { value: 'price_desc', label: 'Precio ↓' },
+            { value: 'name', label: 'Nombre' },
+          ] as { value: SortMode; label: string }[]).map(s => (
+            <button key={s.value} onClick={() => setSortMode(s.value)} className={`py-2 rounded-lg text-xs font-medium transition-all text-center ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeFilterCount > 0 && (
+        <>
+          <hr className="border-border/50" />
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10">
+            <X className="w-3.5 h-3.5" /> Limpiar filtros ({activeFilterCount})
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   if (!canUse) {
     return (
       <MainLayout>
@@ -182,7 +361,7 @@ export default function MedicalMarketplace() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-5xl">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
           <div className="flex items-center gap-2">
             <Store className="w-6 h-6 text-primary" />
@@ -201,43 +380,119 @@ export default function MedicalMarketplace() {
             <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Publicar producto</Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground mb-6">Compra y vende material entre colegas. Al mostrar interés pagas una cuota de intermediación y se te abre el chat con el proveedor para cerrar el trato.</p>
+        <p className="text-sm text-muted-foreground mb-4">Compra y vende material entre colegas. Al mostrar interés pagas una cuota de intermediación y se te abre el chat con el proveedor para cerrar el trato.</p>
+
+        {/* Búsqueda + botón filtros (móvil) */}
+        <div className="flex gap-2 mb-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Buscar producto, marca o proveedor…" value={search} onChange={e => { setSearch(e.target.value); setQuick(''); }} className="pl-9 h-11 border-2 border-primary/30 shadow-sm focus-visible:ring-primary/40 focus-visible:border-primary" />
+            {search && <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>}
+          </div>
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button type="button" aria-label="Abrir filtros" variant="outline" size="icon" className="h-11 w-11 relative sm:hidden flex-shrink-0">
+                <SlidersHorizontal className="w-4 h-4" />
+                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center">{activeFilterCount}</span>}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
+              <SheetHeader><SheetTitle>Filtros y orden</SheetTitle></SheetHeader>
+              <div className="mt-4 overflow-y-auto max-h-[calc(85vh-120px)] pb-6">{filterPanel}</div>
+              <div className="pt-3 border-t">
+                <Button type="button" onClick={() => setFiltersOpen(false)} className="w-full">Ver {filteredProducts.length} resultados</Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Chips rápidos inteligentes */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+          {[
+            { key: 'available', label: 'Disponibles ahora', icon: <Sparkles className="w-3 h-3" /> },
+            { key: 'instock', label: 'Con stock', icon: <Boxes className="w-3 h-3" /> },
+            { key: 'budget', label: 'Hasta $1,000', icon: <Tag className="w-3 h-3" /> },
+            { key: 'mid', label: '$1,000 – $10,000', icon: <Tag className="w-3 h-3" /> },
+            { key: 'premium', label: 'Equipo mayor +$10k', icon: <Tag className="w-3 h-3" /> },
+            ...topCats.map(c => ({ key: `cat:${c.name}`, label: c.name, icon: <Package className="w-3 h-3" /> })),
+          ].map(chip => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => applyQuick(chip.key)}
+              className={`flex items-center gap-1 whitespace-nowrap flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium border transition-all ${
+                quick === chip.key
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              }`}
+            >
+              {chip.icon}{chip.label}
+            </button>
+          ))}
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : products.length === 0 ? (
           <Card><CardContent className="py-12 text-center text-muted-foreground">Aún no hay productos publicados.</CardContent></Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map(p => {
-              const reserved = isReserved(p);
-              return (
-                <Card key={p.id} className="overflow-hidden flex flex-col">
-                  {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" />}
-                  <CardContent className="p-4 flex flex-col flex-1">
-                    <h3 className="font-semibold text-sm leading-tight">{p.name}</h3>
-                    {p.vendorName && <p className="text-xs text-muted-foreground mt-0.5">{p.vendorName}</p>}
-                    {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> fee ${feeFor(Number(p.price)).toLocaleString()}</span>
-                    </div>
-                    <div className="mt-3 pt-1">
-                      {mine(p) ? (
-                        <Badge variant="outline" className="w-full justify-center py-1">Tu producto</Badge>
-                      ) : reserved ? (
-                        <Badge variant="secondary" className="w-full justify-center py-1 gap-1"><Clock className="w-3 h-3" /> Apartado</Badge>
-                      ) : (
-                        <Button size="sm" className="w-full gap-1.5" disabled={payingId === p.id}
-                          onClick={() => { setInterestProduct(p); setInterestTerms(false); }}>
-                          {payingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} Estoy interesado
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="flex gap-6">
+            {/* Sidebar de filtros (desktop) */}
+            <aside className="hidden sm:block w-56 flex-shrink-0 sticky top-20 self-start">
+              <div className="rounded-xl border bg-card p-4 shadow-sm">
+                <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-primary" /> Filtros</h3>
+                {filterPanel}
+              </div>
+            </aside>
+
+            {/* Resultados */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-3">{filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}</p>
+              {filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 px-4">
+                  <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4"><Package className="w-7 h-7 text-muted-foreground" /></div>
+                  <p className="text-sm font-medium text-foreground mb-1">Ningún producto con esos filtros</p>
+                  <Button type="button" variant="outline" size="sm" className="mt-3" onClick={clearFilters}>Limpiar filtros</Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredProducts.map(p => {
+                    const reserved = isReserved(p);
+                    return (
+                      <Card key={p.id} className="overflow-hidden flex flex-col">
+                        {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" />}
+                        <CardContent className="p-4 flex flex-col flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            {p.brandName && <Badge variant="outline" className="text-[9px] px-1.5 py-0 gap-0.5"><Tag className="w-2.5 h-2.5" />{p.brandName}</Badge>}
+                            {p.category && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{p.category}</Badge>}
+                          </div>
+                          <h3 className="font-semibold text-sm leading-tight">{p.name}</h3>
+                          {p.vendorName && <p className="text-xs text-muted-foreground mt-0.5">{p.vendorName}</p>}
+                          {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                          <div className="mt-2 flex items-baseline gap-2">
+                            <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
+                            <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> fee ${feeFor(Number(p.price)).toLocaleString()}</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? 'unidad' : 'unidades'}` : 'Sin unidades'}</p>
+                          <div className="mt-auto pt-2">
+                            {mine(p) ? (
+                              <Badge variant="outline" className="w-full justify-center py-1">Tu producto</Badge>
+                            ) : reserved ? (
+                              <Badge variant="secondary" className="w-full justify-center py-1 gap-1"><Clock className="w-3 h-3" /> Apartado</Badge>
+                            ) : (
+                              <Button type="button" size="sm" className="w-full gap-1.5" disabled={payingId === p.id}
+                                onClick={() => { setInterestProduct(p); setInterestTerms(false); }}>
+                                {payingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} Estoy interesado
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
