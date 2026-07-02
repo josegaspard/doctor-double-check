@@ -1357,7 +1357,7 @@ async function handleMarketplaceSaleFee(db: ReturnType<typeof supabaseAdmin>, se
 
   const { data: order } = await db
     .from("product_interests")
-    .select("id, fee_status, currency, marketplace_products(name), marketplace_vendors(name, user_id)")
+    .select("id, fee_status, currency, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name, user_id)")
     .eq("id", interestId)
     .single();
   if (!order) { logStep("Sale fee: interest not found", { interestId }); return; }

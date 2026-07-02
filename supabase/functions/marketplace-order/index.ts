@@ -231,7 +231,7 @@ serve(async (req) => {
     if (!interestId) throw new Error("interest_id is required");
     const { data: order, error: ordErr } = await db
       .from("product_interests")
-      .select("id, status, fee_status, fee_amount, product_price, currency, buyer_id, vendor_id, product_id, chat_session_id, marketplace_products(name, stock, is_active), marketplace_vendors(name, user_id)")
+      .select("id, status, fee_status, fee_amount, product_price, currency, buyer_id, vendor_id, product_id, chat_session_id, marketplace_products!product_interests_product_id_fkey(name, stock, is_active), marketplace_vendors(name, user_id)")
       .eq("id", interestId)
       .single();
     if (ordErr || !order) throw new Error("Orden no encontrada");

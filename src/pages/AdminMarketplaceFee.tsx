@@ -106,7 +106,7 @@ export default function AdminMarketplaceFee() {
       // Órdenes de compra / ventas concretadas / fees
       const { data: ints } = await sb
         .from('product_interests')
-        .select('id, fee_amount, fee_rate, product_price, currency, status, fee_status, created_at, completed_at, paid_at, marketplace_products(name), marketplace_vendors(name)')
+        .select('id, fee_amount, fee_rate, product_price, currency, status, fee_status, created_at, completed_at, paid_at, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name)')
         .order('created_at', { ascending: false })
         .limit(100);
       setInterests((ints || []).map((i: any) => ({

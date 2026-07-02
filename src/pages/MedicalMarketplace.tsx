@@ -125,7 +125,9 @@ export default function MedicalMarketplace() {
         setVendor(v || null);
 
         // Mis órdenes como comprador (activas o concretadas)
-        const orderCols = 'id, status, fee_status, fee_amount, product_price, currency, created_at, completed_at, product_id, buyer_id, marketplace_products(name), marketplace_vendors(name)';
+        // OJO: hint de FK obligatorio — product_interests↔marketplace_products tiene
+        // dos relaciones (product_id y reserved_interest_id) y PostgREST no desambigua solo.
+        const orderCols = 'id, status, fee_status, fee_amount, product_price, currency, created_at, completed_at, product_id, buyer_id, marketplace_products!product_interests_product_id_fkey(name), marketplace_vendors(name)';
         const { data: mine } = await sb.from('product_interests')
           .select(orderCols)
           .eq('buyer_id', user.id)
