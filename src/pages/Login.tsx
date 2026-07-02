@@ -29,8 +29,19 @@ import { translateAuthError } from '@/lib/translateAuthError';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, isLoading, resetPassword } = useAuth();
+  const { login, register, isLoading, resetPassword, isAuthenticated, role } = useAuth();
   const { t } = useLanguage();
+
+  // Si YA hay sesión activa, /login no debe mostrarse (llegar aquí con "Atrás" o
+  // por URL directa hacía parecer que la sesión se cerró). Redirigimos al home de
+  // la app con replace. El ref evita pisar la navegación post-login del propio
+  // formulario (que decide dashboard/onboarding según el rol).
+  const loginAttemptedHere = React.useRef(false);
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && role && role !== 'visitor' && !loginAttemptedHere.current) {
+      navigate('/lives', { replace: true });
+    }
+  }, [isLoading, isAuthenticated, role, navigate]);
   
   const preferredRole = (location.state as any)?.preferredRole || 'patient';
 
@@ -119,6 +130,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
+    loginAttemptedHere.current = true;
     setGoogleLoading(true);
     try {
       const result = await socialAuth.auth.signInWithOAuth('google', {
@@ -153,6 +165,7 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    loginAttemptedHere.current = true;
     setLoginError('');
     setResetEmailSent(false);
     
@@ -166,9 +179,11 @@ export default function Login() {
       const uid = sessionData.session?.user?.id;
       if (uid) {
         const destination = await resolvePostLoginRoute(uid);
-        navigate(destination);
+        // replace: /login NO debe quedar en el historial — dar "Atrás" desde el
+        // panel regresaba al formulario de login y parecía que se cerró la sesión.
+        navigate(destination, { replace: true });
       } else {
-        navigate('/lives');
+        navigate('/lives', { replace: true });
       }
     } else {
       try { sessionStorage.removeItem('mm_role_gate'); } catch {}
@@ -201,6 +216,7 @@ export default function Login() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    loginAttemptedHere.current = true;
     setRegisterError('');
 
     // Validate password strength before submitting

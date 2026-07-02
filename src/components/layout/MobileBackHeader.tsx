@@ -89,7 +89,15 @@ export function MobileBackHeader() {
       <button
         type="button"
         onClick={() => {
-          if (window.history.length > 1) navigate(-1);
+          // Retroceder SOLO dentro de la app: window.history.length cuenta también
+          // las páginas previas al sitio (Google, tab nueva), así que navigate(-1)
+          // podía sacar al usuario de la web (y parecía que se cerraba la sesión).
+          // React Router guarda su índice interno en history.state.idx: si es 0,
+          // esta es la primera página de la sesión SPA → vamos al home /lives.
+          const idx = typeof (window.history.state as any)?.idx === 'number'
+            ? (window.history.state as any).idx
+            : 0;
+          if (idx > 0) navigate(-1);
           else navigate('/lives');
         }}
         aria-label={t('common.back') || 'Volver'}

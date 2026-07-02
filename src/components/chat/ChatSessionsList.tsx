@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { MessageSquare, History, Trash2, X, Info, Search } from 'lucide-react';
@@ -213,8 +212,11 @@ export function ChatSessionsList({
       </CardHeader>
 
       <CardContent className="p-2 flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="space-y-1 pr-2">
+        {/* Scroll NATIVO: el ScrollArea de Radix envuelve el contenido en un div
+            display:table que ignora min-w-0/truncate — las filas se desbordaban
+            de la tarjeta en móvil (hora y preview cortados fuera del borde). */}
+        <div className="h-full overflow-y-auto overscroll-contain">
+          <div className="space-y-1 pr-1 sm:pr-2">
             {filteredSessions.length > 0 ? (
               filteredSessions.map(session => {
                 const displayInfo = getDisplayInfo(session);
@@ -253,7 +255,7 @@ export function ChatSessionsList({
               <EmptyState type="no-sessions" activeTab={activeTab} />
             )}
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
 
