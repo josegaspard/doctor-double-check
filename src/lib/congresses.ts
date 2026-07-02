@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Congresos (cliente 2026-07-02): tipos y helpers compartidos entre el listado,
@@ -56,6 +57,43 @@ export async function fetchOpenCongresses(): Promise<Congress[]> {
     .order('starts_at', { ascending: true })
     .limit(50);
   return (data as Congress[]) || [];
+}
+
+// Identidad visual de póster por congreso: sin banner_url, cada congreso recibe
+// un degradado propio (determinista por id) de la familia de marca, para que el
+// listado no se vea como N rectángulos azules idénticos.
+const POSTER_GRADIENTS = [
+  'linear-gradient(140deg, #0c2a5e 0%, #163a83 45%, #1d6673 100%)',
+  'linear-gradient(140deg, #123a6e 0%, #1d6673 60%, #26857a 100%)',
+  'linear-gradient(140deg, #1b2f63 0%, #44598e 55%, #227787 100%)',
+  'linear-gradient(140deg, #0f3057 0%, #226076 50%, #2c8f83 100%)',
+  'linear-gradient(150deg, #172554 0%, #1e4a7a 55%, #227787 100%)',
+  'linear-gradient(150deg, #10316b 0%, #205a80 55%, #1d7f7c 100%)',
+];
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export function congressPosterStyle(c: Pick<Congress, 'id' | 'banner_url'>): CSSProperties {
+  if (c.banner_url) {
+    return { backgroundImage: `url(${c.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' };
+  }
+  return { background: POSTER_GRADIENTS[hashStr(c.id) % POSTER_GRADIENTS.length] };
+}
+
+// Fondo tintado para iniciales de avatar (nada de círculos grises "DR").
+const AVATAR_TINTS = ['#1d6673', '#44598e', '#163a83', '#226076', '#2c7a70'];
+export function avatarTint(seed: string): string {
+  return AVATAR_TINTS[hashStr(seed || 'x') % AVATAR_TINTS.length];
+}
+
+export function initialsOf(name?: string | null): string {
+  const parts = (name || '').replace(/^Dra?\.\s*/i, '').trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return '?';
+  return ((parts[0][0] || '') + (parts[1]?.[0] || '')).toUpperCase();
 }
 
 // Adjunta name/avatar de profiles a las filas de congress_speakers.

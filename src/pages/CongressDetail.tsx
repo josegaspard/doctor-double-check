@@ -5,23 +5,26 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { CongressCreateDialog } from '@/components/congresses/CongressCreateDialog';
+import { AttachRecordingsDialog } from '@/components/congresses/AttachRecordingsDialog';
 import { MeetingCreateDialog } from '@/components/meetings/MeetingCreateDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   ArrowLeft, Loader2, Presentation, CalendarDays, Radio, Video,
-  Star, Pencil, Archive, ArchiveRestore, Plus, PlayCircle, Clock, Film, Trash2,
+  Star, Pencil, Archive, ArchiveRestore, PlayCircle, Clock, Film, Trash2, Plus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Congress, CongressSpeaker, congressPhase, hydrateSpeakers } from '@/lib/congresses';
+import {
+  Congress, CongressSpeaker, congressPhase, congressPosterStyle,
+  avatarTint, initialsOf, hydrateSpeakers,
+} from '@/lib/congresses';
 
-// Detalle de congreso (cliente 2026-07-02): programa completo de conferencias
-// (reuniones + lives de cualquier doctor), transmisiones en vivo ahora, archivo
-// de grabaciones al terminar y conferencistas con link a su perfil.
+// Detalle de congreso (cliente 2026-07-02, rediseño mismo día): póster con la
+// identidad del congreso, panel claro de "agrega tu conferencia / live / video",
+// programa tipo agenda por día, ponentes con avatar y grabaciones tipo videoteca.
 
 interface AgendaItem {
   kind: 'meeting' | 'live';
@@ -44,6 +47,7 @@ interface RecordingRow {
   thumbnail_url: string | null;
   duration: number;
   doctor_id: string;
+  doctorName?: string;
 }
 
 export default function CongressDetail() {
@@ -60,6 +64,7 @@ export default function CongressDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
   const [showAddMeeting, setShowAddMeeting] = useState(false);
+  const [showAttachVideos, setShowAttachVideos] = useState(false);
 
   const isAdmin = role === 'admin';
   const isLead = speakers.some(s => s.user_id === user?.id && s.is_lead);
@@ -94,10 +99,10 @@ export default function CongressDetail() {
       setSpeakers((await hydrateSpeakers((speakerRows as CongressSpeaker[]) || []))
         .sort((a, b) => Number(b.is_lead) - Number(a.is_lead)));
 
-      // Nombres de ponentes para la agenda (organizadores de reuniones + doctores de lives).
       const speakerIds = new Set<string>();
       ((sessionRows as any[]) || []).forEach(s => speakerIds.add(s.organizer_id));
       ((liveRows as any[]) || []).forEach(l => speakerIds.add(l.doctor_id));
+      ((recRows as any[]) || []).forEach(r => speakerIds.add(r.doctor_id));
       let nameMap: Record<string, string> = {};
       if (speakerIds.size > 0) {
         const { data: profs } = await supabase
@@ -139,7 +144,7 @@ export default function CongressDetail() {
       });
       items.sort((a, b) => (a.at?.getTime() || 0) - (b.at?.getTime() || 0));
       setAgenda(items);
-      setRecordings((recRows as RecordingRow[]) || []);
+      setRecordings(((recRows as RecordingRow[]) || []).map(r => ({ ...r, doctorName: nameMap[r.doctor_id] })));
     } catch (error) {
       console.error('Error fetching congress:', error);
     } finally {
@@ -215,7 +220,6 @@ export default function CongressDetail() {
   const startDate = new Date(`${congress.starts_at}T12:00:00`);
   const endDate = new Date(`${congress.ends_at}T12:00:00`);
 
-  // Agrupar programa por día (las sin fecha van al final).
   const byDay: Record<string, AgendaItem[]> = {};
   const noDate: AgendaItem[] = [];
   agenda.forEach(i => {
@@ -225,38 +229,47 @@ export default function CongressDetail() {
   });
   const dayKeys = Object.keys(byDay).sort();
 
-  const phaseBadge = phase === 'active'
-    ? <Badge className="bg-live text-white">{t('congresses.statusActive')}</Badge>
-    : phase === 'upcoming'
-      ? <Badge variant="info">{t('congresses.statusUpcoming')}</Badge>
-      : <Badge variant="secondary">{t('congresses.statusArchived')}</Badge>;
+  const fmtDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  // El fondo global de la app es una imagen oscura: todo el contenido va sobre
+  // paneles sólidos bg-card (título incluido) para garantizar contraste.
+  const Panel = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <div className={`rounded-2xl bg-card border border-border p-4 sm:p-5 ${className}`}>{children}</div>
+  );
+
+  const SectionTitle = ({ icon: Icon, children, count, action }: { icon: React.ElementType; children: React.ReactNode; count?: number; action?: React.ReactNode }) => (
+    <div className="flex items-center justify-between gap-3 mb-3">
+      <h2 className="font-heading text-base sm:text-lg font-bold flex items-center gap-2 text-card-foreground">
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+        {children}
+        {typeof count === 'number' && (
+          <span className="text-xs font-semibold text-muted-foreground bg-muted rounded-full px-2 py-0.5">{count}</span>
+        )}
+      </h2>
+      {action}
+    </div>
+  );
 
   const AgendaRow = ({ item }: { item: AgendaItem }) => (
-    <div className="flex items-center gap-3 p-2.5 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+    <div className={`flex items-center gap-3 sm:gap-4 py-3 ${item.isLiveNow && !item.isDone ? 'rounded-xl bg-live/5 border border-live/25 px-3' : 'border-b border-border/70 last:border-b-0'}`}>
       <div className="w-12 text-center flex-shrink-0">
         {item.at ? (
-          <>
-            <p className="text-sm font-bold leading-none">{format(item.at, 'HH:mm')}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{format(item.at, 'd MMM', { locale })}</p>
-          </>
+          <p className="text-sm font-bold tabular-nums leading-none">{format(item.at, 'HH:mm')}</p>
         ) : (
           <Clock className="w-4 h-4 mx-auto text-muted-foreground/50" />
         )}
+        <p className="text-[10px] uppercase text-muted-foreground mt-1">
+          {item.kind === 'live' ? t('congresses.liveLabel') : t('congresses.meetingLabel')}
+        </p>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm line-clamp-2 leading-snug">{item.title}</p>
-        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-          <Badge variant="outline" className="text-[10px] h-5 gap-1">
-            {item.kind === 'live' ? <Radio className="w-2.5 h-2.5" /> : <Video className="w-2.5 h-2.5" />}
-            {item.kind === 'live' ? t('congresses.liveLabel') : t('congresses.meetingLabel')}
-          </Badge>
-          <span className="text-[11px] text-muted-foreground truncate">
-            {t('congresses.by')}{' '}
-            <Link to={`/doctor/${item.speakerId}`} className="hover:underline" onClick={e => e.stopPropagation()}>
-              {item.speakerName}
-            </Link>
-          </span>
-        </div>
+        <p className="font-semibold text-sm leading-snug line-clamp-2">{item.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+          <Link to={`/doctor/${item.speakerId}`} className="hover:underline" onClick={e => e.stopPropagation()}>
+            {item.speakerName}
+          </Link>
+          {item.specialty && <span> · {item.specialty}</span>}
+        </p>
       </div>
       <div className="flex-shrink-0">
         {item.isLiveNow && !item.isDone ? (
@@ -265,9 +278,9 @@ export default function CongressDetail() {
             {item.kind === 'live' ? t('congresses.watchLive') : t('congresses.join')}
           </Button>
         ) : item.isDone ? (
-          <Badge variant="secondary" className="text-[10px]">{t('congresses.sessionDone')}</Badge>
+          <span className="text-[11px] font-medium text-muted-foreground">{t('congresses.sessionDone')}</span>
         ) : (
-          <Badge variant="outline" className="text-[10px]">{t('congresses.sessionUpcoming')}</Badge>
+          <span className="text-[11px] font-medium text-primary">{t('congresses.sessionUpcoming')}</span>
         )}
       </div>
     </div>
@@ -281,210 +294,261 @@ export default function CongressDetail() {
           {t('congresses.back')}
         </Button>
 
-        {/* Encabezado */}
-        <Card className="overflow-hidden mb-4">
+        {/* Póster del congreso: título y fechas DENTRO del banner */}
+        <div className="relative rounded-2xl overflow-hidden" style={congressPosterStyle(congress)}>
           <div
-            className="h-28 sm:h-36 relative"
-            style={congress.banner_url
-              ? { backgroundImage: `url(${congress.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { background: 'linear-gradient(120deg, #163a83 0%, #227787 100%)' }}
-          >
-            <Presentation className="absolute right-4 bottom-3 w-12 h-12 text-white/20" />
-            <div className="absolute top-3 left-3 flex items-center gap-2">{phaseBadge}</div>
+            className="absolute inset-0"
+            style={{ background: 'radial-gradient(110% 80% at 88% -8%, rgba(255,255,255,0.16) 0%, transparent 55%), linear-gradient(to top, rgba(7,18,42,0.78) 0%, rgba(7,18,42,0.25) 55%, rgba(7,18,42,0.08) 100%)' }}
+          />
+          <div className="relative p-5 sm:p-8 pt-14 sm:pt-20">
+            <div className="flex items-center gap-2 flex-wrap">
+              {liveNowItems.length > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-live text-white text-[11px] font-semibold px-2.5 py-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-70" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                  </span>
+                  {t('congresses.liveNow')}
+                </span>
+              ) : (
+                <span className="rounded-full bg-white/15 text-white text-[11px] font-medium px-2.5 py-1 backdrop-blur-sm">
+                  {phase === 'active' ? t('congresses.statusActive') : phase === 'upcoming' ? t('congresses.statusUpcoming') : t('congresses.statusArchived')}
+                </span>
+              )}
+              {congress.specialty && (
+                <span className="rounded-full bg-white/15 text-white text-[11px] font-medium px-2.5 py-1 backdrop-blur-sm">{congress.specialty}</span>
+              )}
+            </div>
+            <h1 className="font-heading text-2xl sm:text-4xl font-bold text-white leading-tight mt-3 max-w-2xl">
+              {congress.title}
+            </h1>
+            <p className="text-white/85 text-sm sm:text-base font-medium mt-2 flex items-center gap-2">
+              <CalendarDays className="w-4 h-4" />
+              {congress.starts_at === congress.ends_at
+                ? format(startDate, "d 'de' MMMM yyyy", { locale })
+                : `${format(startDate, "d 'de' MMMM", { locale })} – ${format(endDate, "d 'de' MMMM yyyy", { locale })}`}
+            </p>
+            <p className="text-white/70 text-xs sm:text-sm mt-3">
+              {t('congresses.sessionsCount').replace('{n}', String(agenda.length))}
+              {' · '}
+              {t('congresses.speakersCount').replace('{n}', String(speakers.length))}
+              {' · '}
+              {t('congresses.videosCount').replace('{n}', String(recordings.length))}
+            </p>
           </div>
-          <CardContent className="p-4 sm:p-5">
-            <h1 className="font-heading text-lg sm:text-2xl font-bold leading-snug">{congress.title}</h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="w-4 h-4" />
-                {congress.starts_at === congress.ends_at
-                  ? format(startDate, 'd MMMM yyyy', { locale })
-                  : `${format(startDate, 'd MMMM', { locale })} – ${format(endDate, 'd MMMM yyyy', { locale })}`}
-              </span>
-              {congress.specialty && <Badge variant="outline" className="text-xs">{congress.specialty}</Badge>}
-            </div>
-            {congress.description && (
-              <p className="text-sm text-muted-foreground mt-3 whitespace-pre-line">{congress.description}</p>
-            )}
+        </div>
 
-            <div className="flex flex-wrap gap-2 mt-4">
-              {canAddSession && phase !== 'archived' && (
-                <>
-                  <Button size="sm" className="gap-1.5" onClick={() => setShowAddMeeting(true)}>
-                    <Plus className="w-4 h-4" />
-                    {t('congresses.addMeeting')}
-                  </Button>
-                  {(role === 'doctor' || role === 'resident') && (
-                    <Button size="sm" variant="outline" className="gap-1.5 text-live border-live/40 hover:bg-live/10" onClick={() => navigate(`/doctor/go-live?congress=${congress.id}`)}>
-                      <Radio className="w-3.5 h-3.5" />
-                      {t('congresses.goLiveHere')}
-                    </Button>
-                  )}
-                </>
-              )}
-              {canManage && (
-                <>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowEdit(true)}>
-                    <Pencil className="w-3.5 h-3.5" />
-                    {t('congresses.edit')}
-                  </Button>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={handleArchiveToggle}>
-                    {congress.status === 'archived'
-                      ? <><ArchiveRestore className="w-3.5 h-3.5" />{t('congresses.unarchive')}</>
-                      : <><Archive className="w-3.5 h-3.5" />{t('congresses.archive')}</>}
-                  </Button>
-                  {canDelete && (
-                    <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={handleDelete}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {t('congresses.delete')}
-                    </Button>
-                  )}
-                </>
-              )}
+        {/* Gestión (organizador / líder / admin) */}
+        {canManage && (
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setShowEdit(true)}>
+              <Pencil className="w-3.5 h-3.5" />
+              {t('congresses.edit')}
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={handleArchiveToggle}>
+              {congress.status === 'archived'
+                ? <><ArchiveRestore className="w-3.5 h-3.5" />{t('congresses.unarchive')}</>
+                : <><Archive className="w-3.5 h-3.5" />{t('congresses.archive')}</>}
+            </Button>
+            {canDelete && (
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs text-destructive border-destructive/40 hover:bg-destructive/10" onClick={handleDelete}>
+                <Trash2 className="w-3.5 h-3.5" />
+                {t('congresses.delete')}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {congress.description && (
+          <Panel className="mt-4">
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line max-w-[70ch]">
+              {congress.description}
+            </p>
+          </Panel>
+        )}
+
+        {/* Agrega contenido — responde "¿cómo agrego reuniones, lives, videos?" */}
+        {canAddSession && phase !== 'archived' && (
+          <div className="mt-4 rounded-2xl bg-card border border-border overflow-hidden">
+            <div className="px-4 sm:px-5 py-3 bg-muted/50 border-b border-border">
+              <p className="text-sm font-semibold">{t('congresses.addContentTitle')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t('congresses.addContentSubtitle')}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="divide-y divide-border">
+              <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5">
+                <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Video className="w-4 h-4 text-primary" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t('congresses.addMeeting')}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">{t('congresses.addMeetingDesc')}</p>
+                </div>
+                <Button size="sm" className="h-8 gap-1.5 flex-shrink-0" onClick={() => setShowAddMeeting(true)}>
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('congresses.addAction')}
+                </Button>
+              </div>
+              {(role === 'doctor' || role === 'resident') && (
+                <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5">
+                  <span className="w-9 h-9 rounded-full bg-live/10 flex items-center justify-center flex-shrink-0">
+                    <Radio className="w-4 h-4 text-live" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{t('congresses.goLiveHere')}</p>
+                    <p className="text-xs text-muted-foreground leading-snug">{t('congresses.addLiveDesc')}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 flex-shrink-0 text-live border-live/40 hover:bg-live/10" onClick={() => navigate(`/doctor/go-live?congress=${congress.id}`)}>
+                    <Radio className="w-3.5 h-3.5" />
+                    {t('congresses.addAction')}
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 px-4 sm:px-5 py-3.5">
+                <span className="w-9 h-9 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                  <Film className="w-4 h-4 text-secondary" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t('congresses.addVideoTitle')}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">{t('congresses.addVideoDesc')}</p>
+                </div>
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 flex-shrink-0" onClick={() => setShowAttachVideos(true)}>
+                  <Plus className="w-3.5 h-3.5" />
+                  {t('congresses.addAction')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* En vivo ahora */}
         {liveNowItems.length > 0 && (
-          <Card className="mb-4 border-live/40">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-live opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-live" />
-                </span>
-                {t('congresses.liveNowSection')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
+          <Panel className="mt-4 border-live/40">
+            <SectionTitle icon={Radio} count={liveNowItems.length}>{t('congresses.liveNowSection')}</SectionTitle>
+            <div className="space-y-2">
               {liveNowItems.map(item => <AgendaRow key={`${item.kind}-${item.id}`} item={item} />)}
-            </CardContent>
-          </Card>
+            </div>
+          </Panel>
         )}
 
-        {/* Conferencistas */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Star className="w-4 h-4 text-premium" />
-              {t('congresses.speakers')}
-              <Badge variant="outline" className="text-[10px] h-5 ml-1">{speakers.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {speakers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('congresses.noSpeakers')}</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {speakers.map(s => (
-                  <Link
-                    key={s.user_id}
-                    to={`/doctor/${s.user_id}`}
-                    className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <Avatar className="w-7 h-7">
-                      {s.avatar_url && <AvatarImage src={s.avatar_url} alt={s.name || ''} />}
-                      <AvatarFallback className="text-[10px]">{(s.name || '?').slice(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium">{s.name || t('congresses.speakerFallback')}</span>
-                    {s.is_lead && (
-                      <Badge className="text-[9px] h-4 px-1.5 bg-premium/15 text-premium border border-premium/30 gap-0.5">
-                        <Star className="w-2.5 h-2.5" fill="currentColor" />
-                        {t('congresses.lead')}
-                      </Badge>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Programa */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-primary" />
-              {t('congresses.program')}
-              <Badge variant="outline" className="text-[10px] h-5 ml-1">{agenda.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {agenda.length === 0 ? (
-              <div className="text-center py-6">
-                <Video className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">{t('congresses.noSessions')}</p>
-                {canAddSession && phase !== 'archived' && (
-                  <p className="text-xs text-muted-foreground mt-1">{t('congresses.addMeetingHint')}</p>
-                )}
-              </div>
-            ) : (
-              <>
-                {dayKeys.map(day => (
-                  <div key={day}>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-2 capitalize">
-                      {format(new Date(`${day}T12:00:00`), 'EEEE d MMMM', { locale })}
-                    </p>
-                    <div className="space-y-2">
-                      {byDay[day].map(item => <AgendaRow key={`${item.kind}-${item.id}`} item={item} />)}
-                    </div>
-                  </div>
-                ))}
-                {noDate.length > 0 && (
+        <Panel className="mt-4">
+          <SectionTitle icon={CalendarDays} count={agenda.length}>{t('congresses.program')}</SectionTitle>
+          {agenda.length === 0 ? (
+            <div className="text-center py-10 rounded-2xl border border-dashed border-border">
+              <Video className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">{t('congresses.noSessions')}</p>
+              {canAddSession && phase !== 'archived' && (
+                <p className="text-xs text-muted-foreground mt-1">{t('congresses.addMeetingHint')}</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {dayKeys.map(day => (
+                <div key={day}>
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1.5 capitalize">
+                    {format(new Date(`${day}T12:00:00`), 'EEEE d MMMM', { locale })}
+                  </p>
                   <div>
-                    <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('congresses.noDateGroup')}</p>
-                    <div className="space-y-2">
-                      {noDate.map(item => <AgendaRow key={`${item.kind}-${item.id}`} item={item} />)}
+                    {byDay[day].map(item => <AgendaRow key={`${item.kind}-${item.id}`} item={item} />)}
+                  </div>
+                </div>
+              ))}
+              {noDate.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">{t('congresses.noDateGroup')}</p>
+                  <div>
+                    {noDate.map(item => <AgendaRow key={`${item.kind}-${item.id}`} item={item} />)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </Panel>
+
+        {/* Conferencistas */}
+        <Panel className="mt-4">
+          <SectionTitle icon={Star} count={speakers.length}>{t('congresses.speakers')}</SectionTitle>
+          {speakers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('congresses.noSpeakers')}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {speakers.map(s => (
+                <Link
+                  key={s.user_id}
+                  to={`/doctor/${s.user_id}`}
+                  className="flex items-center gap-3 p-2.5 rounded-xl border border-border hover:bg-muted/40 transition-colors"
+                >
+                  <Avatar className="w-10 h-10">
+                    {s.avatar_url && <AvatarImage src={s.avatar_url} alt={s.name || ''} />}
+                    <AvatarFallback className="text-xs font-semibold text-white" style={{ backgroundColor: avatarTint(s.name || s.user_id) }}>
+                      {initialsOf(s.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate flex items-center gap-1.5">
+                      {s.name || t('congresses.speakerFallback')}
+                      {s.is_lead && <Star className="w-3.5 h-3.5 text-premium flex-shrink-0" fill="currentColor" />}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {s.is_lead ? `${t('congresses.lead')}${s.specialty ? ' · ' + s.specialty : ''}` : (s.specialty || t('congresses.speakerRole'))}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Panel>
+
+        {/* Grabaciones (archivo del congreso) */}
+        <Panel className="mt-4 mb-4">
+          <SectionTitle
+            icon={Film}
+            count={recordings.length}
+            action={canAddSession && phase !== 'archived' ? (
+              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" onClick={() => setShowAttachVideos(true)}>
+                <Plus className="w-3.5 h-3.5" />
+                {t('congresses.attachVideo')}
+              </Button>
+            ) : undefined}
+          >
+            {t('congresses.recordings')}
+          </SectionTitle>
+          {recordings.length === 0 ? (
+            <div className="text-center py-10 rounded-2xl border border-dashed border-border">
+              <Film className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">{t('congresses.noRecordings')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {recordings.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => navigate(`/recording/${r.id}`)}
+                  className="group text-left rounded-xl overflow-hidden border border-border bg-card hover:shadow-md transition-shadow"
+                >
+                  <div className="aspect-video relative overflow-hidden">
+                    {r.thumbnail_url ? (
+                      <img src={r.thumbnail_url} alt={r.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full" style={congressPosterStyle({ id: r.id, banner_url: null })} />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                    <PlayCircle className="absolute inset-0 m-auto w-10 h-10 text-white/0 group-hover:text-white/90 transition-colors duration-200 drop-shadow" />
+                    {r.duration > 0 && (
+                      <span className="absolute top-2 right-2 text-[10px] font-medium bg-black/75 text-white px-1.5 py-0.5 rounded">
+                        {fmtDuration(r.duration)}
+                      </span>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 p-2.5">
+                      <p className="text-white text-xs sm:text-sm font-semibold leading-snug line-clamp-2">{r.title}</p>
+                      {r.doctorName && <p className="text-white/75 text-[10px] mt-0.5 truncate">{r.doctorName}</p>}
                     </div>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Grabaciones (archivo) */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Film className="w-4 h-4 text-primary" />
-              {t('congresses.recordings')}
-              <Badge variant="outline" className="text-[10px] h-5 ml-1">{recordings.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recordings.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{t('congresses.noRecordings')}</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {recordings.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => navigate(`/recording/${r.id}`)}
-                    className="text-left rounded-lg overflow-hidden border border-border hover:shadow-md transition-shadow"
-                  >
-                    <div className="aspect-video bg-muted relative">
-                      {r.thumbnail_url ? (
-                        <img src={r.thumbnail_url} alt={r.title} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(120deg, #163a83 0%, #227787 100%)' }}>
-                          <PlayCircle className="w-8 h-8 text-white/60" />
-                        </div>
-                      )}
-                      {r.duration > 0 && (
-                        <span className="absolute bottom-1 right-1 text-[10px] bg-black/70 text-white px-1 rounded">
-                          {Math.floor(r.duration / 60)}:{String(r.duration % 60).padStart(2, '0')}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium p-2 line-clamp-2">{r.title}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </button>
+              ))}
+            </div>
+          )}
+        </Panel>
 
         <CongressCreateDialog
           open={showEdit}
@@ -497,6 +561,13 @@ export default function CongressDetail() {
           onOpenChange={setShowAddMeeting}
           onCreated={fetchAll}
           defaultCongressId={congress.id}
+        />
+        <AttachRecordingsDialog
+          open={showAttachVideos}
+          onOpenChange={setShowAttachVideos}
+          congressId={congress.id}
+          canManage={canManage}
+          onChanged={fetchAll}
         />
       </div>
     </MainLayout>
