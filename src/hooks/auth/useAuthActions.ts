@@ -7,7 +7,7 @@ export function useAuthActions(
   setSupabaseUser: (user: import('@supabase/supabase-js').User | null) => void,
   setIsLoading: (loading: boolean) => void
 ) {
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: import('./types').UserRole }> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -20,14 +20,16 @@ export function useAuthActions(
         return { success: false, error: error.message };
       }
 
+      let resolvedRole: import('./types').UserRole | undefined;
       if (data.user) {
         const profile = await fetchUserProfile(data.user.id);
+        resolvedRole = profile?.role;
         setUser(profile);
         setSupabaseUser(data.user);
       }
 
       setIsLoading(false);
-      return { success: true };
+      return { success: true, role: resolvedRole };
     } catch (error: any) {
       setIsLoading(false);
       return { success: false, error: error.message || 'Login error' };

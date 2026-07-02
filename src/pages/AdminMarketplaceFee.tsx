@@ -39,8 +39,10 @@ interface InterestRow {
   fee_rate: number;
   product_price: number;
   currency: string;
-  status: string;
+  status: string;       // ordered | completed | cancelled (+legacy paid/pending_payment/expired)
+  fee_status: string;   // none | pending | paid — fee del VENDEDOR al concretar
   created_at: string;
+  completed_at: string | null;
   paid_at: string | null;
   product?: { name: string | null } | null;
   vendor?: { name: string | null } | null;
@@ -101,10 +103,10 @@ export default function AdminMarketplaceFee() {
       }));
       setVendors(vendorsWithInfo);
 
-      // Transacciones (fees cobrados)
+      // Órdenes de compra / ventas concretadas / fees
       const { data: ints } = await sb
         .from('product_interests')
-        .select('id, fee_amount, fee_rate, product_price, currency, status, created_at, paid_at, marketplace_products(name), marketplace_vendors(name)')
+        .select('id, fee_amount, fee_rate, product_price, currency, status, fee_status, created_at, completed_at, paid_at, marketplace_products(name), marketplace_vendors(name)')
         .order('created_at', { ascending: false })
         .limit(100);
       setInterests((ints || []).map((i: any) => ({
@@ -166,9 +168,44 @@ export default function AdminMarketplaceFee() {
     return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pendiente</Badge>;
   };
 
+  // Admin también puede concretar/cancelar una orden (vía edge function, notifica a todos).
+  const adminOrderAction = async (i: InterestRow, action: 'complete' | 'cancel') => {
+    setActingId(i.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('marketplace-order', {
+        body: { action, interest_id: i.id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast(action === 'complete'
+        ? { title: '🤝 Venta concretada', description: 'Se notificó a comprador y vendedor; el fee quedó por cobrar.' }
+        : { title: 'Orden cancelada', description: 'Se notificó a ambas partes.' });
+      load();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setActingId(null);
+    }
+  };
+
   const pendingVendors = vendors.filter(v => v.status !== 'approved');
   const approvedVendors = vendors.filter(v => v.status === 'approved');
-  const totalFees = interests.filter(i => i.status === 'paid').reduce((a, i) => a + Number(i.fee_amount || 0), 0);
+  const feesPaid = interests.filter(i => i.fee_status === 'paid').reduce((a, i) => a + Number(i.fee_amount || 0), 0);
+  const feesPending = interests.filter(i => i.status === 'completed' && i.fee_status === 'pending').reduce((a, i) => a + Number(i.fee_amount || 0), 0);
+  const activeOrders = interests.filter(i => i.status === 'ordered').length;
+  const completedSales = interests.filter(i => i.status === 'completed').length;
+
+  const orderStatusBadge = (i: InterestRow) => {
+    if (i.status === 'ordered') return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Orden activa</Badge>;
+    if (i.status === 'completed' || i.status === 'paid') return <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" />Venta concretada</Badge>;
+    if (i.status === 'cancelled' || i.status === 'expired') return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Cancelada</Badge>;
+    return <Badge variant="secondary">{i.status}</Badge>;
+  };
+  const feeBadge = (i: InterestRow) => {
+    if (i.fee_status === 'paid') return <Badge variant="success" className="gap-1 text-[10px]">Fee cobrado</Badge>;
+    if (i.status === 'completed' && i.fee_status === 'pending') return <Badge variant="secondary" className="gap-1 text-[10px] bg-amber-100 text-amber-800 border border-amber-300">Fee por cobrar</Badge>;
+    return null;
+  };
 
   return (
     <MainLayout>
@@ -180,7 +217,7 @@ export default function AdminMarketplaceFee() {
           <Store className="w-6 h-6 text-primary" />
           <h1 className="font-heading text-2xl font-bold">Marketplace — Fee e intermediación</h1>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">Reventa entre doctores y residentes. La plataforma cobra un fee por desbloquear el contacto; el vendedor cobra el producto por fuera.</p>
+        <p className="text-sm text-muted-foreground mb-6">Reventa entre doctores y residentes. El comprador ordena sin pagar nada; cuando el vendedor concreta la venta, es él quien paga el fee de la plataforma.</p>
 
         {migrationMissing && (
           <Card className="mb-6 border-warning/40 bg-warning/5">
@@ -206,17 +243,12 @@ export default function AdminMarketplaceFee() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="fee">Fee por producto (% del precio)</Label>
+                    <Label htmlFor="fee">Fee por venta concretada (% del precio)</Label>
                     <div className="relative">
                       <Input id="fee" type="number" min={0} max={100} step={0.5} value={feePct} onChange={e => setFeePct(e.target.value)} className="pr-8" />
                       <Percent className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2" />
                     </div>
-                    <p className="text-xs text-muted-foreground">Ej.: 10% → un producto de $2,000 cobra $200 de fee.</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="hrs">Horas de apartado tras pagar</Label>
-                    <Input id="hrs" type="number" min={1} step={1} value={reserveHours} onChange={e => setReserveHours(e.target.value)} />
-                    <p className="text-xs text-muted-foreground">El producto queda reservado para el comprador este tiempo.</p>
+                    <p className="text-xs text-muted-foreground">Lo paga el vendedor al concretarse la venta. Ej.: 10% → una venta de $2,000 genera $200 de fee.</p>
                   </div>
                 </div>
                 <Button onClick={saveConfig} disabled={savingCfg} className="gap-2">
@@ -279,27 +311,39 @@ export default function AdminMarketplaceFee() {
               </CardContent>
             </Card>
 
-            {/* 3. Transacciones / fees cobrados */}
+            {/* 3. Órdenes de compra, ventas concretadas y fees */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Fees cobrados</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Órdenes y fees</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-6 mb-4">
-                  <div><p className="text-2xl font-bold text-success">${totalFees.toLocaleString()}</p><p className="text-xs text-muted-foreground">total en fees</p></div>
-                  <div><p className="text-2xl font-bold">{interests.filter(i => i.status === 'paid').length}</p><p className="text-xs text-muted-foreground">apartados pagados</p></div>
+                <div className="flex items-center gap-6 mb-4 flex-wrap">
+                  <div><p className="text-2xl font-bold text-success">${feesPaid.toLocaleString()}</p><p className="text-xs text-muted-foreground">fees cobrados</p></div>
+                  <div><p className="text-2xl font-bold text-amber-600">${feesPending.toLocaleString()}</p><p className="text-xs text-muted-foreground">fees por cobrar</p></div>
+                  <div><p className="text-2xl font-bold">{completedSales}</p><p className="text-xs text-muted-foreground">ventas concretadas</p></div>
+                  <div><p className="text-2xl font-bold">{activeOrders}</p><p className="text-xs text-muted-foreground">órdenes activas</p></div>
                 </div>
                 {interests.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aún no hay transacciones.</p>
+                  <p className="text-sm text-muted-foreground">Aún no hay órdenes de compra.</p>
                 ) : (
                   <div className="space-y-1.5">
                     {interests.map(i => (
-                      <div key={i.id} className="flex items-center justify-between gap-2 text-xs border-b border-border/60 py-1.5">
+                      <div key={i.id} className="flex items-center justify-between gap-2 text-xs border-b border-border/60 py-1.5 flex-wrap">
                         <span className="min-w-0 truncate">{i.product?.name || 'Producto'} <span className="text-muted-foreground">· {i.vendor?.name || 'Proveedor'}</span></span>
-                        <span className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-muted-foreground">{Math.round(Number(i.fee_rate) * 100)}% de ${Number(i.product_price).toLocaleString()}</span>
-                          <b className="text-success">${Number(i.fee_amount).toLocaleString()}</b>
-                          {statusBadge(i.status === 'paid' ? 'approved' : i.status === 'pending_payment' ? 'pending' : i.status)}
+                        <span className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                          <span className="text-muted-foreground">fee {Math.round(Number(i.fee_rate) * 100)}% de ${Number(i.product_price).toLocaleString()} = <b className="text-foreground">${Number(i.fee_amount).toLocaleString()}</b></span>
+                          {orderStatusBadge(i)}
+                          {feeBadge(i)}
+                          {i.status === 'ordered' && (
+                            <>
+                              <Button type="button" size="sm" className="h-6 px-2 text-[10px] gap-1" disabled={actingId === i.id} onClick={() => adminOrderAction(i, 'complete')}>
+                                {actingId === i.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}Concretar
+                              </Button>
+                              <Button type="button" size="sm" variant="ghost" className="h-6 px-2 text-[10px] gap-1 text-destructive hover:text-destructive" disabled={actingId === i.id} onClick={() => adminOrderAction(i, 'cancel')}>
+                                <XCircle className="w-3 h-3" />Cancelar
+                              </Button>
+                            </>
+                          )}
                         </span>
                       </div>
                     ))}

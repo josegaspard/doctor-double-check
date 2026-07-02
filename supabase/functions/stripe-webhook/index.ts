@@ -113,6 +113,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "marketplace_interest_fee" && session.payment_status === "paid") {
         await handleMarketplaceInterestFee(db, session);
       }
+      if (session.metadata?.type === "marketplace_sale_fee" && session.payment_status === "paid") {
+        await handleMarketplaceSaleFee(db, session);
+      }
       if (session.metadata?.type === "ad_campaign" && session.payment_status === "paid") {
         await handleAdPurchaseCompleted(db, session);
       }
@@ -1342,6 +1345,58 @@ async function handleMarketplaceInterestFee(db: ReturnType<typeof supabaseAdmin>
   });
 
   logStep("Marketplace interest fee completed", { interestId, chatSessionId, feeAmount });
+}
+
+// FEE de VENTA pagado por el VENDEDOR (modelo sin prepago, cliente 2026-07-01):
+// la venta ya se concretó sin método de pago de por medio; aquí solo se liquida
+// la comisión de la plataforma. Se notifica al vendedor y a los administradores.
+async function handleMarketplaceSaleFee(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const interestId = session.metadata!.interest_id;
+  const feeAmount = parseFloat(session.metadata!.fee_amount || "0");
+  logStep("Processing marketplace sale fee", { interestId, feeAmount });
+
+  const { data: order } = await db
+    .from("product_interests")
+    .select("id, fee_status, currency, marketplace_products(name), marketplace_vendors(name, user_id)")
+    .eq("id", interestId)
+    .single();
+  if (!order) { logStep("Sale fee: interest not found", { interestId }); return; }
+  if (order.fee_status === "paid") { logStep("Sale fee already processed", { interestId }); return; }
+
+  const paymentIntentId = typeof session.payment_intent === "string"
+    ? session.payment_intent : (session.payment_intent as any)?.id ?? null;
+
+  await db.from("product_interests").update({
+    fee_status: "paid",
+    fee_paid_at: new Date().toISOString(),
+    stripe_payment_intent_id: paymentIntentId,
+  }).eq("id", interestId);
+
+  const productName = (order as any).marketplace_products?.name || "producto";
+  const vendorName = (order as any).marketplace_vendors?.name || "Proveedor";
+  const vendorUserId = (order as any).marketplace_vendors?.user_id as string | undefined;
+  const feeTxt = `$${feeAmount.toLocaleString("es-MX")} ${order.currency || "MXN"}`;
+
+  if (vendorUserId) {
+    await db.from("notifications").insert({
+      user_id: vendorUserId,
+      type: "system",
+      title: "✅ Fee de venta pagado",
+      message: `Pagaste el fee (${feeTxt}) por la venta de "${productName}". ¡Gracias!`,
+      data: { url: "/marketplace", interest_id: interestId },
+    });
+  }
+  const { data: adminRows } = await db.from("user_roles").select("user_id").eq("role", "admin");
+  const adminNotifs = (adminRows || []).map((r: { user_id: string }) => ({
+    user_id: r.user_id,
+    type: "system",
+    title: "💵 Marketplace: fee cobrado",
+    message: `${vendorName} pagó el fee (${feeTxt}) por la venta de "${productName}".`,
+    data: { url: "/admin/marketplace-fee", interest_id: interestId },
+  }));
+  if (adminNotifs.length > 0) await db.from("notifications").insert(adminNotifs);
+
+  logStep("Marketplace sale fee completed", { interestId, feeAmount });
 }
 
 // Restore stock + mark order abandoned when a marketplace checkout expires.

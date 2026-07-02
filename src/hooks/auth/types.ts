@@ -77,7 +77,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   role: UserRole | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   logout: () => Promise<void>;
   loginAsVisitor: () => void;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;

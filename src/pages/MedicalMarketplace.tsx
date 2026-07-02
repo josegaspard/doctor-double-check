@@ -20,7 +20,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import {
   Store, Loader2, HandHeart, ShieldCheck, Clock, Tag, Plus, PackagePlus, Lock, CheckCircle,
-  Search, SlidersHorizontal, X, Sparkles, Package, Boxes,
+  Search, SlidersHorizontal, X, Sparkles, Package, Boxes, ClipboardList, MessageCircle, XCircle,
+  BadgeDollarSign,
 } from 'lucide-react';
 
 interface Product {
@@ -43,6 +44,22 @@ interface Product {
 
 type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'name';
 
+interface OrderRow {
+  id: string;
+  status: string;          // ordered | completed | cancelled
+  fee_status: string;      // none | pending | paid (fee del VENDEDOR)
+  fee_amount: number;
+  product_price: number;
+  currency: string;
+  created_at: string;
+  completed_at: string | null;
+  product_id: string;
+  buyer_id: string;
+  productName?: string | null;
+  vendorName?: string | null;
+  buyerName?: string | null;
+}
+
 export default function MedicalMarketplace() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
@@ -56,10 +73,16 @@ export default function MedicalMarketplace() {
   // Estado del vendedor (verificación de negocio)
   const [vendor, setVendor] = useState<{ id: string; status: string } | null>(null);
 
-  // Diálogo "Estoy interesado"
+  // Diálogo "Estoy interesado" (orden de compra SIN pago)
   const [interestProduct, setInterestProduct] = useState<Product | null>(null);
   const [interestTerms, setInterestTerms] = useState(false);
-  const [payingId, setPayingId] = useState<string | null>(null);
+  const [sendingId, setSendingId] = useState<string | null>(null);
+
+  // Órdenes de compra (comprador y vendedor)
+  const [myOrders, setMyOrders] = useState<OrderRow[]>([]);
+  const [vendorOrders, setVendorOrders] = useState<OrderRow[]>([]);
+  const [actingOrderId, setActingOrderId] = useState<string | null>(null);
+  const [payingFeeId, setPayingFeeId] = useState<string | null>(null);
 
   // Diálogo "Quiero vender"
   const [sellOpen, setSellOpen] = useState(false);
@@ -100,6 +123,34 @@ export default function MedicalMarketplace() {
       if (user?.id) {
         const { data: v } = await sb.from('marketplace_vendors').select('id, status').eq('user_id', user.id).maybeSingle();
         setVendor(v || null);
+
+        // Mis órdenes como comprador (activas o concretadas)
+        const orderCols = 'id, status, fee_status, fee_amount, product_price, currency, created_at, completed_at, product_id, buyer_id, marketplace_products(name), marketplace_vendors(name)';
+        const { data: mine } = await sb.from('product_interests')
+          .select(orderCols)
+          .eq('buyer_id', user.id)
+          .in('status', ['ordered', 'completed'])
+          .order('created_at', { ascending: false });
+        setMyOrders((mine || []).map((o: any) => ({ ...o, productName: o.marketplace_products?.name, vendorName: o.marketplace_vendors?.name })));
+
+        // Órdenes recibidas sobre MIS productos (soy vendedor)
+        if (v?.id) {
+          const { data: vo } = await sb.from('product_interests')
+            .select(orderCols)
+            .eq('vendor_id', v.id)
+            .in('status', ['ordered', 'completed'])
+            .order('created_at', { ascending: false });
+          const rows: OrderRow[] = (vo || []).map((o: any) => ({ ...o, productName: o.marketplace_products?.name }));
+          const buyerIds = Array.from(new Set(rows.map(o => o.buyer_id)));
+          if (buyerIds.length > 0) {
+            const { data: bp } = await sb.from('profiles_public').select('id, name').in('id', buyerIds);
+            const names = new Map((bp || []).map((p: any) => [p.id, p.name]));
+            rows.forEach(o => { o.buyerName = names.get(o.buyer_id) || null; });
+          }
+          setVendorOrders(rows);
+        } else {
+          setVendorOrders([]);
+        }
       }
     } catch (e) {
       console.error('[MedicalMarketplace] load', e);
@@ -182,23 +233,80 @@ export default function MedicalMarketplace() {
     return Array.from(counts, ([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n).slice(0, 4);
   }, [products]);
 
+  // "Estoy interesado" → orden de compra SIN pago: notifica al proveedor (y al
+  // admin) y abre el chat para acordar los pormenores.
   const startInterest = async () => {
     if (!interestProduct || !interestTerms) return;
-    setPayingId(interestProduct.id);
+    setSendingId(interestProduct.id);
     try {
-      const { data, error } = await supabase.functions.invoke('create-marketplace-interest-fee', {
-        body: { product_id: interestProduct.id, terms_accepted: true },
+      const { data, error } = await supabase.functions.invoke('marketplace-order', {
+        body: { action: 'create', product_id: interestProduct.id, terms_accepted: true },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setInterestProduct(null);
+      toast({
+        title: '📋 Orden de compra enviada',
+        description: 'El proveedor ya fue notificado. Te abrimos el chat para acordar los detalles.',
+      });
+      navigate('/chat');
+    } catch (e: any) {
+      toast({ title: 'No se pudo enviar la orden', description: e.message || 'Error', variant: 'destructive' });
+    } finally {
+      setSendingId(null);
+    }
+  };
+
+  // Vendedor concreta la venta (sin pago de por medio) o cualquiera cancela la orden.
+  const orderAction = async (orderId: string, action: 'complete' | 'cancel') => {
+    setActingOrderId(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke('marketplace-order', {
+        body: { action, interest_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast(action === 'complete'
+        ? { title: '🤝 Venta concretada', description: 'Se notificó al comprador y al administrador. Recuerda pagar el fee de la plataforma.' }
+        : { title: 'Orden cancelada', description: 'Se notificó a la otra parte.' });
+      load();
+    } catch (e: any) {
+      toast({ title: 'No se pudo completar', description: e.message || 'Error', variant: 'destructive' });
+    } finally {
+      setActingOrderId(null);
+    }
+  };
+
+  // El VENDEDOR paga el fee de la venta concretada (Stripe).
+  const payFee = async (orderId: string) => {
+    setPayingFeeId(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke('marketplace-order', {
+        body: { action: 'pay_fee', interest_id: orderId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) { window.location.href = data.url; return; }
       throw new Error('No se recibió el enlace de pago');
     } catch (e: any) {
-      toast({ title: 'No se pudo continuar', description: e.message || 'Error', variant: 'destructive' });
+      toast({ title: 'No se pudo iniciar el pago del fee', description: e.message || 'Error', variant: 'destructive' });
     } finally {
-      setPayingId(null);
+      setPayingFeeId(null);
     }
   };
+
+  // Retorno del checkout del fee del vendedor.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('fee_paid') === '1') {
+      toast({ title: '✅ Fee pagado', description: 'Gracias. El pago puede tardar unos segundos en reflejarse.' });
+      window.history.replaceState({}, '', '/marketplace');
+    } else if (params.get('fee_canceled') === '1') {
+      toast({ title: 'Pago de fee cancelado', description: 'Puedes reintentarlo desde tus órdenes.', variant: 'destructive' });
+      window.history.replaceState({}, '', '/marketplace');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submitSell = async () => {
     if (!sellTerms || !sellForm.name.trim()) {
@@ -380,7 +488,7 @@ export default function MedicalMarketplace() {
             <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Publicar producto</Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground mb-4">Compra y vende material entre colegas. Al mostrar interés pagas una cuota de intermediación y se te abre el chat con el proveedor para cerrar el trato.</p>
+        <p className="text-sm text-muted-foreground mb-4">Compra y vende material entre colegas. Al mostrar interés se envía una orden de compra al proveedor y se abre el chat para acordar los pormenores — no pagas nada dentro de la plataforma.</p>
 
         {/* Búsqueda + botón filtros (móvil) */}
         <div className="flex gap-2 mb-3">
@@ -431,6 +539,94 @@ export default function MedicalMarketplace() {
           ))}
         </div>
 
+        {/* Órdenes de compra recibidas (soy vendedor) */}
+        {!loading && vendorOrders.length > 0 && (
+          <Card className="mb-4 border-primary/30">
+            <CardContent className="p-4">
+              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><ClipboardList className="w-4 h-4 text-primary" /> Órdenes de compra recibidas</h2>
+              <div className="space-y-2">
+                {vendorOrders.map(o => (
+                  <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{o.productName || 'Producto'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {o.buyerName || 'Comprador'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {o.status === 'ordered' && (
+                        <>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                          </Button>
+                          <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'complete')}>
+                            {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Concretar venta
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
+                            <XCircle className="w-3.5 h-3.5" /> Cancelar
+                          </Button>
+                        </>
+                      )}
+                      {o.status === 'completed' && o.fee_status === 'pending' && (
+                        <>
+                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada</Badge>
+                          <Button type="button" size="sm" className="h-8 gap-1" disabled={payingFeeId === o.id} onClick={() => payFee(o.id)}>
+                            {payingFeeId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} Pagar fee ${Number(o.fee_amount).toLocaleString()}
+                          </Button>
+                        </>
+                      )}
+                      {o.status === 'completed' && o.fee_status === 'paid' && (
+                        <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada · fee pagado</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mis órdenes como comprador */}
+        {!loading && myOrders.length > 0 && (
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><HandHeart className="w-4 h-4 text-primary" /> Mis órdenes de compra</h2>
+              <div className="space-y-2">
+                {myOrders.map(o => (
+                  <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{o.productName || 'Producto'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {o.vendorName || 'Proveedor'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {o.status === 'ordered' ? (
+                        <>
+                          <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" /> Orden enviada</Badge>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
+                            <XCircle className="w-3.5 h-3.5" /> Cancelar
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada</Badge>
+                          <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate('/chat')}>
+                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : products.length === 0 ? (
@@ -471,18 +667,22 @@ export default function MedicalMarketplace() {
                           {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
                           <div className="mt-2 flex items-baseline gap-2">
                             <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
-                            <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> fee ${feeFor(Number(p.price)).toLocaleString()}</span>
+                            {mine(p) && <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> fee al vender ${feeFor(Number(p.price)).toLocaleString()}</span>}
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? 'unidad' : 'unidades'}` : 'Sin unidades'}</p>
                           <div className="mt-auto pt-2">
                             {mine(p) ? (
                               <Badge variant="outline" className="w-full justify-center py-1">Tu producto</Badge>
+                            ) : myOrders.some(o => o.product_id === p.id && o.status === 'ordered') ? (
+                              <Button type="button" size="sm" variant="outline" className="w-full gap-1.5" onClick={() => navigate('/chat')}>
+                                <MessageCircle className="w-4 h-4" /> Orden enviada — ver chat
+                              </Button>
                             ) : reserved ? (
                               <Badge variant="secondary" className="w-full justify-center py-1 gap-1"><Clock className="w-3 h-3" /> Apartado</Badge>
                             ) : (
-                              <Button type="button" size="sm" className="w-full gap-1.5" disabled={payingId === p.id}
+                              <Button type="button" size="sm" className="w-full gap-1.5" disabled={sendingId === p.id}
                                 onClick={() => { setInterestProduct(p); setInterestTerms(false); }}>
-                                {payingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} Estoy interesado
+                                {sendingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} Estoy interesado
                               </Button>
                             )}
                           </div>
@@ -503,24 +703,23 @@ export default function MedicalMarketplace() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><HandHeart className="w-5 h-5 text-primary" /> Estoy interesado</DialogTitle>
             <DialogDescription>
-              Para desbloquear el contacto con el proveedor pagas una <b>cuota de intermediación</b>. El producto queda apartado para ti y se abre el chat para cerrar la venta.
+              Se enviará una <b>orden de compra</b> al proveedor y se abrirá un chat para acordar los pormenores (entrega, forma de pago, etc.) directamente con él.
             </DialogDescription>
           </DialogHeader>
           {interestProduct && (
             <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
               <div className="flex justify-between"><span>{interestProduct.name}</span><b>${Number(interestProduct.price).toLocaleString()}</b></div>
-              <div className="flex justify-between text-primary"><span>Cuota de la plataforma</span><b>${feeFor(Number(interestProduct.price)).toLocaleString()}</b></div>
-              <p className="text-xs text-muted-foreground pt-1">El precio del producto lo pagas directamente al proveedor por fuera. Solo la cuota se cobra aquí.</p>
+              <p className="text-xs text-muted-foreground pt-1">No se realiza ningún pago dentro de la plataforma. Todo lo acuerdas directamente con el proveedor por el chat.</p>
             </div>
           )}
           <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
             <Checkbox checked={interestTerms} onCheckedChange={(v) => setInterestTerms(!!v)} className="mt-0.5" />
-            <span>Acepto los <b>términos y condiciones</b> de intermediación y que la cuota no es reembolsable una vez abierto el contacto.</span>
+            <span>Acepto los <b>términos y condiciones</b> de intermediación del marketplace.</span>
           </label>
           <DialogFooter>
             <Button variant="outline" onClick={() => setInterestProduct(null)}>Cancelar</Button>
-            <Button disabled={!interestTerms || !!payingId} onClick={startInterest} className="gap-2">
-              {payingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Pagar cuota y contactar
+            <Button disabled={!interestTerms || !!sendingId} onClick={startInterest} className="gap-2">
+              {sendingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Enviar orden de compra
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -568,6 +767,7 @@ export default function MedicalMarketplace() {
             <div className="space-y-1"><Label>Precio (MXN) *</Label><Input type="number" min={1} value={pubForm.price} onChange={e => setPubForm(f => ({ ...f, price: e.target.value }))} /></div>
             <div className="space-y-1"><Label>Descripción</Label><Textarea rows={3} value={pubForm.description} onChange={e => setPubForm(f => ({ ...f, description: e.target.value }))} /></div>
             <div className="space-y-1"><Label>URL de imagen</Label><Input value={pubForm.image_url} onChange={e => setPubForm(f => ({ ...f, image_url: e.target.value }))} /></div>
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><Tag className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> Al concretar una venta pagarás a la plataforma un fee del {Math.round(feeRate * 100)}% del precio{pubForm.price && Number(pubForm.price) > 0 ? ` (≈ $${feeFor(Number(pubForm.price)).toLocaleString()})` : ''}. El comprador no paga nada aquí.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPubOpen(false)}>Cancelar</Button>
