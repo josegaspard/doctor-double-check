@@ -462,8 +462,8 @@ export default function Chat() {
             }).length;
           };
           return (
-            <div className="mb-2 px-2 sm:px-0 flex-shrink-0 overflow-x-auto">
-              <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 border border-border/60 p-1">
+            <div className="mb-3 px-2 sm:px-0 flex-shrink-0 overflow-x-auto scrollbar-hide">
+              <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 border border-border/60 p-1.5">
                 {tabs.map(({ key, label, Icon, color }) => {
                   const active = chatFilter === key;
                   const count = countFor(key);
@@ -474,13 +474,13 @@ export default function Chat() {
                       onClick={() => setChatFilter(key as typeof chatFilter)}
                       aria-pressed={active}
                       style={active ? { backgroundColor: color, color: '#fff' } : undefined}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 sm:px-3.5 h-8 text-xs font-semibold whitespace-nowrap transition-all ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 sm:px-4 h-9 text-xs font-semibold whitespace-nowrap transition-all ${
                         active
                           ? 'shadow-sm'
                           : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" style={!active ? { color } : undefined} />
+                      <Icon className="w-4 h-4" style={!active ? { color } : undefined} />
                       {label}
                       {count > 0 && (
                         <span

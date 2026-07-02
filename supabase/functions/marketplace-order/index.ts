@@ -380,8 +380,8 @@ serve(async (req) => {
           quantity: 1,
         }],
         mode: "payment",
-        success_url: `${req.headers.get("origin")}/marketplace?fee_paid=1`,
-        cancel_url: `${req.headers.get("origin")}/marketplace?fee_canceled=1`,
+        success_url: `${req.headers.get("origin") || APP_URL}/marketplace?fee_paid=1`,
+        cancel_url: `${req.headers.get("origin") || APP_URL}/marketplace?fee_canceled=1`,
         metadata: {
           type: "marketplace_sale_fee",
           interest_id: order.id,
