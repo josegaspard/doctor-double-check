@@ -107,7 +107,8 @@ export default function VerificationPending() {
             <Button variant="ghost" className="flex-1 text-foreground hover:text-foreground" onClick={() => navigate('/')}>
               {t('verificationPendingPage.backToHome')}
             </Button>
-            <Button variant="outline" className="flex-1" onClick={logout}>
+            {/* Al cerrar sesión SIEMPRE aterrizar en el landing (cliente 2026-07-02). */}
+            <Button variant="outline" className="flex-1" onClick={() => { logout(); navigate('/', { replace: true }); }}>
               {t('verificationPendingPage.logout')}
             </Button>
           </div>

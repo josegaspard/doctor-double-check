@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-02-batch37-chatlist-overflow-back-login
+// SW_VERSION: 2026-07-02-batch38-logo-home-logout-landing
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

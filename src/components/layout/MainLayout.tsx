@@ -355,6 +355,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   // bottomTabs already computed above
 
+  // Destino del LOGO (cliente 2026-07-02): con sesión activa el "home" es /lives;
+  // sin sesión (visitor) el logo lleva al landing público /.
+  const homeHref = isAuthenticated && role && role !== 'visitor' ? '/lives' : '/';
+
   // Hide bottom nav on certain pages (video call, live player full experience)
   const hideBottomNav = location.pathname.startsWith('/video-call');
 
@@ -475,17 +479,17 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </Sheet>
 
               {/* Logo on mobile - small */}
-              <Link to="/" className="flex sm:hidden items-center">
+              <Link to={homeHref} className="flex sm:hidden items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo on tablet - compact */}
-              <Link to="/" className="hidden sm:flex md:hidden items-center">
+              <Link to={homeHref} className="hidden sm:flex md:hidden items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo - desktop+ */}
-              <Link to="/" className="hidden md:flex items-center">
+              <Link to={homeHref} className="hidden md:flex items-center">
                 <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-6 lg:h-7 xl:h-8 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import logoWhite from '@/assets/logo-medical-masters-white.png';
 import logoBlue from '@/assets/logo-medical-masters.png';
 import heroBgDesktop from '@/assets/landing/hero-bg-desktop.png';
@@ -40,6 +41,10 @@ import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 
 export default function Landing() {
   const { t } = useLanguage();
+  const { isAuthenticated, role } = useAuth();
+  // Con sesión activa el logo lleva al home de la app (/lives); sin sesión,
+  // recarga el landing (cliente 2026-07-02).
+  const homeHref = isAuthenticated && role && role !== 'visitor' ? '/lives' : '/';
   const [scrolled, setScrolled] = useState(false);
 
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -75,7 +80,7 @@ export default function Landing() {
         <div className="landing-nav-surface absolute inset-0 transition-all duration-500" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
           <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to={homeHref} className="flex items-center gap-2 group">
               <div className="relative h-8 sm:h-10 md:h-12 overflow-hidden">
                 <img src={logoWhite} alt={t('landing.nav.logoAlt')} className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
                 <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
