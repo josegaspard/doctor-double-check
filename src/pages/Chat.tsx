@@ -438,11 +438,13 @@ export default function Chat() {
             texto neutro). Solo doctores ven a pacientes; residentes chatean con
             doctores/residentes y proveedores. */}
         {(role === 'doctor' || role === 'resident') && (() => {
+          // Colores de marca oscurecidos para que el texto blanco del chip activo
+          // cumpla contraste WCAG (≥4.5:1).
           const allTabs = [
-            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#227787' }, // teal
-            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#5E79C0' }, // comfort blue
+            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#1D6673' }, // teal
+            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#44598E' }, // comfort blue
             { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' }, // navy
-            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#B0810A' }, // gold
+            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#8A6508' }, // gold
           ] as const;
           const visibleKeys = role === 'doctor'
             ? ['all', 'patients', 'doctors', 'providers']
@@ -463,7 +465,9 @@ export default function Chat() {
           };
           return (
             <div className="mb-3 px-2 sm:px-0 flex-shrink-0 overflow-x-auto scrollbar-hide">
-              <div className="inline-flex items-center gap-1 rounded-full bg-muted/70 border border-border/60 p-1.5">
+              {/* Contenedor SÓLIDO (bg-card): sobre el fondo teal del brandbook un
+                  bg-muted translúcido se fundía y mataba el contraste del texto. */}
+              <div className="inline-flex items-center gap-1 rounded-full bg-card border border-border shadow-sm p-1.5">
                 {tabs.map(({ key, label, Icon, color }) => {
                   const active = chatFilter === key;
                   const count = countFor(key);
@@ -480,7 +484,9 @@ export default function Chat() {
                           : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
                       }`}
                     >
-                      <Icon className="w-4 h-4" style={!active ? { color } : undefined} />
+                      {/* Icono inactivo en currentColor: los hex de marca desaparecían
+                          sobre el muted del dark mode (navy sobre navy ≈ 1.2:1). */}
+                      <Icon className="w-4 h-4" />
                       {label}
                       {count > 0 && (
                         <span

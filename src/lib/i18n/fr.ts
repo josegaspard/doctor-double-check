@@ -2213,6 +2213,7 @@ export const fr = {
     "noneSelected": "Aucun élément sélectionné"
   },
   "landingFooter": {
+    "vendorPortal": "Portail des fournisseurs",
     "platform": "Plateforme",
     "forDoctors": "Pour les Médecins",
     "forResidents": "Pour les Internes",

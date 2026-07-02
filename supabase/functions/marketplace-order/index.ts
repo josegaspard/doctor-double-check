@@ -120,11 +120,14 @@ serve(async (req) => {
 
       const { data: product, error: prodErr } = await db
         .from("marketplace_products")
-        .select("id, name, price, currency, image_url, vendor_id, is_active, approval_status, marketplace_vendors(name, user_id, status)")
+        .select("id, name, price, currency, image_url, vendor_id, is_active, approval_status, listing_type, marketplace_vendors(name, user_id, status)")
         .eq("id", product_id)
         .single();
       if (prodErr || !product) throw new Error("Producto no encontrado");
       if (!product.is_active) throw new Error("Producto no disponible");
+      if ((product as any).listing_type && (product as any).listing_type !== "fee") {
+        throw new Error("Este producto se vende por la tienda, no por orden de compra");
+      }
       // Solo se puede ordenar sobre productos aprobados por el administrador
       // y de proveedores con verificación vigente.
       if ((product as any).approval_status && (product as any).approval_status !== "approved") {
@@ -205,14 +208,18 @@ serve(async (req) => {
       }
 
       // Notificaciones: vendedor (orden de compra), comprador (confirmación) y admins.
+      // URL con ?session= para abrir DIRECTO la conversación (además, en el
+      // chat de residentes el filtro default excluye proveedores; el query
+      // param fuerza el salto al filtro correcto).
+      const chatUrl = chatSessionId ? `/chat?session=${chatSessionId}` : "/chat";
       if (vendorUserId) {
         await notifyUsers(db, [vendorUserId], "📋 Nueva orden de compra",
           `${callerName} está interesado en "${product.name}" (${money(price, currency)}). Abre el chat para acordar los pormenores.`,
-          { url: "/chat", interest_id: interest.id });
+          { url: chatUrl, interest_id: interest.id });
       }
       await notifyUsers(db, [user.id], "✅ Orden de compra enviada",
         `Tu orden por "${product.name}" llegó a ${vendorName || "el proveedor"}. Ya puedes chatear con él para acordar los detalles.`,
-        { url: "/chat", interest_id: interest.id });
+        { url: chatUrl, interest_id: interest.id });
       const admins = await adminIds(db);
       await notifyUsers(db, admins, "🛒 Marketplace: nueva orden de compra",
         `${callerName} ordenó "${product.name}" de ${vendorName || "un proveedor"} (${money(price, currency)}).`,
@@ -296,7 +303,7 @@ serve(async (req) => {
       const feeTxt = money(Number(order.fee_amount), order.currency);
       await notifyUsers(db, [order.buyer_id], "🎉 Venta concretada",
         `${vendorName || "El proveedor"} concretó tu compra de "${productName || "el producto"}". Coordina la entrega por el chat.`,
-        { url: "/chat", interest_id: order.id });
+        { url: order.chat_session_id ? `/chat?session=${order.chat_session_id}` : "/chat", interest_id: order.id });
       if (vendorUserId) {
         await notifyUsers(db, [vendorUserId], "🤝 Venta concretada — fee pendiente",
           `Concretaste la venta de "${productName || "tu producto"}" a ${buyerName}. Recuerda pagar el fee de la plataforma (${feeTxt}) desde el marketplace.`,

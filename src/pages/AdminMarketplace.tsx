@@ -118,8 +118,9 @@ function ProductsTab({ es }: { es: boolean }) {
     setSaving(true);
     const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, brand_id: form.brand_id || null, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
     if (editingId) await supabase.from('marketplace_products').update(payload).eq('id', editingId);
-    // Lo que carga el propio admin nace aprobado (la revisión es para proveedores).
-    else await supabase.from('marketplace_products').insert({ ...payload, approval_status: 'approved', approved_at: new Date().toISOString() });
+    // Lo que carga el propio admin nace aprobado (la revisión es para proveedores)
+    // y pertenece a la tienda e-commerce de pacientes (canal 'ecommerce').
+    else await supabase.from('marketplace_products').insert({ ...payload, approval_status: 'approved', approved_at: new Date().toISOString(), listing_type: 'ecommerce' });
     setSaving(false); setDialogOpen(false); fetchData(); toast.success(t('adminMarketplacePage.common.saved'));
   };
 
@@ -367,7 +368,24 @@ function VendorsTab({ es: _es }: { es: boolean }) {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('marketplace_vendors').update({ status } as any).eq('id', id);
+    // Mismo comportamiento que AdminMarketplaceFee: al rechazar se pide motivo
+    // y en ambos casos se notifica al proveedor con campanilla.
+    let note: string | null = null;
+    if (status === 'rejected') {
+      note = window.prompt('Motivo del rechazo (se le mostrará al proveedor):') || null;
+      if (note === null) return;
+    }
+    const payload: any = { status };
+    if (status === 'rejected') payload.notes = note;
+    const { error } = await supabase.from('marketplace_vendors').update(payload).eq('id', id);
+    if (error) { toast.error(error.message); return; }
+    const v = vendors.find(x => x.id === id);
+    if (v?.user_id) {
+      const notif = status === 'approved'
+        ? { title: '🎉 ¡Eres proveedor aprobado!', message: `Tu negocio "${v.name}" fue aprobado. Ya puedes publicar productos desde tu portal de proveedor.` }
+        : { title: 'Tu solicitud de proveedor fue rechazada', message: `${note ? `Motivo: ${note}. ` : ''}Puedes corregir tus datos y volver a postular desde el portal de proveedores.` };
+      await (supabase as any).from('notifications').insert({ user_id: v.user_id, type: 'system', ...notif, data: { url: '/vendor/dashboard' } });
+    }
     fetchData(); toast.success(t('adminMarketplacePage.vendors.statusUpdated'));
   };
 

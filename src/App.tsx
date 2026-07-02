@@ -272,7 +272,8 @@ const App = () => {
                       <Route path="/admin/content-moderation" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminContentModeration /></AccessGuard>} />
                       <Route path="/book/:doctorId" element={<AccessGuard allowedRoles={['patient','resident']} fallbackType="forbidden"><BookAppointment /></AccessGuard>} />
                       <Route path="/my-appointments" element={<AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><MyAppointments /></AccessGuard>} />
-                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<VendorProducts />} />}
+                      {/* /vendor/products duplicaba al portal sin la UX de aprobación → redirect. */}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<Navigate to="/vendor/dashboard" replace />} />}
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
                       <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
                       <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
@@ -323,9 +324,10 @@ const App = () => {
                       <Route path="/admin/marketplace-fee" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminMarketplaceFee /></AccessGuard>} />
                       {FEATURE_FLAGS.marketplaceFeeModel && <Route path="/marketplace" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalMarketplace /></AccessGuard>} />}
                       <Route path="/admin/accounting" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAccounting /></AccessGuard>} />
-                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />}
-                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/earnings" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><VendorEarnings /></AccessGuard>} />}
-                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/dashboard" element={<VendorDashboard />} />}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/stripe-setup" element={<AccessGuard allowedRoles={['doctor','resident','admin']} fallbackType="forbidden"><VendorStripeSetup /></AccessGuard>} />}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/earnings" element={<AccessGuard allowedRoles={['doctor','resident','admin']} fallbackType="forbidden"><VendorEarnings /></AccessGuard>} />}
+                      {/* Portal de proveedores: mismo público que el marketplace dr↔dr. */}
+                      {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/dashboard" element={<AccessGuard allowedRoles={['doctor','resident','admin']} fallbackType="forbidden"><VendorDashboard /></AccessGuard>} />}
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />
                       <Route path="/psychology" element={<Navigate to="/psicologia" replace />} />

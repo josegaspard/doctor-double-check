@@ -2282,6 +2282,7 @@ export const en = {
   },
   // Landing Footer
   landingFooter: {
+    vendorPortal: 'Vendor portal',
     platform: 'Platform',
     forDoctors: 'For Doctors',
     forResidents: 'For Residents',

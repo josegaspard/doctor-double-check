@@ -270,7 +270,7 @@ export default function VendorDashboard() {
   const [actingOrderId, setActingOrderId] = useState<string | null>(null);
 
   const fetchVendor = async () => {
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     setLoading(true);
     const { data: cfg } = await (supabase as any).from('marketplace_config').select('fee_rate').eq('id', true).maybeSingle();
     if (cfg?.fee_rate != null) setFeeRate(Number(cfg.fee_rate));
@@ -309,18 +309,21 @@ export default function VendorDashboard() {
     if (!form.name || !vendor) return;
     setSaving(true);
     const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: vendor.id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
+    let error: any = null;
     if (editingId) {
       // Un producto rechazado que se corrige vuelve a revisión del admin.
       const prev = products.find(p => p.id === editingId);
       if (prev?.approval_status === 'rejected') { payload.approval_status = 'pending'; payload.approval_note = null; }
-      await supabase.from('marketplace_products').update(payload).eq('id', editingId);
+      ({ error } = await supabase.from('marketplace_products').update(payload).eq('id', editingId));
     } else {
       // Nuevo producto: entra en revisión (approval_status default 'pending').
-      await supabase.from('marketplace_products').insert(payload);
+      ({ error } = await supabase.from('marketplace_products').insert(payload));
     }
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
     const { data } = await supabase.from('marketplace_products').select('*').eq('vendor_id', vendor.id).order('created_at', { ascending: false });
     setProducts((data as any[]) || []);
-    setSaving(false); setDialogOpen(false);
+    setDialogOpen(false);
     toast.success(editingId ? t('autoI18n.vendorDash47') : 'Producto enviado a revisión. El administrador lo aprobará antes de publicarse.');
   };
 
@@ -349,12 +352,14 @@ export default function VendorDashboard() {
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm(t('autoI18n.vendorDash48')) || !vendor) return;
-    await supabase.from('marketplace_products').delete().eq('id', id);
+    const { error } = await supabase.from('marketplace_products').delete().eq('id', id);
+    if (error) { toast.error(error.message); return; }
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 
   const toggleProductActive = async (id: string, active: boolean) => {
-    await supabase.from('marketplace_products').update({ is_active: active } as any).eq('id', id);
+    const { error } = await supabase.from('marketplace_products').update({ is_active: active } as any).eq('id', id);
+    if (error) { toast.error(error.message); return; }
     setProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: active } : p));
   };
 
@@ -483,7 +488,7 @@ export default function VendorDashboard() {
                       <p className="text-xs text-muted-foreground">${p.price} MXN · Stock: {p.stock}</p>
                       <div className="flex items-center gap-1.5 flex-wrap mt-1">
                         {p.category && <Badge variant="secondary" className="text-[10px]">{p.category}</Badge>}
-                        {p.approval_status === 'pending' && <Badge variant="secondary" className="text-[10px] gap-0.5 bg-amber-100 text-amber-800 border border-amber-300"><Clock className="w-2.5 h-2.5" />En revisión</Badge>}
+                        {p.approval_status === 'pending' && <Badge variant="secondary" className="text-[10px] gap-0.5 bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700"><Clock className="w-2.5 h-2.5" />En revisión</Badge>}
                         {p.approval_status === 'approved' && <Badge variant="outline" className="text-[10px] gap-0.5 text-success border-success/40"><CheckCircle2 className="w-2.5 h-2.5" />Aprobado</Badge>}
                         {p.approval_status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-0.5"><XCircle className="w-2.5 h-2.5" />Rechazado</Badge>}
                       </div>

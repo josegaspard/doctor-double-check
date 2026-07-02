@@ -2300,6 +2300,7 @@ export const es = {
   },
   // Landing Footer
   landingFooter: {
+    vendorPortal: 'Portal de proveedores',
     platform: 'Plataforma',
     forDoctors: 'Para Doctores',
     forResidents: 'Para Residentes',

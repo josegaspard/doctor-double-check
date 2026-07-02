@@ -126,18 +126,19 @@ export default function AdminAccounting() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
-        <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2 text-white hover:text-white">
+        <Button variant="back" size="sm" onClick={() => navigate('/admin')} className="mb-3 -ml-2">
           <ArrowLeft className="w-4 h-4 mr-1" /> {t('autoI18n.clAdminAccount1')}
         </Button>
 
-        <div className="mb-6 rounded-2xl bg-white border-2 border-primary/30 shadow-md p-4 sm:p-5">
+        {/* bg-card (no bg-white fijo): en dark mode la placa blanca rompía el tema. */}
+        <div className="mb-6 rounded-2xl bg-card border-2 border-primary/30 shadow-md p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow">
               <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-2xl font-bold text-secondary truncate">{t('autoI18n.clAdminAccount2')}</h1>
-              <p className="text-xs sm:text-sm text-secondary/70">{t('autoI18n.clAdminAccount3')}</p>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">{t('autoI18n.clAdminAccount2')}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">{t('autoI18n.clAdminAccount3')}</p>
             </div>
           </div>
         </div>
@@ -178,14 +179,14 @@ export default function AdminAccounting() {
         </div>
 
         <Tabs defaultValue="summary">
-          <TabsList>
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="summary">{t('autoI18n.clAdminAccount16')}</TabsTrigger>
             <TabsTrigger value="entries">{t('autoI18n.clAdminAccount17')}</TabsTrigger>
-            <TabsTrigger value="purchases">Compras marketplace</TabsTrigger>
+            <TabsTrigger value="purchases">Compras</TabsTrigger>
           </TabsList>
           <TabsContent value="summary">
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
@@ -212,7 +213,7 @@ export default function AdminAccounting() {
           </TabsContent>
           <TabsContent value="entries">
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr>
@@ -287,7 +288,7 @@ export default function AdminAccounting() {
                         <td className="p-2 text-xs">
                           {p.status === 'ordered' && <Badge variant="secondary" className="text-[10px]">Orden activa</Badge>}
                           {(p.status === 'completed' || p.status === 'paid') && p.fee_status === 'paid' && <Badge variant="verified" className="text-[10px]">Concretada · fee cobrado</Badge>}
-                          {p.status === 'completed' && p.fee_status === 'pending' && <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300">Concretada · fee por cobrar</Badge>}
+                          {p.status === 'completed' && p.fee_status === 'pending' && <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700">Concretada · fee por cobrar</Badge>}
                           {(p.status === 'cancelled' || p.status === 'expired') && <Badge variant="destructive" className="text-[10px]">Cancelada</Badge>}
                         </td>
                       </tr>

@@ -102,8 +102,9 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
-  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
-  // Panel SIEMPRE después de Foro (cliente 2026-06-25/29).
+  // Foro RETIRADO del menú por completo (cliente 2026-07-02); la ruta /foro sigue
+  // viva por URL directa, pero no aparece en barra ni en "Más".
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'], hidden: true },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   // ===== Hidden — accesibles por URL pero fuera del menú =====
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'], hidden: true },

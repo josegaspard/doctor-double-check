@@ -112,6 +112,7 @@ export default function MedicalMarketplace() {
         .select('id, name, description, price, currency, image_url, vendor_id, category, stock, brand_id, reserved_by, reserved_until, created_at, marketplace_vendors(name), marketplace_brands(name)')
         .eq('is_active', true)
         .eq('approval_status', 'approved') // solo productos aprobados por el admin
+        .eq('listing_type', 'fee') // canal de intermediación dr↔dr (no e-commerce)
         .order('created_at', { ascending: false });
       setProducts((prods || []).map((p: any) => ({ ...p, vendorName: p.marketplace_vendors?.name, brandName: p.marketplace_brands?.name })));
 

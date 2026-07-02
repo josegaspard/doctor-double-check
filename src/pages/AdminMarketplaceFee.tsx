@@ -278,7 +278,7 @@ export default function AdminMarketplaceFee() {
   };
   const feeBadge = (i: InterestRow) => {
     if (i.fee_status === 'paid') return <Badge variant="success" className="gap-1 text-[10px]">Fee cobrado</Badge>;
-    if (i.status === 'completed' && i.fee_status === 'pending') return <Badge variant="secondary" className="gap-1 text-[10px] bg-amber-100 text-amber-800 border border-amber-300">Fee por cobrar</Badge>;
+    if (i.status === 'completed' && i.fee_status === 'pending') return <Badge variant="secondary" className="gap-1 text-[10px] bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700">Fee por cobrar</Badge>;
     return null;
   };
 
@@ -439,7 +439,7 @@ export default function AdminMarketplaceFee() {
               <CardContent>
                 <div className="flex items-center gap-6 mb-4 flex-wrap">
                   <div><p className="text-2xl font-bold text-success">${feesPaid.toLocaleString()}</p><p className="text-xs text-muted-foreground">fees cobrados</p></div>
-                  <div><p className="text-2xl font-bold text-amber-600">${feesPending.toLocaleString()}</p><p className="text-xs text-muted-foreground">fees por cobrar</p></div>
+                  <div><p className="text-2xl font-bold text-amber-700 dark:text-amber-400">${feesPending.toLocaleString()}</p><p className="text-xs text-muted-foreground">fees por cobrar</p></div>
                   <div><p className="text-2xl font-bold">{completedSales}</p><p className="text-xs text-muted-foreground">ventas concretadas</p></div>
                   <div><p className="text-2xl font-bold">{activeOrders}</p><p className="text-xs text-muted-foreground">órdenes activas</p></div>
                 </div>

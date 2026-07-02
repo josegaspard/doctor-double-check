@@ -2214,6 +2214,7 @@ export const zh = {
     "noneSelected": "未选择任何项目"
   },
   "landingFooter": {
+    "vendorPortal": "供应商门户",
     "platform": "平台",
     "forDoctors": "面向医生",
     "forResidents": "面向住院医师",

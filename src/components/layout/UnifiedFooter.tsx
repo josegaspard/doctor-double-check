@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useFooterLinks } from '@/hooks/useFooterLinks';
 import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { DmcaBadge } from '@/components/layout/DmcaBadge';
@@ -81,6 +82,7 @@ const HREF_I18N_MAP: Record<string, string> = {
   '/dmca': 'landingFooter.dmca',
   '/report-issue': 'landingFooter.report',
   '/advertising': 'ads.advertising',
+  '/vendor/dashboard': 'landingFooter.vendorPortal',
 };
 
 export function UnifiedFooter({ variant }: Props) {
@@ -88,6 +90,7 @@ export function UnifiedFooter({ variant }: Props) {
   const { socialLinks } = useSocialLinks();
   const { t, language } = useLanguage();
   const { config: adConfig } = useAdConfig();
+  const { role } = useAuth();
 
   // Translate labels using i18n keys when href is known; fallback to BD label.
   const translateLink = (l: { label: string; href: string }) => {
@@ -102,9 +105,12 @@ export function UnifiedFooter({ variant }: Props) {
   const platformLinksRaw = footerLinks.platform.some(l => l.href === '/for-residents')
     ? footerLinks.platform
     : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
-  // Garantizar SIEMPRE el enlace al Portal de proveedores en el footer
-  // (cliente 2026-07-02: va aquí, NO en el menú "Más").
-  const platformWithVendors = platformLinksRaw.some(l => l.href === '/vendor/dashboard')
+  // Garantizar el enlace al Portal de proveedores en el footer (cliente
+  // 2026-07-02: va aquí, NO en el menú "Más") — solo para quien puede usarlo.
+  const canSeeVendorPortal = role === 'doctor' || role === 'resident' || role === 'admin';
+  const platformWithVendors = !canSeeVendorPortal
+    ? platformLinksRaw.filter(l => l.href !== '/vendor/dashboard')
+    : platformLinksRaw.some(l => l.href === '/vendor/dashboard')
     ? platformLinksRaw
     : [...platformLinksRaw, { label: 'Portal de proveedores', href: '/vendor/dashboard' }];
   const platformLinks = platformWithVendors.map(translateLink);

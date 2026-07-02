@@ -54,9 +54,13 @@ export default function MedicalSupplies() {
     const fetchAll = async () => {
       setLoading(true);
       const [{ data: p }, { data: c }, vRes] = await Promise.all([
-        supabase.from('marketplace_products')
+        (supabase as any).from('marketplace_products')
           .select('*, marketplace_vendors(name, logo_url, website, phone, location), marketplace_brands(id, name, logo_url, description)')
           .eq('is_active', true)
+          // Tienda e-commerce de pacientes: SOLO productos de ese canal. Los del
+          // marketplace de intermediación dr↔dr ('fee') no se venden con prepago
+          // aquí (evita vender la misma unidad por dos canales).
+          .eq('listing_type', 'ecommerce')
           .order('created_at', { ascending: false }),
         supabase.from('marketplace_categories').select('*').eq('is_active', true).order('sort_order'),
         FEATURE_FLAGS.marketplaceVendors

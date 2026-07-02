@@ -91,6 +91,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const togglesRef = useRef(toggles);
   useEffect(() => { togglesRef.current = toggles; }, [toggles]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  // Ref espejo de sessions para el handler realtime (evita closure viejo):
+  // se usa para saber si un mensaje entrante es de un chat del marketplace.
+  const sessionsRef = useRef<ChatSession[]>([]);
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const subscriptionRef = useRef<any>(null);
@@ -340,7 +344,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             const viewedSession = new URLSearchParams(locationRef.current.search).get('session');
             const isViewingThisSession = isOnChatPage && viewedSession === newMessage.session_id;
 
-            if (!isViewingThisSession && togglesRef.current?.enable_patient_chat) {
+            // Los chats del marketplace (proveedores) notifican SIEMPRE, aunque
+            // el admin tenga apagado el chat de pacientes.
+            const isMarketplaceSession = sessionsRef.current?.some?.(
+              (s: any) => s.id === newMessage.session_id && s.marketplaceInterestId,
+            );
+            if (!isViewingThisSession && (togglesRef.current?.enable_patient_chat || isMarketplaceSession)) {
               const preview = newMessage.content.length > 120
                 ? newMessage.content.slice(0, 117) + '…'
                 : newMessage.content;
@@ -411,14 +420,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Check if session already exists
-      const { data: existing } = await supabase
+      // Check if session already exists.
+      // OJO: se EXCLUYEN los chats del marketplace (marketplace_interest_id) —
+      // son un flujo aparte por orden de compra; sin este filtro, 2+ órdenes al
+      // mismo proveedor hacían fallar maybeSingle() (multiple rows) y un chat
+      // normal reutilizaba la sesión de la orden. limit(1) por robustez.
+      const { data: existingRows } = await (supabase as any)
         .from('chat_sessions')
         .select('*')
         .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${participantId}),and(participant1_id.eq.${participantId},participant2_id.eq.${user.id})`)
         .eq('status', 'active')
         .eq('is_double_check', isDoubleCheck)
-        .maybeSingle();
+        .is('marketplace_interest_id', null)
+        .limit(1);
+      const existing = existingRows?.[0];
 
       if (existing) {
         const { data: profiles } = await supabase

@@ -2213,6 +2213,7 @@ export const ca = {
     "noneSelected": "No hi ha elements seleccionats"
   },
   "landingFooter": {
+    "vendorPortal": "Portal de proveïdors",
     "platform": "Plataforma",
     "forDoctors": "Per a Doctors",
     "forResidents": "Per a Residents",

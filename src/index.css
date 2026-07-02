@@ -59,12 +59,13 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success */
-    --success: 142 72% 42%;
+    /* Success — oscurecido 2026-07-02: con texto blanco, 42% de luminosidad
+       daba 2.6:1 de contraste (WCAG pide 4.5:1). */
+    --success: 142 72% 29%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning */
-    --warning: 38 92% 50%;
+    /* Warning — oscurecido 2026-07-02 por la misma razón (antes 2.2:1). */
+    --warning: 32 95% 38%;
     --warning-foreground: 0 0% 100%;
 
     /* Info — Blue Lagoon (mismo tono que primary, mensajes informativos) */
@@ -140,10 +141,11 @@
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 40%;
+    /* Oscurecidos 2026-07-02 (contraste con texto blanco, ver tema light). */
+    --success: 142 60% 30%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 80% 45%;
+    --warning: 32 85% 38%;
     --warning-foreground: 0 0% 100%;
 
     --info: 189 48% 52%;
