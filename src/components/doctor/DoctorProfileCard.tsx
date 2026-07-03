@@ -159,7 +159,7 @@ export function DoctorProfileCard() {
               </p>
             )}
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-              <ManualBadge badge={manualBadge} size="sm" />
+              <ManualBadge badge={manualBadge} size="lg" iconOnly />
               <Badge variant="outline" className="text-[10px]">
                 {doctorProfile?.status === 'approved' ? '✓ Aprobado' : doctorProfile?.status || 'Pendiente'}
               </Badge>

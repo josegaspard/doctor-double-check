@@ -123,7 +123,7 @@ export default function PsychologyDirectory() {
                         </div>
                         <p className="text-xs text-secondary/80 font-medium mb-1">{doctor.specialty}</p>
                         <div className="flex items-center gap-1 flex-wrap">
-                          <ManualBadge badge={doctor.manual_badge} size="sm" />
+                          <ManualBadge badge={doctor.manual_badge} size="md" iconOnly />
                           <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
                         </div>
                       </div>

@@ -34,7 +34,9 @@ export function ManualBadge({ badge, size = 'md', iconOnly = false, className }:
     md: 'px-2 py-0.5 text-xs gap-1',
     lg: 'px-3 py-1 text-sm gap-1',
   };
-  const iconSizes = { sm: 'w-2.5 h-2.5', md: 'w-3.5 h-3.5', lg: 'w-4 h-4' };
+  const iconSizes = { sm: 'w-3.5 h-3.5', md: 'w-4 h-4', lg: 'w-5 h-5' };
+  // Solo-icono: mucho más grande para que el distintivo se note (cliente 2026-07-03).
+  const iconOnlySizes = { sm: 'w-6 h-6', md: 'w-7 h-7', lg: 'w-9 h-9' };
 
   const isGold = badge === 'gold';
   const img = BADGE_IMG[badge];
@@ -49,7 +51,8 @@ export function ManualBadge({ badge, size = 'md', iconOnly = false, className }:
         src={img}
         alt={label}
         aria-label={label}
-        className={cn(iconSizes[size], 'object-contain shrink-0', className)}
+        title={label}
+        className={cn(iconOnlySizes[size], 'object-contain shrink-0', className)}
       />
     );
   }

@@ -548,7 +548,7 @@ export default function DoctorProfile() {
 
                 {/* Badges — minimal on mobile */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
-                  <ManualBadge badge={doctor.manualBadge} size="sm" />
+                  <ManualBadge badge={doctor.manualBadge} size="lg" iconOnly />
                   <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
                   {doctor.isIdentityVerified && (
                     <Badge variant="verified" className="gap-1 text-xs">

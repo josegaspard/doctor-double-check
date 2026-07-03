@@ -918,7 +918,7 @@ export default function Doctors() {
                               {doctor.specialty}
                             </p>
                             <div className="flex flex-wrap items-center gap-1 max-w-full">
-                              <ManualBadge badge={doctor.manual_badge} size="sm" />
+                              <ManualBadge badge={doctor.manual_badge} size="md" iconOnly />
                               <DoctorBadge
                                 type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)}
                                 size="sm"
