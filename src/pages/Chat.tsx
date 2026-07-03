@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
+import { BadgeChatPanel } from '@/components/chat/BadgeChatPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
 import { MessageSquare, Loader2, Users, User, Stethoscope, Store } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,7 +33,7 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
-  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors' | 'providers'>(role === 'resident' ? 'doctors' : 'all');
+  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors' | 'providers' | 'badge'>(role === 'resident' ? 'doctors' : 'all');
   // Distintivo del doctor (medalla/palomita) para mostrar acceso a su chat exclusivo.
   const [myBadge, setMyBadge] = useState<'gold' | 'verified' | null>(null);
   useEffect(() => {
@@ -436,11 +437,15 @@ export default function Chat() {
             { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#44598E' }, // comfort blue
             { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' }, // navy
             { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#8A6508' }, // gold
+            // Sala grupal exclusiva por insignia — a la DERECHA de Proveedores.
+            { key: 'badge',     label: t('badgeChat.roomRowTitle'), Icon: Store,      color: myBadge === 'gold' ? '#8A6508' : '#163A83' },
           ] as const;
           const visibleKeys = role === 'doctor'
             ? ['all', 'patients', 'doctors', 'providers']
             : ['doctors', 'providers']; // residente: sin pacientes (bloqueado por permisos)
+          if (myBadge === 'gold' || myBadge === 'verified') visibleKeys.push('badge');
           const tabs = allTabs.filter(tt => visibleKeys.includes(tt.key));
+          const colsClass = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5'][tabs.length] || 'grid-cols-4';
           // Contador de chats activos por tipo (independiente del filtro seleccionado).
           const countFor = (key: string) => {
             const actives = allSessions.filter(s => s.status === 'active');
@@ -461,7 +466,7 @@ export default function Chat() {
                   Móvil: grid full-width (todas las opciones visibles a la vez, sin
                   scroll horizontal); sm+: pills en línea como antes. */}
               <div
-                className={`grid w-full ${tabs.length === 2 ? 'grid-cols-2' : 'grid-cols-4'} sm:flex sm:w-auto sm:max-w-max items-stretch sm:items-center gap-1 rounded-2xl sm:rounded-full bg-card border border-border shadow-sm p-1 sm:p-1.5`}
+                className={`grid w-full ${colsClass} sm:flex sm:w-auto sm:max-w-max items-stretch sm:items-center gap-1 rounded-2xl sm:rounded-full bg-card border border-border shadow-sm p-1 sm:p-1.5`}
               >
                 {tabs.map(({ key, label, Icon, color }) => {
                   const active = chatFilter === key;
@@ -470,7 +475,7 @@ export default function Chat() {
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setChatFilter(key as typeof chatFilter)}
+                      onClick={() => { setChatFilter(key as typeof chatFilter); if (key === 'badge') setSelectedSession(null); }}
                       aria-pressed={active}
                       style={active ? { backgroundColor: color, color: '#fff' } : undefined}
                       className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 rounded-xl sm:rounded-full px-1 sm:px-4 py-1.5 sm:py-0 sm:h-9 min-w-0 text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all ${
@@ -482,7 +487,9 @@ export default function Chat() {
                       {/* Icono inactivo en currentColor: los hex de marca desaparecían
                           sobre el muted del dark mode (navy sobre navy ≈ 1.2:1). */}
                       <span className="relative inline-flex shrink-0">
-                        <Icon className="w-4 h-4" />
+                        {key === 'badge'
+                          ? <img src={myBadge === 'gold' ? '/badge-gold.png' : '/badge-verified.png'} alt="" aria-hidden="true" className="w-4 h-4 object-contain" />
+                          : <Icon className="w-4 h-4" />}
                         {/* Móvil: contador como burbuja sobre el icono (no cabe en línea). */}
                         {count > 0 && (
                           <span
@@ -512,6 +519,11 @@ export default function Chat() {
           );
         })()}
 
+        {chatFilter === 'badge' && (myBadge === 'gold' || myBadge === 'verified') ? (
+          <div className="flex-1 min-h-0 overflow-hidden w-full max-w-full">
+            <BadgeChatPanel badge={myBadge} />
+          </div>
+        ) : (
         <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
           <ChatSessionsList
             activeSessions={activeSessions}
@@ -527,8 +539,6 @@ export default function Chat() {
             getDoctorId={getDoctorIdForSession}
             onDoctorProfileClick={goToDoctorProfile}
             hidden={showMobileChat}
-            badge={myBadge}
-            onOpenBadgeChat={() => navigate('/badge-chat')}
           />
 
           {/* Disclaimer orientación médica removido por orden del cliente. */}
@@ -557,6 +567,7 @@ export default function Chat() {
               onDoctorProfileClick={goToDoctorProfile}
             />
         </div>
+        )}
       </div>
 
       {/* Post-consultation summary dialog */}

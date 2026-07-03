@@ -2,7 +2,7 @@
 // Misma estructura exacta que es.ts; valores traducidos al chino simplificado.
 export const zh = {
   "codeOfEthics": { "title": "道德准则", "subtitle": "Medical Masters 的职业道德承诺" },
-  "badgeChat": { "goldRoom": "金牌聊天室", "verifiedRoom": "认证聊天室", "noAccess": "您没有可进入专属聊天室的徽章。", "backToChat": "返回聊天", "empty": "此聊天室还没有消息。", "placeholder": "输入消息…", "roomRowTitle": "认证医生", "roomRowSubtitle": "徽章专属聊天室" },
+  "badgeChat": { "goldRoom": "金牌聊天室", "verifiedRoom": "认证聊天室", "noAccess": "您没有可进入专属聊天室的徽章。", "backToChat": "返回聊天", "empty": "此聊天室还没有消息。", "placeholder": "输入消息…", "roomRowTitle": "认证医生", "roomRowSubtitle": "徽章专属聊天室", "today": "今天", "yesterday": "昨天" },
   "autoI18n": {
     "adminMkt1": "无品牌",
     "adminMkt2": "注册商标",

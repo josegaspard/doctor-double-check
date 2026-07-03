@@ -1,6 +1,6 @@
 export const en = {
   codeOfEthics: { title: 'Code of Ethics', subtitle: 'Professional ethical commitment at Medical Masters' },
-  badgeChat: { goldRoom: 'Medal Chat', verifiedRoom: 'Verified Chat', noAccess: 'You do not have a badge that grants access to an exclusive chat.', backToChat: 'Back to chat', empty: 'No messages in this room yet.', placeholder: 'Type a message…', roomRowTitle: 'Verified doctors', roomRowSubtitle: 'Exclusive badge room' },
+  badgeChat: { goldRoom: 'Medal Chat', verifiedRoom: 'Verified Chat', noAccess: 'You do not have a badge that grants access to an exclusive chat.', backToChat: 'Back to chat', empty: 'No messages in this room yet.', placeholder: 'Type a message…', roomRowTitle: 'Verified doctors', roomRowSubtitle: 'Exclusive badge room', today: 'Today', yesterday: 'Yesterday' },
   autoI18n: {
     "adminMkt1": "No brand",
     "adminMkt2": "Registered brands",

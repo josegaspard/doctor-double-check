@@ -43,10 +43,6 @@ interface Props {
   getDoctorId: (session: ChatSession) => string | null;
   onDoctorProfileClick: (e: React.MouseEvent, session: ChatSession) => void;
   hidden?: boolean;
-  /** Distintivo del usuario actual: si tiene, se muestra la fila fija "Doctores verificados". */
-  badge?: 'gold' | 'verified' | null;
-  /** Abrir la sala exclusiva por insignia (/badge-chat). */
-  onOpenBadgeChat?: () => void;
 }
 
 export function ChatSessionsList({
@@ -63,8 +59,6 @@ export function ChatSessionsList({
   getDoctorId,
   onDoctorProfileClick,
   hidden = false,
-  badge = null,
-  onOpenBadgeChat,
 }: Props) {
   const sessions = activeTab === 'active' ? activeSessions : closedSessions;
   const { deleteSession, deleteSessions } = useChat();
@@ -122,17 +116,6 @@ export function ChatSessionsList({
     setIsBulkDeleting(false);
     setShowBulkDeleteConfirm(false);
   };
-
-  // Fila fija "Doctores verificados" (cliente 2026-07-02): la sala exclusiva por
-  // insignia aparece como una entrada más de la lista (junto a proveedores, etc.),
-  // no como botón aparte. Solo en la pestaña Activas y para quien tiene distintivo.
-  const badgeRoomTitle = t('badgeChat.roomRowTitle');
-  const showBadgeRow =
-    activeTab === 'active' &&
-    (badge === 'gold' || badge === 'verified') &&
-    !!onOpenBadgeChat &&
-    (!searchQuery.trim() || badgeRoomTitle.toLowerCase().includes(searchQuery.toLowerCase()));
-  const badgeImg = badge === 'gold' ? '/badge-gold.png' : '/badge-verified.png';
 
   // Filter sessions by search query
   const filteredSessions = sessions.filter(session => {
@@ -234,32 +217,6 @@ export function ChatSessionsList({
             de la tarjeta en móvil (hora y preview cortados fuera del borde). */}
         <div className="h-full overflow-y-auto overscroll-contain">
           <div className="space-y-1 pr-1 sm:pr-2">
-            {showBadgeRow && (
-              <button
-                type="button"
-                onClick={onOpenBadgeChat}
-                className={`w-full text-left flex items-center gap-3 p-2.5 rounded-xl border transition-colors ${
-                  badge === 'gold'
-                    ? 'border-premium/30 bg-premium/5 hover:bg-premium/10'
-                    : 'border-primary/30 bg-primary/5 hover:bg-primary/10'
-                }`}
-              >
-                <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    badge === 'gold' ? 'bg-premium/15' : 'bg-primary/15'
-                  }`}
-                >
-                  <img src={badgeImg} alt="" aria-hidden="true" className="w-7 h-7 object-contain" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-semibold text-sm truncate">{badgeRoomTitle}</p>
-                    <img src={badgeImg} alt="" aria-hidden="true" className="w-4 h-4 object-contain flex-shrink-0" />
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{t('badgeChat.roomRowSubtitle')}</p>
-                </div>
-              </button>
-            )}
             {filteredSessions.length > 0 ? (
               filteredSessions.map(session => {
                 const displayInfo = getDisplayInfo(session);
@@ -294,7 +251,7 @@ export function ChatSessionsList({
                 <Search className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 <p>{t('fix20.chat.noSearchResults')} "{searchQuery}"</p>
               </div>
-            ) : showBadgeRow ? null : (
+            ) : (
               <EmptyState type="no-sessions" activeTab={activeTab} />
             )}
           </div>

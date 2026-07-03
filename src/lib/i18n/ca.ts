@@ -1,7 +1,7 @@
 // ca — completado 2026-06-22 (50 claves faltantes traducidas).
 export const ca = {
   "codeOfEthics": { "title": "Codi d'Ètica", "subtitle": "Compromís ètic professional a Medical Masters" },
-  "badgeChat": { "goldRoom": "Xat de Medalla", "verifiedRoom": "Xat de Marca", "noAccess": "No tens cap distintiu que doni accés a un xat exclusiu.", "backToChat": "Torna al xat", "empty": "Encara no hi ha missatges en aquesta sala.", "placeholder": "Escriu un missatge…", "roomRowTitle": "Metges verificats", "roomRowSubtitle": "Sala exclusiva per distintiu" },
+  "badgeChat": { "goldRoom": "Xat de Medalla", "verifiedRoom": "Xat de Marca", "noAccess": "No tens cap distintiu que doni accés a un xat exclusiu.", "backToChat": "Torna al xat", "empty": "Encara no hi ha missatges en aquesta sala.", "placeholder": "Escriu un missatge…", "roomRowTitle": "Metges verificats", "roomRowSubtitle": "Sala exclusiva per distintiu", "today": "Avui", "yesterday": "Ahir" },
   "autoI18n": {
     "adminMkt1": "Sense marca",
     "adminMkt2": "Marques registrades",
