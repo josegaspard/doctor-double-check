@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +42,7 @@ interface SessionDisplayInfo {
   specialty?: string;
   avatar?: string;
   type: string;
+  userId?: string;
 }
 
 interface ChatHeaderProps {
@@ -147,6 +149,9 @@ export function ChatHeader({
               </button>
             ) : (
               <span className="text-base font-semibold truncate">{displayInfo.name}</span>
+            )}
+            {displayInfo.type === 'doctor' && (
+              <DoctorBadgeIcon userId={displayInfo.userId} size="sm" className="flex-shrink-0" />
             )}
             {session.isDoubleCheck && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-0.5">

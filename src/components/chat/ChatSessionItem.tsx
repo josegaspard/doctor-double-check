@@ -3,7 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import {
   Stethoscope, 
   User, 
   CheckCheck, 
@@ -22,6 +23,7 @@ interface SessionDisplayInfo {
   specialty?: string;
   avatar?: string;
   type: string;
+  userId?: string;
 }
 
 interface ChatSessionItemProps {
@@ -133,6 +135,9 @@ export function ChatSessionItem({
               {/* Nombre del doctor en sidebar: NO clickeable.
                   Acceso al perfil sólo desde el header del chat (ChatHeader). */}
               <p className="font-semibold text-sm truncate">{displayInfo.name}</p>
+              {displayInfo.type === 'doctor' && (
+                <DoctorBadgeIcon userId={displayInfo.userId} size="sm" className="flex-shrink-0" />
+              )}
               {session.isDoubleCheck && (
                 <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 gap-0.5 flex-shrink-0">
                   <CheckCheck className="w-3 h-3" />

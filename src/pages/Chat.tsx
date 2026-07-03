@@ -311,9 +311,9 @@ export default function Chat() {
     // Determine the "other" participant based on current user id
     const isParticipant1 = session.participant1Id === user?.id;
     if (isParticipant1) {
-      return { name: session.participant2Name || t('chat.doctor'), specialty: session.participant2Specialty, avatar: session.participant2Avatar, type: session.participant2Type };
+      return { name: session.participant2Name || t('chat.doctor'), specialty: session.participant2Specialty, avatar: session.participant2Avatar, type: session.participant2Type, userId: session.participant2Id };
     }
-    return { name: session.participant1Name || t('chat.patient'), specialty: session.participant1Specialty, avatar: session.participant1Avatar, type: session.participant1Type };
+    return { name: session.participant1Name || t('chat.patient'), specialty: session.participant1Specialty, avatar: session.participant1Avatar, type: session.participant1Type, userId: session.participant1Id };
   };
 
   const formatOfficeHours = (session: ChatSession) => {
