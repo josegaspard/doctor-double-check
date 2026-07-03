@@ -1,7 +1,15 @@
 import React from 'react';
-import { Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Iconos de insignia como imagen (cliente 2026-07-02): la palomita y la medalla
+// dejan de ser iconos de librería y usan los PNG oficiales del cliente.
+//   'verified' = palomita  -> /badge-verified.png
+//   'gold'     = medalla    -> /badge-gold.png
+const BADGE_IMG: Record<'gold' | 'verified', string> = {
+  verified: '/badge-verified.png',
+  gold: '/badge-gold.png',
+};
 
 interface ManualBadgeProps {
   /** Valor de doctor_profiles.manual_badge: 'gold' | 'verified' | null */
@@ -29,14 +37,21 @@ export function ManualBadge({ badge, size = 'md', iconOnly = false, className }:
   const iconSizes = { sm: 'w-2.5 h-2.5', md: 'w-3.5 h-3.5', lg: 'w-4 h-4' };
 
   const isGold = badge === 'gold';
-  const Icon = isGold ? Award : ShieldCheck;
+  const img = BADGE_IMG[badge];
   const label = isGold ? t('onboardingPage.badgeGold') : t('onboardingPage.badgeVerified');
   const colors = isGold
     ? 'bg-premium/15 text-premium border-premium/30'
     : 'bg-primary/10 text-primary border-primary/30';
 
   if (iconOnly) {
-    return <Icon className={cn(iconSizes[size], isGold ? 'text-premium' : 'text-primary', className)} aria-label={label} />;
+    return (
+      <img
+        src={img}
+        alt={label}
+        aria-label={label}
+        className={cn(iconSizes[size], 'object-contain shrink-0', className)}
+      />
+    );
   }
 
   return (
@@ -48,7 +63,7 @@ export function ManualBadge({ badge, size = 'md', iconOnly = false, className }:
         className,
       )}
     >
-      <Icon className={cn(iconSizes[size], isGold ? 'fill-premium/20' : '')} />
+      <img src={img} alt="" aria-hidden="true" className={cn(iconSizes[size], 'object-contain')} />
       {label}
     </span>
   );

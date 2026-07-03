@@ -83,6 +83,7 @@ const HREF_I18N_MAP: Record<string, string> = {
   '/report-issue': 'landingFooter.report',
   '/advertising': 'ads.advertising',
   '/vendor/dashboard': 'landingFooter.vendorPortal',
+  '/congresos': 'nav.congresses',
 };
 
 export function UnifiedFooter({ variant }: Props) {
@@ -113,7 +114,12 @@ export function UnifiedFooter({ variant }: Props) {
     : platformLinksRaw.some(l => l.href === '/vendor/dashboard')
     ? platformLinksRaw
     : [...platformLinksRaw, { label: 'Portal de proveedores', href: '/vendor/dashboard' }];
-  const platformLinks = platformWithVendors.map(translateLink);
+  // Garantizar el enlace a Congresos en el footer (cliente 2026-07-02): serie de
+  // conferencias de varios doctores, visible para todos los roles.
+  const platformWithCongresses = platformWithVendors.some(l => l.href === '/congresos')
+    ? platformWithVendors
+    : [...platformWithVendors, { label: t('nav.congresses'), href: '/congresos' }];
+  const platformLinks = platformWithCongresses.map(translateLink);
 
   const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
