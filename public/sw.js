@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-03-batch49-manual-badge-directories-selfcard
+// SW_VERSION: 2026-07-03-batch50-congresos-spacing
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

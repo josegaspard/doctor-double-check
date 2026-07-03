@@ -59,7 +59,7 @@ export default function DoctorCongresses({ doctorId }: Props) {
   if (loading || congresses.length === 0) return null;
 
   return (
-    <Card className="mb-6">
+    <Card className="mt-6 mb-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-base sm:text-lg flex items-center gap-2">
           <Presentation className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
