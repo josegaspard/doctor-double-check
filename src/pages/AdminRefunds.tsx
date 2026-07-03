@@ -312,14 +312,21 @@ export default function AdminRefunds() {
       t('adminRefunds.csv.reason'),
       t('adminRefunds.csv.adminNotes'),
     ];
+    // Neutralizar inyección de fórmulas: un valor que empieza con = + - @ (o tab/CR)
+    // se antepone con ' para que Excel/Sheets no lo ejecute como fórmula.
+    const csvSafe = (v: string) => {
+      const s = String(v ?? '');
+      const guarded = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+      return `"${guarded.replace(/"/g, '""')}"`;
+    };
     const csvRows = rows.map(r => [
       format(new Date(r.created_at), 'yyyy-MM-dd HH:mm'),
-      r.user_name || '', r.user_email || '', r.amount.toString(),
+      csvSafe(r.user_name || ''), csvSafe(r.user_email || ''), r.amount.toString(),
       methodConfig[r.refund_method || 'wallet'] ? t(methodConfig[r.refund_method || 'wallet'].labelKey) : (r.refund_method || t('adminRefunds.method.wallet')),
       statusConfig[r.status] ? t(statusConfig[r.status].labelKey) : r.status,
-      r.stripe_refund_id || '', r.bank_transfer_reference || '',
-      `"${(r.reason || '').replace(/"/g, '""')}"`,
-      `"${(r.admin_notes || '').replace(/"/g, '""')}"`,
+      csvSafe(r.stripe_refund_id || ''), csvSafe(r.bank_transfer_reference || ''),
+      csvSafe(r.reason || ''),
+      csvSafe(r.admin_notes || ''),
     ]);
 
     const csv = [headers.join(','), ...csvRows.map(r => r.join(','))].join('\n');

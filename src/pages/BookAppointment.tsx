@@ -142,6 +142,27 @@ export default function BookAppointment() {
       return;
     }
 
+    // Avisar al doctor de la nueva solicitud (campanita + push). Antes NO se notificaba:
+    // la cita solo aparecía si el doctor abría "Mis citas" por su cuenta.
+    try {
+      const apptId = (data as any).id;
+      const when = new Date(selected.scheduled_at).toLocaleString();
+      const title = t('bookAppointment.notifyDoctorTitle');
+      const message = t('bookAppointment.notifyDoctorMessage').replace('{when}', when);
+      await supabase.from('notifications').insert({
+        user_id: doctorId,
+        type: 'system',
+        title,
+        message,
+        data: { kind: 'appointment_request', appointment_id: apptId, deeplink: '/doctor/availability' },
+      } as any);
+      await supabase.functions.invoke('send-push-notification', {
+        body: { user_ids: [doctorId], title, body: message, url: '/doctor/availability' },
+      }).catch(() => {});
+    } catch (e) {
+      console.error('notify doctor (appointment) failed:', e);
+    }
+
     setConfirmation({ scheduled_at: selected.scheduled_at, appointmentId: (data as any).id });
     setSubmitting(false);
   };

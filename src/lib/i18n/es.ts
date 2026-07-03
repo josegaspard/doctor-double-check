@@ -1443,6 +1443,7 @@ export const es = {
     userFallback: 'Usuario',
     verificationApproved: 'Verificación aprobada',
     verificationRejected: 'Verificación rechazada',
+    actionError: 'No se pudo completar la acción. Intenta de nuevo.',
     badgePending: 'Pendiente',
     badgeInProgress: 'En proceso',
     badgeVerified: 'Verificado',
@@ -3642,6 +3643,8 @@ export const es = {
   bookAppointment: {
     mexicoOnlyNotice: 'Por ahora las consultas médicas solo están disponibles para usuarios en México.',
     toastMexicoOnly: 'Por ahora las consultas solo están disponibles en México.',
+    notifyDoctorTitle: 'Nueva solicitud de cita',
+    notifyDoctorMessage: 'Un paciente solicitó una cita para el {when}. Confírmala en tu agenda.',
     back: 'Volver',
     notFound: 'Médico no encontrado o no aprobado.',
     viewDirectory: 'Ver directorio',

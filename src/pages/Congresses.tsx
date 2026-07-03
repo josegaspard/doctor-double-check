@@ -93,6 +93,17 @@ export default function Congresses() {
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const archived = congresses.filter(c => congressPhase(c) === 'archived');
 
+  // Pestaña activa CONTROLADA: elige una no-vacía tras cargar (antes defaultValue se
+  // fijaba en el primer render con isLoading=true → siempre 'active', dejando al usuario
+  // en una pestaña vacía si solo había próximos/archivados).
+  const [tab, setTab] = useState<'active' | 'upcoming' | 'archived'>('active');
+  const [tabInit, setTabInit] = useState(false);
+  useEffect(() => {
+    if (isLoading || tabInit) return;
+    setTabInit(true);
+    setTab(active.length > 0 ? 'active' : upcoming.length > 0 ? 'upcoming' : archived.length > 0 ? 'archived' : 'active');
+  }, [isLoading, tabInit, active.length, upcoming.length, archived.length]);
+
   const dateRange = (c: Congress) => {
     const s = new Date(`${c.starts_at}T12:00:00`);
     const e = new Date(`${c.ends_at}T12:00:00`);
@@ -233,7 +244,7 @@ export default function Congresses() {
           </div>
         )}
 
-        <Tabs defaultValue={active.length > 0 || isLoading ? 'active' : (upcoming.length > 0 ? 'upcoming' : 'archived')} className="space-y-4 mt-5">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as 'active' | 'upcoming' | 'archived')} className="space-y-4 mt-5">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="active" className="gap-1.5">
               {t('congresses.tabs.active')}

@@ -90,6 +90,28 @@ Deno.serve(async (req) => {
       throw new Error("amount must be a positive number");
     }
 
+    // ANTI DOBLE-REEMBOLSO (2026-07-03): reclamar la solicitud de forma atómica.
+    // Un UPDATE condicional (status 'requested' -> 'processing') con lock de fila:
+    // dos llamadas concurrentes (2 pestañas / 2 admins / retry) sólo dejan que UNA
+    // avance; la otra matchea 0 filas y aborta antes de tocar Stripe/wallet.
+    if (refund_request_id) {
+      const { data: claimed, error: claimErr } = await supabaseAdmin
+        .from("refund_requests")
+        .update({ status: "processing", reviewed_by: userData.user.id })
+        .eq("id", refund_request_id)
+        .eq("status", "requested")
+        .select("id");
+      if (claimErr) throw new Error(`Could not lock refund request: ${claimErr.message}`);
+      if (!claimed || claimed.length === 0) {
+        throw new Error("Refund request already processed or in progress");
+      }
+    }
+
+    // Clave de idempotencia determinística para que un reintento NO cree un 2º refund en Stripe.
+    const refundIdemKey = refund_request_id
+      ? `refund_req_${refund_request_id}`
+      : `refund_tx_${transaction_id ?? "na"}_${Math.round(Number(amount) * 100)}`;
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-03-31.basil" });
 
     let stripeRefundId = null;
@@ -110,12 +132,17 @@ Deno.serve(async (req) => {
           payment_intent: stripe_payment_intent_id,
           amount: Math.round(amount * 100),
           reason: "requested_by_customer",
-        });
-        
+        }, { idempotencyKey: refundIdemKey });
+
         stripeRefundId = refund.id;
         logStep("Stripe refund created", { refundId: refund.id });
       } catch (stripeError: any) {
         logStep("Stripe refund failed", { error: stripeError.message });
+        // Liberar la reclamación para que el admin pueda reintentar.
+        if (refund_request_id) {
+          await supabaseAdmin.from("refund_requests")
+            .update({ status: "requested" }).eq("id", refund_request_id).eq("status", "processing");
+        }
         throw new Error(`Stripe refund failed: ${stripeError.message}`);
       }
 
@@ -286,15 +313,20 @@ Deno.serve(async (req) => {
           .single();
 
         if (doctorProfile) {
-          const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - amount);
+          // Al doctor se le acreditó el NETO (bruto − comisión), NO el bruto. Revertir el
+          // bruto lo dejaba perdiendo de más. Se resta el neto usando la tasa de comisión.
+          const { data: rate } = await supabaseAdmin.rpc("fn_commission_rate", { p_kind: "consultation" });
+          const commissionRate = Number.isFinite(Number(rate)) ? Number(rate) : 0.20;
+          const netToReverse = Number((amount * (1 - commissionRate)).toFixed(2));
+          const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - netToReverse);
           await supabaseAdmin.from("doctor_profiles").update({ pending_earnings: newPendingEarnings }).eq("user_id", doctorId);
-          logStep("Reversed doctor earnings", { doctorId, amount, newPendingEarnings });
-          
+          logStep("Reversed doctor earnings (net)", { doctorId, amount, commissionRate, netToReverse, newPendingEarnings });
+
           await supabaseAdmin.from("notifications").insert({
             user_id: doctorId, type: "system",
             title: "Reembolso procesado",
-            message: `Se ha revertido una ganancia de $${amount.toFixed(2)} por un reembolso.`,
-            data: { amount, reason },
+            message: `Se ha revertido una ganancia de $${netToReverse.toFixed(2)} por un reembolso.`,
+            data: { amount: netToReverse, reason },
           });
         }
       }

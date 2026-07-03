@@ -331,8 +331,13 @@ export default function Chat() {
     const currentDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][now.getDay()];
     if (session.officeDays && !session.officeDays.includes(currentDay)) return false;
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const startTime = parseInt(session.officeHoursStart.split(':')[0]) * 60;
-    const endTime = parseInt(session.officeHoursEnd.split(':')[0]) * 60;
+    // Respetar horas Y minutos (antes ignoraba los minutos: 09:30 se leía como 09:00).
+    const toMin = (hhmm: string) => {
+      const [h, m] = hhmm.split(':');
+      return (parseInt(h, 10) || 0) * 60 + (parseInt(m, 10) || 0);
+    };
+    const startTime = toMin(session.officeHoursStart);
+    const endTime = toMin(session.officeHoursEnd);
     return currentTime >= startTime && currentTime <= endTime;
   };
 

@@ -129,6 +129,9 @@ export default function DoctorReviews({ doctorId, onRatingCalculated }: DoctorRe
               </span>
             </div>
             <RatingStars rating={review.rating} size="sm" />
+            {review.comment && review.comment.trim() && (
+              <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{review.comment}</p>
+            )}
           </div>
         ))}
         {visibleCount < reviews.length && (

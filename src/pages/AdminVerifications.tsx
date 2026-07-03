@@ -156,40 +156,19 @@ export default function AdminVerifications() {
     setIsProcessing(true);
     try {
       const newStatus: VerificationStatus = actionType === 'approve' ? 'verified' : 'failed';
-      
-      const updateData: any = {
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      };
 
-      if (actionType === 'approve') {
-        updateData.verified_at = new Date().toISOString();
-      } else {
-        updateData.metadata = {
-          ...selectedVerification.metadata,
-          rejection_reason: rejectionReason,
-        };
-      }
-
-      const { error } = await supabase
-        .from('identity_verifications')
-        .update(updateData)
-        .eq('id', selectedVerification.id);
+      // Verificación ATÓMICA vía RPC: identidad + is_identity_verified + badge en un
+      // solo commit, con chequeo de admin y errores propagados. Antes eran 3 writes
+      // sueltos que se tragaban el error → dejaba el estado a medias y hacía reaparecer
+      // la ventana de verificación aunque ya se hubiera "verificado".
+      const { error } = await (supabase as any).rpc('admin_review_identity_verification', {
+        p_id: selectedVerification.id,
+        p_approve: actionType === 'approve',
+        p_badge: actionType === 'approve' ? badgeChoice : 'none',
+        p_reason: actionType === 'reject' ? rejectionReason : null,
+      });
 
       if (error) throw error;
-
-      if (actionType === 'approve') {
-        await supabase
-          .from('profiles')
-          .update({ is_identity_verified: true })
-          .eq('id', selectedVerification.user_id);
-
-        // Asignar (o quitar) el distintivo manual en el mismo acto de verificación.
-        await supabase
-          .from('doctor_profiles')
-          .update({ manual_badge: badgeChoice === 'none' ? null : badgeChoice } as any)
-          .eq('user_id', selectedVerification.user_id);
-      }
 
       try {
         await supabase.functions.invoke('send-verification-email', {
@@ -211,9 +190,12 @@ export default function AdminVerifications() {
       );
 
       setIsActionDialogOpen(false);
-      fetchVerifications();
+      setSelectedVerification(null);
+      setBadgeChoice('none');
+      setRejectionReason('');
+      await fetchVerifications();
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || t('adminVerifications.actionError'));
     } finally {
       setIsProcessing(false);
     }

@@ -1441,6 +1441,7 @@ export const en = {
     userFallback: 'User',
     verificationApproved: 'Verification approved',
     verificationRejected: 'Verification rejected',
+    actionError: 'Could not complete the action. Please try again.',
     badgePending: 'Pending',
     badgeInProgress: 'In Progress',
     badgeVerified: 'Verified',
@@ -3624,6 +3625,8 @@ export const en = {
   bookAppointment: {
     mexicoOnlyNotice: 'For now, medical consultations are only available to users in Mexico.',
     toastMexicoOnly: 'Consultations are only available in Mexico for now.',
+    notifyDoctorTitle: 'New appointment request',
+    notifyDoctorMessage: 'A patient requested an appointment for {when}. Confirm it in your schedule.',
     back: 'Back',
     notFound: 'Doctor not found or not approved.',
     viewDirectory: 'View directory',

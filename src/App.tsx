@@ -237,7 +237,7 @@ const App = () => {
                       <Route path="/wallet/ledger" element={<AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><WalletLedger /></AccessGuard>} />
                       <Route path="/chat" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><Chat /></ToggleGate>} />
                       {/* Chat exclusivo por distintivo (medalla/palomita) — solo doctores con badge. */}
-                      <Route path="/badge-chat" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><BadgeChat /></AccessGuard>} />
+                      <Route path="/badge-chat" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><BadgeChat /></AccessGuard>} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
                       <Route path="/verify-identity" element={<IdentityVerification />} />

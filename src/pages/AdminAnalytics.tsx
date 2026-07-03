@@ -80,7 +80,7 @@ export default function AdminAnalytics() {
           { count: totalRecordings }, { count: totalUsers }, { count: totalDoctors },
           { count: totalLives }, { data: rolesData }, { data: livesData },
           { data: doctorStats }, { count: recordingsPurchased },
-          { data: marketplaceData },
+          { data: marketplaceData }, { data: allDoctorEarnings },
         ] = await Promise.all([
           supabase.from('wallet_transactions').select('amount, type, created_at, status, metadata').eq('status', 'paid').gte('created_at', dateFromStr),
           supabase.from('purchases').select('amount, created_at').gte('created_at', dateFromStr),
@@ -94,6 +94,8 @@ export default function AdminAnalytics() {
           supabase.from('doctor_profiles').select('user_id, total_consultations, rating, consultation_fee, pending_earnings, total_earnings').eq('status', 'approved').order('total_consultations', { ascending: false }).limit(10),
           supabase.from('purchases').select('*', { count: 'exact', head: true }),
           supabase.from('marketplace_orders').select('total_amount, created_at').in('status', ['paid', 'shipped', 'delivered']).gte('created_at', dateFromStr),
+          // Totales de dinero sobre TODOS los doctores aprobados (no solo el top-10).
+          supabase.from('doctor_profiles').select('pending_earnings, total_earnings').eq('status', 'approved'),
         ]);
 
         const walletTopupsRevenue = transactions?.filter(t => t.type === 'topup').reduce((s, t) => s + Number(t.amount), 0) || 0;
@@ -103,9 +105,9 @@ export default function AdminAnalytics() {
         const marketplaceRevenue = marketplaceData?.reduce((s, o) => s + Number(o.total_amount), 0) || 0;
         const marketplaceOrders = marketplaceData?.length || 0;
 
-        // Doctor payment metrics
-        const totalPaidToDoctors = doctorStats?.reduce((s, d) => s + Number(d.total_earnings || 0), 0) || 0;
-        const totalPendingPayouts = doctorStats?.reduce((s, d) => s + Number(d.pending_earnings || 0), 0) || 0;
+        // Doctor payment metrics — sobre TODOS los doctores, no el top-10 (KPI de dinero real).
+        const totalPaidToDoctors = allDoctorEarnings?.reduce((s, d) => s + Number(d.total_earnings || 0), 0) || 0;
+        const totalPendingPayouts = allDoctorEarnings?.reduce((s, d) => s + Number(d.pending_earnings || 0), 0) || 0;
         // grossRevenue = actual sales only (NOT topups — topups are deposits, not revenue)
         const grossRevenue = purchasesRevenue + subscriptionsRevenue + consultationsRevenue + marketplaceRevenue;
         const platformCommission = grossRevenue - totalPaidToDoctors - totalPendingPayouts;

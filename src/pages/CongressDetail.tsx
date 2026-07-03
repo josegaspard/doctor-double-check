@@ -139,7 +139,9 @@ export default function CongressDetail() {
           speakerName: nameMap[l.doctor_id] || t('congresses.speakerFallback'),
           at: l.started_at ? new Date(l.started_at) : null,
           isLiveNow: l.status === 'live',
-          isDone: l.status === 'ended',
+          // Un live terminado queda en 'ended' o 'recording_ready' (grabación lista);
+          // ambos son estados terminales → no seguir mostrándolo como "Próxima".
+          isDone: l.status === 'ended' || l.status === 'recording_ready',
         });
       });
       items.sort((a, b) => (a.at?.getTime() || 0) - (b.at?.getTime() || 0));
