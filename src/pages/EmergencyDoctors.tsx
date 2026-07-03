@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { ManualBadge } from '@/components/doctor/ManualBadge';
 import {
   Plus,
   Star,
@@ -153,7 +154,10 @@ export default function EmergencyDoctors() {
                         {doctor.is_identity_verified && <CheckCircle className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
                       </div>
                       <p className="text-xs text-primary/80 font-medium mb-1">{doctor.specialty}</p>
-                      <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <ManualBadge badge={doctor.manual_badge} size="sm" />
+                        <DoctorBadge type={getDoctorBadgeType(doctor.total_consultations || 0, doctor.rating || 0, doctor.badge_override)} size="sm" />
+                      </div>
                     </div>
                     <div className="flex-shrink-0 text-right">
                       <PriceDisplay amount={doctor.consultation_fee} size="lg" />

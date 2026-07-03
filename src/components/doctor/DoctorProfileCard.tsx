@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Camera, Loader2, AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { CredentialStatusBadge, type CredentialStatus } from './CredentialStatusBadge';
+import { ManualBadge } from './ManualBadge';
 
 interface CredentialsState {
   cedula_profesional: string | null;
@@ -28,6 +29,7 @@ export function DoctorProfileCard() {
   const [credsLoading, setCredsLoading] = useState(true);
   const [credsError, setCredsError] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState<number>(0);
+  const [manualBadge, setManualBadge] = useState<string | null>(null);
 
   const doctorProfile = user?.doctorProfile;
   const initials = (user?.name || 'Dr').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -40,7 +42,7 @@ export function DoctorProfileCard() {
       const { data, error } = await supabase
         .from('doctor_profiles')
         .select(
-          'cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason, followers_count'
+          'cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason, followers_count, manual_badge'
         )
         .eq('user_id', supabaseUser.id)
         .maybeSingle();
@@ -55,6 +57,7 @@ export function DoctorProfileCard() {
           cofepris_rejection_reason: data.cofepris_rejection_reason ?? null,
         });
         setFollowersCount(Number((data as any).followers_count) || 0);
+        setManualBadge((data as any).manual_badge ?? null);
       } else {
         setCreds(null);
       }
@@ -156,6 +159,7 @@ export function DoctorProfileCard() {
               </p>
             )}
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <ManualBadge badge={manualBadge} size="sm" />
               <Badge variant="outline" className="text-[10px]">
                 {doctorProfile?.status === 'approved' ? '✓ Aprobado' : doctorProfile?.status || 'Pendiente'}
               </Badge>
