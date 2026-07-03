@@ -1,6 +1,6 @@
 export const es = {
   codeOfEthics: { title: 'Código de Ética', subtitle: 'Compromiso ético profesional en Medical Masters' },
-  badgeChat: { goldRoom: 'Chat de Medalla', verifiedRoom: 'Chat de Palomita', noAccess: 'No tienes un distintivo que te dé acceso a un chat exclusivo.', backToChat: 'Volver al chat', empty: 'Aún no hay mensajes en esta sala.', placeholder: 'Escribe un mensaje…' },
+  badgeChat: { goldRoom: 'Chat de Medalla', verifiedRoom: 'Chat de Palomita', noAccess: 'No tienes un distintivo que te dé acceso a un chat exclusivo.', backToChat: 'Volver al chat', empty: 'Aún no hay mensajes en esta sala.', placeholder: 'Escribe un mensaje…', roomRowTitle: 'Doctores verificados', roomRowSubtitle: 'Sala exclusiva por insignia' },
   autoI18n: {
     "adminMkt1": "Sin marca",
     "adminMkt2": "Marcas registradas",

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
-import { MessageSquare, Loader2, Award, ShieldCheck, Users, User, Stethoscope, Store } from 'lucide-react';
+import { MessageSquare, Loader2, Users, User, Stethoscope, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 
@@ -406,17 +406,8 @@ export default function Chat() {
             <span>Chat</span>
           </h1>
           <div className="flex items-center gap-2">
-            {(myBadge === 'gold' || myBadge === 'verified') && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate('/badge-chat')}
-                className={`gap-1.5 font-semibold ${myBadge === 'gold' ? 'border-premium/40 text-premium hover:bg-premium/10' : 'border-primary/40 text-primary hover:bg-primary/10'}`}
-              >
-                {myBadge === 'gold' ? <Award className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                <span className="hidden sm:inline">{myBadge === 'gold' ? t('badgeChat.goldRoom') : t('badgeChat.verifiedRoom')}</span>
-              </Button>
-            )}
+            {/* La sala exclusiva por insignia ("Doctores verificados") ya no es un
+                botón aquí: aparece como fila fija dentro de ChatSessionsList. */}
             {activeSessions.length > 0 && (
               <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md text-[11px] sm:text-xs font-bold whitespace-nowrap">
                 <span className="relative flex w-2 h-2">
@@ -536,6 +527,8 @@ export default function Chat() {
             getDoctorId={getDoctorIdForSession}
             onDoctorProfileClick={goToDoctorProfile}
             hidden={showMobileChat}
+            badge={myBadge}
+            onOpenBadgeChat={() => navigate('/badge-chat')}
           />
 
           {/* Disclaimer orientación médica removido por orden del cliente. */}

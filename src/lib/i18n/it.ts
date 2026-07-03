@@ -1,7 +1,7 @@
 // it — completado 2026-06-22 (50 claves faltantes traducidas).
 export const it = {
   "codeOfEthics": { "title": "Codice Etico", "subtitle": "Impegno etico professionale su Medical Masters" },
-  "badgeChat": { "goldRoom": "Chat Medaglia", "verifiedRoom": "Chat Spunta", "noAccess": "Non hai un distintivo che dia accesso a una chat esclusiva.", "backToChat": "Torna alla chat", "empty": "Ancora nessun messaggio in questa stanza.", "placeholder": "Scrivi un messaggio…" },
+  "badgeChat": { "goldRoom": "Chat Medaglia", "verifiedRoom": "Chat Spunta", "noAccess": "Non hai un distintivo che dia accesso a una chat esclusiva.", "backToChat": "Torna alla chat", "empty": "Ancora nessun messaggio in questa stanza.", "placeholder": "Scrivi un messaggio…", "roomRowTitle": "Medici verificati", "roomRowSubtitle": "Stanza esclusiva per distintivo" },
   "autoI18n": {
     "adminMkt1": "Nessun marchio",
     "adminMkt2": "Marchi registrati",

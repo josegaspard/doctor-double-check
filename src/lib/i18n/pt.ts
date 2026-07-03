@@ -1,7 +1,7 @@
 // pt — completado 2026-06-22 (50 claves faltantes traducidas).
 export const pt = {
   "codeOfEthics": { "title": "Código de Ética", "subtitle": "Compromisso ético profissional na Medical Masters" },
-  "badgeChat": { "goldRoom": "Chat da Medalha", "verifiedRoom": "Chat do Selo", "noAccess": "Você não tem um distintivo que dê acesso a um chat exclusivo.", "backToChat": "Voltar ao chat", "empty": "Ainda não há mensagens nesta sala.", "placeholder": "Escreva uma mensagem…" },
+  "badgeChat": { "goldRoom": "Chat da Medalha", "verifiedRoom": "Chat do Selo", "noAccess": "Você não tem um distintivo que dê acesso a um chat exclusivo.", "backToChat": "Voltar ao chat", "empty": "Ainda não há mensagens nesta sala.", "placeholder": "Escreva uma mensagem…", "roomRowTitle": "Médicos verificados", "roomRowSubtitle": "Sala exclusiva por distintivo" },
   "autoI18n": {
     "adminMkt1": "Sem marca",
     "adminMkt2": "Marcas registradas",

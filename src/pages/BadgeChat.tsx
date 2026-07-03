@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Award, ShieldCheck, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, Loader2, ArrowLeft } from 'lucide-react';
 
 interface BadgeMsg {
   id: string;
@@ -109,8 +109,8 @@ export default function BadgeChat() {
   }
 
   const isGold = badge === 'gold';
-  const RoomIcon = isGold ? Award : ShieldCheck;
-  const roomTitle = isGold ? t('badgeChat.goldRoom') : t('badgeChat.verifiedRoom');
+  const badgeImg = isGold ? '/badge-gold.png' : '/badge-verified.png';
+  const roomTitle = t('badgeChat.roomRowTitle');
 
   return (
     <MainLayout>
@@ -120,7 +120,7 @@ export default function BadgeChat() {
             <ArrowLeft className="w-4 h-4" /> {t('badgeChat.backToChat')}
           </Button>
           <div className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${isGold ? 'bg-premium/15 text-premium' : 'bg-primary/10 text-primary'}`}>
-            <RoomIcon className="w-4 h-4" /> {roomTitle}
+            <img src={badgeImg} alt="" aria-hidden="true" className="w-4 h-4 object-contain" /> {roomTitle}
           </div>
         </div>
 
