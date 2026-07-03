@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-02-batch44-badgechat-tab-grupal-por-dia
+// SW_VERSION: 2026-07-02-batch45-badgechat-fix-scroll-ventana
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

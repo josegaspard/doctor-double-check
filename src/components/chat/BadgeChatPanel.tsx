@@ -42,7 +42,10 @@ export function BadgeChatPanel({ badge, className = '' }: Props) {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  // Scroll SOLO dentro del contenedor de mensajes (nunca scrollIntoView: ese
+  // método baja toda la ventana para "traer a la vista" el ancla — provocaba
+  // que al abrir la sala la web entera hiciera scroll hacia abajo).
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = async () => {
     const { data } = await supabase
@@ -71,7 +74,10 @@ export function BadgeChatPanel({ badge, className = '' }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [badge]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight; // baja el contenedor, no la ventana
+  }, [messages]);
 
   const send = async () => {
     if (!draft.trim() || !user?.id) return;
@@ -115,7 +121,7 @@ export function BadgeChatPanel({ badge, className = '' }: Props) {
       </div>
 
       {/* Mensajes agrupados por día */}
-      <div className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-3">
         {loading ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -149,7 +155,6 @@ export function BadgeChatPanel({ badge, className = '' }: Props) {
             </div>
           ))
         )}
-        <div ref={bottomRef} />
       </div>
 
       {/* Enviar */}
