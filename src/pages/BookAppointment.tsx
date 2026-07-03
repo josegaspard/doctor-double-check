@@ -13,6 +13,7 @@ import { ArrowLeft, Calendar as CalendarIcon, Clock, Stethoscope, Loader2, Check
 import { useAuth } from '@/contexts/AuthContext';
 import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface Slot {
   id: string;
@@ -240,7 +241,12 @@ export default function BookAppointment() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-lg">{t('bookAppointment.header.titlePrefix')} Dr. {doctor.name}</CardTitle>
+                <CardTitle className="text-lg">
+                  <span className="inline-flex items-center gap-1 min-w-0">
+                    {t('bookAppointment.header.titlePrefix')} Dr. {doctor.name}
+                    <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+                  </span>
+                </CardTitle>
                 <CardDescription className="flex items-center gap-3 flex-wrap mt-1">
                   <span className="inline-flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5" />{doctor.specialty}</span>
                   {doctor.rating > 0 && <Badge variant="secondary" className="text-[10px]">★ {doctor.rating.toFixed(1)} · {doctor.total_consultations} {t('bookAppointment.header.consultationsSuffix')}</Badge>}

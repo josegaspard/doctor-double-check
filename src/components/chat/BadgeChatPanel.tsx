@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, Loader2 } from 'lucide-react';
@@ -143,7 +144,14 @@ export function BadgeChatPanel({ badge, className = '' }: Props) {
                   <div key={m.id} className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${own ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
                       {/* Etiqueta POR DOCTOR (nombre del emisor) */}
-                      {!own && <p className="text-[11px] font-semibold opacity-70 mb-0.5">{m.sender_name || t('congresses.speakerFallback')}</p>}
+                      {!own && (
+                        <p className="text-[11px] font-semibold opacity-70 mb-0.5">
+                          <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                            <span className="truncate">{m.sender_name || t('congresses.speakerFallback')}</span>
+                            <DoctorBadgeIcon userId={m.sender_id} size="sm" className="flex-shrink-0" />
+                          </span>
+                        </p>
+                      )}
                       <p className="whitespace-pre-wrap break-words">{m.content}</p>
                       <p className={`text-[10px] mt-0.5 text-right ${own ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                         {format(new Date(m.created_at), 'HH:mm')}

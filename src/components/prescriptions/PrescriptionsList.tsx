@@ -20,6 +20,7 @@ import {
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
 import { FileText, Download, Loader2, Pill, ChevronRight, Image, Trash2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface Prescription {
   id: string;
@@ -30,6 +31,7 @@ interface Prescription {
   medications: any[];
   instructions?: string;
   notes?: string;
+  doctorId?: string;
   doctorName: string;
   doctorSpecialty: string;
   doctorLicense: string;
@@ -76,6 +78,7 @@ export function PrescriptionsList() {
           medications: (p.medications as any[]) || [],
           instructions: p.instructions || undefined,
           notes: p.notes || undefined,
+          doctorId: p.doctor_id,
           doctorName: p.doctor_name,
           doctorSpecialty: p.doctor_specialty,
           doctorLicense: p.doctor_license,
@@ -268,8 +271,9 @@ export function PrescriptionsList() {
                   {rx.fileUrl ? <Image className="w-6 h-6 text-info" /> : <FileText className="w-6 h-6 text-primary" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-base truncate group-hover:text-primary transition-colors">
-                    {role === 'doctor' ? rx.patientName : rx.doctorName}
+                  <p className="font-semibold text-base inline-flex items-center gap-1 min-w-0 group-hover:text-primary transition-colors">
+                    <span className="truncate">{role === 'doctor' ? rx.patientName : rx.doctorName}</span>
+                    {role !== 'doctor' && <DoctorBadgeIcon userId={rx.doctorId} size="sm" className="flex-shrink-0" />}
                   </p>
                   {rx.diagnosis && (
                     <p className="text-sm text-muted-foreground truncate">{rx.diagnosis}</p>

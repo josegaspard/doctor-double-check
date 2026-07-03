@@ -9,6 +9,7 @@ import { Search, Stethoscope, PlayCircle, Video, X, Loader2, Folder, ArrowRight,
 import { useDebounce } from '@/hooks/use-debounce';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -435,8 +436,11 @@ export function GlobalSearch() {
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-foreground truncate">
-                                <HighlightMatch text={result.title} query={query} />
+                              <p className="font-medium text-sm text-foreground min-w-0">
+                                <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                                  <span className="truncate"><HighlightMatch text={result.title} query={query} /></span>
+                                  {result.type === 'doctor' && <DoctorBadgeIcon userId={result.id} size="sm" className="flex-shrink-0" />}
+                                </span>
                               </p>
                               {result.subtitle && (
                                 <p className="text-xs text-muted-foreground truncate">

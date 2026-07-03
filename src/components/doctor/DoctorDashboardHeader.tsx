@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Radio, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   userName?: string;
+  userId?: string;
   isApproved: boolean;
   isPending: boolean;
   isRejected: boolean;
@@ -16,7 +18,7 @@ interface Props {
   badgeOverride?: string | null;
 }
 
-export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejected, totalConsultations = 0, rating = 0, badgeOverride }: Props) {
+export function DoctorDashboardHeader({ userName, userId, isApproved, isPending, isRejected, totalConsultations = 0, rating = 0, badgeOverride }: Props) {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -27,8 +29,11 @@ export function DoctorDashboardHeader({ userName, isApproved, isPending, isRejec
           <h1 className="font-heading text-lg sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
             {t('dashboard.title')}
           </h1>
-          <p className="text-muted-foreground text-xs sm:text-sm lg:text-base mt-0.5 truncate">
-            {t('dashboard.welcome')}, {userName?.split(' ')[0]}
+          <p className="text-muted-foreground text-xs sm:text-sm lg:text-base mt-0.5 min-w-0">
+            <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+              <span className="truncate">{t('dashboard.welcome')}, {userName?.split(' ')[0]}</span>
+              <DoctorBadgeIcon userId={userId} size="md" className="flex-shrink-0" />
+            </span>
           </p>
         </div>
         {isApproved && (

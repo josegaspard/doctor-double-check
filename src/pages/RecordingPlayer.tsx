@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
 import { AdPreroll } from '@/components/ads/AdPreroll';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 // RecordingChatReplay solo se monta si el recording tiene liveId asociado. Lazy
 // para que el chunk principal de RecordingPlayer no lo arrastre.
 const RecordingChatReplay = React.lazy(() =>
@@ -443,7 +444,10 @@ export default function RecordingPlayer() {
                     <Stethoscope className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{recording.doctorName}</h3>
+                    <span className="inline-flex items-center gap-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{recording.doctorName}</h3>
+                      <DoctorBadgeIcon userId={recording.doctorId} size="sm" className="flex-shrink-0" />
+                    </span>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">{recording.specialty}</p>
                     <Badge variant="secondary" className="mt-2 gap-1 text-xs">
                       <Award className="w-3 h-3" />

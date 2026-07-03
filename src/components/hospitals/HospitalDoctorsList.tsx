@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -225,8 +226,11 @@ export default function HospitalDoctorsList({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate text-foreground">
-                      {d.name ? `Dr. ${d.name}` : t('autoI18n.clHospDoctors8')}
+                    <p className="text-sm font-semibold text-foreground min-w-0">
+                      <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                        <span className="truncate">{d.name ? `Dr. ${d.name}` : t('autoI18n.clHospDoctors8')}</span>
+                        <DoctorBadgeIcon userId={d.user_id} size="sm" className="flex-shrink-0" />
+                      </span>
                     </p>
                     <p className="text-xs text-primary/80 font-medium truncate">{d.specialty}</p>
                     <div className="mt-1 flex items-center flex-wrap gap-x-2 gap-y-1 text-[11px] text-muted-foreground">

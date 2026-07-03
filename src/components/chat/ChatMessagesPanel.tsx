@@ -362,6 +362,7 @@ export function ChatMessagesPanel({
             {activeVideoRoom && !isClosed && userRole === 'patient' && consultationId && (
               <CallWaitingBanner
                 doctorName={getDisplayInfo(session).name}
+                doctorId={otherDoctorId ?? undefined}
                 consultationId={consultationId}
               />
             )}

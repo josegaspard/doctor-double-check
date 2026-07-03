@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { RatingStars } from './RatingStars';
 import { Loader2, Star } from 'lucide-react';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface RatingDialogProps {
   open: boolean;
@@ -122,7 +123,10 @@ export function RatingDialog({
             {t('fix20.chat.ratingDialogTitle')}
           </DialogTitle>
           <DialogDescription>
-            {t('fix20.chat.ratingDialogDesc')} {doctorName}?
+            <span className="inline-flex items-center gap-1 min-w-0">
+              {t('fix20.chat.ratingDialogDesc')} {doctorName}
+              <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+            </span>?
           </DialogDescription>
         </DialogHeader>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -504,6 +505,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
                 {selectedInvitees.map(doc => (
                   <Badge key={doc.id} variant="secondary" className="gap-1 text-xs pr-1">
                     {doc.name}
+                    {doc.inviteeType === 'doctor' && <DoctorBadgeIcon userId={doc.id} size="sm" className="flex-shrink-0" />}
                     {doc.specialty && <span className="opacity-60">· {doc.specialty}</span>}
                     <button onClick={() => removeInvitee(doc.id)} className="ml-0.5 hover:text-destructive">
                       <X className="w-3 h-3" />
@@ -536,6 +538,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
                   >
                     <span className="flex items-center gap-1.5">
                       {doc.name}
+                      {doc.inviteeType === 'doctor' && <DoctorBadgeIcon userId={doc.id} size="sm" className="flex-shrink-0" />}
                       {doc.inviteeType === 'patient' && (
                         <Badge variant="info" className="text-[10px]">{t('meetingCreateDialog.patientBadge')}</Badge>
                       )}

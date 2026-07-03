@@ -7,6 +7,7 @@ import { Phone, PhoneOff, Stethoscope } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface IncomingCallModalProps {
   open: boolean;
@@ -170,7 +171,10 @@ export function IncomingCallModal({
           <p className="text-sm text-white/50 font-medium mb-1.5 tracking-wide uppercase text-[11px]">
             {t('incomingCallModal.incomingVideoCall')}
           </p>
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{doctorName}</h2>
+          <span className="inline-flex items-center gap-1 min-w-0 mb-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">{doctorName}</h2>
+            <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+          </span>
           {doctorSpecialty && (
             <div className="flex items-center gap-1.5 text-success/90 text-sm mb-8 sm:mb-10">
               <Stethoscope className="w-4 h-4" />

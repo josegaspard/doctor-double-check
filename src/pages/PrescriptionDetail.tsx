@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 import { SecureImage } from '@/components/security/SecureImage';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import {
   ArrowLeft,
   FileText,
@@ -194,7 +195,10 @@ export default function PrescriptionDetail() {
                 <Stethoscope className="w-6 h-6 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-secondary truncate">{prescription.doctorName}</p>
+                <p className="font-semibold text-secondary inline-flex items-center gap-1 min-w-0">
+                  <span className="truncate">{prescription.doctorName}</span>
+                  <DoctorBadgeIcon userId={prescription.doctorId} size="sm" className="flex-shrink-0" />
+                </p>
                 <p className="text-sm text-primary font-medium">{prescription.doctorSpecialty}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80">
                   <span>{t('prescriptionDetailPage.doctor.licenseLabel')} {prescription.doctorLicense}</span>

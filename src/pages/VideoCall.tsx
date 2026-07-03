@@ -21,6 +21,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { DailyCall } from '@daily-co/daily-js';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface InCallMessage {
   id: string;
@@ -240,6 +241,10 @@ export default function VideoCall() {
   // el video y al tocarla abre el chat panel.
   const [lastUnreadMsg, setLastUnreadMsg] = useState<{ sender: string; text: string } | null>(null);
   const [otherParticipantName, setOtherParticipantName] = useState('');
+  // Doctor's user_id of the other participant, ONLY when the shown other party is
+  // the doctor (i.e. current user is the patient). Null when the other party is a
+  // patient, so the badge never renders for a patient. Used for DoctorBadgeIcon.
+  const [otherParticipantId, setOtherParticipantId] = useState<string | null>(null);
   const [patientId, setPatientId] = useState<string | null>(null);
   const [doctorCreds, setDoctorCreds] = useState<{ name: string; specialty: string | null; cedula: string | null; cofepris: string | null } | null>(null);
   const [showPostConsult, setShowPostConsult] = useState(false);
@@ -292,6 +297,9 @@ export default function VideoCall() {
       if (!data) return;
       setPatientId(data.patient_id);
       const otherId = isDoctor ? data.patient_id : data.doctor_id;
+      // Only the doctor gets a badge; when current user is the doctor, the other
+      // party is a patient → keep id null so no badge shows.
+      setOtherParticipantId(isDoctor ? null : data.doctor_id);
       const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
       setOtherParticipantName(profile?.name || t('videoCall.participant'));
 
@@ -593,9 +601,12 @@ export default function VideoCall() {
             <p className="text-xs uppercase tracking-widest text-white/70 mb-1">
               {isDoctor ? t('videoCallPage.callingTo') : t('videoCallPage.incomingCall')}
             </p>
-            <h2 className="text-2xl font-bold text-white mb-1">
-              {otherParticipantName || (isDoctor ? t('videoCallPage.patient') : t('videoCallPage.doctor'))}
-            </h2>
+            <span className="inline-flex items-center gap-1 min-w-0 mb-1">
+              <h2 className="text-2xl font-bold text-white">
+                {otherParticipantName || (isDoctor ? t('videoCallPage.patient') : t('videoCallPage.doctor'))}
+              </h2>
+              <DoctorBadgeIcon userId={otherParticipantId ?? undefined} size="sm" className="flex-shrink-0" />
+            </span>
             {doctorCreds?.specialty && !isDoctor && (
               <p className="text-sm text-white/80">{doctorCreds.specialty}</p>
             )}

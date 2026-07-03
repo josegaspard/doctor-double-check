@@ -81,6 +81,7 @@ export default function DoctorDashboard() {
         </Button>
         <DoctorDashboardHeader
           userName={user?.name}
+          userId={user?.id}
           isApproved={isApproved}
           isPending={isPending}
           isRejected={isRejected}

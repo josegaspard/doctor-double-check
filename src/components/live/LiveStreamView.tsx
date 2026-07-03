@@ -7,6 +7,7 @@ import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import logoMmWhite from '@/assets/logo-medical-masters-white.png';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import {
   Clock,
   Heart,
@@ -58,7 +59,7 @@ export function LiveStreamView({
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
+  const { user, supabaseUser } = useAuth();
 
   // Cédula propia del doctor para el lower-third del live (cliente 2026-06-16).
   const [ownCedula, setOwnCedula] = useState<string | null>(null);
@@ -131,7 +132,10 @@ export function LiveStreamView({
     <>
       <img src={logoMmWhite} alt="Medical Masters" className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
       <div className="absolute bottom-16 right-3 z-[25] max-w-[70%] rounded-lg bg-black/55 backdrop-blur-sm px-3 py-1.5 text-right pointer-events-none">
-        <p className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{user?.name}</p>
+        <span className="inline-flex items-center gap-1 min-w-0">
+          <span className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{user?.name}</span>
+          <DoctorBadgeIcon userId={supabaseUser?.id ?? user?.id} size="sm" className="flex-shrink-0" />
+        </span>
         {liveData.specialty && <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{liveData.specialty}</p>}
         {ownCedula && <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">Céd. <span className="font-mono">{ownCedula}</span></p>}
         {user?.email && <p className="text-white/60 text-[9px] sm:text-[10px] leading-tight truncate">{user.email}</p>}

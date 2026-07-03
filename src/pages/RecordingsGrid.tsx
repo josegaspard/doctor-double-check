@@ -41,6 +41,7 @@ import {
 type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 export default function RecordingsGrid({ embedded = false }: { embedded?: boolean } = {}) {
   // embedded=true: se renderiza DENTRO de otra página (p.ej. /education → pestaña
@@ -570,7 +571,10 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                               {recording.doctorName.charAt(0)}
                             </span>
                           </div>
-                          <span className="truncate">{recording.doctorName}</span>
+                          <span className="inline-flex items-center gap-1 min-w-0">
+                            <span className="truncate">{recording.doctorName}</span>
+                            <DoctorBadgeIcon userId={recording.doctorId} size="sm" className="flex-shrink-0" />
+                          </span>
                         </div>
                         {recording.peakViewers != null && recording.peakViewers > 0 && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">

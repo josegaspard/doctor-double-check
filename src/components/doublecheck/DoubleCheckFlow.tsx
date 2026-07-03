@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import {
   CheckCheck,
   FileText,
@@ -322,7 +323,10 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('doubleCheckFlow.confirm.specialist')}</span>
-                    <span className="font-medium">{doctor.name}</span>
+                    <span className="font-medium inline-flex items-center gap-1 min-w-0">
+                      {doctor.name}
+                      <DoctorBadgeIcon userId={doctor.userId} size="sm" className="flex-shrink-0" />
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('doubleCheckFlow.confirm.specialty')}</span>

@@ -29,6 +29,7 @@ import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface LiveConsultationBookingProps {
   open: boolean;
@@ -206,7 +207,10 @@ export function LiveConsultationBooking({
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{doctorName}</p>
+                <span className="inline-flex items-center gap-1 min-w-0">
+                  <span className="font-medium text-sm truncate">{doctorName}</span>
+                  <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+                </span>
                 <p className="text-xs text-muted-foreground">{specialty}</p>
               </div>
               <Badge variant="secondary" className="text-sm font-bold">

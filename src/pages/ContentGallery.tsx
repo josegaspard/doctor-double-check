@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -232,7 +233,12 @@ function ContentCardBody({
           <AvatarFallback><User className="w-3 h-3" /></AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-xs sm:text-sm font-medium truncate">{content.creator_name}</p>
+          <p className="text-xs sm:text-sm font-medium min-w-0">
+            <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+              <span className="truncate">{content.creator_name}</span>
+              <DoctorBadgeIcon userId={content.creator_id} size="sm" className="flex-shrink-0" />
+            </span>
+          </p>
           {(content.creator_cedula || content.creator_cofepris) && (
             <div className="flex flex-wrap gap-1 mt-1 min-w-0">
               <CredentialStatusBadge

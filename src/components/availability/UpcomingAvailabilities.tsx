@@ -18,6 +18,7 @@ import { useDoctorAvailability, DoctorAvailability } from '@/hooks/useDoctorAvai
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 function AvailabilityCard({
   availability,
@@ -64,8 +65,11 @@ function AvailabilityCard({
               <p className="font-semibold text-sm line-clamp-2 whitespace-normal break-words leading-snug">
                 {availability.title}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                {availability.doctorName}
+              <p className="text-xs text-muted-foreground mt-0.5 min-w-0">
+                <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                  <span className="truncate">{availability.doctorName}</span>
+                  <DoctorBadgeIcon userId={availability.doctorId} size="sm" className="flex-shrink-0" />
+                </span>
               </p>
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 <Badge variant={availability.status === 'confirmed' ? 'verified' : 'secondary'} className="text-[10px] px-1.5 py-0 h-5">
@@ -137,8 +141,11 @@ function AvailabilityDetailDialog({
               <DialogTitle className="text-base leading-snug break-words">
                 {availability.title}
               </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                {availability.doctorName}
+              <p className="text-sm text-muted-foreground mt-1 min-w-0">
+                <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                  <span className="truncate">{availability.doctorName}</span>
+                  <DoctorBadgeIcon userId={availability.doctorId} size="sm" className="flex-shrink-0" />
+                </span>
               </p>
             </div>
           </div>
@@ -362,8 +369,11 @@ export function UpcomingAvailabilities() {
                       <p className="font-semibold text-sm line-clamp-2 break-words leading-snug">
                         {a.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {a.doctorName}
+                      <p className="text-xs text-muted-foreground mt-0.5 min-w-0">
+                        <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                          <span className="truncate">{a.doctorName}</span>
+                          <DoctorBadgeIcon userId={a.doctorId} size="sm" className="flex-shrink-0" />
+                        </span>
                       </p>
                       <div className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground flex-wrap">
                         <Calendar className="h-3 w-3 flex-shrink-0" />

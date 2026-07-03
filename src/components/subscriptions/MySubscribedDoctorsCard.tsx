@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -51,7 +52,12 @@ export function MySubscribedDoctorsCard() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-xs truncate">{sub.creatorName || (t('mySubscriptions.defaultDoctorName') || 'Doctor')}</p>
+                <p className="font-medium text-xs min-w-0">
+                  <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                    <span className="truncate">{sub.creatorName || (t('mySubscriptions.defaultDoctorName') || 'Doctor')}</span>
+                    <DoctorBadgeIcon userId={sub.creatorId} size="sm" className="flex-shrink-0" />
+                  </span>
+                </p>
                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   {tierBadge(sub.tier)}
                   <span className="capitalize">{sub.tier}</span>

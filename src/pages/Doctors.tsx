@@ -42,6 +42,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { ManualBadge } from '@/components/doctor/ManualBadge';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 
@@ -774,7 +775,10 @@ export default function Doctors() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-xs font-medium truncate">{doc.name}</p>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{doc.name}</p>
+                          <DoctorBadgeIcon userId={doc.user_id} size="sm" className="flex-shrink-0" />
+                        </div>
                         <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
                       </div>
                       {/* Price hidden per client request */}

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { CongressCreateDialog } from '@/components/congresses/CongressCreateDialog';
@@ -489,6 +490,7 @@ export default function CongressDetail() {
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate flex items-center gap-1.5">
                       {s.name || t('congresses.speakerFallback')}
+                      <DoctorBadgeIcon userId={s.user_id} size="sm" className="flex-shrink-0" />
                       {s.is_lead && <Star className="w-3.5 h-3.5 text-premium flex-shrink-0" fill="currentColor" />}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">

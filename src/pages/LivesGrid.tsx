@@ -32,6 +32,7 @@ import {
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
@@ -100,7 +101,10 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
                 {live.doctorName.charAt(0)}
               </span>
             </div>
-            <span className="truncate text-xs sm:text-sm">{live.doctorName}</span>
+            <span className="inline-flex items-center gap-1 min-w-0">
+              <span className="truncate text-xs sm:text-sm">{live.doctorName}</span>
+              <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+            </span>
           </div>
           <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
             <Badge variant="outline" className="text-xs">

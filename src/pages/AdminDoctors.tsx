@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -409,6 +410,7 @@ export default function AdminDoctors() {
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="font-semibold text-sm truncate">{doctor.profile?.name || t('admin.noName')}</h3>
+                          <DoctorBadgeIcon userId={doctor.user_id} size="sm" className="flex-shrink-0" />
                           {getStatusBadge(doctor.status)}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{doctor.profile?.email}</p>

@@ -55,6 +55,7 @@ import {
   Radio,
   Loader2,
 } from 'lucide-react';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 export default function LivePlayer() {
   const { id } = useParams<{ id: string }>();
@@ -526,7 +527,10 @@ export default function LivePlayer() {
                     nombre, especialidad, cédula profesional y correo (cliente
                     2026-06-16: el correo es visible para TODOS los espectadores). */}
                 <div className="absolute bottom-3 right-3 z-20 max-w-[80%] rounded-lg bg-black/55 backdrop-blur-sm px-3 py-1.5 text-right pointer-events-none">
-                  <p className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{live.doctorName}</p>
+                  <span className="inline-flex items-center gap-1 min-w-0">
+                    <span className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{live.doctorName}</span>
+                    <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+                  </span>
                   {live.specialty && (
                     <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{live.specialty}</p>
                   )}
@@ -762,6 +766,7 @@ export default function LivePlayer() {
                     {/* Fila 1: nombre + badge verificado (con wrap) */}
                     <div className="flex items-start gap-1.5 flex-wrap">
                       <h3 className="font-semibold text-foreground text-sm leading-tight truncate flex-1 min-w-0">{live.doctorName}</h3>
+                      <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
                       <Badge variant="verified" className="gap-0.5 text-[10px] px-1.5 py-0 h-4 leading-none whitespace-nowrap shrink-0">
                         <Award className="w-2.5 h-2.5" />
                         {t('livePlayer.verified')}

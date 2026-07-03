@@ -11,6 +11,7 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface LiveEndedOverlayProps {
   doctorId: string;
@@ -73,7 +74,10 @@ export function LiveEndedOverlay({
               </AvatarFallback>
             </Avatar>
             <div className="text-left">
-              <p className="font-semibold text-foreground text-sm">{doctorName}</p>
+              <span className="inline-flex items-center gap-1 min-w-0">
+                <span className="font-semibold text-foreground text-sm">{doctorName}</span>
+                <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+              </span>
               <p className="text-xs text-muted-foreground">{specialty}</p>
             </div>
           </div>

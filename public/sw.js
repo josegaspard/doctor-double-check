@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-03-batch52-badge-en-chat
+// SW_VERSION: 2026-07-03-batch53-badge-toda-la-web
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

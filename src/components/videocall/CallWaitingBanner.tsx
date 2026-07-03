@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Phone, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 
 interface CallWaitingBannerProps {
   doctorName: string;
   consultationId: string;
+  doctorId?: string;
 }
 
-export function CallWaitingBanner({ doctorName, consultationId }: CallWaitingBannerProps) {
+export function CallWaitingBanner({ doctorName, consultationId, doctorId }: CallWaitingBannerProps) {
   const navigate = useNavigate();
 
   return (
@@ -26,8 +28,9 @@ export function CallWaitingBanner({ doctorName, consultationId }: CallWaitingBan
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground">
-          {doctorName} te está esperando
+        <p className="text-sm font-semibold text-foreground inline-flex items-center gap-1 min-w-0">
+          <span className="truncate">{doctorName} te está esperando</span>
+          <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
         </p>
         <p className="text-xs text-muted-foreground">
           Videollamada activa — únete ahora
