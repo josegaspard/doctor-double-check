@@ -1,6 +1,7 @@
 export const es = {
   codeOfEthics: { title: 'Código de Ética', subtitle: 'Compromiso ético profesional en Medical Masters' },
   badgeChat: { goldRoom: 'Chat de Medalla', verifiedRoom: 'Chat de Palomita', noAccess: 'No tienes un distintivo que te dé acceso a un chat exclusivo.', backToChat: 'Volver al chat', empty: 'Aún no hay mensajes en esta sala.', placeholder: 'Escribe un mensaje…', roomRowTitle: 'Doctores verificados', roomRowSubtitle: 'Sala exclusiva por insignia', today: 'Hoy', yesterday: 'Ayer' },
+  userMgmt: { reactivate: 'Reactivar cuenta', reactivated: 'Cuenta reactivada', currentlySuspended: 'Esta cuenta está suspendida actualmente.' },
   autoI18n: {
     "adminMkt1": "Sin marca",
     "adminMkt2": "Marcas registradas",
@@ -3477,6 +3478,8 @@ export const es = {
       walletInfo: 'El monto se acreditará directamente a la Wallet del usuario.',
       adminNotesLabel: 'Notas del admin (opcional)',
       adminNotesPlaceholder: 'Notas adicionales...',
+      rejectReasonLabel: 'Motivo del rechazo (se envía al usuario)',
+      rejectReasonPlaceholder: 'Explica por qué se rechaza esta solicitud…',
       cancel: 'Cancelar',
       confirm: 'Confirmar Reembolso',
     },
@@ -3485,6 +3488,7 @@ export const es = {
       bankInitiated: 'Reembolso bancario iniciado',
       walletProcessed: 'Reembolso a Wallet procesado',
       processError: 'Error al procesar',
+      rejectReasonRequired: 'Indica el motivo del rechazo',
       requestRejected: 'Solicitud rechazada',
       genericError: 'Error',
       transferRefRequired: 'Ingresa la referencia de transferencia',

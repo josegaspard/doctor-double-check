@@ -77,11 +77,15 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [actionReason, setActionReason] = useState('');
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [isSuspended, setIsSuspended] = useState(false);
 
   useEffect(() => {
     if (user && isOpen) {
       loadUserStats();
       loadUserTransactions();
+      // Estado real de suspensión para decidir Suspender vs Reactivar.
+      supabase.from('profiles').select('is_suspended').eq('id', user.id).maybeSingle()
+        .then(({ data }) => setIsSuspended(!!(data as any)?.is_suspended));
     }
   }, [user, isOpen]);
 
@@ -172,13 +176,15 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
     try {
       // Real suspension: bans the account at the auth level so it can no longer
       // log in or refresh its session (not just a notification).
+      const nextSuspend = !isSuspended;
       const { data, error } = await supabase.functions.invoke('admin-suspend-user', {
-        body: { userId: user.id, suspend: true, reason: actionReason || undefined },
+        body: { userId: user.id, suspend: nextSuspend, reason: actionReason || undefined },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      toast.success(t('autoI18n.userMgmt1'));
+      setIsSuspended(nextSuspend);
+      toast.success(nextSuspend ? t('autoI18n.userMgmt1') : t('userMgmt.reactivated'));
       onUserUpdated();
       onClose();
     } catch (error: any) {
@@ -401,15 +407,18 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
                 className="mt-3"
                 rows={2}
               />
-              <Button 
-                variant="warning" 
-                className="mt-3" 
+              <Button
+                variant={isSuspended ? 'success' : 'warning'}
+                className="mt-3"
                 onClick={handlePauseUser}
                 disabled={isProcessing}
               >
                 {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pause className="w-4 h-4 mr-2" />}
-                {t('autoI18n.userMgmt27')}
+                {isSuspended ? t('userMgmt.reactivate') : t('autoI18n.userMgmt27')}
               </Button>
+              {isSuspended && (
+                <p className="mt-2 text-xs text-warning font-medium">{t('userMgmt.currentlySuspended')}</p>
+              )}
             </div>
 
             <div className="p-4 border border-destructive/50 bg-destructive/5 rounded-lg">

@@ -90,6 +90,7 @@ export default function AdminRefunds() {
 
   // Approval dialog
   const [approvalDialog, setApprovalDialog] = useState<{ open: boolean; request: RefundRequest | null }>({ open: false, request: null });
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; request: RefundRequest | null }>({ open: false, request: null });
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [adminNotes, setAdminNotes] = useState('');
   const [userBankAccount, setUserBankAccount] = useState<BankAccount | null>(null);
@@ -197,11 +198,12 @@ export default function AdminRefunds() {
   };
 
   const handleRejectRequest = async (req: RefundRequest) => {
+    if (!adminNotes.trim()) { toast.error(t('adminRefunds.toast.rejectReasonRequired')); return; }
     setIsProcessing(true);
     try {
       await supabase.from('refund_requests' as any).update({
         status: 'rejected',
-        admin_notes: adminNotes || null,
+        admin_notes: adminNotes.trim(),
         reviewed_by: user?.id,
         reviewed_at: new Date().toISOString(),
       } as any).eq('id', req.id);
@@ -214,6 +216,8 @@ export default function AdminRefunds() {
       });
 
       toast.success(t('adminRefunds.toast.requestRejected'));
+      setRejectDialog({ open: false, request: null });
+      setAdminNotes('');
       loadData();
     } catch (error: any) {
       toast.error(error.message || t('adminRefunds.toast.genericError'));
@@ -481,7 +485,7 @@ export default function AdminRefunds() {
                 <Button size="sm" onClick={() => openApprovalDialog(req)} className="gap-1">
                   <CheckCircle className="w-3 h-3" />{t('adminRefunds.actions.approve')}
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => { setAdminNotes(''); handleRejectRequest(req); }} className="gap-1">
+                <Button size="sm" variant="destructive" onClick={() => { setAdminNotes(''); setRejectDialog({ open: true, request: req }); }} className="gap-1">
                   <XCircle className="w-3 h-3" />{t('adminRefunds.actions.reject')}
                 </Button>
               </div>
@@ -761,6 +765,32 @@ export default function AdminRefunds() {
               <Button onClick={handleApproveRequest} disabled={isProcessing || !selectedMethod}>
                 {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {t('adminRefunds.dialog.confirm')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Diálogo de RECHAZO con motivo obligatorio (antes rechazaba al instante sin razón). */}
+        <Dialog open={rejectDialog.open} onOpenChange={(open) => !isProcessing && setRejectDialog({ ...rejectDialog, open })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('adminRefunds.actions.reject')}</DialogTitle>
+            </DialogHeader>
+            {rejectDialog.request && (
+              <div className="space-y-3 text-sm">
+                <p><strong>{t('adminRefunds.dialog.userLabel')}:</strong> {rejectDialog.request.user_name}</p>
+                <p><strong>{t('adminRefunds.dialog.amountLabel')}:</strong> ${rejectDialog.request.amount.toLocaleString()} MXN</p>
+                <div>
+                  <label className="text-sm font-medium">{t('adminRefunds.dialog.rejectReasonLabel')}</label>
+                  <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder={t('adminRefunds.dialog.rejectReasonPlaceholder')} rows={3} className="mt-1" />
+                </div>
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setRejectDialog({ open: false, request: null })} disabled={isProcessing}>{t('adminRefunds.dialog.cancel')}</Button>
+              <Button variant="destructive" onClick={() => rejectDialog.request && handleRejectRequest(rejectDialog.request)} disabled={isProcessing || !adminNotes.trim()}>
+                {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {t('adminRefunds.actions.reject')}
               </Button>
             </DialogFooter>
           </DialogContent>

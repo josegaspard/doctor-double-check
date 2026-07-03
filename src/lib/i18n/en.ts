@@ -1,6 +1,7 @@
 export const en = {
   codeOfEthics: { title: 'Code of Ethics', subtitle: 'Professional ethical commitment at Medical Masters' },
   badgeChat: { goldRoom: 'Medal Chat', verifiedRoom: 'Verified Chat', noAccess: 'You do not have a badge that grants access to an exclusive chat.', backToChat: 'Back to chat', empty: 'No messages in this room yet.', placeholder: 'Type a message…', roomRowTitle: 'Verified doctors', roomRowSubtitle: 'Exclusive badge room', today: 'Today', yesterday: 'Yesterday' },
+  userMgmt: { reactivate: 'Reactivate account', reactivated: 'Account reactivated', currentlySuspended: 'This account is currently suspended.' },
   autoI18n: {
     "adminMkt1": "No brand",
     "adminMkt2": "Registered brands",
@@ -3459,6 +3460,8 @@ export const en = {
       walletInfo: "The amount will be credited directly to the user's wallet.",
       adminNotesLabel: 'Admin notes (optional)',
       adminNotesPlaceholder: 'Additional notes...',
+      rejectReasonLabel: 'Rejection reason (sent to the user)',
+      rejectReasonPlaceholder: 'Explain why this request is rejected…',
       cancel: 'Cancel',
       confirm: 'Confirm Refund',
     },
@@ -3467,6 +3470,7 @@ export const en = {
       bankInitiated: 'Bank refund initiated',
       walletProcessed: 'Wallet refund processed',
       processError: 'Error processing',
+      rejectReasonRequired: 'Please provide a rejection reason',
       requestRejected: 'Request rejected',
       genericError: 'Error',
       transferRefRequired: 'Enter the transfer reference',

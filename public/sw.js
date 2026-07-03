@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-03-batch47-auditoria-seguridad-dinero-fixes
+// SW_VERSION: 2026-07-03-batch48-admin-refund-reject-suspend-reactivar
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();
