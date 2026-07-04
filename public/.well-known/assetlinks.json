@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.medicalmasters.app",
+      "sha256_cert_fingerprints": [
+        "09:ED:35:79:5F:E4:E0:35:CB:D1:A9:77:EA:9C:92:9C:08:7B:77:B9:68:E2:00:2A:40:A3:5D:73:CC:8C:25:52"
+      ]
+    }
+  }
+]
