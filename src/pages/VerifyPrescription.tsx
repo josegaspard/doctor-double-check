@@ -13,6 +13,9 @@ interface VerifiedRx {
   doctor_specialty: string;
   doctor_license: string;
   doctor_cedula: string | null;
+  cedula_verified: boolean;
+  cedula_institucion: string | null;
+  cedula_anio: number | null;
   patient_name: string;
   patient_age: string | null;
   medications: any[];
@@ -104,6 +107,13 @@ export default function VerifyPrescription() {
                   {t('prescriptionDetailPage.doctor.licenseLabel')} {rx.doctor_license}
                   {rx.doctor_cedula ? ` · ${t('prescriptionDetailPage.doctor.cedulaLabel')} ${rx.doctor_cedula}` : ''}
                 </p>
+                {rx.cedula_verified && (
+                  <Badge variant="success" className="mt-1.5 gap-1 text-[11px]">
+                    <ShieldCheck className="w-3 h-3" />
+                    {t('rxVerify.cedulaVerified')}
+                    {rx.cedula_anio ? ` (${rx.cedula_anio})` : ''}
+                  </Badge>
+                )}
               </div>
 
               {/* Paciente */}

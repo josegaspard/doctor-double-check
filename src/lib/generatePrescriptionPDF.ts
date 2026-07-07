@@ -23,6 +23,7 @@ export interface PrescriptionData {
   doctorCedula?: string;
   doctorSignatureUrl?: string;
   signedAt: Date;
+  cedulaVerified?: boolean;   // cédula verificada contra el registro de la SEP
   // Verificación (se rellenan en exportPrescriptionToPDF)
   verifyQrDataUrl?: string;
   verifyUrl?: string;
@@ -62,6 +63,9 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 
   const folio = prescriptionFolio(rx.id);
   const verifyUrl = rx.verifyUrl || prescriptionVerifyUrl(rx.id);
+  const sepBadge = rx.cedulaVerified
+    ? ` <span style="color:#166534; font-weight:600;">· ✓ Cédula verificada ante SEP</span>`
+    : '';
 
   // Use the deployed logo URL
   const logoUrl = 'https://medical-masters.com/icon-512.png?v=11';
@@ -113,7 +117,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Médico</p>
           <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
           <p style="margin: 2px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
-          <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}</p>
+          <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}${sepBadge}</p>
         </div>
         <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; border-left: 4px solid #839ed5;">
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Paciente</p>
@@ -173,7 +177,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
           <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
         </div>
         <p style="margin: 4px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
-        <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}</p>
+        <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}${sepBadge}</p>
       </div>
 
       <!-- Verificación (QR + folio) -->

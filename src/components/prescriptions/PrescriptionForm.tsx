@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +41,30 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   ]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [cedulaVerified, setCedulaVerified] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cédula del médico contra SEP: al abrir el recetario, si aún no está verificada
+  // la disparamos contra el registro oficial de la SEP (edge function ya desplegada,
+  // usa el Solr público — sin API de pago). Best-effort: nunca bloquea la receta.
+  useEffect(() => {
+    const ensureCedulaVerified = async () => {
+      const cedula = (user as any)?.doctorProfile?.cedulaProfesional;
+      if (!user?.id || !cedula) return;
+      const { data: existing } = await supabase
+        .from('cedula_verifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('is_verified', true)
+        .limit(1);
+      if (existing && existing.length > 0) { setCedulaVerified(true); return; }
+      try {
+        const { data } = await supabase.functions.invoke('verify-cedula-sep', { body: { cedula } });
+        if ((data as any)?.verified || (data as any)?.success) setCedulaVerified(true);
+      } catch { /* SEP puede estar caída; la receta se emite igual */ }
+    };
+    ensureCedulaVerified();
+  }, [user?.id]);
 
   const addMedication = () => {
     setMedications([...medications, { name: '', dosage: '', route: '', frequency: '', duration: '' }]);
@@ -196,6 +219,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           doctorCedula: user.doctorProfile.cedulaProfesional || undefined,
           doctorSignatureUrl,
           signedAt: new Date(data.signed_at),
+          cedulaVerified,
         });
       }
 

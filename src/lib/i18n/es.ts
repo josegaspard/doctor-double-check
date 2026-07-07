@@ -7069,6 +7069,7 @@ export const es = {
     validTitle: 'Receta válida',
     validBody: 'Emitida por un médico verificado en Medical Masters.',
     issuedOn: 'Emitida',
+    cedulaVerified: 'Cédula verificada ante SEP',
     doctor: 'Médico tratante',
     patient: 'Paciente',
     medications: 'Medicamentos',

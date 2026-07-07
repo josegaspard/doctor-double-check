@@ -26,6 +26,7 @@ import {
   File,
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface PrescriptionDetail {
@@ -56,6 +57,7 @@ export default function PrescriptionDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [fileSignedUrl, setFileSignedUrl] = useState<string | null>(null);
   const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [cedulaVerified, setCedulaVerified] = useState(false);
 
   useEffect(() => {
     const fetchPrescription = async () => {
@@ -97,6 +99,12 @@ export default function PrescriptionDetail() {
         setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: sigUrl } : prev);
       }
 
+      // ¿Cédula del médico verificada ante SEP? (para badge y PDF)
+      const { data: cedRows } = await supabase
+        .rpc('verify_prescription', { p_id: data.id } as any);
+      const cedRow = Array.isArray(cedRows) ? cedRows[0] : cedRows;
+      if ((cedRow as any)?.cedula_verified) setCedulaVerified(true);
+
       // Get signed URL for the file (short TTL anti-piracy)
       if ((data as any).file_url) {
         setIsLoadingFile(true);
@@ -131,6 +139,7 @@ export default function PrescriptionDetail() {
       doctorCedula: prescription.doctorCedula,
       doctorSignatureUrl: prescription.doctorSignatureUrl,
       signedAt: prescription.signedAt,
+      cedulaVerified,
     });
   };
 
@@ -200,9 +209,15 @@ export default function PrescriptionDetail() {
                   <DoctorBadgeIcon userId={prescription.doctorId} size="sm" className="flex-shrink-0" />
                 </p>
                 <p className="text-sm text-primary font-medium">{prescription.doctorSpecialty}</p>
-                <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80">
+                <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80 flex-wrap">
                   <span>{t('prescriptionDetailPage.doctor.licenseLabel')} {prescription.doctorLicense}</span>
                   {prescription.doctorCedula && <span>{t('prescriptionDetailPage.doctor.cedulaLabel')} {prescription.doctorCedula}</span>}
+                  {cedulaVerified && (
+                    <Badge variant="success" className="gap-1 text-[10px]">
+                      <ShieldCheck className="w-3 h-3" />
+                      {t('rxVerify.cedulaVerified')}
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
