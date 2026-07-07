@@ -41,13 +41,6 @@ const CONTENT_CATEGORIES = [
   'Otro',
 ];
 
-interface MasterclassSession {
-  session_number: number;
-  title: string;
-  scheduled_at: string;
-  duration_minutes: number;
-}
-
 interface UploadedContent {
   id: string;
   type: 'video' | 'pdf' | 'image' | 'presentation';
@@ -80,12 +73,6 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // Masterclass state
-  const [isMasterclass, setIsMasterclass] = useState(false);
-  const [masterclassSessions, setMasterclassSessions] = useState<MasterclassSession[]>([
-    { session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 },
-  ]);
 
   // Manage mode state
   const [manageMode, setManageMode] = useState(false);
@@ -246,10 +233,6 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
       if (uploadError) throw uploadError;
 
       const insertPayload: any = { creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName };
-      if (isMasterclass) {
-        insertPayload.is_masterclass = true;
-        insertPayload.masterclass_sessions = masterclassSessions.filter(s => s.title.trim());
-      }
 
       const { data: contentData, error: dbError } = await supabase
         .from('doctor_content')
@@ -425,56 +408,8 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
             </div>
             
 
-            {/* Masterclass toggle */}
-            <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
-              <div className="min-w-0 flex-1"><Label>{t('doctorUploadPage.masterclassLabel')}</Label><p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.masterclassDescription')}</p></div>
-              <Switch checked={isMasterclass} onCheckedChange={v => { setIsMasterclass(v); if (v && masterclassSessions.length === 0) setMasterclassSessions([{ session_number: 1, title: '', scheduled_at: '', duration_minutes: 60 }]); }} disabled={!isApproved} className="flex-shrink-0" />
-            </div>
-
-            {isMasterclass && (
-              <div className="space-y-3 border border-border rounded-lg p-3 sm:p-4 bg-muted/30">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <Label className="text-sm font-medium">{t('doctorUploadPage.sessionsCount').replace('{count}', String(masterclassSessions.length))}</Label>
-                  <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => setMasterclassSessions(prev => [...prev, { session_number: prev.length + 1, title: '', scheduled_at: '', duration_minutes: 60 }])}>
-                    {t('doctorUploadPage.addSession')}
-                  </Button>
-                </div>
-                {masterclassSessions.map((session, i) => (
-                  <div key={i} className="rounded-lg border border-border bg-card p-3 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-primary">{t('doctorUploadPage.sessionNumber').replace('{n}', String(i + 1))}</span>
-                      {masterclassSessions.length > 1 && (
-                        <Button type="button" variant="ghost" size="sm" className="text-destructive h-7 px-2 -mr-2" onClick={() => {
-                          setMasterclassSessions(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, session_number: idx + 1 })));
-                        }}>
-                          <X className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionTitleLabel')}</Label>
-                      <Input placeholder={t('doctorUploadPage.sessionNumber').replace('{n}', String(i + 1))} value={session.title} onChange={e => {
-                        setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, title: e.target.value } : s));
-                      }} className="text-sm" />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionDateTimeLabel')}</Label>
-                        <Input type="datetime-local" value={session.scheduled_at} onChange={e => {
-                          setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, scheduled_at: e.target.value } : s));
-                        }} className="text-sm w-full sm:w-48" />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground">{t('doctorUploadPage.sessionMinutesLabel')}</Label>
-                        <Input type="number" value={session.duration_minutes} onChange={e => {
-                          setMasterclassSessions(prev => prev.map((s, idx) => idx === i ? { ...s, duration_minutes: parseInt(e.target.value) || 60 } : s));
-                        }} className="text-sm w-full sm:w-20" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Masterclass se gestiona ahora en su propia sección de MM Education
+                (cliente 2026-07-07) — se quitó el toggle de aquí. */}
 
             <div className="flex items-start sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/30 border border-border">
               <div className="min-w-0 flex-1"><Label>{t('doctorUploadPage.publicContentLabel')}</Label><p className="text-xs text-muted-foreground mt-0.5">{t('doctorUploadPage.publicContentDescription')}</p></div>

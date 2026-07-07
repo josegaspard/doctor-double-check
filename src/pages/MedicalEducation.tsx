@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, ArrowLeft, Loader2, Trash2, CalendarDays, Video, Folder } from 'lucide-react';
+import { GraduationCap, Plus, MessageCircle, Eye, Stethoscope, Send, ArrowLeft, Loader2, Trash2, CalendarDays, Video, Folder, Presentation } from 'lucide-react';
+import MasterclassSection from '@/components/education/MasterclassSection';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useSpecialties } from '@/hooks/useSpecialties';
@@ -314,6 +315,12 @@ export default function MedicalEducation() {
                 </TabsTrigger>
               )}
               {(role === 'doctor' || role === 'resident') && (
+                <TabsTrigger value="masterclass" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
+                  <Presentation className="w-4 h-4" />
+                  <span className="whitespace-nowrap truncate">{t('medicalEducationPage.tabMasterclass')}</span>
+                </TabsTrigger>
+              )}
+              {(role === 'doctor' || role === 'resident') && (
                 <TabsTrigger value="calendar" className="justify-center min-w-0 gap-1.5 sm:gap-2 rounded-xl px-2 sm:px-4 py-2.5 text-[13px] sm:text-sm font-medium text-[#163a83]/65 hover:text-[#163a83] transition-colors data-[state=active]:!bg-primary data-[state=active]:!text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30">
                   <CalendarDays className="w-4 h-4" />
                   <span className="whitespace-nowrap truncate">{t('medicalEducationPage.tabCalendar')}</span>
@@ -471,6 +478,13 @@ export default function MedicalEducation() {
           {(role === 'doctor' || role === 'resident') && (
             <TabsContent value="meetings" className="mt-0 focus-visible:outline-none">
               <Meetings embedded />
+            </TabsContent>
+          )}
+
+          {/* ---- Masterclass (sesiones programadas) — entre Reuniones y Calendario (cliente 2026-07-07) ---- */}
+          {(role === 'doctor' || role === 'resident') && (
+            <TabsContent value="masterclass" className="mt-0 focus-visible:outline-none">
+              <MasterclassSection />
             </TabsContent>
           )}
 
