@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
+import { exportPrescriptionToPDF, prescriptionFolio, prescriptionVerifyUrl } from '@/lib/generatePrescriptionPDF';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 import { SecureImage } from '@/components/security/SecureImage';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -293,11 +293,17 @@ export default function PrescriptionDetail() {
                       <Badge variant="outline" className="text-xs">#{i + 1}</Badge>
                       <p className="font-semibold text-foreground">{med.name}</p>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-sm mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm mt-2">
                       {med.dosage && (
                         <div>
                           <p className="text-xs text-muted-foreground">{t('prescriptionDetailPage.medications.dosageLabel')}</p>
                           <p className="font-medium">{med.dosage}</p>
+                        </div>
+                      )}
+                      {med.route && (
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t('rxExtra.routeLabel')}</p>
+                          <p className="font-medium">{med.route}</p>
                         </div>
                       )}
                       {med.frequency && (
@@ -350,7 +356,7 @@ export default function PrescriptionDetail() {
         )}
 
         {/* Signature */}
-        <Card className="border-primary/20">
+        <Card className="border-primary/20 mb-4">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
@@ -360,6 +366,27 @@ export default function PrescriptionDetail() {
                   hour: '2-digit', minute: '2-digit',
                 }).format(prescription.signedAt)}
               </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Folio + verificación pública */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">{t('rxExtra.folioLabel')}</p>
+                <p className="font-mono font-bold text-primary text-lg">{prescriptionFolio(prescription.id)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('rxExtra.verifyHint')}</p>
+              </div>
+              <Button
+                variant="outline"
+                className="gap-2 flex-shrink-0"
+                onClick={() => window.open(prescriptionVerifyUrl(prescription.id), '_blank')}
+              >
+                <FileText className="w-4 h-4" />
+                {t('rxExtra.verifyButton')}
+              </Button>
             </div>
           </CardContent>
         </Card>

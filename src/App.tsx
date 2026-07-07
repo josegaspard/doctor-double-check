@@ -136,6 +136,7 @@ const AdminEvents = React.lazy(() => import("./pages/AdminEvents"));
 const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
 const PrescriptionDetail = React.lazy(() => import("./pages/PrescriptionDetail"));
+const VerifyPrescription = React.lazy(() => import("./pages/VerifyPrescription"));
 const ReportIssue = React.lazy(() => import("./pages/ReportIssue"));
 const EmailConfirmed = React.lazy(() => import("./pages/EmailConfirmed"));
 const AdminRanks = React.lazy(() => import("./pages/AdminRanks"));
@@ -321,6 +322,8 @@ const App = () => {
                       <Route path="/prescriptions" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><Prescriptions /></ToggleGate>} />
                       <Route path="/prescriptions/new" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><CreatePrescription /></ToggleGate>} />
                       <Route path="/prescriptions/:id" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><PrescriptionDetail /></ToggleGate>} />
+                      {/* Portal público de verificación de recetas (QR) — sin login ni toggle (cliente 2026-07-07) */}
+                      <Route path="/verificar-receta/:id" element={<VerifyPrescription />} />
                       <Route path="/report-issue" element={<ReportIssue />} />
                       <Route path="/email-confirmed" element={<EmailConfirmed />} />
                       <Route path="/advertising" element={<Advertising />} />

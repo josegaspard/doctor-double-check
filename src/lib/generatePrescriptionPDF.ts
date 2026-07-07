@@ -1,6 +1,9 @@
+import QRCode from 'qrcode';
+
 export interface Medication {
   name: string;
   dosage: string;
+  route?: string;        // Vía de administración (Oral, IM, IV, etc.)
   frequency: string;
   duration: string;
   notes?: string;
@@ -20,7 +23,22 @@ export interface PrescriptionData {
   doctorCedula?: string;
   doctorSignatureUrl?: string;
   signedAt: Date;
+  // Verificación (se rellenan en exportPrescriptionToPDF)
+  verifyQrDataUrl?: string;
+  verifyUrl?: string;
 }
+
+// Folio legible y estable derivado del id de la receta.
+export const prescriptionFolio = (id: string): string =>
+  `MM-${id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+
+// URL pública de verificación (portal /verificar-receta/:id).
+export const prescriptionVerifyUrl = (id: string): string => {
+  const origin = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'https://medical-masters.com';
+  return `${origin}/verificar-receta/${id}`;
+};
 
 const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('es-MX', {
@@ -35,11 +53,15 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
     <tr>
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; font-weight: 600; color: #163a83;">${i + 1}. ${med.name}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.dosage}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.route || '—'}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.frequency}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.duration}</td>
     </tr>
-    ${med.notes ? `<tr><td colspan="4" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">📝 ${med.notes}</td></tr>` : ''}
+    ${med.notes ? `<tr><td colspan="5" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">📝 ${med.notes}</td></tr>` : ''}
   `).join('');
+
+  const folio = prescriptionFolio(rx.id);
+  const verifyUrl = rx.verifyUrl || prescriptionVerifyUrl(rx.id);
 
   // Use the deployed logo URL
   const logoUrl = 'https://medical-masters.com/icon-512.png?v=11';
@@ -79,7 +101,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         </div>
         <div style="text-align: right; font-size: 13px; opacity: 0.9;">
           <p style="margin: 0;">Fecha: ${formatDate(rx.signedAt)}</p>
-          <p style="margin: 0;">Folio: ${rx.id.slice(0, 8).toUpperCase()}</p>
+          <p style="margin: 0;">Folio: ${folio}</p>
         </div>
       </div>
     </div>
@@ -115,6 +137,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
             <tr style="background: #f0f4fa;">
               <th style="padding: 10px 12px; text-align: left; font-size: 12px; color: #163a83; font-weight: 600;">Medicamento</th>
               <th style="padding: 10px 12px; text-align: left; font-size: 12px; color: #163a83; font-weight: 600;">Dosis</th>
+              <th style="padding: 10px 12px; text-align: left; font-size: 12px; color: #163a83; font-weight: 600;">Vía</th>
               <th style="padding: 10px 12px; text-align: left; font-size: 12px; color: #163a83; font-weight: 600;">Frecuencia</th>
               <th style="padding: 10px 12px; text-align: left; font-size: 12px; color: #163a83; font-weight: 600;">Duración</th>
             </tr>
@@ -152,6 +175,16 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         <p style="margin: 4px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
         <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}</p>
       </div>
+
+      <!-- Verificación (QR + folio) -->
+      <div style="margin-top: 28px; display: flex; align-items: center; gap: 16px; background: #f0f4fa; border: 1px solid #d1d9e6; border-radius: 10px; padding: 16px;">
+        ${rx.verifyQrDataUrl ? `<img src="${rx.verifyQrDataUrl}" alt="Código QR de verificación" style="width: 96px; height: 96px; flex-shrink: 0; background: #fff; border-radius: 6px;" />` : ''}
+        <div style="min-width: 0;">
+          <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; color: #163a83; font-weight: 700; letter-spacing: 0.5px;">Verificación de autenticidad</p>
+          <p style="margin: 0; font-size: 12px; color: #374a6d;">Escanea el código QR o visita el enlace para confirmar que esta receta fue emitida por un médico verificado en Medical Masters.</p>
+          <p style="margin: 6px 0 0; font-size: 12px; color: #6b7fa3; word-break: break-all;"><strong style="color:#163a83;">Folio ${folio}</strong> · ${verifyUrl}</p>
+        </div>
+      </div>
     </div>
 
     <!-- Footer -->
@@ -170,9 +203,18 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 </html>`;
 };
 
-export const exportPrescriptionToPDF = (data: PrescriptionData): void => {
-  const html = generatePrescriptionHTML(data);
+export const exportPrescriptionToPDF = async (data: PrescriptionData): Promise<void> => {
+  // Abrir la ventana de forma SÍNCRONA (si no, el bloqueador de popups la mata
+  // al abrirla tras un await). Luego generamos el QR y escribimos el HTML.
   const printWindow = window.open('', '_blank');
+
+  const verifyUrl = data.verifyUrl || prescriptionVerifyUrl(data.id);
+  let verifyQrDataUrl: string | undefined;
+  try {
+    verifyQrDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 240, errorCorrectionLevel: 'M' });
+  } catch { /* si falla el QR, la receta sigue mostrando folio + enlace */ }
+
+  const html = generatePrescriptionHTML({ ...data, verifyUrl, verifyQrDataUrl });
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();

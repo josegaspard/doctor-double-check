@@ -15,6 +15,12 @@ import {
   FileText, Plus, Trash2, Loader2, Download, Upload, Image, File, X 
 } from 'lucide-react';
 
+// Vías de administración (COFEPRIS / uso clínico habitual en México).
+const ROUTE_OPTIONS = [
+  'Oral', 'Sublingual', 'Intramuscular', 'Intravenosa', 'Subcutánea',
+  'Tópica', 'Oftálmica', 'Ótica', 'Nasal', 'Inhalada', 'Rectal', 'Vaginal', 'Otra',
+];
+
 interface PrescriptionFormProps {
   patientId: string;
   patientName: string;
@@ -31,14 +37,14 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   const [instructions, setInstructions] = useState('');
   const [notes, setNotes] = useState('');
   const [medications, setMedications] = useState<Medication[]>([
-    { name: '', dosage: '', frequency: '', duration: '' },
+    { name: '', dosage: '', route: '', frequency: '', duration: '' },
   ]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const addMedication = () => {
-    setMedications([...medications, { name: '', dosage: '', frequency: '', duration: '' }]);
+    setMedications([...medications, { name: '', dosage: '', route: '', frequency: '', duration: '' }]);
   };
 
   const removeMedication = (index: number) => {
@@ -294,13 +300,14 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
       {/* Medications */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1">
           <Label>{t('autoI18n.prescForm19')}</Label>
           <Button variant="outline" size="sm" onClick={addMedication} className="gap-1">
             <Plus className="w-3 h-3" />
             {t('autoI18n.prescForm20')}
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground mb-2">{t('rxExtra.dciHint')}</p>
         <div className="space-y-3">
           {medications.map((med, i) => (
             <div key={i} className="p-3 bg-muted/50 rounded-lg space-y-2">
@@ -323,6 +330,15 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
                   value={med.dosage}
                   onChange={(e) => updateMedication(i, 'dosage', e.target.value)}
                 />
+                <select
+                  aria-label={t('rxExtra.routeLabel')}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={med.route || ''}
+                  onChange={(e) => updateMedication(i, 'route', e.target.value)}
+                >
+                  <option value="">{t('rxExtra.routePlaceholder')}</option>
+                  {ROUTE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
                 <Input
                   placeholder={t('autoI18n.prescForm23')}
                   value={med.frequency}

@@ -7051,6 +7051,26 @@ export const es = {
       currentMedications: 'Medicación actual',
     },
   },
+  rxExtra: {
+    dciHint: 'Usa el nombre genérico (DCI) del fármaco; agrega la marca solo si es necesario.',
+    routeLabel: 'Vía',
+    routePlaceholder: 'Vía de administración',
+    folioLabel: 'Folio',
+    verifyHint: 'Cualquiera puede verificar la autenticidad de esta receta con el folio o el QR.',
+    verifyButton: 'Ver verificación',
+  },
+  rxVerify: {
+    checking: 'Verificando receta...',
+    invalidTitle: 'Receta no encontrada',
+    invalidBody: 'Este folio no corresponde a ninguna receta emitida en Medical Masters. Verifica el enlace o el código QR.',
+    validTitle: 'Receta válida',
+    validBody: 'Emitida por un médico verificado en Medical Masters.',
+    issuedOn: 'Emitida',
+    doctor: 'Médico tratante',
+    patient: 'Paciente',
+    medications: 'Medicamentos',
+    footer: 'Verificación generada por Medical Masters. La autenticidad se confirma contra nuestra base de datos en tiempo real.',
+  },
   prescriptionDetailPage: {
     notFound: {
       title: 'Receta no encontrada',
