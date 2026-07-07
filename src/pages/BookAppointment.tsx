@@ -49,6 +49,55 @@ const formatDate = (iso: string, lang: string = 'es') => {
 const formatTime = (iso: string, lang: string = 'es') =>
   new Date(iso).toLocaleTimeString(LOCALE_MAP[lang] || 'es-MX', { hour: '2-digit', minute: '2-digit' });
 
+// Orientación (cliente 2026-07-07): el doctor define su horario semanal de atención
+// (office_days + horas). Aquí generamos turnos reservables de 30 min dentro de ese
+// horario para las próximas semanas, sin que el doctor tenga que crear cada turno.
+const ORIENTATION_SLOT_MIN = 30;
+const ORIENTATION_HORIZON_DAYS = 21;
+const DAY_NUM: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
+function generateOfficeHourSlots(
+  doctorId: string,
+  officeDays: string[] | null,
+  start: string | null,
+  end: string | null,
+  bookedTimes: Set<string>,
+  now: Date,
+): Slot[] {
+  if (!officeDays?.length || !start || !end) return [];
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const startMins = sh * 60 + sm;
+  const endMins = eh * 60 + em;
+  if (endMins <= startMins) return [];
+  const activeNums = new Set(officeDays.map(d => DAY_NUM[d.toLowerCase()]).filter(n => n !== undefined));
+  const out: Slot[] = [];
+  for (let d = 0; d < ORIENTATION_HORIZON_DAYS; d++) {
+    const day = new Date(now);
+    day.setDate(now.getDate() + d);
+    day.setHours(0, 0, 0, 0);
+    if (!activeNums.has(day.getDay())) continue;
+    for (let m = startMins; m + ORIENTATION_SLOT_MIN <= endMins; m += ORIENTATION_SLOT_MIN) {
+      const dt = new Date(day);
+      dt.setHours(Math.floor(m / 60), m % 60, 0, 0);
+      if (dt.getTime() <= now.getTime()) continue;
+      const iso = dt.toISOString();
+      if (bookedTimes.has(iso)) continue;
+      out.push({
+        id: `gen-${iso}`,
+        doctor_id: doctorId,
+        title: '',
+        description: null,
+        scheduled_at: iso,
+        duration_minutes: ORIENTATION_SLOT_MIN,
+        type: 'consultation',
+      });
+    }
+  }
+  return out;
+}
+
 export default function BookAppointment() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const navigate = useNavigate();
@@ -69,7 +118,7 @@ export default function BookAppointment() {
     const load = async () => {
       setLoading(true);
       const [{ data: dp }, { data: prof }, { data: avs }, { data: appts }] = await Promise.all([
-        supabase.from('doctor_profiles').select('user_id, specialty, consultation_fee, rating, total_consultations').eq('user_id', doctorId).eq('status', 'approved').single(),
+        supabase.from('doctor_profiles').select('user_id, specialty, consultation_fee, rating, total_consultations, office_days, office_hours_start, office_hours_end').eq('user_id', doctorId).eq('status', 'approved').single(),
         supabase.from('profiles').select('id, name, avatar_url').eq('id', doctorId).single(),
         supabase
           .from('doctor_availability')
@@ -79,7 +128,7 @@ export default function BookAppointment() {
           .gte('scheduled_at', new Date().toISOString())
           .order('scheduled_at', { ascending: true })
           .limit(50),
-        supabase.from('appointments').select('availability_id').eq('doctor_id', doctorId).in('status', ['requested', 'confirmed']),
+        supabase.from('appointments').select('availability_id, scheduled_at').eq('doctor_id', doctorId).in('status', ['requested', 'confirmed']),
       ]);
 
       if (dp && prof) {
@@ -93,8 +142,25 @@ export default function BookAppointment() {
           total_consultations: (dp as any).total_consultations || 0,
         });
       }
-      setSlots((avs as any[]) || []);
-      setBookedSlotIds(new Set(((appts as any[]) || []).map((a) => a.availability_id).filter(Boolean)));
+      const apptRows = (appts as any[]) || [];
+      const bookedTimes = new Set(
+        apptRows.map((a) => (a.scheduled_at ? new Date(a.scheduled_at).toISOString() : null)).filter(Boolean) as string[]
+      );
+      const discreteSlots = (avs as any[] as Slot[]) || [];
+      const discreteTimes = new Set(discreteSlots.map((s) => new Date(s.scheduled_at).toISOString()));
+      const officeSlots = generateOfficeHourSlots(
+        doctorId,
+        (dp as any)?.office_days ?? null,
+        (dp as any)?.office_hours_start ?? null,
+        (dp as any)?.office_hours_end ?? null,
+        bookedTimes,
+        new Date(),
+      ).filter((s) => !discreteTimes.has(new Date(s.scheduled_at).toISOString()));
+      const merged = [...discreteSlots, ...officeSlots].sort(
+        (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
+      );
+      setSlots(merged);
+      setBookedSlotIds(new Set(apptRows.map((a) => a.availability_id).filter(Boolean)));
       setLoading(false);
     };
     load();
@@ -128,7 +194,9 @@ export default function BookAppointment() {
       .insert({
         patient_id: user.id,
         doctor_id: doctorId,
-        availability_id: selected.id,
+        // Los turnos generados desde el horario semanal (id "gen-…") no tienen fila
+        // en doctor_availability → availability_id null.
+        availability_id: selected.id.startsWith('gen-') ? null : selected.id,
         scheduled_at: selected.scheduled_at,
         duration_minutes: selected.duration_minutes,
         reason: reason || null,

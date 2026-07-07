@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-06-batch56-videos-editables-admin
+// SW_VERSION: 2026-07-07-batch58-orientacion-calendario-chat-recetas
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

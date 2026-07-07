@@ -684,10 +684,20 @@ export default function DoctorProfile() {
             {/* Action panel — clear hierarchy */}
             {!isSelf && (
             <div className="bg-muted/30 rounded-xl p-3 space-y-2.5">
-              {/* Primary CTA */}
-              <Button 
-                className="gap-2 w-full" 
+              {/* Primary CTA — Orientación: lleva al calendario del doctor (cliente 2026-07-07) */}
+              <Button
+                className="gap-2 w-full"
                 size="lg"
+                onClick={() => navigate(`/book/${doctor.id}`)}
+              >
+                <CalendarIcon className="w-5 h-5" />
+                {t('doctorProfile.orientation')}
+              </Button>
+
+              {/* Chat (antes "Reservar cita") — inicia el chat con el doctor */}
+              <Button
+                variant="outline"
+                className="gap-2 w-full"
                 onClick={handleStartConsultation}
                 disabled={isStartingChat || isRequestingConnection || (role === 'resident' && residentConnectionStatus === 'pending')}
               >
@@ -696,38 +706,23 @@ export default function DoctorProfile() {
                 ) : (
                   <MessageSquare className="w-5 h-5" />
                 )}
-                {isStartingChat 
+                {isStartingChat
                   ? t('doctorProfile.starting')
                   : role === 'resident'
                     ? residentConnectionStatus === 'accepted'
-                      ? t('doctorProfile.startChat')
+                      ? t('doctorProfile.chat')
                       : residentConnectionStatus === 'pending'
                         ? t('doctorProfile.connectionPending')
                         : t('doctorProfile.requestConnection')
-                  : isFreeConsultation 
-                    ? t('doctorProfile.freeConsultation')
-                    : canChatDirectly 
-                      ? t('doctorProfile.startConsultation')
-                      : (
+                  : (isFreeConsultation || canChatDirectly)
+                    ? t('doctorProfile.chat')
+                    : (
                         <>
-                          {t('doctorProfile.consultation')} (<PriceDisplay amount={doctor.consultationFee} size="sm" />)
+                          {t('doctorProfile.chat')} (<PriceDisplay amount={doctor.consultationFee} size="sm" />)
                         </>
                       )
                 }
               </Button>
-
-              {/* Schedule appointment (patients only — does not block UI for others) */}
-              {(role === 'patient' || role === 'visitor') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-1.5"
-                  onClick={() => navigate(`/book/${doctor.id}`)}
-                >
-                  <CalendarIcon className="w-4 h-4 text-primary" />
-                  {t('doctorProfilePage.bookAppointment')}
-                </Button>
-              )}
 
               {/* Secondary actions — stacked on mobile, row on sm+ */}
               <div className="flex flex-col gap-2 sm:grid sm:grid-cols-[1fr_1fr_auto] sm:gap-2">

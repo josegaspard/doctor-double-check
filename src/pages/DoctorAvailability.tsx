@@ -53,6 +53,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDoctorAvailability, AvailabilityType, DoctorAvailability } from '@/hooks/useDoctorAvailability';
@@ -96,6 +97,15 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
   });
   const [inviteeInput, setInviteeInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Orientación (cliente 2026-07-07): en vez de un turno puntual, el doctor define
+  // qué días y horas de la semana está disponible. Se guarda en doctor_profiles
+  // (office_days / office_hours_start / office_hours_end) y /book genera los turnos.
+  const ORIENTATION_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+  const [orientationDays, setOrientationDays] = useState<string[]>(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+  const [orientationStart, setOrientationStart] = useState('08:00:00');
+  const [orientationEnd, setOrientationEnd] = useState('20:00:00');
+  const [orientationLoaded, setOrientationLoaded] = useState(false);
+  const [isSavingOrientation, setIsSavingOrientation] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -108,6 +118,49 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     inviteesCount: number;
   } | null>(null);
   const [isNotifyingMove, setIsNotifyingMove] = useState(false);
+
+  // Cargar el horario de atención actual cuando se abre el modal en modo Orientación.
+  React.useEffect(() => {
+    if (!isDialogOpen || formData.type !== 'consultation' || orientationLoaded || !user?.id) return;
+    let active = true;
+    supabase
+      .from('doctor_profiles')
+      .select('office_hours_start, office_hours_end, office_days')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (!active || !data) { setOrientationLoaded(true); return; }
+        setOrientationStart((data as any).office_hours_start || '08:00:00');
+        setOrientationEnd((data as any).office_hours_end || '20:00:00');
+        setOrientationDays((data as any).office_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+        setOrientationLoaded(true);
+      });
+    return () => { active = false; };
+  }, [isDialogOpen, formData.type, orientationLoaded, user?.id]);
+
+  const toggleOrientationDay = (day: string) => {
+    setOrientationDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  };
+
+  const handleSaveOrientation = async () => {
+    if (!user?.id) return;
+    if (orientationDays.length === 0) {
+      toast({ title: t('common.error'), description: t('availabilityPage.orientationNoDays'), variant: 'destructive' });
+      return;
+    }
+    setIsSavingOrientation(true);
+    const { error } = await supabase
+      .from('doctor_profiles')
+      .update({ office_hours_start: orientationStart, office_hours_end: orientationEnd, office_days: orientationDays } as any)
+      .eq('user_id', user.id);
+    setIsSavingOrientation(false);
+    if (error) {
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: t('common.success'), description: t('availabilityPage.orientationSaved') });
+    setIsDialogOpen(false);
+  };
 
   const Wrapper = embedded ? React.Fragment : MainLayout;
 
@@ -546,7 +599,7 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
         </Dialog>
 
         {/* Create dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) setOrientationLoaded(false); }}>
           <DialogContent className="sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg h-full sm:h-auto">
             <DialogHeader className="pb-2">
               <DialogTitle className="text-base sm:text-lg">{t('availabilityPage.scheduleAvailability')}</DialogTitle>
@@ -580,6 +633,59 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
                 </div>
               </div>
 
+              {/* Orientación → configuración de horario semanal (cliente 2026-07-07) */}
+              {formData.type === 'consultation' && (
+                <div className="space-y-4">
+                  <p className="text-xs text-muted-foreground">{t('availabilityPage.orientationHint')}</p>
+                  <div className="space-y-2">
+                    <Label className="text-xs sm:text-sm">{t('availabilityPage.orientationDaysLabel')}</Label>
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                      {ORIENTATION_DAYS.map(day => (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleOrientationDay(day)}
+                          className={cn(
+                            'h-9 rounded-md border text-xs font-medium transition-colors capitalize',
+                            orientationDays.includes(day)
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:border-primary/40'
+                          )}
+                        >
+                          {t(`officeHoursConfig.days.${day}`).slice(0, 3)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="orientation-start" className="text-xs sm:text-sm">{t('availabilityPage.orientationStartLabel')}</Label>
+                      <Input
+                        id="orientation-start"
+                        type="time"
+                        value={orientationStart.slice(0, 5)}
+                        onChange={(e) => setOrientationStart(`${e.target.value}:00`)}
+                        className="h-9 sm:h-10 text-xs sm:text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="orientation-end" className="text-xs sm:text-sm">{t('availabilityPage.orientationEndLabel')}</Label>
+                      <Input
+                        id="orientation-end"
+                        type="time"
+                        value={orientationEnd.slice(0, 5)}
+                        onChange={(e) => setOrientationEnd(`${e.target.value}:00`)}
+                        className="h-9 sm:h-10 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                    <p className="text-xs text-muted-foreground">{t('availabilityPage.orientationPreview')}</p>
+                  </div>
+                </div>
+              )}
+
+              {formData.type !== 'consultation' && (<>
               <div className="space-y-2">
                 <Label htmlFor="title">{t('availabilityPage.titleLabel')}</Label>
                 <Input
@@ -714,19 +820,30 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
                   </div>
                 )}
               </div>
+              </>)}
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
-                {isSubmitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
-                ) : (
-                  <><Plus className="w-4 h-4 mr-2" />{t('availabilityPage.create')}</>
-                )}
-              </Button>
+              {formData.type === 'consultation' ? (
+                <Button onClick={handleSaveOrientation} disabled={isSavingOrientation} className="w-full sm:w-auto">
+                  {isSavingOrientation ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
+                  ) : (
+                    <><Clock className="w-4 h-4 mr-2" />{t('availabilityPage.orientationSave')}</>
+                  )}
+                </Button>
+              ) : (
+                <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
+                  {isSubmitting ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
+                  ) : (
+                    <><Plus className="w-4 h-4 mr-2" />{t('availabilityPage.create')}</>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
