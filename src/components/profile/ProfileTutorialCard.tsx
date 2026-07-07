@@ -3,16 +3,17 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { GraduationCap, Clapperboard } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteVideos } from '@/hooks/useSiteVideos';
 
 type TutorialRole = 'patient' | 'doctor' | 'resident';
 
 /**
- * Mapa rol → video de tutorial (archivos en public/tutoriales/).
- * Cuando el cliente entregue cada video, basta subirlo con este nombre a
- * public/tutoriales/ y desplegar: el video reemplaza al aviso "muy pronto"
- * automáticamente, sin tocar código.
+ * Video de tutorial por rol. La URL se edita desde el súper admin
+ * (site_settings.videos.tutorial_<rol>). Si no hay video configurado, cae al
+ * asset estático de public/tutoriales/; y si tampoco existe, el <video> falla
+ * y mostramos el aviso "muy pronto".
  */
-const TUTORIAL_VIDEOS: Record<TutorialRole, string> = {
+const STATIC_FALLBACK: Record<TutorialRole, string> = {
   doctor: '/tutoriales/tutorial-doctores.mp4',
   patient: '/tutoriales/tutorial-pacientes.mp4',
   resident: '/tutoriales/tutorial-residentes.mp4',
@@ -24,13 +25,17 @@ interface ProfileTutorialCardProps {
 
 export function ProfileTutorialCard({ role }: ProfileTutorialCardProps) {
   const { t } = useLanguage();
+  const { videos } = useSiteVideos();
   // Si el archivo aún no existe, el server (SPA rewrite de Vercel) devuelve el
   // index.html en vez del .mp4 → el <video> no puede decodificarlo y dispara
   // onError. En ese caso mostramos el aviso "muy pronto" en lugar del video.
   const [unavailable, setUnavailable] = useState(false);
 
-  const src = TUTORIAL_VIDEOS[role as TutorialRole];
-  if (!src) return null;
+  if (!(['doctor', 'patient', 'resident'] as string[]).includes(role)) return null;
+  const r = role as TutorialRole;
+
+  const configured = videos[`tutorial_${r}` as const];
+  const src = configured || STATIC_FALLBACK[r];
 
   const subtitleKey = `profileTutorial.subtitle.${role}`;
   const subtitle = t(subtitleKey);
@@ -67,6 +72,7 @@ export function ProfileTutorialCard({ role }: ProfileTutorialCardProps) {
           ) : (
             <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-black">
               <video
+                key={src}
                 controls
                 playsInline
                 preload="metadata"

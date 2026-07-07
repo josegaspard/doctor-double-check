@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { useSiteVideos } from '@/hooks/useSiteVideos';
 
 export default function Landing() {
   const { t } = useLanguage();
@@ -51,7 +52,10 @@ export default function Landing() {
 
   // Video del home: SIN autoplay (cliente 2026-06-29). Se reproduce solo cuando
   // el usuario pulsa play en los controles nativos del <video>.
+  // Editable desde el súper admin (site_settings.videos.home); fallback al asset estático.
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { videos } = useSiteVideos();
+  const homeVideoSrc = videos.home || '/landing-mm-2026.mp4';
 
   // Scroll effect for navbar
   useEffect(() => {
@@ -433,7 +437,8 @@ export default function Landing() {
                 playsInline
                 preload="metadata"
                 className="w-full aspect-video object-cover"
-                src="/landing-mm-2026.mp4"
+                src={homeVideoSrc}
+                key={homeVideoSrc}
               />
             </div>
           </div>

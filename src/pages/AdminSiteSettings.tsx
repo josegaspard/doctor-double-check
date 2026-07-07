@@ -39,7 +39,9 @@ import {
   Trash2,
   Link2,
   ToggleLeft,
+  Film,
 } from 'lucide-react';
+import { AdminVideoManager } from '@/components/admin/AdminVideoManager';
 import { Badge } from '@/components/ui/badge';
 
 interface SocialLinks {
@@ -762,7 +764,11 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="videos" className="gap-2 text-xs">
+                <Film className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('adminVideos.tab')}</span>
+              </TabsTrigger>
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('adminSiteSettingsPage.tabs.social')}</span>
@@ -800,6 +806,22 @@ export default function AdminSiteSettings() {
                 <span className="hidden sm:inline">Páginas</span>
               </TabsTrigger>
             </TabsList>
+
+            {/* Videos Tab (editable por súper admin: home + tutoriales por rol) */}
+            <TabsContent value="videos">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Film className="w-5 h-5" />
+                    {t('adminVideos.title')}
+                  </CardTitle>
+                  <CardDescription>{t('adminVideos.desc')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminVideoManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* Social Links Tab */}
             <TabsContent value="social">
