@@ -433,7 +433,7 @@ export default function Landing() {
                 playsInline
                 preload="metadata"
                 className="w-full aspect-video object-cover"
-                src="/landing-inmersiva.mp4"
+                src="/landing-mm-2026.mp4"
               />
             </div>
           </div>

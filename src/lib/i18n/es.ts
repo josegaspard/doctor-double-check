@@ -1,4 +1,13 @@
 export const es = {
+  profileTutorial: {
+    title: 'Aprende a usar la aplicación',
+    subtitle: {
+      doctor: 'Tutorial rápido para sacarle el máximo provecho a Medical Masters como doctor.',
+      patient: 'Tutorial rápido para sacarle el máximo provecho a Medical Masters como paciente.',
+      resident: 'Tutorial rápido para sacarle el máximo provecho a Medical Masters como residente.',
+      default: 'Tutorial rápido para aprender a usar Medical Masters.',
+    },
+  },
   codeOfEthics: { title: 'Código de Ética', subtitle: 'Compromiso ético profesional en Medical Masters' },
   badgeChat: { goldRoom: 'Chat de Medalla', verifiedRoom: 'Chat de Palomita', noAccess: 'No tienes un distintivo que te dé acceso a un chat exclusivo.', backToChat: 'Volver al chat', empty: 'Aún no hay mensajes en esta sala.', placeholder: 'Escribe un mensaje…', roomRowTitle: 'Doctores verificados', roomRowSubtitle: 'Sala exclusiva por insignia', today: 'Hoy', yesterday: 'Ayer' },
   userMgmt: { reactivate: 'Reactivar cuenta', reactivated: 'Cuenta reactivada', currentlySuspended: 'Esta cuenta está suspendida actualmente.' },

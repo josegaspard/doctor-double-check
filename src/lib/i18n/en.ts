@@ -1,4 +1,13 @@
 export const en = {
+  profileTutorial: {
+    title: 'Learn how to use the app',
+    subtitle: {
+      doctor: 'A quick tutorial to get the most out of Medical Masters as a doctor.',
+      patient: 'A quick tutorial to get the most out of Medical Masters as a patient.',
+      resident: 'A quick tutorial to get the most out of Medical Masters as a resident.',
+      default: 'A quick tutorial to learn how to use Medical Masters.',
+    },
+  },
   codeOfEthics: { title: 'Code of Ethics', subtitle: 'Professional ethical commitment at Medical Masters' },
   badgeChat: { goldRoom: 'Medal Chat', verifiedRoom: 'Verified Chat', noAccess: 'You do not have a badge that grants access to an exclusive chat.', backToChat: 'Back to chat', empty: 'No messages in this room yet.', placeholder: 'Type a message…', roomRowTitle: 'Verified doctors', roomRowSubtitle: 'Exclusive badge room', today: 'Today', yesterday: 'Yesterday' },
   userMgmt: { reactivate: 'Reactivate account', reactivated: 'Account reactivated', currentlySuspended: 'This account is currently suspended.' },

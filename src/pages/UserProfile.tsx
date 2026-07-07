@@ -72,6 +72,7 @@ import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinical
 import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
+import { ProfileTutorialCard } from '@/components/profile/ProfileTutorialCard';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
 import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
@@ -910,6 +911,9 @@ export default function UserProfile() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Aprende a usar la aplicación — tutorial por rol (cliente 2026-07-06), después del panel del perfil */}
+        {(role === 'patient' || role === 'doctor' || role === 'resident') && <ProfileTutorialCard role={role} />}
 
         {/* Doctores que sigues / suscripciones — los 3 roles pueden seguir doctores */}
         {(role === 'patient' || role === 'doctor' || role === 'resident') && <MySubscribedDoctorsCard />}
