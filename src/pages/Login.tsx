@@ -69,6 +69,10 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   
   const [registerName, setRegisterName] = useState('');
+  // Nombre y apellido por separado para doctor/residente (pedido cliente 2026-07-07):
+  // más intuitivo que "Nombre completo"; se combinan en `name` al registrar.
+  const [registerFirstName, setRegisterFirstName] = useState('');
+  const [registerLastName, setRegisterLastName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerRole, setRegisterRole] = useState<Exclude<UserRole, 'visitor' | 'admin'>>(preferredRole);
@@ -76,6 +80,8 @@ export default function Login() {
   const [registerInstitution, setRegisterInstitution] = useState('');
   const [registerCountry, setRegisterCountry] = useState('');
   const [registerCedula, setRegisterCedula] = useState('');
+  // Cédula de especialista (opcional) además de la profesional — solo doctor (cliente 2026-07-07)
+  const [registerCedulaEspecialidad, setRegisterCedulaEspecialidad] = useState('');
   const [registerHospital, setRegisterHospital] = useState('');
   const [registerUniversity, setRegisterUniversity] = useState('');
   const [registerDoctorCode, setRegisterDoctorCode] = useState('');
@@ -236,15 +242,21 @@ export default function Login() {
       return;
     }
 
+    // Doctor/residente capturan Nombre + Apellido por separado; se combinan aquí.
+    const composedName = (registerRole === 'doctor' || registerRole === 'resident')
+      ? `${registerFirstName.trim()} ${registerLastName.trim()}`.replace(/\s+/g, ' ').trim()
+      : registerName.trim();
+
     const result = await register({
       email: registerEmail,
       password: registerPassword,
-      name: registerName,
+      name: composedName,
       role: registerRole,
       specialty: registerSpecialty,
       institution: registerHospital || registerUniversity || registerInstitution,
       country: registerCountry,
       cedula: registerCedula,
+      cedulaEspecialidad: registerCedulaEspecialidad,
       hospital: registerHospital,
       university: registerUniversity,
       doctorCode: registerDoctorCode,
@@ -486,17 +498,43 @@ export default function Login() {
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6 pt-0">
                     <form onSubmit={handleRegister} className="space-y-3 sm:space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">{t('login.name')}</Label>
-                        <Input
-                          id="name"
-                          placeholder={t('fix20.pages.loginNamePlaceholder')}
-                          value={registerName}
-                          onChange={(e) => setRegisterName(e.target.value)}
-                          required
-                        />
-                      </div>
-                      
+                      {/* Nombre completo (paciente) o Nombre + Apellido separados (doctor/residente, cliente 2026-07-07) */}
+                      {(registerRole === 'doctor' || registerRole === 'resident') ? (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="first-name">{t('login.firstName')}</Label>
+                            <Input
+                              id="first-name"
+                              placeholder={t('login.firstNamePlaceholder')}
+                              value={registerFirstName}
+                              onChange={(e) => setRegisterFirstName(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="last-name">{t('login.lastName')}</Label>
+                            <Input
+                              id="last-name"
+                              placeholder={t('login.lastNamePlaceholder')}
+                              value={registerLastName}
+                              onChange={(e) => setRegisterLastName(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label htmlFor="name">{t('login.name')}</Label>
+                          <Input
+                            id="name"
+                            placeholder={t('fix20.pages.loginNamePlaceholder')}
+                            value={registerName}
+                            onChange={(e) => setRegisterName(e.target.value)}
+                            required
+                          />
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <Label htmlFor="reg-email">{t('login.email')}</Label>
                         <Input
@@ -556,6 +594,13 @@ export default function Login() {
                               onChange={(e) => setRegisterCedula(e.target.value)}
                             />
                             <CedulaVerifyLink country={registerCountry} className="pt-0.5" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{t('login.cedulaEspecialidad')} <span className="text-muted-foreground font-normal">({t('login.optional')})</span></Label>
+                            <Input
+                              value={registerCedulaEspecialidad}
+                              onChange={(e) => setRegisterCedulaEspecialidad(e.target.value)}
+                            />
                           </div>
                           <div className="space-y-2">
                             <Label>{t('login.hospital')}</Label>

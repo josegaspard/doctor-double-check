@@ -77,6 +77,7 @@ export function useAuthActions(
             year: data.year,
             country: data.country,
             cedula_profesional: data.cedula,
+            cedula_especialidad: data.cedulaEspecialidad,
             hospital: data.hospital,
             university: data.university,
             doctor_code: data.doctorCode,

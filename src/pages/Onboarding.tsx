@@ -210,6 +210,8 @@ export default function Onboarding() {
   const [specialty, setSpecialty] = useState('');
   const [institution, setInstitution] = useState('');
   const [license, setLicense] = useState('');
+  // Cédula de especialista (opcional), además de la profesional — solo doctor (cliente 2026-07-07)
+  const [cedulaEspecialidad, setCedulaEspecialidad] = useState('');
   // Distintivo que el médico elige al verificarse (cliente 2026-06-29):
   // 'gold' = 🥇 medalla dorada, 'verified' = ✔️ palomita, null = ninguno.
   const [year, setYear] = useState<number>(1);
@@ -511,6 +513,8 @@ export default function Onboarding() {
           license: license || '',
           status: 'pending',
           location: doctorLocation.trim() || null,
+          cedula_especialidad: cedulaEspecialidad.trim() || null,
+          cedula_especialidad_status: cedulaEspecialidad.trim() ? 'pending' : null,
         };
 
         // Link cedula verification if available
@@ -1402,6 +1406,22 @@ export default function Onboarding() {
                               />
                             </div>
                           )}
+                        </motion.div>
+                      )}
+
+                      {/* Cédula de especialista (opcional) — debajo de la profesional (cliente 2026-07-07) */}
+                      {selectedRole === 'doctor' && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label htmlFor="cedula-especialidad">
+                            {t('onboarding.cedulaEspecialidad')} <span className="text-muted-foreground font-normal text-xs">{t('onboardingPage.phoneOptional')}</span>
+                          </Label>
+                          <Input
+                            id="cedula-especialidad"
+                            placeholder={t('onboarding.cedulaEspecialidadPlaceholder')}
+                            value={cedulaEspecialidad}
+                            onChange={(e) => setCedulaEspecialidad(e.target.value.slice(0, 50))}
+                            maxLength={50}
+                          />
                         </motion.div>
                       )}
 

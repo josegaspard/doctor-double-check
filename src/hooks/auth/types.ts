@@ -66,6 +66,7 @@ export interface RegisterData {
   year?: number;
   country?: string;
   cedula?: string;
+  cedulaEspecialidad?: string;
   hospital?: string;
   university?: string;
   doctorCode?: string;

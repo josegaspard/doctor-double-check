@@ -35,6 +35,7 @@ import {
   Wallet,
   DollarSign,
   Settings,
+  GraduationCap,
   LogOut,
   LogIn,
   Stethoscope,
@@ -64,6 +65,7 @@ import {
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { TutorialVideoDialog } from '@/components/profile/TutorialVideoDialog';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -251,6 +253,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
   const { balance } = useWallet();
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useLanguage();
   const { socialLinks } = useSocialLinks();
   const { toggles } = useSiteToggles();
@@ -633,6 +636,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <Settings className="w-4 h-4 mr-2" />
                       {t('nav.settings')}
                     </DropdownMenuItem>
+                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+                      <DropdownMenuItem onClick={() => setTutorialOpen(true)} className="py-3 text-sm">
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        {t('nav.tutorial')}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-destructive py-3 text-sm">
                       <LogOut className="w-4 h-4 mr-2" />
@@ -650,6 +659,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
           </div>
         </div>
       </header>
+
+      {/* Tutorial "cómo usar la plataforma" por rol — abierto desde el menú del usuario (debajo de Configuración) */}
+      {isAuthenticated && user && (
+        <TutorialVideoDialog role={role} open={tutorialOpen} onOpenChange={setTutorialOpen} />
+      )}
 
       {/* Mobile Back Header */}
       <MobileBackHeader />
