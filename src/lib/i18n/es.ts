@@ -7,6 +7,8 @@ export const es = {
       resident: 'Tutorial rápido para sacarle el máximo provecho a Medical Masters como residente.',
       default: 'Tutorial rápido para aprender a usar Medical Masters.',
     },
+    comingSoonTitle: 'Video en camino 🎬',
+    comingSoonDesc: 'Muy pronto encontrarás aquí el video tutorial. ¡Estamos preparándolo para ti!',
   },
   codeOfEthics: { title: 'Código de Ética', subtitle: 'Compromiso ético profesional en Medical Masters' },
   badgeChat: { goldRoom: 'Chat de Medalla', verifiedRoom: 'Chat de Palomita', noAccess: 'No tienes un distintivo que te dé acceso a un chat exclusivo.', backToChat: 'Volver al chat', empty: 'Aún no hay mensajes en esta sala.', placeholder: 'Escribe un mensaje…', roomRowTitle: 'Doctores verificados', roomRowSubtitle: 'Sala exclusiva por insignia', today: 'Hoy', yesterday: 'Ayer' },

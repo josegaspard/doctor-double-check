@@ -7,6 +7,8 @@ export const en = {
       resident: 'A quick tutorial to get the most out of Medical Masters as a resident.',
       default: 'A quick tutorial to learn how to use Medical Masters.',
     },
+    comingSoonTitle: 'Video coming soon 🎬',
+    comingSoonDesc: "The tutorial video will be available here very soon. We're getting it ready for you!",
   },
   codeOfEthics: { title: 'Code of Ethics', subtitle: 'Professional ethical commitment at Medical Masters' },
   badgeChat: { goldRoom: 'Medal Chat', verifiedRoom: 'Verified Chat', noAccess: 'You do not have a badge that grants access to an exclusive chat.', backToChat: 'Back to chat', empty: 'No messages in this room yet.', placeholder: 'Type a message…', roomRowTitle: 'Verified doctors', roomRowSubtitle: 'Exclusive badge room', today: 'Today', yesterday: 'Yesterday' },

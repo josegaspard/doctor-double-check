@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Clapperboard } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type TutorialRole = 'patient' | 'doctor' | 'resident';
@@ -9,8 +9,8 @@ type TutorialRole = 'patient' | 'doctor' | 'resident';
 /**
  * Mapa rol → video de tutorial (archivos en public/tutoriales/).
  * Cuando el cliente entregue cada video, basta subirlo con este nombre a
- * public/tutoriales/ y desplegar: la tarjeta aparece automáticamente.
- * Si el archivo no existe (404) la tarjeta se oculta sola (onError).
+ * public/tutoriales/ y desplegar: el video reemplaza al aviso "muy pronto"
+ * automáticamente, sin tocar código.
  */
 const TUTORIAL_VIDEOS: Record<TutorialRole, string> = {
   doctor: '/tutoriales/tutorial-doctores.mp4',
@@ -24,10 +24,13 @@ interface ProfileTutorialCardProps {
 
 export function ProfileTutorialCard({ role }: ProfileTutorialCardProps) {
   const { t } = useLanguage();
-  const [hidden, setHidden] = useState(false);
+  // Si el archivo aún no existe, el server (SPA rewrite de Vercel) devuelve el
+  // index.html en vez del .mp4 → el <video> no puede decodificarlo y dispara
+  // onError. En ese caso mostramos el aviso "muy pronto" en lugar del video.
+  const [unavailable, setUnavailable] = useState(false);
 
   const src = TUTORIAL_VIDEOS[role as TutorialRole];
-  if (!src || hidden) return null;
+  if (!src) return null;
 
   const subtitleKey = `profileTutorial.subtitle.${role}`;
   const subtitle = t(subtitleKey);
@@ -49,16 +52,30 @@ export function ProfileTutorialCard({ role }: ProfileTutorialCardProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-black">
-            <video
-              controls
-              playsInline
-              preload="metadata"
-              className="w-full aspect-video object-cover"
-              src={src}
-              onError={() => setHidden(true)}
-            />
-          </div>
+          {unavailable ? (
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-dashed border-[#227787]/40 bg-gradient-to-br from-[#227787]/5 to-[#163a83]/5 flex flex-col items-center justify-center text-center px-6">
+              <div className="w-14 h-14 rounded-full bg-[#227787]/10 flex items-center justify-center mb-4">
+                <Clapperboard className="w-7 h-7 text-[#227787]" />
+              </div>
+              <p className="text-base font-semibold text-[#163a83]">
+                {t('profileTutorial.comingSoonTitle')}
+              </p>
+              <p className="text-sm text-gray-500 mt-1 max-w-sm">
+                {t('profileTutorial.comingSoonDesc')}
+              </p>
+            </div>
+          ) : (
+            <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-gray-100 bg-black">
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full aspect-video object-cover"
+                src={src}
+                onError={() => setUnavailable(true)}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
