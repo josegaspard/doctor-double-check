@@ -15,7 +15,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { GraduationCap, Plus, X, Loader2, CalendarDays, Clock } from 'lucide-react';
+import { GraduationCap, Plus, X, Loader2, CalendarDays, Clock, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Misma taxonomía que la de subir contenido (DoctorUpload).
@@ -50,6 +50,7 @@ interface Masterclass {
   createdAt: string;
   moderationStatus: string;
   isPublic: boolean;
+  fileUrl: string | null;
   sessions: Session[];
 }
 
@@ -82,7 +83,7 @@ export function MasterclassSection() {
     // RLS restringe qué filas llegan; ordenamos por fecha desc.
     const { data } = await supabase
       .from('doctor_content')
-      .select('id, title, description, category, creator_id, created_at, masterclass_sessions, moderation_status, is_public')
+      .select('id, title, description, category, creator_id, created_at, masterclass_sessions, moderation_status, is_public, file_url')
       .eq('is_masterclass', true)
       .order('created_at', { ascending: false });
 
@@ -107,9 +108,27 @@ export function MasterclassSection() {
       createdAt: r.created_at,
       moderationStatus: r.moderation_status,
       isPublic: r.is_public,
+      fileUrl: r.file_url ?? null,
       sessions: Array.isArray(r.masterclass_sessions) ? (r.masterclass_sessions as Session[]) : [],
     })));
     setLoading(false);
+  };
+
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const openMaterial = async (m: Masterclass) => {
+    if (!m.fileUrl) { toast.error(t('masterclassSection.noMaterial')); return; }
+    setOpeningId(m.id);
+    // Abrimos la pestaña de forma síncrona para no ser bloqueados por el popup blocker.
+    const tab = window.open('', '_blank');
+    const { data, error } = await supabase.storage.from('doctor-content').createSignedUrl(m.fileUrl, 3600);
+    if (error || !data?.signedUrl) {
+      if (tab) tab.close();
+      toast.error(t('masterclassSection.materialError'));
+      setOpeningId(null);
+      return;
+    }
+    if (tab) tab.location.href = data.signedUrl;
+    setOpeningId(null);
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [user?.id]);
@@ -321,6 +340,18 @@ export function MasterclassSection() {
                       </div>
                     ))}
                   </div>
+                )}
+                {m.fileUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 gap-1.5"
+                    onClick={() => openMaterial(m)}
+                    disabled={openingId === m.id}
+                  >
+                    {openingId === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
+                    {t('masterclassSection.viewMaterial')}
+                  </Button>
                 )}
               </CardContent>
             </Card>

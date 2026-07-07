@@ -688,7 +688,11 @@ export default function DoctorProfile() {
               <Button
                 className="gap-2 w-full"
                 size="lg"
-                onClick={() => navigate(`/book/${doctor.id}`)}
+                onClick={() => {
+                  if (role === 'patient' || role === 'resident') { navigate(`/book/${doctor.id}`); return; }
+                  if (!isAuthenticated) { navigate('/login'); return; }
+                  toast.info(t('doctorProfile.onlyPatients'));
+                }}
               >
                 <CalendarIcon className="w-5 h-5" />
                 {t('doctorProfile.orientation')}
