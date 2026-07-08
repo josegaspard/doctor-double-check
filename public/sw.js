@@ -1,6 +1,7 @@
 // Service Worker for Push Notifications
-// Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-08-batch66-video-poster-movil
+// Kill-switch: al activarse borra TODA la Cache Storage y recarga las pestañas
+// abiertas para que ningún cliente quede con assets viejos (batch67, 8-jul).
+// SW_VERSION: 2026-07-08-batch67-purga-total-cache
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();
@@ -8,11 +9,21 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('activate', function(event) {
   event.waitUntil((async () => {
+    // 1) Borra por completo toda la Cache Storage (cualquier cache de cualquier SW previo).
     try {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
     } catch (e) {}
+    // 2) Toma control inmediato de todas las pestañas.
     await self.clients.claim();
+    // 3) Fuerza recarga UNA vez para que carguen el HTML/JS/assets frescos.
+    //    Solo ocurre al cambiar de versión de SW, así que no genera bucle.
+    try {
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientList) {
+        if ('navigate' in client) client.navigate(client.url);
+      }
+    } catch (e) {}
   })());
 });
 
