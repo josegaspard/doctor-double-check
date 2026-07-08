@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-07-batch64-registro-autoconfirm-onboarding-directo
+// SW_VERSION: 2026-07-08-batch65-nuevo-logo-marca-completa
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();

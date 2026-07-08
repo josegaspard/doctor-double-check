@@ -68,7 +68,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
     : '';
 
   // Use the deployed logo URL
-  const logoUrl = 'https://medical-masters.com/icon-512.png?v=11';
+  const logoUrl = 'https://medical-masters.com/icon-512.png?v=17';
 
   return `
 <!DOCTYPE html>
