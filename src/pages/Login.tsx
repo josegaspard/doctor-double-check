@@ -263,9 +263,14 @@ export default function Login() {
     });
 
     if (result.success) {
-      // Email/password signups must confirm their email before proceeding.
-      // After confirming, they'll be able to sign in normally.
-      setShowEmailConfirmation(true);
+      // Con auto-confirmación de email activa (mientras Resend no verifica dominio),
+      // el signup devuelve sesión al instante → mandamos al onboarding directo.
+      // Si NO hay sesión (confirmación por correo activa), mostramos "revisa tu correo".
+      if (result.hasSession) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        setShowEmailConfirmation(true);
+      }
       return;
     }
 

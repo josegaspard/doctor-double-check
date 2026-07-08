@@ -60,7 +60,7 @@ export function useAuthActions(
     sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
   };
 
-  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean }> => {
     setIsLoading(true);
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -103,16 +103,17 @@ export function useAuthActions(
 
       // If email confirmation is required, Supabase returns user but NO session.
       // Only set the authenticated state when we actually have a session.
-      if (authData.session?.user) {
+      const hasSession = !!authData.session?.user;
+      if (hasSession) {
         // Wait a bit for the trigger to create the profile
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        const profile = await fetchUserProfile(authData.session.user.id);
+        const profile = await fetchUserProfile(authData.session!.user.id);
         setUser(profile);
-        setSupabaseUser(authData.session.user);
+        setSupabaseUser(authData.session!.user);
       }
 
       setIsLoading(false);
-      return { success: true };
+      return { success: true, hasSession };
     } catch (error: any) {
       setIsLoading(false);
       return { success: false, error: error.message || 'Registration error' };

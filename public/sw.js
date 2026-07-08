@@ -1,6 +1,6 @@
 // Service Worker for Push Notifications
 // Kill-switch: limpia cualquier cache obsoleto de SWs previos al activarse.
-// SW_VERSION: 2026-07-07-batch63-registro-nombre-apellido-cedula-especialista
+// SW_VERSION: 2026-07-07-batch64-registro-autoconfirm-onboarding-directo
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();
