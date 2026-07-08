@@ -56,6 +56,14 @@ export default function Landing() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { videos } = useSiteVideos();
   const homeVideoSrc = videos.home || '/landing-mm-2026.mp4';
+  // Poster para que en móvil (iOS Safari con preload="metadata") se muestre el
+  // primer frame del video igual que en PC, en vez de un reproductor NEGRO
+  // (cliente 2026-07-08). Si el video resuelto es el de por defecto (venga del
+  // fallback o guardado tal cual en site_settings.videos.home) usamos el frame
+  // extraído; si el admin sube un video propio, forzamos el frame con el
+  // fragmento #t=0.1 (truco iOS) ya que no tenemos un poster que coincida.
+  const isDefaultHomeVideo = homeVideoSrc.split('?')[0].endsWith('/landing-mm-2026.mp4');
+  const homeVideoPoster = isDefaultHomeVideo ? '/landing-mm-2026-poster.jpg' : undefined;
 
   // Scroll effect for navbar
   useEffect(() => {
@@ -436,8 +444,9 @@ export default function Landing() {
                 controls
                 playsInline
                 preload="metadata"
+                poster={homeVideoPoster}
                 className="w-full aspect-video object-cover"
-                src={homeVideoSrc}
+                src={homeVideoPoster ? homeVideoSrc : `${homeVideoSrc}#t=0.1`}
                 key={homeVideoSrc}
               />
             </div>
