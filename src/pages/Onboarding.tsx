@@ -422,6 +422,15 @@ export default function Onboarding() {
         return;
       }
 
+      // Foto de la cédula ya subida en el REGISTRO (cliente 2026-07-08): precargarla
+      // para no pedirla dos veces. El progreso guardado (abajo) la pisa si es más nuevo.
+      const { data: dp } = await (supabase as any)
+        .from('doctor_profiles')
+        .select('cedula_photo_url')
+        .eq('user_id', supabaseUser.id)
+        .maybeSingle();
+      if (dp?.cedula_photo_url) setCedulaPhotoUrl(dp.cedula_photo_url);
+
       // Load saved progress
       const { data: savedProgress } = await supabase
         .from('onboarding_progress')

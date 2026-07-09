@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle, Camera } from 'lucide-react';
 import { AppRole as UserRole } from '@/types/database';
 import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
@@ -82,6 +82,12 @@ export default function Login() {
   const [registerCedula, setRegisterCedula] = useState('');
   // Cédula de especialista (opcional) además de la profesional — solo doctor (cliente 2026-07-07)
   const [registerCedulaEspecialidad, setRegisterCedulaEspecialidad] = useState('');
+  // Foto de la cédula profesional en el REGISTRO (cliente 2026-07-08): se elige el
+  // archivo aquí y se sube a storage DESPUÉS del signUp (antes no hay sesión y el
+  // bucket privado exige carpeta = auth.uid()). El onboarding la re-usa.
+  const [registerCedulaFoto, setRegisterCedulaFoto] = useState<File | null>(null);
+  const [registerCedulaFotoPreview, setRegisterCedulaFotoPreview] = useState<string | null>(null);
+  const registerCedulaFotoInputRef = React.useRef<HTMLInputElement>(null);
   const [registerHospital, setRegisterHospital] = useState('');
   const [registerUniversity, setRegisterUniversity] = useState('');
   const [registerDoctorCode, setRegisterDoctorCode] = useState('');
@@ -242,6 +248,12 @@ export default function Login() {
       return;
     }
 
+    // Foto de la cédula profesional obligatoria para doctores (cliente 2026-07-08)
+    if (registerRole === 'doctor' && !registerCedulaFoto) {
+      setRegisterError(t('onboarding.validationCedulaPhoto'));
+      return;
+    }
+
     // Doctor/residente capturan Nombre + Apellido por separado; se combinan aquí.
     const composedName = (registerRole === 'doctor' || registerRole === 'resident')
       ? `${registerFirstName.trim()} ${registerLastName.trim()}`.replace(/\s+/g, ' ').trim()
@@ -263,6 +275,39 @@ export default function Login() {
     });
 
     if (result.success) {
+      // Foto de la cédula: recién ahora hay sesión → subir al bucket privado y
+      // ligarla al doctor_profiles (creado por handle_new_user). Si algo falla
+      // NO se bloquea el alta: el onboarding la vuelve a pedir.
+      if (registerRole === 'doctor' && registerCedulaFoto && result.hasSession) {
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            const { compressImageIfNeeded, withTimeout } = await import('@/lib/imageUpload');
+            const upload = await compressImageIfNeeded(registerCedulaFoto);
+            const ext = (upload.name.split('.').pop() || 'jpg').toLowerCase();
+            const path = `${newUser.id}/cedula-foto-${Date.now()}.${ext}`;
+            const { error: upErr } = await withTimeout(
+              supabase.storage.from('doctor-credentials').upload(path, upload, {
+                upsert: true,
+                contentType: upload.type || 'image/jpeg',
+              }),
+              60_000,
+              'subida de foto de cédula',
+            );
+            if (!upErr) {
+              await (supabase as any)
+                .from('doctor_profiles')
+                .update({ cedula_photo_url: path })
+                .eq('user_id', newUser.id);
+            } else {
+              console.error('[Register] cedula foto upload error', upErr);
+            }
+          }
+        } catch (fotoErr) {
+          console.error('[Register] cedula foto upload error', fotoErr);
+        }
+      }
+
       // Con auto-confirmación de email activa (mientras Resend no verifica dominio),
       // el signup devuelve sesión al instante → mandamos al onboarding directo.
       // Si NO hay sesión (confirmación por correo activa), mostramos "revisa tu correo".
@@ -600,6 +645,73 @@ export default function Login() {
                             />
                             <CedulaVerifyLink country={registerCountry} className="pt-0.5" />
                           </div>
+
+                          {/* Foto de la cédula profesional — obligatoria para checar identidad (cliente 2026-07-08) */}
+                          <div className="space-y-2">
+                            <Label>{t('onboarding.cedulaPhoto')}</Label>
+                            <input
+                              ref={registerCedulaFotoInputRef}
+                              type="file"
+                              accept="image/*"
+                              aria-label={t('onboarding.cedulaPhoto')}
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (!file.type.startsWith('image/')) {
+                                  toast.error(t('onboarding.cedulaPhotoInvalidType'));
+                                  e.target.value = '';
+                                  return;
+                                }
+                                if (file.size > 10 * 1024 * 1024) {
+                                  toast.error(t('onboarding.cedulaPhotoTooLarge'));
+                                  e.target.value = '';
+                                  return;
+                                }
+                                setRegisterCedulaFoto(file);
+                                setRegisterCedulaFotoPreview((prev) => {
+                                  if (prev) URL.revokeObjectURL(prev);
+                                  return URL.createObjectURL(file);
+                                });
+                              }}
+                            />
+                            {registerCedulaFotoPreview ? (
+                              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                                <img
+                                  src={registerCedulaFotoPreview}
+                                  alt={t('onboarding.cedulaPhoto')}
+                                  className="w-full max-h-48 object-contain rounded-md bg-background"
+                                />
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs text-success flex items-center gap-1">
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    {t('onboarding.cedulaPhotoUploaded')}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1.5"
+                                    onClick={() => registerCedulaFotoInputRef.current?.click()}
+                                  >
+                                    <Camera className="w-3.5 h-3.5" />
+                                    {t('onboarding.cedulaPhotoChange')}
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => registerCedulaFotoInputRef.current?.click()}
+                                className="w-full rounded-lg border-2 border-dashed border-border p-4 flex flex-col items-center gap-1.5 text-center transition-colors hover:bg-muted/40"
+                              >
+                                <Camera className="w-5 h-5 text-primary" />
+                                <span className="text-sm font-medium text-foreground">{t('onboarding.cedulaPhotoUpload')}</span>
+                                <span className="text-[11px] text-muted-foreground leading-relaxed">{t('onboarding.cedulaPhotoHelp')}</span>
+                              </button>
+                            )}
+                          </div>
+
                           <div className="space-y-2">
                             <Label>{t('login.cedulaEspecialidad')} <span className="text-muted-foreground font-normal">({t('login.optional')})</span></Label>
                             <Input
