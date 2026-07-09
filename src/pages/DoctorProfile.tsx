@@ -6,6 +6,7 @@ import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import DoctorReviews from '@/components/doctor/DoctorReviews';
 import DoctorUpcomingEvents from '@/components/doctor/DoctorUpcomingEvents';
 import DoctorCongresses from '@/components/doctor/DoctorCongresses';
+import DoctorBooks from '@/components/doctor/DoctorBooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -780,6 +781,9 @@ export default function DoctorProfile() {
           doctorId={doctor.id} 
           isOwner={user?.id === doctor.id} 
         />
+
+        {/* Libros/cursos PDF de pago del doctor (cliente 2026-07-08) */}
+        <DoctorBooks doctorId={doctor.id} isOwner={user?.id === doctor.id} />
 
         {/* Congresos donde este doctor es conferencista (en vivo, próximos y archivados) */}
         <DoctorCongresses doctorId={doctor.id} />

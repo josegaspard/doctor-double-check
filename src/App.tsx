@@ -114,6 +114,8 @@ const DoctorBankAccount = React.lazy(() => import("./pages/DoctorBankAccount"));
 const DoctorInvoices = React.lazy(() => import("./pages/DoctorInvoices"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const DoctorContentLibrary = React.lazy(() => import("./pages/DoctorContentLibrary"));
+const DoctorBooksManager = React.lazy(() => import("./pages/DoctorBooksManager"));
+const MyBooks = React.lazy(() => import("./pages/MyBooks"));
 const DoctorEarnings = React.lazy(() => import("./pages/DoctorEarnings"));
 const DoctorEmailHistory = React.lazy(() => import("./pages/DoctorEmailHistory"));
 const SuccessStories = React.lazy(() => import("./pages/SuccessStories"));
@@ -248,6 +250,8 @@ const App = () => {
                       <Route path="/doctor/availability" element={<DoctorAvailability />} />
                       <Route path="/doctor/recordings" element={<DoctorRecordings />} />
                       <Route path="/doctor/content" element={<DoctorContentLibrary />} />
+                      {/* Libros/cursos PDF de pago (cliente 2026-07-08) */}
+                      <Route path="/doctor/books" element={<AccessGuard allowedRoles={['doctor', 'admin']} fallbackType="forbidden"><DoctorBooksManager /></AccessGuard>} />
                       <Route path="/doctor/go-live" element={<DoctorGoLive />} />
                       <Route path="/doctor/subscribers" element={<SubscribersList />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
@@ -267,6 +271,7 @@ const App = () => {
                           Gateado por el toggle enable_marketplace desde el admin. */}
                       <Route path="/medical-supplies" element={<AccessGuard allowedRoles={['patient']} fallbackType="forbidden"><ToggleGate toggleKey="enable_marketplace" feature="marketplace"><MedicalSupplies /></ToggleGate></AccessGuard>} />
                       <Route path="/my-orders" element={<MyOrders />} />
+                      <Route path="/my-books" element={<MyBooks />} />
                       <Route path="/order-success" element={<OrderSuccess />} />
                       <Route path="/double-check" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><DoubleCheck /></ToggleGate>} />
                       <Route path="/settings" element={<Settings />} />

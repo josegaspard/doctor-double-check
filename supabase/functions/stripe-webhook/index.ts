@@ -95,6 +95,9 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "recording_purchase" && session.payment_status === "paid") {
         await handleRecordingPurchase(db, session);
       }
+      if (session.metadata?.type === "content_purchase" && session.payment_status === "paid") {
+        await handleContentPurchase(db, session);
+      }
       if (session.metadata?.type === "creator_subscription" && session.payment_status === "paid") {
         await handleCreatorSubscription(db, session);
       }
@@ -400,6 +403,67 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
   }
 }
 
+// Libros/cursos PDF de pago (doctor_content.is_book) — espejo de handleRecordingPurchase
+async function handleContentPurchase(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+  const userId = session.metadata!.user_id;
+  const contentId = session.metadata!.content_id;
+  const amount = parseFloat(session.metadata!.amount);
+
+  logStep("Processing content purchase", { userId, contentId, amount });
+
+  const { error: purchaseError } = await db
+    .from("purchases")
+    .insert({
+      user_id: userId,
+      content_id: contentId,
+      amount: amount,
+    });
+
+  if (purchaseError) {
+    logStep("Error creating content purchase", { error: purchaseError });
+    return;
+  }
+
+  logStep("Content purchase recorded successfully", { userId, contentId });
+
+  await db
+    .from('entitlements')
+    .insert({
+      user_id: userId,
+      type: `content_${contentId}`,
+      is_active: true,
+    });
+
+  const { data: content } = await db
+    .from("doctor_content")
+    .select("creator_id, title")
+    .eq("id", contentId)
+    .single();
+
+  if (content?.creator_id) {
+    await creditDoctorEarningsAtomic(db, content.creator_id, amount, "content", contentId);
+
+    try {
+      const { data: buyerProfile } = await db
+        .from("profiles")
+        .select("name")
+        .eq("id", userId)
+        .maybeSingle();
+      const buyerName = buyerProfile?.name || "Un usuario";
+      const title = content.title || "tu libro";
+      await db.from("notifications").insert({
+        user_id: content.creator_id,
+        type: "content_purchase",
+        title: "Nueva venta de libro/curso",
+        message: `${buyerName} compró "${title}" por $${amount.toFixed(2)} MXN`,
+        data: { content_id: contentId, buyer_id: userId, amount },
+      });
+    } catch (e: any) {
+      logStep("Failed to notify doctor of content purchase", { error: e.message });
+    }
+  }
+}
+
 async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
   const userId = session.metadata!.user_id;
   const creatorId = session.metadata!.creator_id;
@@ -642,7 +706,7 @@ async function creditDoctorEarningsAtomic(
       user_id: doctorId,
       type: "earning",
       amount: amount,
-      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : "suscripción"}`,
+      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : source === "content" ? "venta de libro/curso" : "suscripción"}`,
       status: "paid",
       metadata: { source, reference_id: referenceId },
     });

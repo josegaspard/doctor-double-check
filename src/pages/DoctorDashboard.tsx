@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Folder, BarChart3, Settings, ChevronDown, Megaphone, ArrowLeft } from 'lucide-react';
+import { Folder, BarChart3, Settings, ChevronDown, Megaphone, ArrowLeft, BookOpen, ChevronRight } from 'lucide-react';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
@@ -143,6 +143,28 @@ export default function DoctorDashboard() {
                 <EarningsCard />
                 <FundHoldsCard />
               </div>
+            </section>
+
+            {/* ── LIBROS Y CURSOS PDF (cliente 2026-07-08) ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorBooks.dashboardSection')}</SectionHeader>
+              <Card
+                className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40"
+                onClick={() => navigate('/doctor/books')}
+              >
+                <CardContent className="p-3.5 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm sm:text-base text-foreground">{t('doctorBooks.dashboardCardTitle')}</h3>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorBooks.dashboardCardDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
             </section>
 
             {/* ── COMUNICACIONES ── */}

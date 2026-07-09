@@ -62,6 +62,11 @@ export function usePurchases() {
     return purchases.some(p => p.recordingId === recordingId);
   }, [purchases, role]);
 
+  const hasPurchasedContent = useCallback((contentId: string): boolean => {
+    if (role === 'admin') return true;
+    return purchases.some(p => p.contentId === contentId);
+  }, [purchases, role]);
+
   const purchaseWithWallet = async (recordingId: string): Promise<{ success: boolean; error?: string }> => {
     if (!supabaseUser?.id) {
       return { success: false, error: t('authErrors.notAuthenticated') };
@@ -122,13 +127,77 @@ export function usePurchases() {
     }
   };
 
+  // Compra de contenido descargable (libros/cursos PDF, doctor_content.is_book)
+  const purchaseContentWithWallet = async (contentId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!supabaseUser?.id) {
+      return { success: false, error: t('authErrors.notAuthenticated') };
+    }
+
+    setIsPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('purchase-content-wallet', {
+        body: { contentId },
+      });
+
+      if (error) throw error;
+
+      if (data?.alreadyPurchased) {
+        toast.info(t('purchaseMessages.alreadyPurchased'));
+        return { success: true };
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || t('purchaseMessages.purchaseError'));
+      }
+
+      toast.success(`Se debitaron $${data.amountCharged} de tu wallet. Nuevo saldo: $${data.newBalance}`);
+
+      await Promise.all([fetchPurchases(), refreshWallet()]);
+
+      return { success: true };
+    } catch (error: any) {
+      const errorMsg = error.message || t('purchaseMessages.processingError');
+      toast.error(errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const purchaseContentWithStripe = async (contentId: string): Promise<{ success: boolean; url?: string; error?: string }> => {
+    if (!supabaseUser?.id) {
+      return { success: false, error: t('authErrors.notAuthenticated') };
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-content-checkout', {
+        body: { contentId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        return { success: true, url: data.url };
+      }
+
+      throw new Error(t('purchaseMessages.paymentSessionError'));
+    } catch (error: any) {
+      const errorMsg = error.message || t('purchaseMessages.paymentError');
+      toast.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
   return {
     purchases,
     isLoading,
     isPurchasing,
     hasPurchased,
+    hasPurchasedContent,
     purchaseWithWallet,
     purchaseWithStripe,
+    purchaseContentWithWallet,
+    purchaseContentWithStripe,
     refresh: fetchPurchases,
   };
 }
