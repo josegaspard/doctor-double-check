@@ -310,13 +310,23 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
-    return navItems.filter(item => {
+    const items = navItems.filter(item => {
       if (item.hidden) return false;
       if (disabledHrefs.has(item.href)) return false;
       if (!item.roles.includes(effectiveRole)) return false;
       if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
       return true;
     });
+    // Cliente 2026-07-09: en PACIENTE, Historial Clínico va ANTES que Recetas.
+    if (effectiveRole === 'patient') {
+      const mrIdx = items.findIndex(i => i.href === '/medical-record');
+      const rxIdx = items.findIndex(i => i.href === '/prescriptions');
+      if (mrIdx > -1 && rxIdx > -1 && mrIdx > rxIdx) {
+        const [mr] = items.splice(mrIdx, 1);
+        items.splice(rxIdx, 0, mr);
+      }
+    }
+    return items;
   }, [role, toggles, disabledHrefs]);
 
   const bottomTabs = useMemo(
@@ -332,7 +342,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Cliente 2026-06-29 (revierte 2026-06-22): TODOS los roles, incluidos los
   // doctores, usan el botón "Más"/"+" cuando no caben todos los items en la barra
   // (primeros N visibles + el resto dentro de "Más"). Así el menú no se satura.
-  const showAllNav = false;
+  // Cliente 2026-07-09: EXCEPTO el PACIENTE — sin botón "Más" en el header;
+  // todos sus items van directos en la barra (Historial Clínico antes que Recetas).
+  const showAllNav = role === 'patient';
 
   const handleLogout = () => {
     // Llevar al landing inmediatamente al cerrar sesión (cliente 2026-06-19):
