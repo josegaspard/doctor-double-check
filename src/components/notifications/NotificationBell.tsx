@@ -12,7 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDistanceToNow } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
+import { getDateLocale } from '@/lib/dateLocale';
+import type { SupportedLanguage } from '@/lib/i18n';
 import { formatMessagePreview } from '@/lib/utils';
 
 // Strip leading emojis from text to avoid duplicate icons
@@ -42,7 +43,7 @@ function NotificationItem({
   notification: Notification;
   onMarkAsRead: () => void;
   onDelete: () => void;
-  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language: SupportedLanguage;
 }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -67,6 +68,8 @@ function NotificationItem({
         return '🎉';
       case 'payment_received':
         return '💵';
+      case 'video_call':
+        return '📹';
       default:
         return '🔔';
     }
@@ -132,6 +135,14 @@ function NotificationItem({
         // Wallet del doctor: panel de ganancias + payouts
         navigate('/doctor/earnings');
         break;
+      case 'video_call':
+        // Llamada perdida/entrante: al chat de la sesión (donde se retoma la llamada).
+        if (data.session_id || data.sessionId) {
+          navigate(`/chat?session=${data.session_id || data.sessionId}`);
+        } else {
+          navigate('/chat');
+        }
+        break;
       case 'system':
         // System notifications - check for URL in data
         if (data.url) {
@@ -174,7 +185,7 @@ function NotificationItem({
           <p className="text-xs text-muted-foreground mt-1">
             {formatDistanceToNow(notification.createdAt, {
               addSuffix: true,
-              locale: language === 'es' ? es : enUS,
+              locale: getDateLocale(language),
             })}
           </p>
         </div>

@@ -272,8 +272,12 @@ export default function Onboarding() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoadedProgress = useRef(false);
   
-  // Cedula verification status
-  const cedulaStatus = cedulaVerified ? 'verified' : useCedulaStatus(license);
+  // Cedula verification status.
+  // El hook debe llamarse SIEMPRE (Rules of Hooks): llamarlo dentro del ternario
+  // cambiaba el conteo de hooks al verificarse la cédula → "Rendered fewer hooks"
+  // y pantalla blanca en el onboarding.
+  const rawCedulaStatus = useCedulaStatus(license);
+  const cedulaStatus = cedulaVerified ? 'verified' : rawCedulaStatus;
   const validateForm = useMemo(() => {
     const errors: ValidationErrors = {};
     
@@ -543,12 +547,14 @@ export default function Onboarding() {
     setIsSubmitting(true);
     
     try {
-      // Update user role
+      // Update user role. UPSERT (no UPDATE): si la fila user_roles no existiera
+      // (trigger que no corrió / fila borrada), un UPDATE afectaba 0 filas SIN error
+      // y el usuario quedaba como 'patient' en silencio (un doctor terminaba como
+      // paciente). El upsert garantiza que el rol quede escrito.
       const { error: roleError } = await supabase
         .from('user_roles')
-        .update({ role: selectedRole })
-        .eq('user_id', supabaseUser.id);
-      
+        .upsert({ user_id: supabaseUser.id, role: selectedRole }, { onConflict: 'user_id' });
+
       if (roleError) throw roleError;
 
       // Create role-specific profile if needed

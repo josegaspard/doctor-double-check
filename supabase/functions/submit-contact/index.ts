@@ -56,6 +56,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const supabase = createClient(supabaseUrl, serviceKey);
 
+  // Rate-limit por IP (endpoint público): evita flood de la tabla `reports` y abuso
+  // del email a admins. 5 envíos / hora por IP. Best-effort: si la RPC falla, deja pasar.
+  const clientIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  try {
+    const { data: allowed } = await supabase.rpc("check_and_record_rate_limit", {
+      p_bucket: "submit_contact",
+      p_key: clientIp,
+      p_max: 5,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      return json({ error: "Demasiados envíos. Intenta de nuevo en un rato." }, 429);
+    }
+  } catch (_e) { /* no bloquear si el rate-limit falla */ }
+
   // 1. Persist the message so it shows up in /admin/reports.
   const { data: inserted, error: insertError } = await supabase
     .from("reports")

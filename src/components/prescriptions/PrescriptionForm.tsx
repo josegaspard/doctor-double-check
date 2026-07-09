@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { exportPrescriptionToPDF, type Medication } from '@/lib/generatePrescriptionPDF';
+import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
 import { 
   FileText, Plus, Trash2, Loader2, Download, Upload, Image, File, X 
 } from 'lucide-react';
@@ -113,17 +114,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   const handleSubmit = async () => {
     if (!user?.id || !user.doctorProfile) return;
 
-    // Fetch doctor signature
-    let doctorSignatureUrl: string | undefined;
-    try {
-      const { data: dp } = await supabase
-        .from('doctor_profiles')
-        .select('signature_url')
-        .eq('user_id', user.id)
-        .single();
-      doctorSignatureUrl = (dp as any)?.signature_url || undefined;
-    } catch {}
-
+    // Credenciales completas del médico (firma + universidad, hospital, cédulas…)
+    // para que la receta muestre el membrete completo.
+    const credentials = await fetchDoctorCredentials(user.id);
+    const doctorSignatureUrl = credentials.doctorSignatureUrl;
 
     const validMeds = medications.filter(m => m.name.trim());
 
@@ -214,9 +208,13 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           instructions: instructions || undefined,
           notes: notes || undefined,
           doctorName: user.name || 'Doctor',
-          doctorSpecialty: user.doctorProfile.specialty,
-          doctorLicense: user.doctorProfile.license,
-          doctorCedula: user.doctorProfile.cedulaProfesional || undefined,
+          doctorSpecialty: credentials.doctorSpecialty || user.doctorProfile.specialty,
+          doctorLicense: credentials.doctorLicense || user.doctorProfile.license,
+          doctorCedula: credentials.doctorCedula || user.doctorProfile.cedulaProfesional || undefined,
+          doctorNumeroConsejo: credentials.doctorNumeroConsejo || user.doctorProfile.numeroConsejo || undefined,
+          doctorUniversity: credentials.doctorUniversity,
+          doctorHospital: credentials.doctorHospital,
+          doctorCofepris: credentials.doctorCofepris,
           doctorSignatureUrl,
           signedAt: new Date(data.signed_at),
           cedulaVerified,

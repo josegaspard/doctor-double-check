@@ -244,15 +244,17 @@ const App = () => {
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
                       <Route path="/verify-identity" element={<IdentityVerification />} />
-                      <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-                      <Route path="/doctor/upload" element={<DoctorUpload />} />
-                      <Route path="/doctor/vault" element={<ToggleGate toggleKey="enable_vault" feature="vault"><DoctorVault /></ToggleGate>} />
-                      <Route path="/doctor/availability" element={<DoctorAvailability />} />
-                      <Route path="/doctor/recordings" element={<DoctorRecordings />} />
-                      <Route path="/doctor/content" element={<DoctorContentLibrary />} />
+                      {/* Rutas operativas del doctor: requieren perfil APROBADO
+                          (antes un doctor 'pending' podía entrar a operar). */}
+                      <Route path="/doctor/dashboard" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorDashboard /></AccessGuard>} />
+                      <Route path="/doctor/upload" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorUpload /></AccessGuard>} />
+                      <Route path="/doctor/vault" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><ToggleGate toggleKey="enable_vault" feature="vault"><DoctorVault /></ToggleGate></AccessGuard>} />
+                      <Route path="/doctor/availability" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorAvailability /></AccessGuard>} />
+                      <Route path="/doctor/recordings" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorRecordings /></AccessGuard>} />
+                      <Route path="/doctor/content" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorContentLibrary /></AccessGuard>} />
                       {/* Libros/cursos PDF de pago (cliente 2026-07-08) */}
-                      <Route path="/doctor/books" element={<AccessGuard allowedRoles={['doctor', 'admin']} fallbackType="forbidden"><DoctorBooksManager /></AccessGuard>} />
-                      <Route path="/doctor/go-live" element={<DoctorGoLive />} />
+                      <Route path="/doctor/books" element={<AccessGuard allowedRoles={['doctor', 'admin']} requireApproved fallbackType="forbidden"><DoctorBooksManager /></AccessGuard>} />
+                      <Route path="/doctor/go-live" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorGoLive /></AccessGuard>} />
                       <Route path="/doctor/subscribers" element={<SubscribersList />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />

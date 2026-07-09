@@ -205,17 +205,18 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           doctorId: doctor.userId,
           consultationFee: doctor.consultationFee,
           doctorName: doctor.name,
+          // Segunda opinión: el webhook debe crear una consulta double-check,
+          // compartir los estudios seleccionados con el médico y dar el entitlement
+          // 'double_check'. Antes esto se perdía (sessionStorage nunca se leía) y la
+          // 2ª opinión pagada con tarjeta se degradaba a un chat normal.
+          isDoubleCheck: true,
+          fileIds: selectedFiles,
         },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        // Store selected files in sessionStorage so we can grant access after redirect
-        if (selectedFiles.length > 0) {
-          sessionStorage.setItem('doublecheck_files', JSON.stringify(selectedFiles));
-          sessionStorage.setItem('doublecheck_doctor', doctor.userId);
-        }
         window.location.href = data.url;
       }
     } catch (error: any) {

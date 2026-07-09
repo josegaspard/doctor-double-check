@@ -58,8 +58,36 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { doctorId, doctorName } = await req.json();
+    const { doctorId, doctorName, isDoubleCheck = false, fileIds = [], liveId, message } = await req.json();
     if (!doctorId) throw new Error("doctorId is required");
+
+    // Segunda opinión pagada con tarjeta: los ids de los estudios a compartir viajan
+    // en metadata (Stripe limita cada valor a 500 chars → capamos a ~12 UUIDs, que
+    // cubre de sobra un expediente típico). El webhook los usa para dar acceso.
+    const fileIdsCsv = Array.isArray(fileIds)
+      ? fileIds.filter((x: unknown) => typeof x === 'string').slice(0, 12).join(',')
+      : '';
+
+    // Reserva desde un LIVE con tarjeta: antes se ignoraba liveId/message → el
+    // mensaje del paciente se perdía y NO se aplicaba el límite max_paid_chats.
+    // Aquí aplicamos el límite ANTES de cobrar; el webhook registra la orientación.
+    const isLive = !!liveId;
+    if (isLive) {
+      const { data: liveRow } = await supabaseClient
+        .from("lives")
+        .select("max_paid_chats, paid_chats_count, chat_enabled")
+        .eq("id", liveId)
+        .maybeSingle();
+      if (liveRow?.chat_enabled === false) {
+        return new Response(JSON.stringify({ error: "El chat de este live está desactivado." }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (liveRow?.max_paid_chats != null && Number(liveRow.paid_chats_count) >= Number(liveRow.max_paid_chats)) {
+        return new Response(JSON.stringify({ error: "Este live alcanzó su límite de orientaciones pagadas." }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+    const liveMessage = typeof message === 'string' ? message.trim().slice(0, 480) : '';
 
     // Price and eligibility are SERVER-SIDE: never trust the fee from the body
     // (before, a user could pay $1 for any consultation), and only charge for an
@@ -108,8 +136,10 @@ Deno.serve(async (req) => {
           price_data: {
             currency: appCfg.currency,
             product_data: {
-              name: `Consulta con ${doctorName || 'Doctor'}`,
-              description: "Consulta médica por chat con un profesional de la salud verificado",
+              name: isDoubleCheck ? `Segunda opinión con ${doctorName || 'Doctor'}` : `Consulta con ${doctorName || 'Doctor'}`,
+              description: isDoubleCheck
+                ? "Segunda opinión médica por chat con estudios compartidos"
+                : "Consulta médica por chat con un profesional de la salud verificado",
             },
             unit_amount: finalPrice,
           },
@@ -122,9 +152,11 @@ Deno.serve(async (req) => {
       metadata: {
         user_id: user.id,
         doctor_id: doctorId,
-        type: "consultation_payment",
+        type: isDoubleCheck ? "double_check_payment" : (isLive ? "live_consultation_payment" : "consultation_payment"),
         original_fee: consultationFee.toString(),
         final_fee: (finalPrice / 100).toString(),
+        ...(isDoubleCheck ? { file_ids: fileIdsCsv } : {}),
+        ...(isLive ? { live_id: liveId, live_message: liveMessage } : {}),
       },
     });
 

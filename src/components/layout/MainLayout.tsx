@@ -104,6 +104,10 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
+  // Antes enterradas (solo accesibles por URL o un botón perdido): ahora en el menú
+  // del paciente para que pueda volver a sus citas y a su bóveda de estudios.
+  { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['patient', 'resident'] },
+  { labelKey: 'nav.myVault', href: '/vault', icon: Folder, roles: ['patient', 'resident'] },
   // Foro RETIRADO del menú por completo (cliente 2026-07-02); la ruta /foro sigue
   // viva por URL directa, pero no aparece en barra ni en "Más".
   { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'], hidden: true },

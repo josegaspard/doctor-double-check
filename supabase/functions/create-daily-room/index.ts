@@ -54,14 +54,25 @@ Deno.serve(async (req) => {
     const { liveId, title, enableRecording = false, mode = 'live' } = await req.json();
     if (!liveId) throw new Error("liveId is required");
 
-    const isConsultation = mode === 'consultation';
+    // 'appointment' = sala 1:1 de una cita agendada; se trata como consulta a nivel
+    // de propiedades de sala (ambos transmiten), pero autoriza contra `appointments`.
+    const isAppointment = mode === 'appointment';
+    const isConsultation = mode === 'consultation' || isAppointment;
     logStep("Creating Daily.co room", { liveId, title, enableRecording, mode });
 
     // ── Authorization: the caller must OWN / participate in this resource ──
     // Without this, any authenticated user could request an is_owner:true
     // broadcast token for someone else's live/consultation.
     let authorized = false;
-    if (isConsultation) {
+    if (isAppointment) {
+      // liveId == appointment id; autoriza al doctor o al paciente de la cita.
+      const { data: ap } = await supabaseClient
+        .from('appointments').select('id')
+        .eq('id', liveId)
+        .or(`doctor_id.eq.${userId},patient_id.eq.${userId}`)
+        .maybeSingle();
+      if (ap) authorized = true;
+    } else if (isConsultation) {
       // liveId == consultation id OR clinical_session id (Meetings union)
       const { data: c } = await supabaseClient
         .from('consultations').select('id')

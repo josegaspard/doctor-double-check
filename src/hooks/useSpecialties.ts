@@ -35,9 +35,11 @@ export function useSpecialties() {
   }, []);
 
   // Dedupe extras that already exist in the base list.
+  // Set<string> explícito: BASE_VALUES es una unión literal del enum generado y los
+  // extras vienen de la BD como string — sin el widening, .has/.add/.push marcan TS2345.
   const specialtyValues = useMemo(() => {
-    const seen = new Set(BASE_VALUES);
-    const merged = [...BASE_VALUES];
+    const seen = new Set<string>(BASE_VALUES);
+    const merged: string[] = [...BASE_VALUES];
     for (const e of extra) { if (!seen.has(e)) { seen.add(e); merged.push(e); } }
     return merged;
   }, [extra]);

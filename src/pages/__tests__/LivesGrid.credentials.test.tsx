@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
+import { withQueryClient } from "@/test/testQuery";
 
 // ===== Pre-populate stale sessionStorage cache version BEFORE imports =====
 beforeEach(() => {
@@ -143,9 +144,11 @@ describe("LivesGrid — credentials rendering with stale cache", () => {
     expect(sessionStorage.getItem("lives_profile_cache_version")).toBe("v1-old");
 
     render(
-      <LivesProvider>
-        <LivesGrid />
-      </LivesProvider>,
+      withQueryClient(
+        <LivesProvider>
+          <LivesGrid />
+        </LivesProvider>,
+      ),
     );
 
     // Cache version should be invalidated and updated to current version

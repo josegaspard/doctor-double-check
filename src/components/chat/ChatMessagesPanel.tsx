@@ -28,6 +28,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
+// ¿Alguna de las filas de entitlement (ya filtradas por is_active) sigue vigente?
+// Una fila sin expires_at nunca expira. Tolera null/array vacío.
+const hasValidEntitlement = (
+  rows?: { is_active?: boolean | null; expires_at?: string | null }[] | null,
+): boolean => {
+  if (!rows || rows.length === 0) return false;
+  const now = new Date();
+  return rows.some((r) => r.is_active !== false && (!r.expires_at || new Date(r.expires_at) > now));
+};
+
 interface SessionDisplayInfo {
   name: string;
   specialty?: string;
@@ -135,12 +145,17 @@ export function ChatMessagesPanel({
     (async () => {
       const otherId = session.participant1Id === userId ? session.participant2Id : session.participant1Id;
       const [entRes, doctorRes] = await Promise.all([
+        // Un paciente acumula VARIAS filas de entitlement 'chat' (cada compra inserta
+        // una; al cerrar el chat solo se marca is_active=false, no se borra). Antes se
+        // usaba .maybeSingle() sin filtrar is_active → con 2+ filas devolvía error y el
+        // paywall bloqueaba a quien YA había pagado otra consulta. Traemos TODAS las
+        // activas y validamos si alguna sigue vigente.
         supabase
           .from('entitlements')
           .select('is_active, expires_at')
           .eq('user_id', userId)
           .eq('type', 'chat')
-          .maybeSingle(),
+          .eq('is_active', true),
         supabase
           .from('doctor_profiles')
           .select('consultation_fee')
@@ -148,8 +163,7 @@ export function ChatMessagesPanel({
           .maybeSingle(),
       ]);
       if (cancelled) return;
-      const data = entRes.data;
-      const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+      const valid = hasValidEntitlement(entRes.data);
       setHasChatEntitlement(valid);
       setEntitlementChecked(true);
       setConsultationFee(Number(doctorRes.data?.consultation_fee) || 0);
@@ -164,8 +178,8 @@ export function ChatMessagesPanel({
       .select('is_active, expires_at')
       .eq('user_id', userId)
       .eq('type', 'chat')
-      .maybeSingle();
-    const valid = !!data?.is_active && (!data.expires_at || new Date(data.expires_at) > new Date());
+      .eq('is_active', true);
+    const valid = hasValidEntitlement(data);
     setHasChatEntitlement(valid);
     return valid;
   };

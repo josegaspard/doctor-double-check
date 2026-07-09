@@ -355,6 +355,13 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
   const resend = new Resend(resendApiKey)
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev'
+  // El sandbox de Resend (onboarding@resend.dev) SOLO entrega al dueño de la cuenta.
+  // Si se cae aquí, recovery/signup fallan para usuarios reales → aviso accionable.
+  // ARREGLO DE CONFIG: verificar dominio en Resend y fijar el secret FROM_EMAIL
+  // (p.ej. no-reply@medical-masters.com). Ver auditoría 2026-07-09.
+  if (fromEmail === 'onboarding@resend.dev') {
+    console.error('[CONFIG] FROM_EMAIL no configurado: usando sandbox de Resend; los correos (recovery/signup) NO llegarán a usuarios reales. Verifica el dominio y fija FROM_EMAIL.', { run_id, emailType })
+  }
 
   let result: { message_id?: string } = {}
   try {

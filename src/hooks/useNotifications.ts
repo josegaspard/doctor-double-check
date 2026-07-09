@@ -5,7 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface Notification {
   id: string;
   userId: string;
-  type: 'doctor_live' | 'doctor_availability' | 'new_content' | 'subscription_update' | 'chat_message' | 'rating_request' | 'system';
+  // Sincronizado con el enum notification_type de la BD (11 valores). Antes faltaban
+  // recording_purchase/new_subscriber/payment_received/video_call → forzaba `as any`.
+  type:
+    | 'doctor_live' | 'doctor_availability' | 'new_content' | 'subscription_update'
+    | 'chat_message' | 'rating_request' | 'system' | 'video_call'
+    | 'recording_purchase' | 'new_subscriber' | 'payment_received';
   title: string;
   message: string;
   data: Record<string, any>;

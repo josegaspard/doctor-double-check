@@ -525,6 +525,30 @@ export type Database = {
         }
         Relationships: []
       }
+      badge_chat_messages: {
+        Row: {
+          badge: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          badge: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          badge?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       cedula_verifications: {
         Row: {
           anio_registro: number | null
@@ -634,6 +658,7 @@ export type Database = {
           is_double_check: boolean
           last_message: string | null
           last_message_at: string | null
+          marketplace_interest_id: string | null
           original_consultation_id: string | null
           participant1_id: string
           participant1_type: Database["public"]["Enums"]["chat_participant_type"]
@@ -650,6 +675,7 @@ export type Database = {
           is_double_check?: boolean
           last_message?: string | null
           last_message_at?: string | null
+          marketplace_interest_id?: string | null
           original_consultation_id?: string | null
           participant1_id: string
           participant1_type: Database["public"]["Enums"]["chat_participant_type"]
@@ -666,6 +692,7 @@ export type Database = {
           is_double_check?: boolean
           last_message?: string | null
           last_message_at?: string | null
+          marketplace_interest_id?: string | null
           original_consultation_id?: string | null
           participant1_id?: string
           participant1_type?: Database["public"]["Enums"]["chat_participant_type"]
@@ -883,10 +910,12 @@ export type Database = {
       clinical_sessions: {
         Row: {
           case_summary: string | null
+          congress_id: string | null
           created_at: string
           daily_room_name: string | null
           daily_room_url: string | null
           description: string | null
+          gold_only: boolean
           id: string
           is_public: boolean
           max_participants: number | null
@@ -904,10 +933,12 @@ export type Database = {
         }
         Insert: {
           case_summary?: string | null
+          congress_id?: string | null
           created_at?: string
           daily_room_name?: string | null
           daily_room_url?: string | null
           description?: string | null
+          gold_only?: boolean
           id?: string
           is_public?: boolean
           max_participants?: number | null
@@ -925,10 +956,12 @@ export type Database = {
         }
         Update: {
           case_summary?: string | null
+          congress_id?: string | null
           created_at?: string
           daily_room_name?: string | null
           daily_room_url?: string | null
           description?: string | null
+          gold_only?: boolean
           id?: string
           is_public?: boolean
           max_participants?: number | null
@@ -942,6 +975,91 @@ export type Database = {
           title?: string
           translate_enabled?: boolean
           translate_target_lang?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinical_sessions_congress_id_fkey"
+            columns: ["congress_id"]
+            isOneToOne: false
+            referencedRelation: "congresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congress_speakers: {
+        Row: {
+          added_by: string | null
+          congress_id: string
+          created_at: string
+          id: string
+          is_lead: boolean
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          congress_id: string
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          congress_id?: string
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "congress_speakers_congress_id_fkey"
+            columns: ["congress_id"]
+            isOneToOne: false
+            referencedRelation: "congresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      congresses: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          organizer_id: string
+          specialty: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          organizer_id: string
+          specialty?: string | null
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          organizer_id?: string
+          specialty?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -1235,6 +1353,7 @@ export type Database = {
           description: string | null
           file_url: string
           id: string
+          is_book: boolean
           is_masterclass: boolean | null
           is_public: boolean
           masterclass_sessions: Json | null
@@ -1242,6 +1361,7 @@ export type Database = {
           moderated_by: string | null
           moderation_note: string | null
           moderation_status: Database["public"]["Enums"]["content_moderation_status"]
+          original_price: number | null
           price: number | null
           thumbnail_url: string | null
           title: string
@@ -1256,6 +1376,7 @@ export type Database = {
           description?: string | null
           file_url: string
           id?: string
+          is_book?: boolean
           is_masterclass?: boolean | null
           is_public?: boolean
           masterclass_sessions?: Json | null
@@ -1263,6 +1384,7 @@ export type Database = {
           moderated_by?: string | null
           moderation_note?: string | null
           moderation_status?: Database["public"]["Enums"]["content_moderation_status"]
+          original_price?: number | null
           price?: number | null
           thumbnail_url?: string | null
           title: string
@@ -1277,6 +1399,7 @@ export type Database = {
           description?: string | null
           file_url?: string
           id?: string
+          is_book?: boolean
           is_masterclass?: boolean | null
           is_public?: boolean
           masterclass_sessions?: Json | null
@@ -1284,6 +1407,7 @@ export type Database = {
           moderated_by?: string | null
           moderation_note?: string | null
           moderation_status?: Database["public"]["Enums"]["content_moderation_status"]
+          original_price?: number | null
           price?: number | null
           thumbnail_url?: string | null
           title?: string
@@ -1576,9 +1700,12 @@ export type Database = {
           available_now: boolean | null
           available_until: string | null
           badge_override: string | null
-          manual_badge: string | null
           bio: string | null
           can_publish_news: boolean
+          cedula_especialidad: string | null
+          cedula_especialidad_rejection_reason: string | null
+          cedula_especialidad_status: string | null
+          cedula_photo_url: string | null
           cedula_profesional: string | null
           cedula_rejection_reason: string | null
           cedula_status:
@@ -1602,6 +1729,7 @@ export type Database = {
           license: string
           location: string | null
           longitude: number | null
+          manual_badge: string | null
           numero_consejo: string | null
           office_days: string[] | null
           office_hours_end: string | null
@@ -1611,6 +1739,7 @@ export type Database = {
           practice_hospital: string | null
           rank_override: string | null
           rating: number
+          secondary_specialties: string[] | null
           signature_url: string | null
           specialty: string
           state: string | null
@@ -1621,6 +1750,7 @@ export type Database = {
           university: string | null
           updated_at: string
           user_id: string
+          workplaces: Json | null
         }
         Insert: {
           available_for_clinical_sessions?: boolean
@@ -1628,9 +1758,12 @@ export type Database = {
           available_now?: boolean | null
           available_until?: string | null
           badge_override?: string | null
-          manual_badge?: string | null
           bio?: string | null
           can_publish_news?: boolean
+          cedula_especialidad?: string | null
+          cedula_especialidad_rejection_reason?: string | null
+          cedula_especialidad_status?: string | null
+          cedula_photo_url?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
@@ -1654,6 +1787,7 @@ export type Database = {
           license: string
           location?: string | null
           longitude?: number | null
+          manual_badge?: string | null
           numero_consejo?: string | null
           office_days?: string[] | null
           office_hours_end?: string | null
@@ -1663,6 +1797,7 @@ export type Database = {
           practice_hospital?: string | null
           rank_override?: string | null
           rating?: number
+          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty: string
           state?: string | null
@@ -1673,6 +1808,7 @@ export type Database = {
           university?: string | null
           updated_at?: string
           user_id: string
+          workplaces?: Json | null
         }
         Update: {
           available_for_clinical_sessions?: boolean
@@ -1680,9 +1816,12 @@ export type Database = {
           available_now?: boolean | null
           available_until?: string | null
           badge_override?: string | null
-          manual_badge?: string | null
           bio?: string | null
           can_publish_news?: boolean
+          cedula_especialidad?: string | null
+          cedula_especialidad_rejection_reason?: string | null
+          cedula_especialidad_status?: string | null
+          cedula_photo_url?: string | null
           cedula_profesional?: string | null
           cedula_rejection_reason?: string | null
           cedula_status?:
@@ -1706,6 +1845,7 @@ export type Database = {
           license?: string
           location?: string | null
           longitude?: number | null
+          manual_badge?: string | null
           numero_consejo?: string | null
           office_days?: string[] | null
           office_hours_end?: string | null
@@ -1715,6 +1855,7 @@ export type Database = {
           practice_hospital?: string | null
           rank_override?: string | null
           rating?: number
+          secondary_specialties?: string[] | null
           signature_url?: string | null
           specialty?: string
           state?: string | null
@@ -1725,6 +1866,7 @@ export type Database = {
           university?: string | null
           updated_at?: string
           user_id?: string
+          workplaces?: Json | null
         }
         Relationships: [
           {
@@ -1958,6 +2100,7 @@ export type Database = {
       }
       expediente_otp: {
         Row: {
+          attempts: number
           created_at: string
           doctor_id: string
           expires_at: string
@@ -1967,6 +2110,7 @@ export type Database = {
           used_at: string | null
         }
         Insert: {
+          attempts?: number
           created_at?: string
           doctor_id: string
           expires_at: string
@@ -1976,6 +2120,7 @@ export type Database = {
           used_at?: string | null
         }
         Update: {
+          attempts?: number
           created_at?: string
           doctor_id?: string
           expires_at?: string
@@ -2656,12 +2801,31 @@ export type Database = {
           },
         ]
       }
+      live_viewers: {
+        Row: {
+          joined_at: string
+          live_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          live_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          live_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lives: {
         Row: {
           chat_enabled: boolean
           chat_highlight_seconds: number | null
           chat_mode: string
           chat_price: number
+          congress_id: string | null
           daily_room_name: string | null
           description: string | null
           doctor_id: string
@@ -2691,6 +2855,7 @@ export type Database = {
           chat_highlight_seconds?: number | null
           chat_mode?: string
           chat_price?: number
+          congress_id?: string | null
           daily_room_name?: string | null
           description?: string | null
           doctor_id: string
@@ -2720,6 +2885,7 @@ export type Database = {
           chat_highlight_seconds?: number | null
           chat_mode?: string
           chat_price?: number
+          congress_id?: string | null
           daily_room_name?: string | null
           description?: string | null
           doctor_id?: string
@@ -2744,7 +2910,15 @@ export type Database = {
           translate_target_lang?: string | null
           viewer_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lives_congress_id_fkey"
+            columns: ["congress_id"]
+            isOneToOne: false
+            referencedRelation: "congresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_audit_log: {
         Row: {
@@ -2842,6 +3016,33 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_config: {
+        Row: {
+          currency: string
+          fee_rate: number
+          id: boolean
+          reserve_hours: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          currency?: string
+          fee_rate?: number
+          id?: boolean
+          reserve_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          currency?: string
+          fee_rate?: number
+          id?: boolean
+          reserve_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       marketplace_orders: {
         Row: {
           buyer_id: string
@@ -2857,6 +3058,7 @@ export type Database = {
           estimated_delivery: string | null
           fulfillment_log: Json
           id: string
+          idempotency_key: string | null
           paid_at: string | null
           platform_fee: number | null
           product_id: string | null
@@ -2901,6 +3103,7 @@ export type Database = {
           estimated_delivery?: string | null
           fulfillment_log?: Json
           id?: string
+          idempotency_key?: string | null
           paid_at?: string | null
           platform_fee?: number | null
           product_id?: string | null
@@ -2945,6 +3148,7 @@ export type Database = {
           estimated_delivery?: string | null
           fulfillment_log?: Json
           id?: string
+          idempotency_key?: string | null
           paid_at?: string | null
           platform_fee?: number | null
           product_id?: string | null
@@ -2994,6 +3198,10 @@ export type Database = {
       }
       marketplace_products: {
         Row: {
+          approval_note: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           brand_id: string | null
           category: string | null
           category_id: string | null
@@ -3005,9 +3213,14 @@ export type Database = {
           images: Json | null
           is_active: boolean
           is_featured: boolean
+          listing_type: string
           low_stock_threshold: number
           name: string
           price: number
+          reserved_at: string | null
+          reserved_by: string | null
+          reserved_interest_id: string | null
+          reserved_until: string | null
           sku: string | null
           stock: number
           total_sold: number
@@ -3017,6 +3230,10 @@ export type Database = {
           weight_grams: number | null
         }
         Insert: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           brand_id?: string | null
           category?: string | null
           category_id?: string | null
@@ -3028,9 +3245,14 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_featured?: boolean
+          listing_type?: string
           low_stock_threshold?: number
           name: string
           price?: number
+          reserved_at?: string | null
+          reserved_by?: string | null
+          reserved_interest_id?: string | null
+          reserved_until?: string | null
           sku?: string | null
           stock?: number
           total_sold?: number
@@ -3040,6 +3262,10 @@ export type Database = {
           weight_grams?: number | null
         }
         Update: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           brand_id?: string | null
           category?: string | null
           category_id?: string | null
@@ -3051,9 +3277,14 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_featured?: boolean
+          listing_type?: string
           low_stock_threshold?: number
           name?: string
           price?: number
+          reserved_at?: string | null
+          reserved_by?: string | null
+          reserved_interest_id?: string | null
+          reserved_until?: string | null
           sku?: string | null
           stock?: number
           total_sold?: number
@@ -3075,6 +3306,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_products_reserved_interest_fk"
+            columns: ["reserved_interest_id"]
+            isOneToOne: false
+            referencedRelation: "product_interests"
             referencedColumns: ["id"]
           },
           {
@@ -3106,6 +3344,7 @@ export type Database = {
           stripe_details_submitted: boolean
           stripe_payouts_enabled: boolean
           tax_id: string | null
+          terms_accepted_at: string | null
           updated_at: string
           user_id: string | null
           website: string | null
@@ -3129,6 +3368,7 @@ export type Database = {
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
           tax_id?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
           user_id?: string | null
           website?: string | null
@@ -3152,6 +3392,7 @@ export type Database = {
           stripe_details_submitted?: boolean
           stripe_payouts_enabled?: boolean
           tax_id?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
           user_id?: string | null
           website?: string | null
@@ -3430,6 +3671,7 @@ export type Database = {
       onboarding_progress: {
         Row: {
           avatar_url: string | null
+          cedula_photo_url: string | null
           created_at: string
           id: string
           institution: string | null
@@ -3444,6 +3686,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          cedula_photo_url?: string | null
           created_at?: string
           id?: string
           institution?: string | null
@@ -3458,6 +3701,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          cedula_photo_url?: string | null
           created_at?: string
           id?: string
           institution?: string | null
@@ -3836,6 +4080,8 @@ export type Database = {
           payout_day: number | null
           payout_frequency: string | null
           require_invoice: boolean | null
+          stripe_fee_fixed: number
+          stripe_fee_pct: number
           updated_at: string
           updated_by: string | null
         }
@@ -3852,6 +4098,8 @@ export type Database = {
           payout_day?: number | null
           payout_frequency?: string | null
           require_invoice?: boolean | null
+          stripe_fee_fixed?: number
+          stripe_fee_pct?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -3868,6 +4116,8 @@ export type Database = {
           payout_day?: number | null
           payout_frequency?: string | null
           require_invoice?: boolean | null
+          stripe_fee_fixed?: number
+          stripe_fee_pct?: number
           updated_at?: string
           updated_by?: string | null
         }
@@ -3974,6 +4224,97 @@ export type Database = {
           },
         ]
       }
+      product_interests: {
+        Row: {
+          buyer_id: string
+          cancelled_at: string | null
+          chat_session_id: string | null
+          completed_at: string | null
+          created_at: string
+          currency: string
+          fee_amount: number
+          fee_paid_at: string | null
+          fee_rate: number
+          fee_status: string
+          fee_stripe_session_id: string | null
+          id: string
+          paid_at: string | null
+          product_id: string
+          product_price: number
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          terms_accepted: boolean
+          vendor_id: string
+        }
+        Insert: {
+          buyer_id: string
+          cancelled_at?: string | null
+          chat_session_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          fee_amount: number
+          fee_paid_at?: string | null
+          fee_rate: number
+          fee_status?: string
+          fee_stripe_session_id?: string | null
+          id?: string
+          paid_at?: string | null
+          product_id: string
+          product_price: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          terms_accepted?: boolean
+          vendor_id: string
+        }
+        Update: {
+          buyer_id?: string
+          cancelled_at?: string | null
+          chat_session_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          fee_amount?: number
+          fee_paid_at?: string | null
+          fee_rate?: number
+          fee_status?: string
+          fee_stripe_session_id?: string | null
+          id?: string
+          paid_at?: string | null
+          product_id?: string
+          product_price?: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          terms_accepted?: boolean
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_interests_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_interests_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_reviews: {
         Row: {
           body: string | null
@@ -4047,11 +4388,13 @@ export type Database = {
           email: string
           id: string
           is_identity_verified: boolean
+          is_suspended: boolean
           name: string
           onboarding_completed: boolean
           phone: string | null
           preferred_currency: string | null
           preferred_language: Database["public"]["Enums"]["supported_language"]
+          referred_by_doctor_code: string | null
           storage_limit_bytes: number
           storage_used_bytes: number
           updated_at: string
@@ -4067,11 +4410,13 @@ export type Database = {
           email: string
           id: string
           is_identity_verified?: boolean
+          is_suspended?: boolean
           name: string
           onboarding_completed?: boolean
           phone?: string | null
           preferred_currency?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
+          referred_by_doctor_code?: string | null
           storage_limit_bytes?: number
           storage_used_bytes?: number
           updated_at?: string
@@ -4087,11 +4432,13 @@ export type Database = {
           email?: string
           id?: string
           is_identity_verified?: boolean
+          is_suspended?: boolean
           name?: string
           onboarding_completed?: boolean
           phone?: string | null
           preferred_currency?: string | null
           preferred_language?: Database["public"]["Enums"]["supported_language"]
+          referred_by_doctor_code?: string | null
           storage_limit_bytes?: number
           storage_used_bytes?: number
           updated_at?: string
@@ -4204,6 +4551,7 @@ export type Database = {
         Row: {
           bunny_status: string | null
           bunny_video_id: string | null
+          congress_id: string | null
           created_at: string
           description: string | null
           doctor_id: string
@@ -4221,6 +4569,7 @@ export type Database = {
         Insert: {
           bunny_status?: string | null
           bunny_video_id?: string | null
+          congress_id?: string | null
           created_at?: string
           description?: string | null
           doctor_id: string
@@ -4238,6 +4587,7 @@ export type Database = {
         Update: {
           bunny_status?: string | null
           bunny_video_id?: string | null
+          congress_id?: string | null
           created_at?: string
           description?: string | null
           doctor_id?: string
@@ -4253,6 +4603,13 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "recordings_congress_id_fkey"
+            columns: ["congress_id"]
+            isOneToOne: false
+            referencedRelation: "congresses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recordings_live_id_fkey"
             columns: ["live_id"]
@@ -4577,6 +4934,30 @@ export type Database = {
           updated_at?: string
           user_id?: string
           year?: number
+        }
+        Relationships: []
+      }
+      search_events: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          specialty: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          specialty?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          specialty?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -5391,30 +5772,14 @@ export type Database = {
       }
     }
     Functions: {
-      verify_expediente_otp: {
+      admin_review_identity_verification: {
         Args: {
-          p_patient_id: string
-          p_code: string
-        }
-        Returns: boolean
-      }
-      join_live_viewer: {
-        Args: {
-          p_live_id: string
+          p_approve: boolean
+          p_badge?: string
+          p_id: string
+          p_reason?: string
         }
         Returns: undefined
-      }
-      leave_live_viewer: {
-        Args: {
-          p_live_id: string
-        }
-        Returns: undefined
-      }
-      purchase_storage_with_wallet: {
-        Args: {
-          p_extra_gb: number
-        }
-        Returns: Json
       }
       book_live_consultation: {
         Args: {
@@ -5424,6 +5789,10 @@ export type Database = {
           p_patient_name?: string
         }
         Returns: Json
+      }
+      can_manage_congress: {
+        Args: { _congress_id: string; _user_id: string }
+        Returns: boolean
       }
       check_and_record_rate_limit: {
         Args: {
@@ -5451,6 +5820,11 @@ export type Database = {
       credit_wallet_balance: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
+      }
+      current_user_badge: { Args: never; Returns: string }
+      decrement_product_stock: {
+        Args: { p_product_id: string; p_qty: number }
+        Returns: boolean
       }
       decrement_storage_used: {
         Args: { p_bytes: number; p_user_id: string }
@@ -5535,6 +5909,28 @@ export type Database = {
           patient_id: string
         }[]
       }
+      get_doctor_badges: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          manual_badge: string
+          user_id: string
+        }[]
+      }
+      get_doctor_prescription_credentials: {
+        Args: { p_doctor_user_id: string }
+        Returns: {
+          cedula_especialidad: string
+          cedula_profesional: string
+          cofepris_permit: string
+          license: string
+          numero_consejo: string
+          practice_hospital: string
+          secondary_specialties: Json
+          specialty: string
+          university: string
+          workplaces: Json
+        }[]
+      }
       get_doctor_public_profile: {
         Args: { p_user_id: string }
         Returns: {
@@ -5546,6 +5942,7 @@ export type Database = {
           followers_count: number
           is_identity_verified: boolean
           location: string
+          manual_badge: string
           name: string
           office_days: string[]
           office_hours_end: string
@@ -5582,6 +5979,7 @@ export type Database = {
           id: string
           is_identity_verified: boolean
           location: string
+          manual_badge: string
           name: string
           office_days: string[]
           office_hours_end: string
@@ -5593,6 +5991,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_live_doctor_email: { Args: { p_live_id: string }; Returns: string }
       get_my_subscribers: {
         Args: never
         Returns: {
@@ -5614,6 +6013,13 @@ export type Database = {
       get_subscription_priority: {
         Args: { p_creator_id: string; p_subscriber_id: string }
         Returns: number
+      }
+      get_user_interests: {
+        Args: { p_limit?: number }
+        Returns: {
+          hits: number
+          term: string
+        }[]
       }
       get_user_role: {
         Args: { _user_id: string }
@@ -5645,6 +6051,10 @@ export type Database = {
         Args: { p_live_id: string }
         Returns: undefined
       }
+      increment_product_stock: {
+        Args: { p_product_id: string; p_qty: number }
+        Returns: boolean
+      }
       increment_storage_used: {
         Args: { p_bytes: number; p_user_id: string }
         Returns: undefined
@@ -5655,6 +6065,9 @@ export type Database = {
       }
       is_approved_doctor: { Args: { _user_id: string }; Returns: boolean }
       is_approved_resident: { Args: { _user_id: string }; Returns: boolean }
+      is_privileged_writer: { Args: never; Returns: boolean }
+      join_live_viewer: { Args: { p_live_id: string }; Returns: undefined }
+      leave_live_viewer: { Args: { p_live_id: string }; Returns: undefined }
       log_vault_action: {
         Args: {
           p_action: string
@@ -5665,6 +6078,7 @@ export type Database = {
         Returns: string
       }
       mark_live_broadcasting: { Args: { p_live_id: string }; Returns: boolean }
+      marketplace_fee_for_price: { Args: { p_price: number }; Returns: number }
       notify_subscribers: {
         Args: {
           p_data?: Json
@@ -5687,15 +6101,45 @@ export type Database = {
         }
         Returns: Json
       }
-      process_double_check_purchase: {
-        Args: { p_amount: number; p_description: string; p_doctor_id: string }
-        Returns: Json
-      }
-      process_wallet_purchase: {
-        Args: { p_amount: number; p_description: string; p_metadata?: Json }
-        Returns: Json
-      }
+      process_double_check_purchase:
+        | {
+            Args: {
+              p_amount: number
+              p_description: string
+              p_doctor_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_description: string
+              p_doctor_id: string
+              p_idempotency_key?: string
+            }
+            Returns: Json
+          }
+      process_wallet_purchase:
+        | {
+            Args: { p_amount: number; p_description: string; p_metadata?: Json }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_description: string
+              p_idempotency_key?: string
+              p_metadata?: Json
+            }
+            Returns: Json
+          }
       process_wallet_topup: { Args: { p_amount: number }; Returns: Json }
+      purchase_storage_with_wallet: {
+        Args: { p_extra_gb: number }
+        Returns: Json
+      }
+      reconcile_stuck_consultations: { Args: never; Returns: number }
+      reconcile_stuck_lives: { Args: never; Returns: number }
       redeem_referral_code: { Args: { p_code: string }; Returns: Json }
       request_consultation_refund: {
         Args: { p_consultation_id: string }
@@ -5729,6 +6173,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      set_recording_congress: {
+        Args: { p_congress_id: string; p_recording_id: string }
+        Returns: undefined
+      }
       user_has_vault_access: {
         Args: { p_file_id: string; p_user_id: string }
         Returns: boolean
@@ -5740,6 +6188,27 @@ export type Database = {
       user_is_invitation_organizer: {
         Args: { p_invitation_session_id: string; p_user_id: string }
         Returns: boolean
+      }
+      verify_expediente_otp: {
+        Args: { p_code: string; p_patient_id: string }
+        Returns: boolean
+      }
+      verify_prescription: {
+        Args: { p_id: string }
+        Returns: {
+          cedula_anio: number
+          cedula_institucion: string
+          cedula_verified: boolean
+          doctor_cedula: string
+          doctor_license: string
+          doctor_name: string
+          doctor_specialty: string
+          id: string
+          medications: Json
+          patient_age: string
+          patient_name: string
+          signed_at: string
+        }[]
       }
     }
     Enums: {
@@ -5777,7 +6246,7 @@ export type Database = {
         | "new_subscriber"
         | "payment_received"
       subscription_tier: "free" | "basic" | "premium"
-      supported_language: "es" | "en" | "pt" | "fr"
+      supported_language: "es" | "en" | "pt" | "fr" | "ca" | "zh" | "it" | "de"
       transaction_status: "initiated" | "paid" | "failed"
       transaction_type:
         | "topup"
@@ -5951,7 +6420,7 @@ export const Constants = {
         "payment_received",
       ],
       subscription_tier: ["free", "basic", "premium"],
-      supported_language: ["es", "en", "pt", "fr"],
+      supported_language: ["es", "en", "pt", "fr", "ca", "zh", "it", "de"],
       transaction_status: ["initiated", "paid", "failed"],
       transaction_type: [
         "topup",

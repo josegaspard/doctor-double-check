@@ -209,7 +209,12 @@ export function LiveStreamView({
               // el Daily room. Hasta este momento, los pacientes NO ven el
               // live en /lives (gate de visibilidad). Esto evita "ghost lives"
               // que aparecen sin nadie del otro lado.
-              supabase.rpc('mark_live_broadcasting', { p_live_id: liveData.id }).catch(() => {});
+              // OJO: el builder de supabase.rpc() NO expone .catch() (solo .then());
+              // usar .catch directo lanzaba TypeError y la RPC nunca corría → los
+              // pacientes no veían NINGÚN live. Se maneja con .then(ok, err).
+              void supabase
+                .rpc('mark_live_broadcasting', { p_live_id: liveData.id })
+                .then(() => {}, (err) => console.warn('mark_live_broadcasting failed', err));
             }}
             onParticipantCountChange={() => {}}
             onMobileFullscreenToggle={handleToggleMobileFullscreen}

@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { exportPrescriptionToPDF } from '@/lib/generatePrescriptionPDF';
+import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
 import { FileText, Download, Loader2, Pill, ChevronRight, Image, Trash2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -93,7 +94,14 @@ export function PrescriptionsList() {
     fetch();
   }, [supabaseUser?.id, role]);
 
-  const handleDownload = (rx: Prescription) => {
+  const handleDownload = async (rx: Prescription) => {
+    // Abrimos la ventana YA, de forma síncrona con el clic, para que el bloqueador
+    // de popups no la mate al llegar el await de las credenciales.
+    const printWindow = window.open('', '_blank');
+    // Traemos las credenciales completas del médico que firmó la receta para que
+    // el membrete salga completo (universidad, hospital, cédulas…), incluso en
+    // recetas antiguas donde sólo se guardó nombre/especialidad/licencia.
+    const credentials = await fetchDoctorCredentials(rx.doctorId);
     exportPrescriptionToPDF({
       id: rx.id,
       patientName: rx.patientName,
@@ -103,11 +111,15 @@ export function PrescriptionsList() {
       instructions: rx.instructions,
       notes: rx.notes,
       doctorName: rx.doctorName,
-      doctorSpecialty: rx.doctorSpecialty,
-      doctorLicense: rx.doctorLicense,
-      doctorCedula: rx.doctorCedula,
+      doctorSpecialty: credentials.doctorSpecialty || rx.doctorSpecialty,
+      doctorLicense: credentials.doctorLicense || rx.doctorLicense,
+      doctorCedula: credentials.doctorCedula || rx.doctorCedula,
+      doctorNumeroConsejo: credentials.doctorNumeroConsejo,
+      doctorUniversity: credentials.doctorUniversity,
+      doctorHospital: credentials.doctorHospital,
+      doctorCofepris: credentials.doctorCofepris,
       signedAt: rx.signedAt,
-    });
+    }, printWindow);
   };
 
   const toggleSelect = (id: string) => {

@@ -11,7 +11,7 @@ type RoleOption = {
   id: 'visitor' | 'patient' | 'doctor' | 'resident';
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: string | number }>;
   bgImage: string;
   fallbackGradient: string;
   action: 'visitor' | 'login';

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import { withQueryClient } from "@/test/testQuery";
 
 // Mock matchMedia for tablet width (768px)
 function setupMatchMedia(width: number) {
@@ -132,12 +133,12 @@ describe("Doctors page — tablet (768px)", () => {
   });
 
   it("renders the page at tablet width without crashing", () => {
-    render(<Doctors />);
+    render(withQueryClient(<Doctors />));
     expect(screen.getByText("Explore Doctors")).toBeInTheDocument();
   });
 
   it("renders search input and specialty filter on the same row at tablet width", () => {
-    render(<Doctors />);
+    render(withQueryClient(<Doctors />));
     const searchInput = screen.getByPlaceholderText("Search doctors...");
     expect(searchInput).toBeInTheDocument();
     // The current layout wraps the search bar in a relative container; just
@@ -147,19 +148,19 @@ describe("Doctors page — tablet (768px)", () => {
   });
 
   it("uses 2-column grid for doctor cards at sm breakpoint (768px >= 640px)", () => {
-    render(<Doctors />);
+    render(withQueryClient(<Doctors />));
     const grids = document.querySelectorAll("[class*='grid-cols-1'][class*='sm:grid-cols-2']");
     expect(grids.length).toBeGreaterThan(0);
   });
 
   it("renders the explore subtitle banner at tablet width", () => {
-    render(<Doctors />);
+    render(withQueryClient(<Doctors />));
     // The current page exposes the subtitle as a high-level intro banner.
     expect(screen.getByText("Find the best specialists")).toBeInTheDocument();
   });
 
   it("displays 'No doctors found' empty state correctly at tablet width", async () => {
-    render(<Doctors />);
+    render(withQueryClient(<Doctors />));
     await waitFor(() => {
       expect(screen.getByText("No doctors found")).toBeInTheDocument();
     });

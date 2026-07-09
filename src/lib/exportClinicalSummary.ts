@@ -8,11 +8,12 @@
  *  - Vaccines applied
  *  - Last-updated stamp + watermark with patient name
  */
+import type { SupportedLanguage } from '@/lib/i18n';
 
 export interface ClinicalSummaryInput {
   patient: { name: string; email: string };
   data: any; // clinical record snapshot
-  language?: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language?: SupportedLanguage;
 }
 
 const fmt = (d: Date) =>

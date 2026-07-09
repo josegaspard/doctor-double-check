@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import type { SupportedLanguage } from '@/lib/i18n';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ interface CedulaAutoVerifyProps {
   userId: string;
   onVerified?: (verificationId: string, data: CedulaVerificationResult) => void;
   onClaimed?: () => void;
-  language?: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language?: SupportedLanguage;
 }
 
 export function CedulaAutoVerify({ 

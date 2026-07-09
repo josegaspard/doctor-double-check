@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { SupportedLanguage } from '@/lib/i18n';
 import { Link } from 'react-router-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
@@ -28,7 +29,7 @@ function AvailabilityCard({
   t,
 }: {
   availability: DoctorAvailability;
-  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language: SupportedLanguage;
   isPremium?: boolean;
   onClick: () => void;
   t: (path: string) => string;
@@ -107,7 +108,7 @@ function AvailabilityDetailDialog({
   t,
 }: {
   availability: DoctorAvailability | null;
-  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language: SupportedLanguage;
   isPremium?: boolean;
   open: boolean;
   onOpenChange: (v: boolean) => void;

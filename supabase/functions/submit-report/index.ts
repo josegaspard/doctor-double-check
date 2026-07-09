@@ -75,6 +75,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const supabase = createClient(supabaseUrl, serviceKey);
 
+  // Rate-limit por IP (endpoint público): 10 reportes / hora por IP. Best-effort.
+  const clientIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  try {
+    const { data: allowed } = await supabase.rpc("check_and_record_rate_limit", {
+      p_bucket: "submit_report",
+      p_key: clientIp,
+      p_max: 10,
+      p_window_seconds: 3600,
+    });
+    if (allowed === false) {
+      return json({ error: "Demasiados reportes. Intenta de nuevo en un rato." }, 429);
+    }
+  } catch (_e) { /* no bloquear si el rate-limit falla */ }
+
   // Trust reporterId only if it actually exists in auth.users; otherwise anon.
   let reporterId = NIL_UUID;
   if (payload.reporterId && typeof payload.reporterId === "string" && payload.reporterId !== NIL_UUID) {

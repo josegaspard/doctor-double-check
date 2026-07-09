@@ -223,10 +223,10 @@ export default function BookAppointment() {
         type: 'system',
         title,
         message,
-        data: { kind: 'appointment_request', appointment_id: apptId, deeplink: '/doctor/availability' },
+        data: { kind: 'appointment_request', appointment_id: apptId, deeplink: '/my-appointments' },
       } as any);
       await supabase.functions.invoke('send-push-notification', {
-        body: { user_ids: [doctorId], title, body: message, url: '/doctor/availability' },
+        body: { user_ids: [doctorId], title, body: message, url: '/my-appointments' },
       }).catch(() => {});
     } catch (e) {
       console.error('notify doctor (appointment) failed:', e);

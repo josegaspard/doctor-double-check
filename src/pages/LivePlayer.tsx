@@ -175,9 +175,10 @@ export default function LivePlayer() {
       // visible para TODOS los espectadores). Función SECURITY DEFINER que solo
       // devuelve el email del doctor de ESTE live. Si la función no existe aún
       // o no hay email, simplemente no se muestra.
-      supabase.rpc('get_live_doctor_email', { p_live_id: id }).then(({ data }) => {
-        if (data) setDoctorEmail(String(data));
-      }).catch(() => {});
+      supabase.rpc('get_live_doctor_email', { p_live_id: id }).then(
+        ({ data }) => { if (data) setDoctorEmail(String(data)); },
+        () => {}, // errores ignorados: el email es best-effort
+      );
     }
   }, [live?.doctorId, id]);
 
@@ -334,6 +335,30 @@ export default function LivePlayer() {
     return () => clearInterval(interval);
   }, [refreshLives, id]);
 
+  // Estos hooks deben ir ANTES de los early-return de abajo (loading / !live),
+  // si no, viola Rules of Hooks y crashea al resolverse el estado.
+  const handleToggleMobileFullscreen = useCallback(() => {
+    setMobileFullscreen(prev => {
+      const next = !prev;
+      if (next) {
+        document.body.style.overflow = 'hidden';
+        (screen.orientation as any)?.lock?.('landscape').catch(() => {});
+      } else {
+        document.body.style.overflow = '';
+        screen.orientation?.unlock?.();
+      }
+      return next;
+    });
+  }, []);
+
+  // Cleanup mobile fullscreen on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = '';
+      screen.orientation?.unlock?.();
+    };
+  }, []);
+
   if ((isLoading || directLoading) && !live) {
     return (
       <MainLayout>
@@ -406,28 +431,6 @@ export default function LivePlayer() {
       toast.error(t('livePlayer.shareError'));
     }
   };
-
-  const handleToggleMobileFullscreen = useCallback(() => {
-    setMobileFullscreen(prev => {
-      const next = !prev;
-      if (next) {
-        document.body.style.overflow = 'hidden';
-        screen.orientation?.lock?.('landscape').catch(() => {});
-      } else {
-        document.body.style.overflow = '';
-        screen.orientation?.unlock?.();
-      }
-      return next;
-    });
-  }, []);
-
-  // Cleanup mobile fullscreen on unmount
-  useEffect(() => {
-    return () => {
-      document.body.style.overflow = '';
-      screen.orientation?.unlock?.();
-    };
-  }, []);
 
   const handleStartPrivateChat = async () => {
     if (!user || !live) return;

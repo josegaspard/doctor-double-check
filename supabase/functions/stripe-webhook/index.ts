@@ -104,6 +104,12 @@ Deno.serve(async (req) => {
       if (session.metadata?.type === "consultation_payment" && session.payment_status === "paid") {
         await handleConsultationPayment(db, session);
       }
+      if (session.metadata?.type === "double_check_payment" && session.payment_status === "paid") {
+        await handleConsultationPayment(db, session, true);
+      }
+      if (session.metadata?.type === "live_consultation_payment" && session.payment_status === "paid") {
+        await handleConsultationPayment(db, session, false, true);
+      }
       if (session.metadata?.type === "storage_upgrade" && session.payment_status === "paid") {
         await handleStorageUpgrade(db, session);
       }
@@ -530,12 +536,17 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
   await creditDoctorEarningsAtomic(db, creatorId, tierPrice, "subscription", null);
 }
 
-async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session) {
+async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session, isDoubleCheck = false, isLive = false) {
   const userId = session.metadata!.user_id;
   const doctorId = session.metadata!.doctor_id;
   const finalFee = parseFloat(session.metadata!.final_fee);
-  
-  logStep("Processing consultation payment", { userId, doctorId, finalFee });
+  const fileIds = isDoubleCheck
+    ? (session.metadata?.file_ids || "").split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  const liveId = isLive ? (session.metadata?.live_id || null) : null;
+  const liveMessage = isLive ? (session.metadata?.live_message || "") : "";
+
+  logStep("Processing consultation payment", { userId, doctorId, finalFee, isDoubleCheck, isLive, files: fileIds.length });
 
   // Idempotency: a Stripe replay (or a stuck-'processing' re-run) must not
   // create a second consultation, double-debit the patient, or double-credit
@@ -559,7 +570,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     .from("entitlements")
     .insert({
       user_id: userId,
-      type: "chat",
+      type: isDoubleCheck ? "double_check" : "chat",
       is_active: true,
       expires_at: expiresAt.toISOString(),
     });
@@ -567,7 +578,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
   if (entitlementError) {
     logStep("Error creating entitlement", { error: entitlementError });
   } else {
-    logStep("Chat entitlement created", { userId, expiresAt });
+    logStep("Entitlement created", { userId, expiresAt, type: isDoubleCheck ? "double_check" : "chat" });
   }
 
   const { data: patientRole } = await db
@@ -581,7 +592,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     .select("id")
     .or(`and(participant1_id.eq.${userId},participant2_id.eq.${doctorId}),and(participant1_id.eq.${doctorId},participant2_id.eq.${userId})`)
     .eq("status", "active")
-    .eq("is_double_check", false)
+    .eq("is_double_check", isDoubleCheck)
     .maybeSingle();
 
   let chatSessionId = existingSession?.id;
@@ -595,7 +606,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
         participant2_id: doctorId,
         participant2_type: "doctor",
         status: "active",
-        is_double_check: false,
+        is_double_check: isDoubleCheck,
       })
       .select()
       .single();
@@ -625,6 +636,57 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     logStep("Consultation record created", { consultationId: consultation.id });
   }
 
+  // Segunda opinión: compartir los estudios seleccionados con el médico (mismo
+  // efecto que grantAccess en el path wallet: fila en vault_access por archivo).
+  if (isDoubleCheck && fileIds.length > 0) {
+    const { error: grantError } = await db
+      .from("vault_access")
+      .insert(fileIds.map((fid) => ({ file_id: fid, doctor_id: doctorId })));
+    if (grantError) {
+      logStep("Error granting vault access for double-check", { error: grantError });
+    } else {
+      logStep("Vault access granted for double-check", { files: fileIds.length });
+    }
+  }
+
+  // Reserva desde un live pagada con tarjeta: replica los efectos del path wallet
+  // (book_live_consultation) que antes se perdían — mensaje inicial, registro de la
+  // orientación y conteo del límite del live.
+  if (isLive && liveId) {
+    if (liveMessage && chatSessionId) {
+      await db.from("chat_messages").insert({
+        session_id: chatSessionId,
+        sender_id: userId,
+        content: `📋 Mensaje desde el live: ${liveMessage}`,
+      });
+    }
+    await db.from("live_consultation_requests").insert({
+      live_id: liveId,
+      patient_id: userId,
+      doctor_id: doctorId,
+      message: liveMessage,
+      payment_method: "card",
+      amount: finalFee,
+      chat_session_id: chatSessionId,
+      consultation_id: consultation?.id,
+      status: "completed",
+    });
+    // Cuenta la orientación contra el límite del live (max_paid_chats).
+    const { error: incErr } = await db.rpc("increment_live_paid_chats", { p_live_id: liveId });
+    if (incErr) {
+      // Fallback si la RPC no existe: incremento no atómico best-effort.
+      const { data: lr } = await db.from("lives").select("paid_chats_count").eq("id", liveId).maybeSingle();
+      await db.from("lives").update({ paid_chats_count: Number(lr?.paid_chats_count || 0) + 1 }).eq("id", liveId);
+    }
+    await db.from("notifications").insert({
+      user_id: doctorId,
+      type: "chat_message",
+      title: "🎯 Nueva orientación desde tu Live",
+      message: "Un paciente reservó una orientación desde tu transmisión en vivo",
+      data: { patient_id: userId, url: "/chat", session_id: chatSessionId, source: "live", live_id: liveId },
+    });
+  }
+
   // FIX #1: Use atomic credit function
   await creditDoctorEarningsAtomic(db, doctorId, finalFee, "consultation", null);
 
@@ -634,9 +696,9 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       user_id: userId,
       type: "purchase",
       amount: -finalFee,
-      description: "Consulta médica por chat",
+      description: isDoubleCheck ? "Segunda opinión médica por chat" : (isLive ? "Orientación desde live por chat" : "Consulta médica por chat"),
       status: "paid",
-      metadata: { type: "consultation", doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
+      metadata: { type: isDoubleCheck ? "double_check" : (isLive ? "live_consultation" : "consultation"), doctor_id: doctorId, stripe_session_id: session.id, consultation_id: consultation?.id },
     });
 
   const { data: patientProfile } = await db

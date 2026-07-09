@@ -21,6 +21,10 @@ export interface PrescriptionData {
   doctorSpecialty: string;
   doctorLicense: string;
   doctorCedula?: string;
+  doctorNumeroConsejo?: string;   // Céd. Esp. / No. de registro ante el Consejo
+  doctorUniversity?: string;      // Universidad de egreso
+  doctorHospital?: string;        // Membresía / afiliación hospitalaria
+  doctorCofepris?: string;        // Permiso COFEPRIS (recetario controlado)
   doctorSignatureUrl?: string;
   signedAt: Date;
   cedulaVerified?: boolean;   // cédula verificada contra el registro de la SEP
@@ -49,6 +53,51 @@ const formatDate = (date: Date): string => {
   }).format(date);
 };
 
+// Escapa texto capturado del perfil del médico para evitar romper el HTML de la receta.
+const esc = (s?: string): string =>
+  (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// Bloque de credenciales completas del médico, replicando el membrete oficial:
+// nombre, membresía/afiliación hospitalaria, especialidad, universidad,
+// Céd. Prof., Céd. Esp. (No. Consejo) y permiso COFEPRIS.
+// `variant` ajusta el color según el fondo (caja "Médico" clara vs. pie de firma).
+const doctorCredentialsHTML = (
+  rx: PrescriptionData,
+  variant: 'box' | 'signature',
+): string => {
+  const muted = '#6b7fa3';
+  const accent = '#227787';
+  const sepBadge = rx.cedulaVerified
+    ? ` <span style="color:#166534; font-weight:600;">· ✓ Cédula verificada ante SEP</span>`
+    : '';
+
+  const lines: string[] = [];
+  if (rx.doctorHospital) {
+    lines.push(`<p style="margin: 2px 0 0; color: ${muted}; font-size: 12px;">${esc(rx.doctorHospital)}</p>`);
+  }
+  if (rx.doctorSpecialty) {
+    lines.push(`<p style="margin: 2px 0 0; color: ${accent}; font-size: 13px; font-weight: 600;">${esc(rx.doctorSpecialty)}</p>`);
+  }
+  if (rx.doctorUniversity) {
+    lines.push(`<p style="margin: 2px 0 0; color: ${muted}; font-size: 12px;">${esc(rx.doctorUniversity)}</p>`);
+  }
+
+  // Línea de cédulas: Céd. Prof. + Céd. Esp. (No. Consejo) + Lic.
+  const idParts: string[] = [];
+  if (rx.doctorCedula) idParts.push(`Céd. Prof. ${esc(rx.doctorCedula)}`);
+  if (rx.doctorNumeroConsejo) idParts.push(`Céd. Esp. Reg. No. Consejo ${esc(rx.doctorNumeroConsejo)}`);
+  // La licencia se muestra sólo si no coincide con la cédula profesional (evita duplicar).
+  if (rx.doctorLicense && rx.doctorLicense !== rx.doctorCedula) idParts.push(`Lic. ${esc(rx.doctorLicense)}`);
+  if (rx.doctorCofepris) idParts.push(`COFEPRIS ${esc(rx.doctorCofepris)}`);
+  if (idParts.length) {
+    lines.push(`<p style="margin: ${variant === 'box' ? '4px' : '2px'} 0 0; color: ${muted}; font-size: 12px;">${idParts.join(' · ')}${sepBadge}</p>`);
+  } else if (sepBadge) {
+    lines.push(`<p style="margin: 2px 0 0; color: ${muted}; font-size: 12px;">${sepBadge}</p>`);
+  }
+
+  return lines.join('\n');
+};
+
 export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
   const medsRows = rx.medications.map((med, i) => `
     <tr>
@@ -63,9 +112,6 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 
   const folio = prescriptionFolio(rx.id);
   const verifyUrl = rx.verifyUrl || prescriptionVerifyUrl(rx.id);
-  const sepBadge = rx.cedulaVerified
-    ? ` <span style="color:#166534; font-weight:600;">· ✓ Cédula verificada ante SEP</span>`
-    : '';
 
   // Use the deployed logo URL
   const logoUrl = 'https://medical-masters.com/icon-512.png?v=17';
@@ -115,9 +161,8 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
         <div style="background: #f0f4fa; padding: 16px; border-radius: 8px; border-left: 4px solid #163a83;">
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Médico</p>
-          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
-          <p style="margin: 2px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
-          <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}${sepBadge}</p>
+          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${esc(rx.doctorName)}</p>
+          ${doctorCredentialsHTML(rx, 'box')}
         </div>
         <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; border-left: 4px solid #839ed5;">
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Paciente</p>
@@ -174,10 +219,9 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         </div>
         ` : ''}
         <div style="display: inline-block; border-bottom: 2px solid #163a83; padding: 0 40px 4px;">
-          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${rx.doctorName}</p>
+          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #163a83;">${esc(rx.doctorName)}</p>
         </div>
-        <p style="margin: 4px 0 0; color: #227787; font-size: 13px;">${rx.doctorSpecialty}</p>
-        <p style="margin: 2px 0 0; color: #6b7fa3; font-size: 12px;">Lic. ${rx.doctorLicense}${rx.doctorCedula ? ` | Céd. Prof. ${rx.doctorCedula}` : ''}${sepBadge}</p>
+        ${doctorCredentialsHTML(rx, 'signature')}
       </div>
 
       <!-- Verificación (QR + folio) -->
@@ -207,10 +251,16 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 </html>`;
 };
 
-export const exportPrescriptionToPDF = async (data: PrescriptionData): Promise<void> => {
+export const exportPrescriptionToPDF = async (
+  data: PrescriptionData,
+  // Ventana ya abierta de forma síncrona por quien llama (para no ser bloqueada por
+  // el navegador cuando hay awaits antes de generar el PDF, p. ej. al traer las
+  // credenciales del médico). Si no se pasa, se abre aquí mismo.
+  preOpenedWindow?: Window | null,
+): Promise<void> => {
   // Abrir la ventana de forma SÍNCRONA (si no, el bloqueador de popups la mata
   // al abrirla tras un await). Luego generamos el QR y escribimos el HTML.
-  const printWindow = window.open('', '_blank');
+  const printWindow = preOpenedWindow ?? window.open('', '_blank');
 
   const verifyUrl = data.verifyUrl || prescriptionVerifyUrl(data.id);
   let verifyQrDataUrl: string | undefined;

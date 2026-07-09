@@ -12,6 +12,9 @@ interface AccessGuardProps {
   children: React.ReactNode;
   allowedRoles: UserRole[];
   requiresEntitlement?: 'chat' | 'recordings';
+  /** Si true, un doctor/residente con perfil NO 'approved' es bloqueado y enviado
+   *  a /verification-pending (antes cualquier doctor pending entraba al panel). */
+  requireApproved?: boolean;
   fallbackMessage?: string;
   fallbackType?: 'login' | 'upgrade' | 'forbidden';
   /** Optional human-readable feature label for audit panel */
@@ -22,6 +25,7 @@ export default function AccessGuard({
   children,
   allowedRoles,
   requiresEntitlement,
+  requireApproved = false,
   fallbackMessage,
   fallbackType = 'login',
   featureLabel,
@@ -30,6 +34,17 @@ export default function AccessGuard({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [auditOpen, setAuditOpen] = useState(false);
+
+  // Gate de "aprobado": el status vive en el perfil de doctor/residente. Admin
+  // siempre pasa. Si aún no cargó el perfil, no bloqueamos (evita falso negativo).
+  const approvalStatus = user?.doctorProfile?.status ?? user?.residentProfile?.status;
+  const needsApproval = requireApproved && role !== 'admin' && (role === 'doctor' || role === 'resident');
+  const notApproved = needsApproval && !!approvalStatus && approvalStatus !== 'approved';
+  useEffect(() => {
+    if (!isLoading && notApproved) {
+      navigate('/verification-pending', { replace: true });
+    }
+  }, [isLoading, notApproved, navigate]);
 
   // Si el usuario NO tiene sesión (p. ej. acaba de cerrar sesión estando en una
   // página protegida), NO mostramos "Acceso denegado": lo llevamos al landing con
@@ -42,7 +57,7 @@ export default function AccessGuard({
     }
   }, [loggedOutRedirect, navigate]);
 
-  if (isLoading || loggedOutRedirect) {
+  if (isLoading || loggedOutRedirect || notApproved) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />

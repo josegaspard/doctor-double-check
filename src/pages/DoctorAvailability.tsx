@@ -110,6 +110,9 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+  // Debe declararse aquí (con el resto de useState), NO después de los early-return
+  // de abajo (isAuthLoading / role) → si no, viola Rules of Hooks y crashea.
+  const [confirmDeleteSingle, setConfirmDeleteSingle] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState<{
     id: string;
     title: string;
@@ -338,7 +341,7 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
 
   // Eliminar un solo evento desde el dialog de detalle. Reutiliza
   // deleteAvailabilities pasando un array de 1 id.
-  const [confirmDeleteSingle, setConfirmDeleteSingle] = useState<string | null>(null);
+  // (el estado confirmDeleteSingle se declara arriba junto al resto de useState)
   const handleDeleteSingle = async (id: string) => {
     const result = await deleteAvailabilities([id]);
     if (result.success) {

@@ -125,14 +125,62 @@ export default function MyAppointments() {
   };
 
   const confirmAppt = async (id: string) => {
+    setCancelling(id); // reutiliza el spinner de fila mientras confirma+provisiona
     const { error } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', id);
     if (error) {
+      setCancelling(null);
       toast.error(error.message);
       return;
     }
     toast.success(t('myAppointments.toastConfirmed'));
+
+    // Provisiona la sala de video de la cita para que el botón "Entrar" del paciente
+    // funcione (antes daily_room_url nunca se poblaba → el video nunca aparecía).
+    // Best-effort: si Daily falla, la cita queda confirmada igual.
+    const appt = appts.find((a) => a.id === id);
+    try {
+      const { data: room } = await supabase.functions.invoke('create-daily-room', {
+        body: { liveId: id, mode: 'appointment', title: t('myAppointments.titleDoctor') },
+      });
+      if ((room as any)?.room?.url) {
+        await supabase.from('appointments').update({ daily_room_url: (room as any).room.url } as any).eq('id', id);
+      }
+    } catch (e) {
+      console.warn('provision appointment room failed:', e);
+    }
+
+    // Avisar al paciente que su cita fue confirmada (campanita), con deeplink correcto.
+    if (appt?.patient_id) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: appt.patient_id,
+          type: 'system',
+          title: t('myAppointments.confirmedNotifyTitle'),
+          message: t('myAppointments.confirmedNotifyMessage'),
+          data: { kind: 'appointment_confirmed', appointment_id: id, deeplink: '/my-appointments' },
+        } as any);
+      } catch { /* la confirmación no depende de la notificación */ }
+    }
+
     supabase.functions.invoke('send-appointment-confirmation', { body: { appointmentId: id } })
       .catch((e) => console.warn('send-appointment-confirmation failed:', e));
+    setCancelling(null);
+    fetchAppts();
+  };
+
+  const rejectAppt = async (id: string) => {
+    if (!confirm(t('myAppointments.confirmReject'))) return;
+    setCancelling(id);
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelled', cancellation_reason: t('myAppointments.rejectedByDoctor') } as any)
+      .eq('id', id);
+    setCancelling(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(t('myAppointments.toastRejected'));
     fetchAppts();
   };
 
@@ -205,7 +253,14 @@ export default function MyAppointments() {
                         </div>
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           {role === 'doctor' && a.status === 'requested' && (
-                            <Button size="sm" className="bg-success hover:bg-success h-7 text-xs" onClick={() => confirmAppt(a.id)}>{t('myAppointments.confirm')}</Button>
+                            <>
+                              <Button size="sm" className="bg-success hover:bg-success h-7 text-xs" disabled={cancelling === a.id} onClick={() => confirmAppt(a.id)}>
+                                {cancelling === a.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('myAppointments.confirm')}
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs text-destructive border-destructive/30" disabled={cancelling === a.id} onClick={() => rejectAppt(a.id)}>
+                                {t('myAppointments.reject')}
+                              </Button>
+                            </>
                           )}
                           {liveSoon && a.daily_room_url && (
                             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(a.daily_room_url!, '_blank')}>

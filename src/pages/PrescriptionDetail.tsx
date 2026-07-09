@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportPrescriptionToPDF, prescriptionFolio, prescriptionVerifyUrl } from '@/lib/generatePrescriptionPDF';
+import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 import { SecureImage } from '@/components/security/SecureImage';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -41,6 +42,10 @@ interface PrescriptionDetail {
   doctorSpecialty: string;
   doctorLicense: string;
   doctorCedula?: string;
+  doctorNumeroConsejo?: string;
+  doctorUniversity?: string;
+  doctorHospital?: string;
+  doctorCofepris?: string;
   doctorSignatureUrl?: string;
   signedAt: Date;
   createdAt: Date;
@@ -92,12 +97,17 @@ export default function PrescriptionDetail() {
         doctorId: data.doctor_id,
       });
 
-      // Fetch doctor signature via security definer function (accessible to patients)
-      const { data: sigUrl } = await supabase
-        .rpc('get_doctor_signature', { p_doctor_user_id: data.doctor_id });
-      if (sigUrl) {
-        setPrescription(prev => prev ? { ...prev, doctorSignatureUrl: sigUrl } : prev);
-      }
+      // Credenciales completas del médico (membrete de la receta) + firma, vía RPCs
+      // SECURITY DEFINER accesibles también a pacientes.
+      const credentials = await fetchDoctorCredentials(data.doctor_id);
+      setPrescription(prev => prev ? {
+        ...prev,
+        doctorNumeroConsejo: credentials.doctorNumeroConsejo,
+        doctorUniversity: credentials.doctorUniversity,
+        doctorHospital: credentials.doctorHospital,
+        doctorCofepris: credentials.doctorCofepris,
+        doctorSignatureUrl: credentials.doctorSignatureUrl || prev.doctorSignatureUrl,
+      } : prev);
 
       // ¿Cédula del médico verificada ante SEP? (para badge y PDF)
       const { data: cedRows } = await supabase
@@ -137,6 +147,10 @@ export default function PrescriptionDetail() {
       doctorSpecialty: prescription.doctorSpecialty,
       doctorLicense: prescription.doctorLicense,
       doctorCedula: prescription.doctorCedula,
+      doctorNumeroConsejo: prescription.doctorNumeroConsejo,
+      doctorUniversity: prescription.doctorUniversity,
+      doctorHospital: prescription.doctorHospital,
+      doctorCofepris: prescription.doctorCofepris,
       doctorSignatureUrl: prescription.doctorSignatureUrl,
       signedAt: prescription.signedAt,
       cedulaVerified,
@@ -208,10 +222,18 @@ export default function PrescriptionDetail() {
                   <span className="truncate">{prescription.doctorName}</span>
                   <DoctorBadgeIcon userId={prescription.doctorId} size="sm" className="flex-shrink-0" />
                 </p>
+                {prescription.doctorHospital && (
+                  <p className="text-xs text-secondary/80">{prescription.doctorHospital}</p>
+                )}
                 <p className="text-sm text-primary font-medium">{prescription.doctorSpecialty}</p>
+                {prescription.doctorUniversity && (
+                  <p className="text-xs text-secondary/80">{prescription.doctorUniversity}</p>
+                )}
                 <div className="flex items-center gap-3 mt-1 text-xs text-secondary/80 flex-wrap">
-                  <span>{t('prescriptionDetailPage.doctor.licenseLabel')} {prescription.doctorLicense}</span>
-                  {prescription.doctorCedula && <span>{t('prescriptionDetailPage.doctor.cedulaLabel')} {prescription.doctorCedula}</span>}
+                  {prescription.doctorCedula && <span>Céd. Prof. {prescription.doctorCedula}</span>}
+                  {prescription.doctorNumeroConsejo && <span>Céd. Esp. Reg. No. Consejo {prescription.doctorNumeroConsejo}</span>}
+                  {!prescription.doctorCedula && <span>{t('prescriptionDetailPage.doctor.licenseLabel')} {prescription.doctorLicense}</span>}
+                  {prescription.doctorCofepris && <span>COFEPRIS {prescription.doctorCofepris}</span>}
                   {cedulaVerified && (
                     <Badge variant="success" className="gap-1 text-[10px]">
                       <ShieldCheck className="w-3 h-3" />

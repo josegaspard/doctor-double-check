@@ -218,6 +218,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // COTEJO DE NOMBRE (anti-suplantación): antes se marcaba is_verified=true solo
+    // por coincidir el NÚMERO de cédula → cualquiera podía reclamar la cédula de un
+    // tercero. Comparamos el nombre del registro SEP contra el nombre del perfil.
+    const normalize = (s: string) =>
+      (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // quita acentos
+        .replace(/[^a-z\s]/g, " ")
+        .split(/\s+/).filter((w) => w.length > 2); // tokens ≥3 letras (ignora "de","la")
+
+    const { data: profileRow } = await supabaseAdmin
+      .from("profiles").select("name").eq("id", userId).maybeSingle();
+    const profileTokens = new Set(normalize(profileRow?.name || ""));
+    const sepTokens = normalize(`${matchedDoc.nombre} ${matchedDoc.paterno} ${matchedDoc.materno}`);
+    const overlap = sepTokens.filter((tok) => profileTokens.has(tok)).length;
+    // Exigimos ≥2 tokens en común (típicamente un apellido + un nombre) o, si el SEP
+    // solo trae 1-2 tokens útiles, que coincidan todos. Sin nombre de perfil → no match.
+    const needed = Math.min(2, sepTokens.length);
+    const nameMatches = profileTokens.size > 0 && sepTokens.length > 0 && overlap >= needed;
+
+    if (!nameMatches) {
+      console.warn("Cédula name mismatch", { userId, cedula, overlap, sepTokens, profileTokens: [...profileTokens] });
+    }
+
     // Create or update verification record
     const verificationData = {
       user_id: userId,
@@ -228,8 +252,10 @@ Deno.serve(async (req) => {
       titulo: matchedDoc.titulo,
       institucion: matchedDoc.institucion,
       anio_registro: matchedDoc.anioRegistro,
-      is_verified: true,
-      verified_at: new Date().toISOString(),
+      // Solo se auto-verifica si el nombre coincide. Si no, queda pendiente de
+      // revisión manual del admin (que ya coteja la foto de cédula).
+      is_verified: nameMatches,
+      verified_at: nameMatches ? new Date().toISOString() : null,
       raw_response: matchedDoc as any,
     };
 
@@ -264,7 +290,11 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        verified: true,
+        verified: nameMatches,
+        // Encontramos la cédula pero el nombre no coincide → requiere revisión manual
+        // del admin (que coteja la foto de cédula ya capturada).
+        needsReview: !nameMatches,
+        nameMismatch: !nameMatches,
         verificationId,
         data: {
           nombre: matchedDoc.nombre,

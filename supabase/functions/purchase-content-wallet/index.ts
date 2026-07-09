@@ -116,6 +116,25 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       logStep("Error creating purchase record", { error: insertError.message });
+      // El ACCESO al PDF depende de la fila en `purchases` (RLS). Si el insert falla
+      // por algo distinto a "ya comprado" (unique 23505), el usuario pagó y NO puede
+      // descargar → reembolsamos el wallet y abortamos (antes solo se logueaba).
+      const isDup = (insertError as any)?.code === '23505' || /duplicate key|unique/i.test(insertError.message || '');
+      if (!isDup) {
+        await adminClient.from('wallet_transactions').insert({
+          user_id: user.id,
+          type: 'refund',
+          amount: purchaseResult.amount_charged,
+          description: `Reembolso (no se pudo registrar la compra de contenido)`,
+          status: 'paid',
+          metadata: { source: 'content', content_id: contentId, reason: 'purchase_insert_failed' },
+        });
+        await adminClient.rpc('credit_wallet_balance', {
+          p_user_id: user.id,
+          p_amount: purchaseResult.amount_charged,
+        }).then(() => {}, () => {});
+        throw new Error("No se pudo registrar la compra; tu wallet fue reembolsado. Intenta de nuevo.");
+      }
     }
 
     // Create entitlement

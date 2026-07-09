@@ -44,10 +44,9 @@ export default function SubscribersList() {
     })();
   }, [user?.id]);
 
-  if (role !== 'doctor' && role !== 'resident') {
-    return <Navigate to="/" replace />;
-  }
-
+  // Rules of Hooks: el useMemo debe ejecutarse SIEMPRE, antes de cualquier
+  // return condicional (el guard de rol se resuelve async y cambiaría el
+  // número de hooks entre renders → crash).
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return subs;
@@ -56,6 +55,10 @@ export default function SubscribersList() {
         (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q)
     );
   }, [subs, query]);
+
+  if (role !== 'doctor' && role !== 'resident') {
+    return <Navigate to="/" replace />;
+  }
 
   const activeCount = subs.filter((s) => s.is_active).length;
   const premiumCount = subs.filter((s) => s.is_active && s.tier === 'premium').length;

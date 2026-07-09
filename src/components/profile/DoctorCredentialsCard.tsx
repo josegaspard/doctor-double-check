@@ -20,6 +20,7 @@ interface CredentialData {
   cedula_especialidad: string | null;
   cedula_especialidad_status: string | null;
   cedula_especialidad_rejection_reason: string | null;
+  cofepris_permit: string | null;
   license: string | null;
   specialty: string;
 }
@@ -34,6 +35,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
   // Editable fields
   const [university, setUniversity] = useState('');
   const [cedulaEsp, setCedulaEsp] = useState('');
+  const [cofepris, setCofepris] = useState('');
   const [secondarySpecialties, setSecondarySpecialties] = useState<string[]>([]);
   const [newSpecialty, setNewSpecialty] = useState('');
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
@@ -44,7 +46,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
       setLoading(true);
       const { data: row } = await supabase
         .from('doctor_profiles')
-        .select('university, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, license, specialty')
+        .select('university, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, cofepris_permit, license, specialty')
         .eq('user_id', userId)
         .maybeSingle();
       if (row) {
@@ -52,6 +54,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
         setData(d);
         setUniversity(d.university || '');
         setCedulaEsp(d.cedula_especialidad || '');
+        setCofepris(d.cofepris_permit || '');
         setSecondarySpecialties(d.secondary_specialties || []);
         setWorkplaces(Array.isArray(d.workplaces) ? d.workplaces : []);
       }
@@ -71,6 +74,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
         university: trimmedUni || null,
         secondary_specialties: cleanSpecs,
         workplaces: cleanWorkplaces,
+        cofepris_permit: cofepris.trim().slice(0, 50) || null,
       };
       // Only update cedula if changed (resets status to pending)
       if (trimmedCedula !== (data?.cedula_especialidad || '')) {
@@ -226,6 +230,24 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
             )}
             {!editing && cedulaStatus === 'rejected' && data.cedula_especialidad_rejection_reason && (
               <p className="ml-6 text-xs text-destructive">{t('doctorCredentialsCard.rejectionReason')}: {data.cedula_especialidad_rejection_reason}</p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Permiso COFEPRIS — antes NO tenía UI para capturarse (solo lectura),
+              por lo que nunca aparecía en el membrete de la receta. */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.cofeprisLabel')}</Label>
+            {editing ? (
+              <div className="ml-6 space-y-1">
+                <Input value={cofepris} onChange={e => setCofepris(e.target.value)} placeholder={t('doctorCredentialsCard.cofeprisPlaceholder')} maxLength={50} />
+                <p className="text-xs text-muted-foreground">{t('doctorCredentialsCard.cofeprisHint')}</p>
+              </div>
+            ) : (
+              <div className="ml-6">
+                <span className="text-sm font-mono">{data.cofepris_permit || <span className="text-muted-foreground italic font-sans">{t('doctorCredentialsCard.cofeprisEmpty')}</span>}</span>
+              </div>
             )}
           </div>
         </CardContent>

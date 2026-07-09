@@ -50,11 +50,13 @@ export default function ResidentGroups() {
   const [newGroup, setNewGroup] = useState({ name: '', description: '', specialty: '' });
   const [isCreating, setIsCreating] = useState(false);
 
-  // Redirect non-residents
-  if (role !== 'resident' && role !== 'doctor') {
-    navigate('/lives');
-    return null;
-  }
+  // Redirect non-residents. En un efecto (no en render) y SIN early-return antes
+  // de los hooks: hacerlo antes del useEffect de abajo violaba Rules of Hooks
+  // (el rol carga async → cambiaba el conteo de hooks → crash).
+  const allowed = role === 'resident' || role === 'doctor';
+  useEffect(() => {
+    if (role && !allowed) navigate('/lives');
+  }, [role, allowed, navigate]);
 
   const fetchGroups = async () => {
     try {
@@ -169,6 +171,9 @@ export default function ResidentGroups() {
     g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     g.specialty?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Guard de render tras TODOS los hooks (el redirect lo dispara el efecto de arriba).
+  if (!allowed) return null;
 
   return (
     <MainLayout>

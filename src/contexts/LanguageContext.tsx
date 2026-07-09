@@ -67,10 +67,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('preferred_language', lang);
 
     if (supabaseUser?.id) {
-      await supabase
-        .from('profiles')
-        .update({ preferred_language: lang } as any)
-        .eq('id', supabaseUser.id);
+      // El enum supported_language de la BD puede NO incluir todavía 'ca'/'zh'
+      // (ver migración 20260709_supported_language_ca_zh). Sin try/catch, Postgres
+      // rechaza el enum inválido y deja una promesa rechazada sin manejar. La UI ya
+      // cambió por localStorage; persistir es best-effort.
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ preferred_language: lang } as any)
+          .eq('id', supabaseUser.id);
+        if (error) console.warn('No se pudo guardar el idioma preferido:', error.message);
+      } catch (e) {
+        console.warn('No se pudo guardar el idioma preferido:', e);
+      }
     }
   };
 

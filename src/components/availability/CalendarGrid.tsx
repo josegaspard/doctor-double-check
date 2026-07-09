@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import type { SupportedLanguage } from '@/lib/i18n';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, isSameMonth, isToday, isSameDay,
@@ -16,7 +17,7 @@ interface CalendarGridProps {
   currentDate: Date;
   viewMode: ViewMode;
   availabilities: DoctorAvailability[];
-  language: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de';
+  language: SupportedLanguage;
   onDayClick: (date: Date) => void;
   onEventClick: (availability: DoctorAvailability) => void;
   isManaging?: boolean;

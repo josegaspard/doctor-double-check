@@ -55,6 +55,7 @@ interface OrderRow {
   completed_at: string | null;
   product_id: string;
   buyer_id: string;
+  chat_session_id?: string | null;
   productName?: string | null;
   vendorName?: string | null;
   buyerName?: string | null;
@@ -142,7 +143,7 @@ export default function MedicalMarketplace() {
           const buyerIds = Array.from(new Set(rows.map(o => o.buyer_id)));
           if (buyerIds.length > 0) {
             const { data: bp } = await sb.from('profiles_public').select('id, name').in('id', buyerIds);
-            const names = new Map((bp || []).map((p: any) => [p.id, p.name]));
+            const names = new Map<string, string>((bp || []).map((p: any) => [p.id, p.name]));
             rows.forEach(o => { o.buyerName = names.get(o.buyer_id) || null; });
           }
           setVendorOrders(rows);
