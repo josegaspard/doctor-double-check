@@ -422,14 +422,48 @@ export default function Onboarding() {
         return;
       }
 
-      // Foto de la cédula ya subida en el REGISTRO (cliente 2026-07-08): precargarla
-      // para no pedirla dos veces. El progreso guardado (abajo) la pisa si es más nuevo.
+      // Foto de la cédula ya ligada al perfil: precargarla para no pedirla dos veces.
       const { data: dp } = await (supabase as any)
         .from('doctor_profiles')
         .select('cedula_photo_url')
         .eq('user_id', supabaseUser.id)
         .maybeSingle();
-      if (dp?.cedula_photo_url) setCedulaPhotoUrl(dp.cedula_photo_url);
+      if (dp?.cedula_photo_url) {
+        setCedulaPhotoUrl(dp.cedula_photo_url);
+      } else {
+        // Foto elegida en el REGISTRO (cliente 2026-07-08): el form la deja en
+        // IndexedDB porque el redirect duro post-signUp mata cualquier subida en
+        // vuelo y antes del signUp no hay sesión. Aquí ya hay sesión → subirla.
+        try {
+          const { takeCedulaFoto } = await import('@/lib/cedulaFotoHandoff');
+          const pending = await takeCedulaFoto();
+          if (pending) {
+            const { compressImageIfNeeded, withTimeout } = await import('@/lib/imageUpload');
+            const upload = await compressImageIfNeeded(pending);
+            const ext = (upload.name.split('.').pop() || 'jpg').toLowerCase();
+            const path = `${supabaseUser.id}/cedula-foto-${Date.now()}.${ext}`;
+            const { error: upErr } = await withTimeout(
+              supabase.storage.from('doctor-credentials').upload(path, upload, {
+                upsert: true,
+                contentType: upload.type || 'image/jpeg',
+              }),
+              60_000,
+              'subida de foto de cédula',
+            );
+            if (!upErr) {
+              setCedulaPhotoUrl(path);
+              await (supabase as any)
+                .from('doctor_profiles')
+                .update({ cedula_photo_url: path })
+                .eq('user_id', supabaseUser.id);
+            } else {
+              console.error('[Onboarding] cedula foto handoff upload error', upErr);
+            }
+          }
+        } catch (handoffErr) {
+          console.error('[Onboarding] cedula foto handoff error', handoffErr);
+        }
+      }
 
       // Load saved progress
       const { data: savedProgress } = await supabase

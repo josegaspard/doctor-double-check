@@ -254,6 +254,19 @@ export default function Login() {
       return;
     }
 
+    // Foto de la cédula: se guarda en IndexedDB ANTES del signUp. El listener de
+    // Auth hace redirect DURO a /onboarding al crearse la sesión (mata cualquier
+    // subida en vuelo), y antes del signUp no hay sesión para el bucket privado.
+    // El onboarding recoge el archivo y lo sube (lib/cedulaFotoHandoff).
+    if (registerRole === 'doctor' && registerCedulaFoto) {
+      try {
+        const { stashCedulaFoto } = await import('@/lib/cedulaFotoHandoff');
+        await stashCedulaFoto(registerCedulaFoto);
+      } catch (stashErr) {
+        console.error('[Register] no se pudo guardar la foto para el onboarding', stashErr);
+      }
+    }
+
     // Doctor/residente capturan Nombre + Apellido por separado; se combinan aquí.
     const composedName = (registerRole === 'doctor' || registerRole === 'resident')
       ? `${registerFirstName.trim()} ${registerLastName.trim()}`.replace(/\s+/g, ' ').trim()
@@ -275,39 +288,6 @@ export default function Login() {
     });
 
     if (result.success) {
-      // Foto de la cédula: recién ahora hay sesión → subir al bucket privado y
-      // ligarla al doctor_profiles (creado por handle_new_user). Si algo falla
-      // NO se bloquea el alta: el onboarding la vuelve a pedir.
-      if (registerRole === 'doctor' && registerCedulaFoto && result.hasSession) {
-        try {
-          const { data: { user: newUser } } = await supabase.auth.getUser();
-          if (newUser) {
-            const { compressImageIfNeeded, withTimeout } = await import('@/lib/imageUpload');
-            const upload = await compressImageIfNeeded(registerCedulaFoto);
-            const ext = (upload.name.split('.').pop() || 'jpg').toLowerCase();
-            const path = `${newUser.id}/cedula-foto-${Date.now()}.${ext}`;
-            const { error: upErr } = await withTimeout(
-              supabase.storage.from('doctor-credentials').upload(path, upload, {
-                upsert: true,
-                contentType: upload.type || 'image/jpeg',
-              }),
-              60_000,
-              'subida de foto de cédula',
-            );
-            if (!upErr) {
-              await (supabase as any)
-                .from('doctor_profiles')
-                .update({ cedula_photo_url: path })
-                .eq('user_id', newUser.id);
-            } else {
-              console.error('[Register] cedula foto upload error', upErr);
-            }
-          }
-        } catch (fotoErr) {
-          console.error('[Register] cedula foto upload error', fotoErr);
-        }
-      }
-
       // Con auto-confirmación de email activa (mientras Resend no verifica dominio),
       // el signup devuelve sesión al instante → mandamos al onboarding directo.
       // Si NO hay sesión (confirmación por correo activa), mostramos "revisa tu correo".

@@ -81,7 +81,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   logout: () => Promise<void>;
   loginAsVisitor: () => void;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string; hasSession?: boolean }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string; hasSession?: boolean; userId?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updateUser: (updates: Partial<ExtendedUser>) => void;
   refreshUser: () => Promise<void>;

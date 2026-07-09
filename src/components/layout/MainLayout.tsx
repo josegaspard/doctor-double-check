@@ -60,7 +60,6 @@ import {
   Megaphone,
   MapPin,
   Package,
-  GraduationCap,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';

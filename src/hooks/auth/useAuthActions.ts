@@ -60,7 +60,7 @@ export function useAuthActions(
     sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
   };
 
-  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean }> => {
+  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean; userId?: string }> => {
     setIsLoading(true);
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -113,7 +113,9 @@ export function useAuthActions(
       }
 
       setIsLoading(false);
-      return { success: true, hasSession };
+      // userId directo de la respuesta del signUp: getUser() justo después del
+      // alta puede devolver user null (sesión aún no persistida) — ver foto cédula.
+      return { success: true, hasSession, userId: authData.user?.id };
     } catch (error: any) {
       setIsLoading(false);
       return { success: false, error: error.message || 'Registration error' };
