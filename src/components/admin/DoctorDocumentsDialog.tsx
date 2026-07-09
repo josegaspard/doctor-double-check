@@ -53,11 +53,24 @@ export function DoctorDocumentsDialog({
     (async () => {
       setLoading(true);
       const client = supabase as any;
-      const [eduRes, certRes, idRes] = await Promise.all([
+      const [eduRes, certRes, idRes, dpRes] = await Promise.all([
         client.from('doctor_education').select('id, degree, institution, document_url, status').eq('doctor_id', userId),
         client.from('doctor_certifications').select('id, name, issuing_organization, document_url, status').eq('doctor_id', userId),
         client.from('identity_verifications').select('id, status, metadata').eq('user_id', userId).order('created_at', { ascending: false }),
+        client.from('doctor_profiles').select('cedula_photo_url, cedula_status').eq('user_id', userId).maybeSingle(),
       ]);
+
+      // Foto de la cédula profesional subida en el onboarding (cliente 2026-07-08)
+      const cedulaItems: DocItem[] = [];
+      if (dpRes.data?.cedula_photo_url) {
+        cedulaItems.push({
+          key: 'cedula-photo',
+          label: t('doctorDocuments.cedulaPhoto'),
+          status: dpRes.data.cedula_status,
+          bucket: 'doctor-credentials',
+          fileUrl: dpRes.data.cedula_photo_url,
+        });
+      }
 
       // Identidad: usa la verificación más reciente que tenga archivos.
       const identityItems: DocItem[] = [];
@@ -90,6 +103,7 @@ export function DoctorDocumentsDialog({
         }));
 
       const next: DocSection[] = [
+        { key: 'cedula', title: t('doctorDocuments.sectionCedula'), icon: IdCard, items: cedulaItems },
         { key: 'identity', title: t('doctorDocuments.sectionIdentity'), icon: IdCard, items: identityItems },
         { key: 'education', title: t('doctorDocuments.sectionEducation'), icon: GraduationCap, items: eduItems },
         { key: 'certifications', title: t('doctorDocuments.sectionCertifications'), icon: Award, items: certItems },

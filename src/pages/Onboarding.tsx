@@ -17,6 +17,7 @@ import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
+import { CedulaPhotoUpload } from '@/components/onboarding/CedulaPhotoUpload';
 import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
 import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
@@ -73,6 +74,7 @@ import { useSpecialties } from '@/hooks/useSpecialties';
 interface ValidationErrors {
   specialty?: string;
   license?: string;
+  cedulaPhoto?: string;
   institution?: string;
   year?: string;
   signerName?: string;
@@ -212,6 +214,9 @@ export default function Onboarding() {
   const [license, setLicense] = useState('');
   // Cédula de especialista (opcional), además de la profesional — solo doctor (cliente 2026-07-07)
   const [cedulaEspecialidad, setCedulaEspecialidad] = useState('');
+  // Foto de la cédula profesional (obligatoria) para checar identidad — solo doctor (cliente 2026-07-08).
+  // Guarda el PATH dentro del bucket privado 'doctor-credentials'.
+  const [cedulaPhotoUrl, setCedulaPhotoUrl] = useState<string | null>(null);
   // Distintivo que el médico elige al verificarse (cliente 2026-06-29):
   // 'gold' = 🥇 medalla dorada, 'verified' = ✔️ palomita, null = ninguno.
   const [year, setYear] = useState<number>(1);
@@ -288,6 +293,11 @@ export default function Onboarding() {
       } else if (!cedulaRegex.test(trimmedLicense)) {
         errors.license = t('onboarding.validationCedulaFormat');
       }
+
+      // Foto de la cédula obligatoria para checar identidad (cliente 2026-07-08)
+      if (!cedulaPhotoUrl) {
+        errors.cedulaPhoto = t('onboarding.validationCedulaPhoto');
+      }
     }
 
     if (selectedRole === 'resident') {
@@ -323,7 +333,7 @@ export default function Onboarding() {
     }
 
     return errors;
-  }, [selectedRole, specialty, license, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted, codeOfEthicsAccepted]);
+  }, [selectedRole, specialty, license, cedulaPhotoUrl, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted, codeOfEthicsAccepted]);
 
   const isFormValid = Object.keys(validateForm).length === 0;
 
@@ -349,6 +359,7 @@ export default function Onboarding() {
         institution: institution || null,
         year,
         avatar_url: avatarUrl,
+        cedula_photo_url: cedulaPhotoUrl,
         phone: phoneNumber ? `${phoneCountryCode}${phoneNumber}` : null,
         updated_at: new Date().toISOString()
       };
@@ -365,7 +376,7 @@ export default function Onboarding() {
     } finally {
       setIsSavingProgress(false);
     }
-  }, [supabaseUser, step, selectedRole, specialty, license, institution, year, avatarUrl]);
+  }, [supabaseUser, step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, phoneNumber, phoneCountryCode]);
 
   // Debounced save - saves 1 second after last change
   const debouncedSave = useCallback(() => {
@@ -387,7 +398,7 @@ export default function Onboarding() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [step, selectedRole, specialty, license, institution, year, avatarUrl, debouncedSave, supabaseUser]);
+  }, [step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, debouncedSave, supabaseUser]);
 
   // Load saved progress and check onboarding status
   useEffect(() => {
@@ -426,6 +437,8 @@ export default function Onboarding() {
         if (savedProgress.institution) setInstitution(savedProgress.institution);
         if (savedProgress.year) setYear(savedProgress.year);
         if (savedProgress.avatar_url) setAvatarUrl(savedProgress.avatar_url);
+        // Columna nueva (2026-07-08), aún no está en los tipos generados
+        if ((savedProgress as any).cedula_photo_url) setCedulaPhotoUrl((savedProgress as any).cedula_photo_url);
         
         // Show toast when restoring previous session
         toast.success(t('onboarding.restoringSession'), {
@@ -515,6 +528,7 @@ export default function Onboarding() {
           location: doctorLocation.trim() || null,
           cedula_especialidad: cedulaEspecialidad.trim() || null,
           cedula_especialidad_status: cedulaEspecialidad.trim() ? 'pending' : null,
+          cedula_photo_url: cedulaPhotoUrl,
         };
 
         // Link cedula verification if available
@@ -1406,6 +1420,35 @@ export default function Onboarding() {
                               />
                             </div>
                           )}
+                        </motion.div>
+                      )}
+
+                      {/* Foto de la cédula profesional (obligatoria) — para checar identidad (cliente 2026-07-08) */}
+                      {selectedRole === 'doctor' && supabaseUser && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label className="flex items-center gap-1">
+                            {t('onboarding.cedulaPhoto')} <span className="text-destructive">*</span>
+                          </Label>
+                          <CedulaPhotoUpload
+                            userId={supabaseUser.id}
+                            currentPath={cedulaPhotoUrl}
+                            onChange={setCedulaPhotoUrl}
+                            hasError={!!validationErrors.cedulaPhoto}
+                          />
+                          <AnimatePresence>
+                            {validationErrors.cedulaPhoto && (
+                              <motion.p
+                                className="text-sm text-destructive flex items-center gap-1"
+                                initial={{ opacity: 0, y: -10, height: 0 }}
+                                animate={{ opacity: 1, y: 0, height: "auto" }}
+                                exit={{ opacity: 0, y: -10, height: 0 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              >
+                                <AlertCircle className="w-3 h-3" />
+                                {validationErrors.cedulaPhoto}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
                       )}
 

@@ -21,6 +21,7 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { CheckCircle, XCircle, Clock, RefreshCw, ShieldCheck, User, Loader2 } from 'lucide-react';
+import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -35,6 +36,7 @@ interface DoctorRow {
   cedula_profesional: string | null;
   cedula_status: CredStatus | null;
   cedula_rejection_reason: string | null;
+  cedula_photo_url: string | null;
   cofepris_permit: string | null;
   cofepris_status: CredStatus | null;
   cofepris_rejection_reason: string | null;
@@ -65,9 +67,10 @@ export function MedicalCredentialsReview() {
   const fetchDoctors = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: profiles, error } = await supabase
+      // cedula_photo_url es columna nueva (2026-07-08), aún no está en los tipos generados
+      const { data: profiles, error } = await (supabase as any)
         .from('doctor_profiles')
-        .select('user_id, cedula_profesional, cedula_status, cedula_rejection_reason, cofepris_permit, cofepris_status, cofepris_rejection_reason')
+        .select('user_id, cedula_profesional, cedula_status, cedula_rejection_reason, cedula_photo_url, cofepris_permit, cofepris_status, cofepris_rejection_reason')
         .order('updated_at', { ascending: false });
       if (error) throw error;
 
@@ -86,13 +89,14 @@ export function MedicalCredentialsReview() {
         cedula_profesional: dp.cedula_profesional,
         cedula_status: (dp.cedula_status as CredStatus) || null,
         cedula_rejection_reason: dp.cedula_rejection_reason,
+        cedula_photo_url: dp.cedula_photo_url || null,
         cofepris_permit: dp.cofepris_permit,
         cofepris_status: (dp.cofepris_status as CredStatus) || null,
         cofepris_rejection_reason: dp.cofepris_rejection_reason,
       }));
 
       const filtered = merged.filter(
-        (d) => (d.cedula_profesional && d.cedula_profesional.trim()) || (d.cofepris_permit && d.cofepris_permit.trim())
+        (d) => (d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url || (d.cofepris_permit && d.cofepris_permit.trim())
       );
       setDoctors(filtered);
     } catch (err: any) {
@@ -290,7 +294,7 @@ export function MedicalCredentialsReview() {
                       </div>
                     </div>
 
-                    {d.cedula_profesional && d.cedula_profesional.trim() && (
+                    {((d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url) && (
                       <div className="rounded-lg border border-border/60 p-3 mb-2 bg-muted/20">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="min-w-0 flex-1">
@@ -303,6 +307,16 @@ export function MedicalCredentialsReview() {
                               <p className="text-[11px] text-destructive mt-1">
                                 {t('medicalCredentialsReview.reasonPrefix')} {d.cedula_rejection_reason}
                               </p>
+                            )}
+                            {/* Foto de la cédula subida en el onboarding (cliente 2026-07-08) */}
+                            {d.cedula_photo_url && (
+                              <div className="mt-2 max-w-sm">
+                                <InlineFileViewer
+                                  fileUrl={d.cedula_photo_url}
+                                  bucket="doctor-credentials"
+                                  className="rounded-md overflow-hidden"
+                                />
+                              </div>
                             )}
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">
