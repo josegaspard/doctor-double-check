@@ -186,16 +186,16 @@ export default function DoctorBooks({ doctorId, isOwner = false }: Props) {
                   )}
 
                   {/* Precio: tachado + oferta (como la referencia) */}
-                  <div className="flex items-baseline gap-2 mt-3">
+                  <div className="flex items-baseline gap-2 mt-3 flex-wrap">
                     {book.original_price && book.original_price > (book.price || 0) && (
-                      <span className="text-sm sm:text-base text-muted-foreground line-through">
+                      <span className="text-sm sm:text-base text-muted-foreground line-through whitespace-nowrap">
                         ${Number(book.original_price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                       </span>
                     )}
-                    <span className="text-xl sm:text-2xl font-bold text-emerald-600">
+                    <span className="text-xl sm:text-2xl font-bold text-emerald-600 whitespace-nowrap">
                       {isFree ? t('doctorBooks.free') : `$${Number(book.price).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
                     </span>
-                    {!isFree && <span className="text-[10px] text-muted-foreground uppercase">MXN</span>}
+                    {!isFree && <span className="text-[10px] text-muted-foreground uppercase whitespace-nowrap">MXN</span>}
                   </div>
 
                   <div className="mt-3 flex-1 flex items-end">
