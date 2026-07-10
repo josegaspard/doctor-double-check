@@ -93,9 +93,9 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
           <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
             <Link to={homeHref} className="flex items-center gap-2 group">
-              <div className="relative h-8 sm:h-10 md:h-12 overflow-hidden">
+              <div className="relative h-10 sm:h-12 md:h-14">
                 <img src={logoWhite} alt={t('landing.nav.logoAlt')} className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
-                <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
+                <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
               </div>
             </Link>
 
