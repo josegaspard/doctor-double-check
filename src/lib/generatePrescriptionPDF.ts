@@ -114,7 +114,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
   const verifyUrl = rx.verifyUrl || prescriptionVerifyUrl(rx.id);
 
   // Use the deployed logo URL
-  const logoUrl = 'https://medical-masters.com/icon-512.png?v=17';
+  const logoUrl = 'https://medical-masters.com/icon-512.png?v=18';
 
   return `
 <!DOCTYPE html>
