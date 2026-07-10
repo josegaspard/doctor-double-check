@@ -18,7 +18,7 @@
  */
 const DMCA_BADGE_ID = 'c5e7327d-945f-44eb-aa9d-c86225f899e0';
 
-const STATUS_URL = `https://www.dmca.com/Protection/Status.aspx?ID=${DMCA_BADGE_ID}`;
+const STATUS_URL = `https://www.dmca.com/Protection/Status.aspx?ID=${DMCA_BADGE_ID}&refurl=https://medical-masters.com/`;
 const BADGE_IMG = `https://images.dmca.com/Badges/dmca_protected_sml_120n.png?ID=${DMCA_BADGE_ID}`;
 
 interface Props {
