@@ -77,6 +77,32 @@ Deno.serve(async (req) => {
 
     if (action !== "approve") throw new Error("action debe ser 'approve' o 'reject'");
 
+    // Claim ATÓMICO: mueve requested→processing en una sola sentencia condicionada
+    // por el estado actual. Dos aprobaciones admin concurrentes: solo UNA gana el
+    // claim (la otra recibe 0 filas y aborta), evitando doble reembolso/doble asiento.
+    const { data: claimed, error: claimErr } = await supabaseAdmin
+      .from("order_refunds")
+      .update({ status: "processing", approved_by: userData.user.id, reviewed_at: new Date().toISOString() })
+      .eq("id", refundId)
+      .eq("status", "requested")
+      .select("id")
+      .maybeSingle();
+    if (claimErr) throw new Error(`No se pudo reclamar el refund: ${claimErr.message}`);
+    if (!claimed) throw new Error("El refund ya está siendo procesado por otra operación");
+
+    // Si algo falla DESPUÉS del claim pero ANTES de mover dinero, revertimos el
+    // refund a 'requested' para que el admin pueda reintentarlo (si no, quedaría
+    // atascado en 'processing' sin salida). Una vez movido el dinero, NO revertimos
+    // (dejar en 'processing' para revisión manual es más seguro que arriesgar doble pago).
+    let moneyMoved = false;
+    const revertClaimIfSafe = async () => {
+      if (moneyMoved) return;
+      await supabaseAdmin.from("order_refunds")
+        .update({ status: "requested", approved_by: null, reviewed_at: null })
+        .eq("id", refundId).eq("status", "processing");
+    };
+
+    try {
     const { data: order } = await supabaseAdmin
       .from("marketplace_orders")
       .select("stripe_payment_intent_id, stripe_session_id, total_amount, currency, buyer_id")
@@ -98,12 +124,15 @@ Deno.serve(async (req) => {
       }
       if (!paymentIntentId) throw new Error("No se encontró payment_intent del pedido");
 
+      // idempotencyKey por refundId: aunque llegara una segunda ejecución para el
+      // mismo refund, Stripe devuelve el mismo refund en vez de crear uno nuevo.
       const stripeRefund = await stripe.refunds.create({
         payment_intent: paymentIntentId,
         amount: Math.round(Number(refund.amount) * 100),
         metadata: { refund_id: refundId, order_id: refund.order_id },
-      });
+      }, { idempotencyKey: `mkt_refund_${refundId}` });
       stripeRefundId = stripeRefund.id;
+      moneyMoved = true;
     } else {
       // Reembolso a wallet del paciente. Antes llamaba a `wallet_credit` (función
       // inexistente) y tragaba el error con `.catch(()=>null)`, marcando el refund
@@ -124,6 +153,7 @@ Deno.serve(async (req) => {
         p_amount: Number(refund.amount),
       });
       if (creditErr) throw new Error(`No se pudo acreditar el reembolso al wallet: ${creditErr.message}`);
+      moneyMoved = true;
     }
 
     await supabaseAdmin
@@ -166,6 +196,13 @@ Deno.serve(async (req) => {
       JSON.stringify({ ok: true, status: "refunded", stripeRefundId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+    } catch (innerErr) {
+      // Falló algo tras el claim: si el dinero aún no se movió, devolvemos el
+      // refund a 'requested' (reintentable); si ya se movió, lo dejamos en
+      // 'processing' para revisión manual. Rethrow al handler externo.
+      await revertClaimIfSafe();
+      throw innerErr;
+    }
   } catch (error: any) {
     console.error("process-marketplace-refund error:", error);
     return new Response(

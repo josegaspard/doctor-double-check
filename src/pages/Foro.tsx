@@ -131,27 +131,32 @@ export default function Foro() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const nowIso = new Date().toISOString();
-      const client = supabase as any;
-      const [livesRes, meetingsRes, doctorsRes, liveCountRes, upcomingRes, eventsRes, eventsCountRes] = await Promise.all([
-        client.from('lives').select('id,title,specialty,viewer_count,thumbnail_url').eq('status', 'live').eq('is_broadcasting', true).order('viewer_count', { ascending: false }).limit(3),
-        client.from('clinical_sessions').select('id,title,specialty,meeting_type,scheduled_at').eq('is_public', true).gt('scheduled_at', nowIso).order('scheduled_at', { ascending: true }).limit(4),
-        client.from('doctor_profiles').select('user_id', { count: 'exact', head: true }).eq('status', 'approved'),
-        client.from('lives').select('id', { count: 'exact', head: true }).eq('status', 'live').eq('is_broadcasting', true),
-        client.from('clinical_sessions').select('id', { count: 'exact', head: true }).eq('is_public', true).gt('scheduled_at', nowIso),
-        client.from('foro_events').select('id,title,event_type,event_date,is_online,location,organizer').eq('is_published', true).gte('event_date', nowIso).order('event_date', { ascending: true }).limit(3),
-        client.from('foro_events').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('event_date', nowIso),
-      ]);
-      setLivesNow((livesRes.data || []) as LiveNow[]);
-      setUpcoming((meetingsRes.data || []) as UpcomingMeeting[]);
-      setUpcomingEvents((eventsRes.data || []) as UpcomingEvent[]);
-      setStats({
-        doctors: doctorsRes.count || 0,
-        liveNow: liveCountRes.count || 0,
-        upcoming: upcomingRes.count || 0,
-        events: eventsCountRes.count || 0,
-      });
-      setLoading(false);
+      try {
+        const nowIso = new Date().toISOString();
+        const client = supabase as any;
+        const [livesRes, meetingsRes, doctorsRes, liveCountRes, upcomingRes, eventsRes, eventsCountRes] = await Promise.all([
+          client.from('lives').select('id,title,specialty,viewer_count,thumbnail_url').eq('status', 'live').eq('is_broadcasting', true).order('viewer_count', { ascending: false }).limit(3),
+          client.from('clinical_sessions').select('id,title,specialty,meeting_type,scheduled_at').eq('is_public', true).gt('scheduled_at', nowIso).order('scheduled_at', { ascending: true }).limit(4),
+          client.from('doctor_profiles').select('user_id', { count: 'exact', head: true }).eq('status', 'approved'),
+          client.from('lives').select('id', { count: 'exact', head: true }).eq('status', 'live').eq('is_broadcasting', true),
+          client.from('clinical_sessions').select('id', { count: 'exact', head: true }).eq('is_public', true).gt('scheduled_at', nowIso),
+          client.from('foro_events').select('id,title,event_type,event_date,is_online,location,organizer').eq('is_published', true).gte('event_date', nowIso).order('event_date', { ascending: true }).limit(3),
+          client.from('foro_events').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('event_date', nowIso),
+        ]);
+        setLivesNow((livesRes.data || []) as LiveNow[]);
+        setUpcoming((meetingsRes.data || []) as UpcomingMeeting[]);
+        setUpcomingEvents((eventsRes.data || []) as UpcomingEvent[]);
+        setStats({
+          doctors: doctorsRes.count || 0,
+          liveNow: liveCountRes.count || 0,
+          upcoming: upcomingRes.count || 0,
+          events: eventsCountRes.count || 0,
+        });
+      } catch (e) {
+        console.error('Foro load error:', e);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 

@@ -102,7 +102,6 @@ const AdminReports = React.lazy(() => import("./pages/AdminReports"));
 const AdminContentModeration = React.lazy(() => import("./pages/AdminContentModeration"));
 const BookAppointment = React.lazy(() => import("./pages/BookAppointment"));
 const MyAppointments = React.lazy(() => import("./pages/MyAppointments"));
-const VendorProducts = React.lazy(() => import("./pages/VendorProducts"));
 const AdminSiteSettings = React.lazy(() => import("./pages/AdminSiteSettings"));
 const AdminRefunds = React.lazy(() => import("./pages/AdminRefunds"));
 const AdminPayoutSettings = React.lazy(() => import("./pages/AdminPayoutSettings"));

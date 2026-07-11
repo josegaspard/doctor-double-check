@@ -127,7 +127,7 @@ export default function Dmca() {
           .from('site_settings')
           .select('value')
           .eq('id', 'dmca_policy')
-          .single();
+          .maybeSingle();
 
         if (data?.value) {
           const content = data.value as unknown as LegalContent;

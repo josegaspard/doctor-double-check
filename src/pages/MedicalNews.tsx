@@ -182,31 +182,36 @@ export default function MedicalNews() {
   useEffect(() => {
     const fetchNews = async () => {
       setIsLoading(true);
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const sortColumn = sortBy === 'most_read' ? 'view_count' : 'published_at';
+      try {
+        const from = page * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+        const sortColumn = sortBy === 'most_read' ? 'view_count' : 'published_at';
 
-      let query = supabase
-        .from('medical_news')
-        .select('id, title, summary, image_url, category, published_at, created_at, slug, view_count', { count: 'exact' })
-        .eq('is_published', true);
+        let query = supabase
+          .from('medical_news')
+          .select('id, title, summary, image_url, category, published_at, created_at, slug, view_count', { count: 'exact' })
+          .eq('is_published', true);
 
-      if (selectedCategory !== 'Todas') query = query.eq('category', selectedCategory);
-      if (search.trim()) query = query.or(`title.ilike.%${search.trim()}%,summary.ilike.%${search.trim()}%`);
-      query = query.order(sortColumn, { ascending: false }).range(from, to);
+        if (selectedCategory !== 'Todas') query = query.eq('category', selectedCategory);
+        if (search.trim()) query = query.or(`title.ilike.%${search.trim()}%,summary.ilike.%${search.trim()}%`);
+        query = query.order(sortColumn, { ascending: false }).range(from, to);
 
-      const { data, count } = await query;
-      if (data) {
-        const ids = data.map(d => d.id);
-        const { data: commentCounts } = await supabase.from('news_comments').select('news_id').in('news_id', ids);
-        const countMap = new Map<string, number>();
-        commentCounts?.forEach(c => countMap.set(c.news_id, (countMap.get(c.news_id) || 0) + 1));
-        let items = data.map(d => ({ ...d, comment_count: countMap.get(d.id) || 0 }));
-        if (sortBy === 'most_commented') items.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
-        setNews(items);
-        setTotalCount(count || 0);
+        const { data, count } = await query;
+        if (data) {
+          const ids = data.map(d => d.id);
+          const { data: commentCounts } = await supabase.from('news_comments').select('news_id').in('news_id', ids);
+          const countMap = new Map<string, number>();
+          commentCounts?.forEach(c => countMap.set(c.news_id, (countMap.get(c.news_id) || 0) + 1));
+          let items = data.map(d => ({ ...d, comment_count: countMap.get(d.id) || 0 }));
+          if (sortBy === 'most_commented') items.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
+          setNews(items);
+          setTotalCount(count || 0);
+        }
+      } catch (e) {
+        console.error('MedicalNews load error:', e);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     fetchNews();
   }, [page, search, selectedCategory, sortBy]);

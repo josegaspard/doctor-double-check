@@ -44,7 +44,7 @@ export default function Contact() {
           .from('site_settings')
           .select('value')
           .eq('id', 'contact_info')
-          .single();
+          .maybeSingle();
 
         if (data?.value) {
           setContactInfo(data.value as unknown as ContactInfo);

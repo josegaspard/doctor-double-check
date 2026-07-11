@@ -107,6 +107,16 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       logStep("Error creating purchase record", { error: insertError.message });
+      // Los gates de reproducción validan `purchases`, no `entitlements`: si esta
+      // fila no se creó, el usuario pagó y NO podría ver la grabación. Un error de
+      // duplicado (carrera) es OK; cualquier otro es fallo real → lanzamos ANTES de
+      // crear entitlement/acreditar al doctor, para que el cliente reintente.
+      // process_wallet_purchase es idempotente (p_idempotency_key) → el reintento
+      // NO vuelve a cobrar ni a acreditar al doctor dos veces.
+      const isDuplicate = (insertError as any).code === '23505' || /duplicate|unique/i.test(insertError.message);
+      if (!isDuplicate) {
+        throw new Error(`No se pudo registrar la compra tras el cobro (reintentable): ${insertError.message}`);
+      }
     }
 
     // Create entitlement
