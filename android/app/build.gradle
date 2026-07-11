@@ -9,8 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Play rechaza subir un AAB con un versionCode ya existente → incrementar
         // en CADA release (antes estaba congelado en 1).
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +18,34 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma de release: credenciales vía keystore.properties (NO commiteado) o env vars.
+    // Play App Signing tomará esta como upload key en la primera subida.
+    signingConfigs {
+        release {
+            def kProps = new Properties()
+            def kFile = rootProject.file('keystore.properties')
+            if (kFile.exists()) {
+                kProps.load(new FileInputStream(kFile))
+                storeFile file(kProps['storeFile'])
+                storePassword kProps['storePassword']
+                keyAlias kProps['keyAlias']
+                keyPassword kProps['keyPassword']
+            } else if (System.getenv('MM_KEYSTORE_FILE')) {
+                storeFile file(System.getenv('MM_KEYSTORE_FILE'))
+                storePassword System.getenv('MM_KEYSTORE_STOREPASS')
+                keyAlias System.getenv('MM_KEYSTORE_ALIAS')
+                keyPassword System.getenv('MM_KEYSTORE_KEYPASS')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Solo aplica la firma si hay credenciales disponibles (build local firmado).
+            if (rootProject.file('keystore.properties').exists() || System.getenv('MM_KEYSTORE_FILE')) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
