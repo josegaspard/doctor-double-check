@@ -52,12 +52,16 @@ export default function DoctorDashboard() {
   useEffect(() => {
     if (!user?.id) return;
     const fetchData = async () => {
-      const [recResult, permResult] = await Promise.all([
-        supabase.from('recordings').select('*', { count: 'exact', head: true }).eq('doctor_id', user.id),
-        supabase.from('doctor_profiles').select('can_publish_news').eq('user_id', user.id).single(),
-      ]);
-      if (!recResult.error && recResult.count !== null) setRecordingsCount(recResult.count);
-      if (permResult.data) setCanPublishNews((permResult.data as any)?.can_publish_news || false);
+      try {
+        const [recResult, permResult] = await Promise.all([
+          supabase.from('recordings').select('*', { count: 'exact', head: true }).eq('doctor_id', user.id),
+          supabase.from('doctor_profiles').select('can_publish_news').eq('user_id', user.id).single(),
+        ]);
+        if (!recResult.error && recResult.count !== null) setRecordingsCount(recResult.count);
+        if (permResult.data) setCanPublishNews((permResult.data as any)?.can_publish_news || false);
+      } catch (e) {
+        console.error('DoctorDashboard load error:', e);
+      }
     };
     fetchData();
   }, [user?.id]);

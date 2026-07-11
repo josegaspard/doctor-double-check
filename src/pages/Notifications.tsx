@@ -67,7 +67,7 @@ function navigateByType(notification: Notification, navigate: ReturnType<typeof 
 export default function Notifications() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification, deleteNotifications } = useNotifications();
+  const { notifications, unreadCount, isLoading, hasError, markAsRead, markAllAsRead, deleteNotification, deleteNotifications, refresh } = useNotifications();
   const dateLocale = language === 'es' ? es : enUS;
 
   const [isSelecting, setIsSelecting] = useState(false);
@@ -182,6 +182,22 @@ export default function Notifications() {
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : hasError && notifications.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Bell className="w-12 h-12 mx-auto text-destructive mb-4 opacity-60" />
+              <h3 className="font-semibold text-lg mb-2">
+                {t('notificationsPage.loadErrorTitle')}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {t('notificationsPage.loadErrorMessage')}
+              </p>
+              <Button variant="outline" onClick={() => refresh()} className="gap-2">
+                <Loader2 className="w-4 h-4" />
+                {t('notificationsPage.retry')}
+              </Button>
+            </CardContent>
+          </Card>
         ) : notifications.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogIn, UserPlus, Lock } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
   isVisitor: boolean;
@@ -16,6 +17,7 @@ interface Props {
  */
 export function LiveVisitorGate({ isVisitor, livePath, freeSeconds = 60 }: Props) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [secondsLeft, setSecondsLeft] = useState(freeSeconds);
   const [blocked, setBlocked] = useState(false);
 
@@ -36,7 +38,7 @@ export function LiveVisitorGate({ isVisitor, livePath, freeSeconds = 60 }: Props
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
         <div className="bg-black/70 backdrop-blur px-3 py-1.5 rounded-full text-white text-xs font-medium border border-white/20 flex items-center gap-2">
           <Lock className="w-3 h-3" />
-          Vista previa gratuita: {secondsLeft}s
+          {t('visitorGate.freePreview').replace('{seconds}', String(secondsLeft))}
         </div>
       </div>
     );
@@ -51,17 +53,17 @@ export function LiveVisitorGate({ isVisitor, livePath, freeSeconds = 60 }: Props
           <Lock className="w-7 h-7 text-primary" />
         </div>
         <div>
-          <h3 className="font-heading text-lg font-bold">Crea tu cuenta para seguir viendo</h3>
+          <h3 className="font-heading text-lg font-bold">{t('visitorGate.title')}</h3>
           <p className="text-sm text-muted-foreground mt-1">
-            Es gratis y solo te toma 30 segundos. Acceso completo a este live, chats con doctores y más.
+            {t('visitorGate.desc')}
           </p>
         </div>
         <div className="flex flex-col gap-2">
           <Button size="lg" onClick={() => navigate(`/login?mode=signup&redirect=${redirect}`)} className="gap-2">
-            <UserPlus className="w-4 h-4" /> Crear cuenta gratis
+            <UserPlus className="w-4 h-4" /> {t('visitorGate.createFree')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate(`/login?redirect=${redirect}`)} className="gap-2">
-            <LogIn className="w-4 h-4" /> Ya tengo cuenta
+            <LogIn className="w-4 h-4" /> {t('visitorGate.haveAccount')}
           </Button>
         </div>
       </div>

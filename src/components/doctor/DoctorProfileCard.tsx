@@ -10,6 +10,7 @@ import { Camera, Loader2, AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { CredentialStatusBadge, type CredentialStatus } from './CredentialStatusBadge';
 import { ManualBadge } from './ManualBadge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CredentialsState {
   cedula_profesional: string | null;
@@ -22,6 +23,7 @@ interface CredentialsState {
 
 export function DoctorProfileCard() {
   const { user, supabaseUser } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
@@ -63,7 +65,7 @@ export function DoctorProfileCard() {
       }
     } catch (err: any) {
       console.warn('[DoctorProfileCard] credentials fetch error', err);
-      setCredsError(err?.message || 'Error al cargar credenciales');
+      setCredsError(err?.message || t('docProfileCard.credsLoadError'));
     } finally {
       setCredsLoading(false);
     }
@@ -100,10 +102,10 @@ export function DoctorProfileCard() {
         .eq('id', supabaseUser.id);
 
       setAvatarUrl(urlWithCacheBust);
-      toast.success('Foto de perfil actualizada');
+      toast.success(t('docProfileCard.photoUpdated'));
     } catch (error) {
       console.error('Avatar upload error:', error);
-      toast.error('Error al subir la foto');
+      toast.error(t('docProfileCard.photoError'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -148,10 +150,10 @@ export function DoctorProfileCard() {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <h2 className="font-semibold text-base sm:text-lg text-foreground truncate">
-              {user?.name || 'Doctor'}
+              {user?.name || t('docProfileCard.defaultName')}
             </h2>
             <p className="text-sm text-primary/80 font-medium truncate">
-              {doctorProfile?.specialty || 'Especialidad'}
+              {doctorProfile?.specialty || t('docProfileCard.specialty')}
             </p>
             {doctorProfile?.location && (
               <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -161,10 +163,10 @@ export function DoctorProfileCard() {
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               <ManualBadge badge={manualBadge} size="lg" iconOnly />
               <Badge variant="outline" className="text-[10px]">
-                {doctorProfile?.status === 'approved' ? '✓ Aprobado' : doctorProfile?.status || 'Pendiente'}
+                {doctorProfile?.status === 'approved' ? t('docProfileCard.approved') : doctorProfile?.status || t('docProfileCard.pending')}
               </Badge>
               <Badge variant="outline" className="text-[10px] gap-1">
-                <Users className="w-2.5 h-2.5" /> {followersCount} seguidores
+                <Users className="w-2.5 h-2.5" /> {followersCount} {t('docProfileCard.followers')}
               </Badge>
               {credsLoading ? (
                 <>
@@ -179,7 +181,7 @@ export function DoctorProfileCard() {
                     title={credsError}
                   >
                     <AlertCircle className="w-2.5 h-2.5" />
-                    Error credenciales
+                    {t('docProfileCard.credentialsError')}
                   </Badge>
                   <Button
                     type="button"
@@ -189,7 +191,7 @@ export function DoctorProfileCard() {
                     className="h-5 px-1.5 text-[10px] gap-0.5"
                   >
                     <RefreshCw className="w-2.5 h-2.5" />
-                    Reintentar
+                    {t('docProfileCard.retry')}
                   </Button>
                 </div>
               ) : (

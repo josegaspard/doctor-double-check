@@ -35,6 +35,7 @@ export function useNotifications() {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!supabaseUser?.id) return;
@@ -59,6 +60,9 @@ export function useNotifications() {
       }));
       setNotifications(mapped);
       setUnreadCount(mapped.filter(n => !n.isRead).length);
+      setHasError(false);
+    } else if (error) {
+      setHasError(true);
     }
     setIsLoading(false);
   }, [supabaseUser?.id]);
@@ -255,6 +259,7 @@ export function useNotifications() {
     preferences,
     unreadCount,
     isLoading,
+    hasError,
     markAsRead,
     markAllAsRead,
     deleteNotification,

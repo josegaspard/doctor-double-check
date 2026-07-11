@@ -75,7 +75,7 @@ export function LiveConsultationBooking({
       return;
     }
     if (limitReached) {
-      toast.error('El doctor ha alcanzado el límite de orientaciones para este live');
+      toast.error(t('liveBooking.limitReached'));
       return;
     }
 
@@ -83,7 +83,7 @@ export function LiveConsultationBooking({
     try {
       if (paymentMethod === 'wallet') {
         if (!canAfford) {
-          toast.error('Saldo insuficiente');
+          toast.error(t('liveBooking.insufficientBalance'));
           setIsProcessing(false);
           return;
         }
@@ -102,7 +102,7 @@ export function LiveConsultationBooking({
         if (error) throw error;
         const result = data as any;
         if (!result.success) {
-          toast.error(result.error || 'Error al procesar el pago');
+          toast.error(result.error || t('liveBooking.paymentError'));
           setIsProcessing(false);
           return;
         }
@@ -147,7 +147,7 @@ export function LiveConsultationBooking({
         });
 
         await refreshWallet();
-        toast.success('¡Orientación reservada! Te redirigimos al chat');
+        toast.success(t('liveBooking.booked'));
         onOpenChange(false);
         navigate(`/chat?session=${result.session_id}`);
       } else {
@@ -169,7 +169,7 @@ export function LiveConsultationBooking({
       }
     } catch (err: any) {
       console.error('Booking error:', err);
-      toast.error('Error al procesar la reserva');
+      toast.error(t('liveBooking.bookingError'));
     } finally {
       setIsProcessing(false);
     }

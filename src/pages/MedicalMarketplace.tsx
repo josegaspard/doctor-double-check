@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Store, Loader2, HandHeart, ShieldCheck, Clock, Tag, Plus, PackagePlus, Lock, CheckCircle,
   Search, SlidersHorizontal, X, Sparkles, Package, Boxes, ClipboardList, MessageCircle, XCircle,
@@ -65,6 +66,7 @@ export default function MedicalMarketplace() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const sb = supabase as any; // tablas/columnas nuevas aún no tipadas (migración con token)
 
   const [loading, setLoading] = useState(true);
@@ -245,13 +247,13 @@ export default function MedicalMarketplace() {
       if (data?.error) throw new Error(data.error);
       setInterestProduct(null);
       toast({
-        title: '📋 Orden de compra enviada',
-        description: 'El proveedor ya fue notificado. Te abrimos el chat para acordar los detalles.',
+        title: t('mkt.toastOrderSentTitle'),
+        description: t('mkt.toastOrderSentDesc'),
       });
       // Abrir DIRECTO la conversación con el proveedor (no solo la bandeja).
       navigate(data?.chat_session_id ? `/chat?session=${data.chat_session_id}` : '/chat');
     } catch (e: any) {
-      toast({ title: 'No se pudo enviar la orden', description: e.message || 'Error', variant: 'destructive' });
+      toast({ title: t('mkt.toastOrderFailTitle'), description: e.message || t('mkt.err'), variant: 'destructive' });
     } finally {
       setSendingId(null);
     }
@@ -271,11 +273,11 @@ export default function MedicalMarketplace() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast(action === 'complete'
-        ? { title: '🤝 Venta concretada', description: 'Se notificó al comprador y al administrador. Recuerda pagar el fee de la plataforma.' }
-        : { title: 'Orden cancelada', description: 'Se notificó a la otra parte.' });
+        ? { title: t('mkt.toastSaleTitle'), description: t('mkt.toastSaleDesc') }
+        : { title: t('mkt.toastCancelTitle'), description: t('mkt.toastCancelDesc') });
       load();
     } catch (e: any) {
-      toast({ title: 'No se pudo completar', description: e.message || 'Error', variant: 'destructive' });
+      toast({ title: t('mkt.toastCompleteFailTitle'), description: e.message || t('mkt.err'), variant: 'destructive' });
     } finally {
       setActingOrderId(null);
     }
@@ -291,9 +293,9 @@ export default function MedicalMarketplace() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) { window.location.href = data.url; return; }
-      throw new Error('No se recibió el enlace de pago');
+      throw new Error(t('mkt.errNoPaymentLink'));
     } catch (e: any) {
-      toast({ title: 'No se pudo iniciar el pago del fee', description: e.message || 'Error', variant: 'destructive' });
+      toast({ title: t('mkt.toastFeeFailTitle'), description: e.message || t('mkt.err'), variant: 'destructive' });
     } finally {
       setPayingFeeId(null);
     }
@@ -303,10 +305,10 @@ export default function MedicalMarketplace() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('fee_paid') === '1') {
-      toast({ title: '✅ Fee pagado', description: 'Gracias. El pago puede tardar unos segundos en reflejarse.' });
+      toast({ title: t('mkt.toastFeePaidTitle'), description: t('mkt.toastFeePaidDesc') });
       window.history.replaceState({}, '', '/marketplace');
     } else if (params.get('fee_canceled') === '1') {
-      toast({ title: 'Pago de fee cancelado', description: 'Puedes reintentarlo desde tus órdenes.', variant: 'destructive' });
+      toast({ title: t('mkt.toastFeeCanceledTitle'), description: t('mkt.toastFeeCanceledDesc'), variant: 'destructive' });
       window.history.replaceState({}, '', '/marketplace');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,7 +317,7 @@ export default function MedicalMarketplace() {
   const publishProduct = async () => {
     const price = Number(pubForm.price);
     if (!pubForm.name.trim() || !Number.isFinite(price) || price <= 0) {
-      toast({ title: 'Datos inválidos', description: 'Nombre y precio válido son obligatorios.', variant: 'destructive' });
+      toast({ title: t('mkt.toastInvalidTitle'), description: t('mkt.toastInvalidDesc'), variant: 'destructive' });
       return;
     }
     setPublishing(true);
@@ -331,12 +333,12 @@ export default function MedicalMarketplace() {
         stock: 1,
       });
       if (error) throw error;
-      toast({ title: '📦 Producto enviado a revisión', description: 'El administrador lo aprobará antes de que aparezca en el marketplace.' });
+      toast({ title: t('mkt.toastPubSentTitle'), description: t('mkt.toastPubSentDesc') });
       setPubOpen(false);
       setPubForm({ name: '', price: '', description: '', image_url: '' });
       load();
     } catch (e: any) {
-      toast({ title: 'No se pudo publicar', description: e.message, variant: 'destructive' });
+      toast({ title: t('mkt.toastPubFailTitle'), description: e.message, variant: 'destructive' });
     } finally {
       setPublishing(false);
     }
@@ -350,11 +352,11 @@ export default function MedicalMarketplace() {
     <div className="space-y-5">
       {/* Categoría */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categoría</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('mkt.category')}</p>
         <Select value={filterCat} onValueChange={(v) => { setFilterCat(v); setQuick(''); }}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('mkt.all')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las categorías</SelectItem>
+            <SelectItem value="all">{t('mkt.allCategories')}</SelectItem>
             {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -362,11 +364,11 @@ export default function MedicalMarketplace() {
 
       {/* Marca */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Marca</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('mkt.brand')}</p>
         <Select value={filterBrand} onValueChange={(v) => { setFilterBrand(v); setQuick(''); }}>
-          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('mkt.all')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas las marcas</SelectItem>
+            <SelectItem value="all">{t('mkt.allBrands')}</SelectItem>
             {brands.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -376,10 +378,10 @@ export default function MedicalMarketplace() {
 
       {/* Precio */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Precio (MXN)</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('mkt.priceMxn')}</p>
         <div className="flex gap-2 mb-2">
-          <Input type="number" placeholder="Min" value={priceRange[0] || ''} onChange={e => { setPriceRange([Number(e.target.value) || 0, priceRange[1]]); setQuick(''); }} className="h-8 text-xs" />
-          <Input type="number" placeholder="Max" value={priceRange[1] || ''} onChange={e => { setPriceRange([priceRange[0], Number(e.target.value) || maxPrice]); setQuick(''); }} className="h-8 text-xs" />
+          <Input type="number" placeholder={t('mkt.min')} value={priceRange[0] || ''} onChange={e => { setPriceRange([Number(e.target.value) || 0, priceRange[1]]); setQuick(''); }} className="h-8 text-xs" />
+          <Input type="number" placeholder={t('mkt.max')} value={priceRange[1] || ''} onChange={e => { setPriceRange([priceRange[0], Number(e.target.value) || maxPrice]); setQuick(''); }} className="h-8 text-xs" />
         </div>
         <Slider value={priceRange} onValueChange={([a, b]) => { setPriceRange([a, b]); setQuick(''); }} min={0} max={maxPrice} step={50} className="py-2" />
         <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
@@ -392,11 +394,11 @@ export default function MedicalMarketplace() {
 
       {/* Unidades / disponibilidad */}
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Con unidades en stock</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('mkt.inStockUnits')}</p>
         <Switch checked={filterInStock} onCheckedChange={(v) => { setFilterInStock(v); setQuick(''); }} />
       </div>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Ocultar apartados</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('mkt.hideReserved')}</p>
         <Switch checked={filterAvailable} onCheckedChange={(v) => { setFilterAvailable(v); setQuick(''); }} />
       </div>
 
@@ -404,13 +406,13 @@ export default function MedicalMarketplace() {
 
       {/* Ordenar */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Ordenar por</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('mkt.sortBy')}</p>
         <div className="grid grid-cols-2 gap-1.5">
           {([
-            { value: 'newest', label: 'Recientes' },
-            { value: 'price_asc', label: 'Precio ↑' },
-            { value: 'price_desc', label: 'Precio ↓' },
-            { value: 'name', label: 'Nombre' },
+            { value: 'newest', label: t('mkt.sortNewest') },
+            { value: 'price_asc', label: t('mkt.sortPriceAsc') },
+            { value: 'price_desc', label: t('mkt.sortPriceDesc') },
+            { value: 'name', label: t('mkt.sortName') },
           ] as { value: SortMode; label: string }[]).map(s => (
             <button key={s.value} onClick={() => setSortMode(s.value)} className={`py-2 rounded-lg text-xs font-medium transition-all text-center ${sortMode === s.value ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-offset-1 ring-primary/20' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}>
               {s.label}
@@ -423,7 +425,7 @@ export default function MedicalMarketplace() {
         <>
           <hr className="border-border/50" />
           <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10">
-            <X className="w-3.5 h-3.5" /> Limpiar filtros ({activeFilterCount})
+            <X className="w-3.5 h-3.5" /> {t('mkt.clearFilters')} ({activeFilterCount})
           </Button>
         </>
       )}
@@ -435,8 +437,8 @@ export default function MedicalMarketplace() {
       <MainLayout>
         <div className="container mx-auto px-4 py-16 text-center">
           <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-bold mb-2">Marketplace exclusivo para profesionales</h2>
-          <p className="text-muted-foreground">Solo doctores y residentes verificados pueden comprar y vender aquí.</p>
+          <h2 className="text-xl font-bold mb-2">{t('mkt.gateTitle')}</h2>
+          <p className="text-muted-foreground">{t('mkt.gateDesc')}</p>
         </div>
       </MainLayout>
     );
@@ -448,52 +450,52 @@ export default function MedicalMarketplace() {
         <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
           <div className="flex items-center gap-2">
             <Store className="w-6 h-6 text-primary" />
-            <h1 className="font-heading text-2xl font-bold">Marketplace médico</h1>
+            <h1 className="font-heading text-2xl font-bold">{t('mkt.title')}</h1>
           </div>
           {/* CTA vendedor según su estado — la postulación completa vive en el Portal de proveedores */}
           {!vendor && (
             <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2">
-              <PackagePlus className="w-4 h-4" /> Quiero vender
+              <PackagePlus className="w-4 h-4" /> {t('mkt.wantToSell')}
             </Button>
           )}
           {vendor?.status === 'pending' && (
-            <Badge variant="secondary" className="gap-1 h-9 px-3"><Clock className="w-3.5 h-3.5" /> Verificación en revisión</Badge>
+            <Badge variant="secondary" className="gap-1 h-9 px-3"><Clock className="w-3.5 h-3.5" /> {t('mkt.verificationPending')}</Badge>
           )}
           {vendor?.status === 'rejected' && (
             <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2 border-destructive/40 text-destructive hover:text-destructive">
-              <XCircle className="w-4 h-4" /> Solicitud rechazada — corregir
+              <XCircle className="w-4 h-4" /> {t('mkt.requestRejectedFix')}
             </Button>
           )}
           {vendor?.status === 'approved' && (
             <div className="flex gap-2 flex-wrap">
               <Button onClick={() => navigate('/vendor/dashboard')} variant="outline" className="gap-2">
-                <Store className="w-4 h-4" /> Portal del proveedor
+                <Store className="w-4 h-4" /> {t('mkt.vendorPortal')}
               </Button>
-              <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> Publicar producto</Button>
+              <Button onClick={() => setPubOpen(true)} className="gap-2"><Plus className="w-4 h-4" /> {t('mkt.publishProduct')}</Button>
             </div>
           )}
         </div>
-        <p className="text-sm text-muted-foreground mb-4">Compra y vende material entre colegas. Al mostrar interés se envía una orden de compra al proveedor y se abre el chat para acordar los pormenores — no pagas nada dentro de la plataforma.</p>
+        <p className="text-sm text-muted-foreground mb-4">{t('mkt.intro')}</p>
 
         {/* Búsqueda + botón filtros (móvil) */}
         <div className="flex gap-2 mb-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar producto, marca o proveedor…" value={search} onChange={e => { setSearch(e.target.value); setQuick(''); }} className="pl-9 h-11 border-2 border-primary/30 shadow-sm focus-visible:ring-primary/40 focus-visible:border-primary" />
+            <Input placeholder={t('mkt.searchPlaceholder')} value={search} onChange={e => { setSearch(e.target.value); setQuick(''); }} className="pl-9 h-11 border-2 border-primary/30 shadow-sm focus-visible:ring-primary/40 focus-visible:border-primary" />
             {search && <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>}
           </div>
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
-              <Button type="button" aria-label="Abrir filtros" variant="outline" size="icon" className="h-11 w-11 relative sm:hidden flex-shrink-0">
+              <Button type="button" aria-label={t('mkt.openFilters')} variant="outline" size="icon" className="h-11 w-11 relative sm:hidden flex-shrink-0">
                 <SlidersHorizontal className="w-4 h-4" />
                 {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center">{activeFilterCount}</span>}
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
-              <SheetHeader><SheetTitle>Filtros y orden</SheetTitle></SheetHeader>
+              <SheetHeader><SheetTitle>{t('mkt.filtersAndSort')}</SheetTitle></SheetHeader>
               <div className="mt-4 overflow-y-auto max-h-[calc(85vh-120px)] pb-6">{filterPanel}</div>
               <div className="pt-3 border-t">
-                <Button type="button" onClick={() => setFiltersOpen(false)} className="w-full">Ver {filteredProducts.length} resultados</Button>
+                <Button type="button" onClick={() => setFiltersOpen(false)} className="w-full">{t('mkt.viewResults').replace('{count}', String(filteredProducts.length))}</Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -502,11 +504,11 @@ export default function MedicalMarketplace() {
         {/* Chips rápidos inteligentes */}
         <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
           {[
-            { key: 'available', label: 'Disponibles ahora', icon: <Sparkles className="w-3 h-3" /> },
-            { key: 'instock', label: 'Con stock', icon: <Boxes className="w-3 h-3" /> },
-            { key: 'budget', label: 'Hasta $1,000', icon: <Tag className="w-3 h-3" /> },
+            { key: 'available', label: t('mkt.chipAvailable'), icon: <Sparkles className="w-3 h-3" /> },
+            { key: 'instock', label: t('mkt.chipInStock'), icon: <Boxes className="w-3 h-3" /> },
+            { key: 'budget', label: t('mkt.chipBudget'), icon: <Tag className="w-3 h-3" /> },
             { key: 'mid', label: '$1,000 – $10,000', icon: <Tag className="w-3 h-3" /> },
-            { key: 'premium', label: 'Equipo mayor +$10k', icon: <Tag className="w-3 h-3" /> },
+            { key: 'premium', label: t('mkt.chipPremium'), icon: <Tag className="w-3 h-3" /> },
             ...topCats.map(c => ({ key: `cat:${c.name}`, label: c.name, icon: <Package className="w-3 h-3" /> })),
           ].map(chip => (
             <button
@@ -528,40 +530,40 @@ export default function MedicalMarketplace() {
         {!loading && vendorOrders.length > 0 && (
           <Card className="mb-4 border-primary/30">
             <CardContent className="p-4">
-              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><ClipboardList className="w-4 h-4 text-primary" /> Órdenes de compra recibidas</h2>
+              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><ClipboardList className="w-4 h-4 text-primary" /> {t('mkt.ordersReceived')}</h2>
               <div className="space-y-2">
                 {vendorOrders.map(o => (
                   <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{o.productName || 'Producto'}</p>
+                      <p className="text-sm font-medium truncate">{o.productName || t('mkt.product')}</p>
                       <p className="text-xs text-muted-foreground">
-                        {o.buyerName || 'Comprador'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                        {o.buyerName || t('mkt.buyer')} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {o.status === 'ordered' && (
                         <>
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
-                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                            <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
                           <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'complete')}>
-                            {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Concretar venta
+                            {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} {t('mkt.completeSale')}
                           </Button>
                           <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
-                            <XCircle className="w-3.5 h-3.5" /> Cancelar
+                            <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                           </Button>
                         </>
                       )}
                       {o.status === 'completed' && o.fee_status === 'pending' && (
                         <>
-                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada</Badge>
+                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> {t('mkt.saleCompleted')}</Badge>
                           <Button type="button" size="sm" className="h-8 gap-1" disabled={payingFeeId === o.id} onClick={() => payFee(o.id)}>
-                            {payingFeeId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} Pagar fee ${Number(o.fee_amount).toLocaleString()}
+                            {payingFeeId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} {t('mkt.payFee')} ${Number(o.fee_amount).toLocaleString()}
                           </Button>
                         </>
                       )}
                       {o.status === 'completed' && o.fee_status === 'paid' && (
-                        <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada · fee pagado</Badge>
+                        <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> {t('mkt.saleCompletedFeePaid')}</Badge>
                       )}
                     </div>
                   </div>
@@ -575,32 +577,32 @@ export default function MedicalMarketplace() {
         {!loading && myOrders.length > 0 && (
           <Card className="mb-4">
             <CardContent className="p-4">
-              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><HandHeart className="w-4 h-4 text-primary" /> Mis órdenes de compra</h2>
+              <h2 className="text-sm font-semibold flex items-center gap-1.5 mb-3"><HandHeart className="w-4 h-4 text-primary" /> {t('mkt.myOrders')}</h2>
               <div className="space-y-2">
                 {myOrders.map(o => (
                   <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{o.productName || 'Producto'}</p>
+                      <p className="text-sm font-medium truncate">{o.productName || t('mkt.product')}</p>
                       <p className="text-xs text-muted-foreground">
-                        {o.vendorName || 'Proveedor'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                        {o.vendorName || t('mkt.vendor')} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {o.status === 'ordered' ? (
                         <>
-                          <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" /> Orden enviada</Badge>
+                          <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" /> {t('mkt.orderSent')}</Badge>
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
-                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                            <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
                           <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
-                            <XCircle className="w-3.5 h-3.5" /> Cancelar
+                            <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                           </Button>
                         </>
                       ) : (
                         <>
-                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> Venta concretada</Badge>
+                          <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> {t('mkt.saleCompleted')}</Badge>
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
-                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                            <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
                         </>
                       )}
@@ -615,25 +617,25 @@ export default function MedicalMarketplace() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
         ) : products.length === 0 ? (
-          <Card><CardContent className="py-12 text-center text-muted-foreground">Aún no hay productos publicados.</CardContent></Card>
+          <Card><CardContent className="py-12 text-center text-muted-foreground">{t('mkt.noProducts')}</CardContent></Card>
         ) : (
           <div className="flex gap-6">
             {/* Sidebar de filtros (desktop) */}
             <aside className="hidden sm:block w-56 flex-shrink-0 sticky top-20 self-start">
               <div className="rounded-xl border bg-card p-4 shadow-sm">
-                <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-primary" /> Filtros</h3>
+                <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-primary" /> {t('mkt.filters')}</h3>
                 {filterPanel}
               </div>
             </aside>
 
             {/* Resultados */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-3">{filteredProducts.length} {filteredProducts.length === 1 ? 'producto' : 'productos'}</p>
+              <p className="text-xs text-muted-foreground mb-3">{filteredProducts.length} {filteredProducts.length === 1 ? t('mkt.productSingular') : t('mkt.productPlural')}</p>
               {filteredProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center py-16 px-4">
                   <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4"><Package className="w-7 h-7 text-muted-foreground" /></div>
-                  <p className="text-sm font-medium text-foreground mb-1">Ningún producto con esos filtros</p>
-                  <Button type="button" variant="outline" size="sm" className="mt-3" onClick={clearFilters}>Limpiar filtros</Button>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('mkt.noMatch')}</p>
+                  <Button type="button" variant="outline" size="sm" className="mt-3" onClick={clearFilters}>{t('mkt.clearFilters')}</Button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -652,22 +654,22 @@ export default function MedicalMarketplace() {
                           {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
                           <div className="mt-2 flex items-baseline gap-2">
                             <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
-                            {mine(p) && <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> fee al vender ${feeFor(Number(p.price)).toLocaleString()}</span>}
+                            {mine(p) && <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> {t('mkt.feeOnSale')} ${feeFor(Number(p.price)).toLocaleString()}</span>}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? 'unidad' : 'unidades'}` : 'Sin unidades'}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? t('mkt.unit') : t('mkt.units')}` : t('mkt.noUnits')}</p>
                           <div className="mt-auto pt-2">
                             {mine(p) ? (
-                              <Badge variant="outline" className="w-full justify-center py-1">Tu producto</Badge>
+                              <Badge variant="outline" className="w-full justify-center py-1">{t('mkt.yourProduct')}</Badge>
                             ) : myOrders.some(o => o.product_id === p.id && o.status === 'ordered') ? (
                               <Button type="button" size="sm" variant="outline" className="w-full gap-1.5" onClick={() => goToOrderChat(myOrders.find(o => o.product_id === p.id && o.status === 'ordered'))}>
-                                <MessageCircle className="w-4 h-4" /> Orden enviada — ver chat
+                                <MessageCircle className="w-4 h-4" /> {t('mkt.orderSentViewChat')}
                               </Button>
                             ) : reserved ? (
-                              <Badge variant="secondary" className="w-full justify-center py-1 gap-1"><Clock className="w-3 h-3" /> Apartado</Badge>
+                              <Badge variant="secondary" className="w-full justify-center py-1 gap-1"><Clock className="w-3 h-3" /> {t('mkt.reserved')}</Badge>
                             ) : (
                               <Button type="button" size="sm" className="w-full gap-1.5" disabled={sendingId === p.id}
                                 onClick={() => { setInterestProduct(p); setInterestTerms(false); }}>
-                                {sendingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} Estoy interesado
+                                {sendingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandHeart className="w-4 h-4" />} {t('mkt.interested')}
                               </Button>
                             )}
                           </div>
@@ -686,25 +688,25 @@ export default function MedicalMarketplace() {
       <Dialog open={!!interestProduct} onOpenChange={(o) => !o && setInterestProduct(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><HandHeart className="w-5 h-5 text-primary" /> Estoy interesado</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><HandHeart className="w-5 h-5 text-primary" /> {t('mkt.interested')}</DialogTitle>
             <DialogDescription>
-              Se enviará una <b>orden de compra</b> al proveedor y se abrirá un chat para acordar los pormenores (entrega, forma de pago, etc.) directamente con él.
+              {t('mkt.interestDialogDescPre')}<b>{t('mkt.interestDialogDescBold')}</b>{t('mkt.interestDialogDescPost')}
             </DialogDescription>
           </DialogHeader>
           {interestProduct && (
             <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
               <div className="flex justify-between"><span>{interestProduct.name}</span><b>${Number(interestProduct.price).toLocaleString()}</b></div>
-              <p className="text-xs text-muted-foreground pt-1">No se realiza ningún pago dentro de la plataforma. Todo lo acuerdas directamente con el proveedor por el chat.</p>
+              <p className="text-xs text-muted-foreground pt-1">{t('mkt.noPaymentNote')}</p>
             </div>
           )}
           <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
             <Checkbox checked={interestTerms} onCheckedChange={(v) => setInterestTerms(!!v)} className="mt-0.5" />
-            <span>Acepto los <b>términos y condiciones</b> de intermediación del marketplace.</span>
+            <span>{t('mkt.acceptPre')}<b>{t('mkt.acceptTerms')}</b>{t('mkt.acceptPost')}</span>
           </label>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInterestProduct(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setInterestProduct(null)}>{t('mkt.cancel')}</Button>
             <Button disabled={!interestTerms || !!sendingId} onClick={startInterest} className="gap-2">
-              {sendingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Enviar orden de compra
+              {sendingId ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} {t('mkt.sendOrder')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -714,20 +716,20 @@ export default function MedicalMarketplace() {
       <Dialog open={pubOpen} onOpenChange={setPubOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><PackagePlus className="w-5 h-5 text-primary" /> Publicar producto</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><PackagePlus className="w-5 h-5 text-primary" /> {t('mkt.publishProduct')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1"><Label>Nombre *</Label><Input value={pubForm.name} onChange={e => setPubForm(f => ({ ...f, name: e.target.value }))} /></div>
-            <div className="space-y-1"><Label>Precio (MXN) *</Label><Input type="number" min={1} value={pubForm.price} onChange={e => setPubForm(f => ({ ...f, price: e.target.value }))} /></div>
-            <div className="space-y-1"><Label>Descripción</Label><Textarea rows={3} value={pubForm.description} onChange={e => setPubForm(f => ({ ...f, description: e.target.value }))} /></div>
-            <div className="space-y-1"><Label>URL de imagen</Label><Input value={pubForm.image_url} onChange={e => setPubForm(f => ({ ...f, image_url: e.target.value }))} /></div>
-            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><Tag className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> Al concretar una venta pagarás a la plataforma un fee del {Math.round(feeRate * 100)}% del precio{pubForm.price && Number(pubForm.price) > 0 ? ` (≈ $${feeFor(Number(pubForm.price)).toLocaleString()})` : ''}. El comprador no paga nada aquí.</p>
-            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><ShieldCheck className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> El producto pasa por revisión del administrador antes de aparecer publicado.</p>
+            <div className="space-y-1"><Label>{t('mkt.name')} *</Label><Input value={pubForm.name} onChange={e => setPubForm(f => ({ ...f, name: e.target.value }))} /></div>
+            <div className="space-y-1"><Label>{t('mkt.priceMxn')} *</Label><Input type="number" min={1} value={pubForm.price} onChange={e => setPubForm(f => ({ ...f, price: e.target.value }))} /></div>
+            <div className="space-y-1"><Label>{t('mkt.description')}</Label><Textarea rows={3} value={pubForm.description} onChange={e => setPubForm(f => ({ ...f, description: e.target.value }))} /></div>
+            <div className="space-y-1"><Label>{t('mkt.imageUrl')}</Label><Input value={pubForm.image_url} onChange={e => setPubForm(f => ({ ...f, image_url: e.target.value }))} /></div>
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><Tag className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {t('mkt.feeNoteA').replace('{pct}', String(Math.round(feeRate * 100)))}{pubForm.price && Number(pubForm.price) > 0 ? ` (≈ $${feeFor(Number(pubForm.price)).toLocaleString()})` : ''}{t('mkt.feeNoteB')}</p>
+            <p className="text-xs text-muted-foreground flex items-start gap-1.5"><ShieldCheck className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {t('mkt.reviewNote')}</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPubOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setPubOpen(false)}>{t('mkt.cancel')}</Button>
             <Button disabled={publishing} onClick={publishProduct} className="gap-2">
-              {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Publicar
+              {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {t('mkt.publish')}
             </Button>
           </DialogFooter>
         </DialogContent>

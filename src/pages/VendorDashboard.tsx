@@ -101,7 +101,7 @@ function RegistrationStepper({ es, user, feeRate, existing, onComplete }: { es: 
 
   const handleSubmit = async () => {
     if (!user) return;
-    if (!termsOk) { toast.error('Debes aceptar los términos y el fee de la plataforma.'); return; }
+    if (!termsOk) { toast.error(t('mkt.toastMustAcceptTerms')); return; }
     setSaving(true);
     const payload = {
       name: form.name, description: form.description || null,
@@ -168,18 +168,18 @@ function RegistrationStepper({ es, user, feeRate, existing, onComplete }: { es: 
               <h2 className="text-lg font-semibold flex items-center gap-2"><FileCheck className="w-5 h-5 text-primary" />{t('autoI18n.vendorDash30')}</h2>
               {/* Términos COMPLETOS del programa de proveedores, incluido el fee. */}
               <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2.5 max-h-64 overflow-y-auto">
-                <p className="font-semibold text-foreground">Términos del programa de proveedores de Medical Masters</p>
-                <p>1. <b className="text-foreground">Verificación.</b> Tu solicitud será revisada por el equipo de Medical Masters. Solo los proveedores aprobados pueden publicar productos.</p>
-                <p>2. <b className="text-foreground">Fee de intermediación ({feePct}%).</b> Publicar productos es gratis. Cuando concretes una venta a través de la plataforma, pagarás a Medical Masters un fee del <b className="text-foreground">{feePct}% del precio del producto</b>. El pago del producto lo acuerdas directamente con el comprador; la plataforma no lo procesa ni lo retiene.</p>
-                <p>3. <b className="text-foreground">Revisión de productos.</b> Cada producto que publiques pasa por aprobación del administrador antes de ser visible en el marketplace.</p>
-                <p>4. <b className="text-foreground">Veracidad.</b> Te comprometes a que la información de tu negocio y de tus productos (precio, stock, estado, fotografías) sea real y esté vigente.</p>
-                <p>5. <b className="text-foreground">Conducta.</b> Toda la comunicación con compradores ocurre por el chat de la plataforma. El incumplimiento de estos términos o del <a href="/codigo-etica" className="text-primary underline">código de ética</a> puede resultar en la suspensión de tu cuenta de proveedor.</p>
-                <p>6. <b className="text-foreground">Fees pendientes.</b> Los fees generados por ventas concretadas son exigibles aunque el cobro al comprador ocurra fuera de la plataforma. Un proveedor con fees vencidos puede ser suspendido.</p>
+                <p className="font-semibold text-foreground">{t('mkt.termsTitle')}</p>
+                <p>1. <b className="text-foreground">{t('mkt.terms1Label')}</b> {t('mkt.terms1Text')}</p>
+                <p>2. <b className="text-foreground">{t('mkt.terms2Label').replace('{pct}', String(feePct))}</b> {t('mkt.terms2TextA')}<b className="text-foreground">{t('mkt.terms2Bold').replace('{pct}', String(feePct))}</b>{t('mkt.terms2TextB')}</p>
+                <p>3. <b className="text-foreground">{t('mkt.terms3Label')}</b> {t('mkt.terms3Text')}</p>
+                <p>4. <b className="text-foreground">{t('mkt.terms4Label')}</b> {t('mkt.terms4Text')}</p>
+                <p>5. <b className="text-foreground">{t('mkt.terms5Label')}</b> {t('mkt.terms5TextA')}<a href="/codigo-etica" className="text-primary underline">{t('mkt.terms5Link')}</a>{t('mkt.terms5TextB')}</p>
+                <p>6. <b className="text-foreground">{t('mkt.terms6Label')}</b> {t('mkt.terms6Text')}</p>
               </div>
               <label className="flex items-start gap-2.5 rounded-lg border border-primary/30 bg-primary/5 p-3 cursor-pointer">
                 <Checkbox checked={termsOk} onCheckedChange={v => setTermsOk(v === true)} className="mt-0.5" />
                 <span className="text-sm">
-                  Acepto los términos del programa de proveedores y el <b>fee de intermediación del {feePct}%</b> por cada venta concretada, así como los <a href="/terms" className="text-primary underline" onClick={e => e.stopPropagation()}>Términos y Condiciones</a> de Medical Masters.
+                  {t('mkt.acceptTermsA')}<b>{t('mkt.acceptTermsBold').replace('{pct}', String(feePct))}</b>{t('mkt.acceptTermsB')}<a href="/terms" className="text-primary underline" onClick={e => e.stopPropagation()}>{t('mkt.acceptTermsLink')}</a>{t('mkt.acceptTermsC')}
                 </span>
               </label>
             </>
@@ -394,18 +394,18 @@ export default function VendorDashboard() {
               <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
                 <ShieldAlert className="w-8 h-8 text-destructive" />
               </div>
-              <h1 className="text-xl font-bold mb-2">Tu solicitud fue rechazada</h1>
+              <h1 className="text-xl font-bold mb-2">{t('mkt.requestRejected')}</h1>
               <p className="text-sm text-muted-foreground mb-4">
-                El administrador revisó tu postulación como proveedor y no fue aprobada por ahora.
+                {t('mkt.requestRejectedDesc')}
               </p>
               {vendor.notes && (
                 <div className="bg-muted/50 rounded-lg p-3 text-sm text-left mb-4">
-                  <p className="font-semibold text-foreground mb-1">Nota del administrador:</p>
+                  <p className="font-semibold text-foreground mb-1">{t('mkt.adminNote')}</p>
                   <p className="text-muted-foreground">{vendor.notes}</p>
                 </div>
               )}
               <Button onClick={() => setShowRegistration(true)} className="gap-2">
-                <Pencil className="w-4 h-4" /> Corregir y volver a postular
+                <Pencil className="w-4 h-4" /> {t('mkt.fixAndReapply')}
               </Button>
             </CardContent>
           </Card>
@@ -488,15 +488,15 @@ export default function VendorDashboard() {
                       <p className="text-xs text-muted-foreground">${p.price} MXN · Stock: {p.stock}</p>
                       <div className="flex items-center gap-1.5 flex-wrap mt-1">
                         {p.category && <Badge variant="secondary" className="text-[10px]">{p.category}</Badge>}
-                        {p.approval_status === 'pending' && <Badge variant="secondary" className="text-[10px] gap-0.5 bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700"><Clock className="w-2.5 h-2.5" />En revisión</Badge>}
-                        {p.approval_status === 'approved' && <Badge variant="outline" className="text-[10px] gap-0.5 text-success border-success/40"><CheckCircle2 className="w-2.5 h-2.5" />Aprobado</Badge>}
-                        {p.approval_status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-0.5"><XCircle className="w-2.5 h-2.5" />Rechazado</Badge>}
+                        {p.approval_status === 'pending' && <Badge variant="secondary" className="text-[10px] gap-0.5 bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700"><Clock className="w-2.5 h-2.5" />{t('mkt.inReview')}</Badge>}
+                        {p.approval_status === 'approved' && <Badge variant="outline" className="text-[10px] gap-0.5 text-success border-success/40"><CheckCircle2 className="w-2.5 h-2.5" />{t('mkt.approved')}</Badge>}
+                        {p.approval_status === 'rejected' && <Badge variant="destructive" className="text-[10px] gap-0.5"><XCircle className="w-2.5 h-2.5" />{t('mkt.rejected')}</Badge>}
                       </div>
                       {p.approval_status === 'rejected' && p.approval_note && (
-                        <p className="text-[11px] text-destructive mt-1">Motivo: {p.approval_note} — edítalo para reenviarlo a revisión.</p>
+                        <p className="text-[11px] text-destructive mt-1">{t('mkt.rejectionReason').replace('{note}', p.approval_note)}</p>
                       )}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active)} title={p.is_active ? 'Desactivar' : 'Activar'}>
+                    <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active)} title={p.is_active ? t('mkt.deactivate') : t('mkt.activate')}>
                       {p.is_active ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
@@ -514,38 +514,38 @@ export default function VendorDashboard() {
             {feeOrders.length > 0 && (
               <Card className="mb-4 border-primary/30">
                 <CardContent className="p-4">
-                  <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-1"><ClipboardList className="w-4 h-4 text-primary" /> Órdenes de compra del marketplace</h3>
-                  <p className="text-xs text-muted-foreground mb-3">El comprador ordena sin pagar en la plataforma; acuerdan por chat y al concretar la venta pagas el fee del {Math.round(feeRate * 100)}%.</p>
+                  <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-1"><ClipboardList className="w-4 h-4 text-primary" /> {t('mkt.ordersMarketplace')}</h3>
+                  <p className="text-xs text-muted-foreground mb-3">{t('mkt.ordersMarketplaceDesc').replace('{pct}', String(Math.round(feeRate * 100)))}</p>
                   <div className="space-y-2">
                     {feeOrders.map(o => (
                       <div key={o.id} className="rounded-lg border border-border p-3 flex items-center justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{o.marketplace_products?.name || 'Producto'}</p>
+                          <p className="text-sm font-medium truncate">{o.marketplace_products?.name || t('mkt.product')}</p>
                           <p className="text-xs text-muted-foreground">
-                            {o.buyerName || 'Comprador'} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
+                            {o.buyerName || t('mkt.buyer')} · ${Number(o.product_price).toLocaleString()} · {new Date(o.created_at).toLocaleDateString('es-MX')}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => navigate(o.chat_session_id ? `/chat?session=${o.chat_session_id}` : '/chat')}>
-                            <MessageCircle className="w-3.5 h-3.5" /> Chat
+                            <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
                           {o.status === 'ordered' && (
                             <>
                               <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'complete')}>
-                                {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Concretar venta
+                                {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {t('mkt.completeSale')}
                               </Button>
                               <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'cancel')}>
-                                <XCircle className="w-3.5 h-3.5" /> Cancelar
+                                <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                               </Button>
                             </>
                           )}
                           {o.status === 'completed' && o.fee_status === 'pending' && (
                             <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'pay_fee')}>
-                              {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} Pagar fee ${Number(o.fee_amount).toLocaleString()}
+                              {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} {t('mkt.payFee')} ${Number(o.fee_amount).toLocaleString()}
                             </Button>
                           )}
                           {o.status === 'completed' && o.fee_status === 'paid' && (
-                            <Badge variant="outline" className="gap-1 text-success border-success/40"><CheckCircle2 className="w-3 h-3" /> Concretada · fee pagado</Badge>
+                            <Badge variant="outline" className="gap-1 text-success border-success/40"><CheckCircle2 className="w-3 h-3" /> {t('mkt.concretadaFeePaid')}</Badge>
                           )}
                         </div>
                       </div>

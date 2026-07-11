@@ -1,5 +1,17 @@
 import React from 'react';
 import { Loader2, Radio } from 'lucide-react';
+import { t as translate, type SupportedLanguage } from '@/lib/i18n';
+
+// Class component sin acceso al hook useLanguage: resolvemos el idioma desde
+// localStorage (misma clave que LanguageContext) y traducimos con el helper puro.
+const tr = (path: string): string => {
+  let lang: SupportedLanguage = 'es';
+  try {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
+    if (stored) lang = stored.slice(0, 2).toLowerCase() as SupportedLanguage;
+  } catch { /* localStorage no disponible */ }
+  return translate(lang, path);
+};
 
 interface State {
   hasError: boolean;
@@ -89,7 +101,7 @@ export class ChunkErrorBoundary extends React.Component<{ children: React.ReactN
           <div className="min-h-screen flex items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-sm">Actualizando aplicación…</p>
+              <p className="text-sm">{tr('chunkError.updating')}</p>
             </div>
           </div>
         );
@@ -103,20 +115,20 @@ export class ChunkErrorBoundary extends React.Component<{ children: React.ReactN
                 <Radio className="w-7 h-7 text-primary" />
               </div>
               <div className="space-y-1">
-                <h2 className="text-xl font-bold text-foreground">Transmisión finalizada</h2>
+                <h2 className="text-xl font-bold text-foreground">{tr('chunkError.streamEnded')}</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  El doctor cerró la transmisión en vivo. Te llevamos al listado de lives.
+                  {tr('chunkError.streamEndedDesc')}
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 text-sm text-primary font-medium">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Redirigiendo en {this.state.liveCountdown}s…</span>
+                <span>{tr('chunkError.redirecting').replace('{seconds}', String(this.state.liveCountdown))}</span>
               </div>
               <button
                 onClick={() => { window.location.href = '/lives'; }}
                 className="w-full inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold hover:bg-primary/90"
               >
-                Ir ahora a Lives
+                {tr('chunkError.goToLivesNow')}
               </button>
             </div>
           </div>
@@ -125,13 +137,13 @@ export class ChunkErrorBoundary extends React.Component<{ children: React.ReactN
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-6">
           <div className="max-w-2xl w-full text-center space-y-4">
-            <h1 className="text-2xl font-bold text-foreground">Algo salió mal</h1>
+            <h1 className="text-2xl font-bold text-foreground">{tr('chunkError.somethingWrong')}</h1>
             <p className="text-sm text-muted-foreground">
-              Hubo un error inesperado. Recarga la página para volver a intentarlo.
+              {tr('chunkError.unexpectedError')}
             </p>
             {this.state.errorMsg && (
               <details className="text-left mx-auto max-w-xl">
-                <summary className="cursor-pointer text-xs text-primary font-semibold mb-2">Ver detalles técnicos</summary>
+                <summary className="cursor-pointer text-xs text-primary font-semibold mb-2">{tr('chunkError.viewTechnical')}</summary>
                 <pre className="text-[10px] whitespace-pre-wrap break-words bg-muted p-3 rounded-md text-foreground/80 overflow-x-auto max-h-[40vh]">
 {this.state.errorMsg}
 {'\n\n'}
@@ -144,7 +156,7 @@ export class ChunkErrorBoundary extends React.Component<{ children: React.ReactN
               onClick={() => window.location.reload()}
               className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90"
             >
-              Recargar
+              {tr('chunkError.reload')}
             </button>
           </div>
         </div>
