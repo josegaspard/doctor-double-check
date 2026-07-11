@@ -33,7 +33,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   const { data: roles } = await supa.from('user_roles').select('role').eq('user_id', user.id);
-  const isDoctor = (roles ?? []).some((r: any) => r.role === 'doctor' || r.role === 'admin');
+  const isAdmin = (roles ?? []).some((r: any) => r.role === 'admin');
+  const isDoctor = isAdmin || (roles ?? []).some((r: any) => r.role === 'doctor');
   if (!isDoctor) {
     return new Response(JSON.stringify({ error: 'forbidden' }), {
       status: 403,
@@ -48,6 +49,51 @@ const handler = async (req: Request): Promise<Response> => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // ANTI-RELAY: el destinatario NO puede ser una dirección arbitraria. Debe ser
+    //  (a) el propio email del emisor, o
+    //  (b) un usuario REGISTRADO en la plataforma con quien el doctor tiene una
+    //      relación real (consulta / cita / receta / chat). Admin puede enviar a
+    //      cualquier usuario registrado sin exigir relación.
+    // Sin esto, un doctor/admin autenticado podía usar el dominio como relay de spam.
+    const toNorm = to.trim().toLowerCase();
+    const callerEmail = (user.email ?? '').trim().toLowerCase();
+    let allowed = !!callerEmail && toNorm === callerEmail;
+
+    if (!allowed) {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      );
+      const { data: recips } = await admin
+        .from('profiles').select('id').ilike('email', toNorm).limit(1);
+      const recipientId = recips?.[0]?.id as string | undefined;
+
+      if (!recipientId) {
+        return new Response(JSON.stringify({ error: 'recipient_not_allowed' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (isAdmin) {
+        allowed = true; // admin → cualquier usuario registrado
+      } else {
+        // Doctor: exige relación documentada con el destinatario.
+        const [cons, appt, presc, chat] = await Promise.all([
+          admin.from('consultations').select('id', { head: true, count: 'exact' }).eq('doctor_id', user.id).eq('patient_id', recipientId),
+          admin.from('appointments').select('id', { head: true, count: 'exact' }).eq('doctor_id', user.id).eq('patient_id', recipientId),
+          admin.from('prescriptions').select('id', { head: true, count: 'exact' }).eq('doctor_id', user.id).eq('patient_id', recipientId),
+          admin.from('chat_sessions').select('id', { head: true, count: 'exact' }).or(`and(participant1_id.eq.${user.id},participant2_id.eq.${recipientId}),and(participant2_id.eq.${user.id},participant1_id.eq.${recipientId})`),
+        ]);
+        allowed = (cons.count ?? 0) > 0 || (appt.count ?? 0) > 0 || (presc.count ?? 0) > 0 || (chat.count ?? 0) > 0;
+      }
+
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: 'no_relationship_with_recipient' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     const kindTitle = kind === 'invoice' ? 'Factura / Resumen médico' : kind === 'summary' ? 'Resumen médico' : 'Nota clínica';
