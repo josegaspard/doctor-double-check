@@ -54,7 +54,7 @@ export function UserBankAccountForm() {
       .from('user_bank_accounts' as any)
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
     if (data) {
       const account = data as any as BankAccount;
       setBankAccount(account);

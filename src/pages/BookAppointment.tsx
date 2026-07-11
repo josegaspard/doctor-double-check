@@ -117,9 +117,12 @@ export default function BookAppointment() {
     if (!doctorId) return;
     const load = async () => {
       setLoading(true);
-      const [{ data: dp }, { data: prof }, { data: avs }, { data: appts }] = await Promise.all([
-        supabase.from('doctor_profiles').select('user_id, specialty, consultation_fee, rating, total_consultations, office_days, office_hours_start, office_hours_end').eq('user_id', doctorId).eq('status', 'approved').single(),
-        supabase.from('profiles').select('id, name, avatar_url').eq('id', doctorId).single(),
+      // El paciente NO puede leer doctor_profiles/profiles directo (RLS: solo dueño/admin)
+      // → esas queries .single() daban 406 y rompían TODO el booking. Usamos el RPC
+      // público SECURITY DEFINER (mismo que usa /doctor/:id) que devuelve el perfil
+      // público del doctor APROBADO con fee, horarios y datos de agenda.
+      const [{ data: docRows }, { data: avs }, { data: appts }] = await Promise.all([
+        supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId }),
         supabase
           .from('doctor_availability')
           .select('id, doctor_id, title, description, scheduled_at, duration_minutes, type')
@@ -131,15 +134,17 @@ export default function BookAppointment() {
         supabase.from('appointments').select('availability_id, scheduled_at').eq('doctor_id', doctorId).in('status', ['requested', 'confirmed']),
       ]);
 
-      if (dp && prof) {
+      const dp = (docRows as any[])?.[0] ?? null;
+
+      if (dp) {
         setDoctor({
-          user_id: (dp as any).user_id,
-          name: (prof as any).name,
-          avatar_url: (prof as any).avatar_url,
-          specialty: (dp as any).specialty,
-          consultation_fee: Number((dp as any).consultation_fee) || 0,
-          rating: Number((dp as any).rating) || 0,
-          total_consultations: (dp as any).total_consultations || 0,
+          user_id: dp.user_id,
+          name: dp.name,
+          avatar_url: dp.avatar_url,
+          specialty: dp.specialty,
+          consultation_fee: Number(dp.consultation_fee) || 0,
+          rating: Number(dp.rating) || 0,
+          total_consultations: dp.total_consultations || 0,
         });
       }
       const apptRows = (appts as any[]) || [];
