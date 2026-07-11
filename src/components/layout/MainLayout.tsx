@@ -585,8 +585,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Right Side */}
               <div className="flex items-center gap-1.5">
-              {/* Global Search */}
-              <GlobalSearch />
+              {/* Global Search — en móvil vive a la IZQUIERDA del header (absoluto sobre la fila)
+                  para que el logo centrado no choque con los controles de la derecha */}
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0 flex items-center">
+                <GlobalSearch />
+              </span>
               
               <LanguageSwitcher />
               
