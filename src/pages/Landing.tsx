@@ -91,9 +91,14 @@ export default function Landing() {
       <nav className={`landing-nav fixed w-full z-50 transition-all duration-500 top-0 ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="landing-nav-surface absolute inset-0 transition-all duration-500" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
-          <div className="flex justify-between items-center h-16 sm:h-20 md:h-24">
-            <Link to={homeHref} className="flex items-center gap-2 group">
-              <div className="relative h-10 sm:h-12 md:h-14">
+          <div className="relative flex justify-between items-center h-20 md:h-24">
+            {/* Móvil/tablet: idioma a la izquierda para equilibrar el logo centrado (cliente 10-jul) */}
+            <div className="lg:hidden">
+              <LanguageSwitcher unstyled className={`rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`} />
+            </div>
+            {/* Logo: centrado y grande en móvil/tablet, a la izquierda en desktop; misma altura en todos los breakpoints */}
+            <Link to={homeHref} className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 flex items-center gap-2 group">
+              <div className="relative h-14">
                 <img src={logoWhite} alt={t('landing.nav.logoAlt')} className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
                 <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
               </div>
@@ -120,7 +125,6 @@ export default function Landing() {
             </div>
 
             <div className="lg:hidden flex items-center gap-2">
-              <LanguageSwitcher unstyled className={`rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`} />
               <Link
                 to="/app"
                 className={`font-bold py-2 px-4 sm:px-6 rounded-full transition-all duration-300 text-sm ${
