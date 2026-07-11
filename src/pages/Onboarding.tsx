@@ -831,11 +831,12 @@ export default function Onboarding() {
       <AppBackground className="min-h-screen flex flex-col">
       <header className="app-shell-header">
           <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <Link to="/" className="flex items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+            <div className="relative flex items-center justify-between min-h-14">
+              {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul); meta solo en tablet+ para no chocar */}
+              <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+                <img src={logoMedicalMasters} alt="Medical Masters" className="h-14 w-auto" />
               </Link>
-              <span className="app-shell-header-meta text-xs font-medium">{t('onboardingPage.headerAccountSetup')}</span>
+              <span className="app-shell-header-meta text-xs font-medium ml-auto hidden sm:inline">{t('onboardingPage.headerAccountSetup')}</span>
             </div>
           </div>
         </header>
@@ -948,11 +949,12 @@ export default function Onboarding() {
     <AppBackground className="min-h-screen flex flex-col">
       <header className="app-shell-header">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-8 w-auto" />
+          <div className="relative flex items-center justify-between min-h-14">
+            {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul); meta solo en tablet+ para no chocar */}
+            <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+              <img src={logoMedicalMasters} alt="Medical Masters" className="h-14 w-auto" />
             </Link>
-            <span className="app-shell-header-meta text-xs font-medium">{t('onboardingPage.headerAccountSetup')}</span>
+            <span className="app-shell-header-meta text-xs font-medium ml-auto hidden sm:inline">{t('onboardingPage.headerAccountSetup')}</span>
           </div>
         </div>
       </header>

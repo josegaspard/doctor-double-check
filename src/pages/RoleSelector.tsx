@@ -122,9 +122,10 @@ export default function RoleSelector() {
       )}
       {/* Header — mobile: en flujo normal. Desktop (lg+): floating absolute */}
       <header className="relative lg:absolute lg:top-0 lg:left-0 lg:right-0 z-40 px-4 sm:px-8 py-3 sm:py-5 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={() => navigate('/')} aria-label="Inicio" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm">
-            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 sm:h-10 w-auto drop-shadow-lg" />
+        <div className="relative flex items-center justify-between min-h-14">
+          {/* Logo GRANDE y centrado en móvil/tablet, mismo tamaño que el landing (cliente 10-jul); desktop a la izquierda */}
+          <button type="button" onClick={() => navigate('/')} aria-label="Inicio" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:static lg:translate-x-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm">
+            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto drop-shadow-lg" />
           </button>
           <LanguageSwitcher className="bg-white/10 hover:bg-white/20 text-white border-white/20" />
         </div>

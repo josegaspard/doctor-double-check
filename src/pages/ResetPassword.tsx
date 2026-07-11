@@ -80,12 +80,13 @@ export default function ResetPassword() {
         {/* Header */}
         <header className="app-shell-header">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-4">
+            <div className="relative flex items-center min-h-14">
               <Button variant="outline" size="icon" onClick={() => navigate('/login')} className="app-shell-icon-button">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <Link to="/">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
+              {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
+              <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
               </Link>
             </div>
           </div>
@@ -171,15 +172,14 @@ export default function ResetPassword() {
       {/* Header */}
       <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={() => navigate('/login')} className="app-shell-icon-button">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <Link to="/">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
-              </Link>
-            </div>
+          <div className="relative flex items-center justify-between min-h-14">
+            <Button variant="outline" size="icon" onClick={() => navigate('/login')} className="app-shell-icon-button">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
+            <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+            </Link>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
         </div>

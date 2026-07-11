@@ -398,7 +398,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         }`}
       >
         <div className="container mx-auto px-4">
-            <div className="relative flex h-14 items-center justify-between">
+            <div className="relative flex h-20 sm:h-16 items-center justify-between">
             {/* Logo & Mobile Menu */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Hamburger menu - hidden on mobile (replaced by bottom nav), visible on tablet */}
@@ -497,19 +497,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 </SheetContent>
               </Sheet>
 
-              {/* Logo móvil: GRANDE y centrado en el header (cliente 10-jul) */}
+              {/* Logo móvil: GRANDE y centrado, MISMO tamaño que el landing (h-14, cliente 10-jul) */}
               <Link to={homeHref} className="flex sm:hidden items-center absolute left-1/2 -translate-x-1/2">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" loading="lazy" decoding="async" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo on tablet - compact */}
               <Link to={homeHref} className="hidden sm:flex md:hidden items-center">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-9 w-auto" loading="lazy" decoding="async" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" loading="lazy" decoding="async" />
               </Link>
 
               {/* Logo - desktop+ */}
               <Link to={homeHref} className="hidden md:flex items-center">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-9 xl:h-10 w-auto" loading="lazy" decoding="async" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 xl:h-11 w-auto" loading="lazy" decoding="async" />
               </Link>
             </div>
 

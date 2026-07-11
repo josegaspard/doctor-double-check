@@ -85,7 +85,7 @@ export function MobileBackHeader() {
   const title = t(titleKey);
 
   return (
-    <div className="app-back-header sticky top-14 z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10">
+    <div className="app-back-header sticky top-20 z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10">
       <button
         type="button"
         onClick={() => {

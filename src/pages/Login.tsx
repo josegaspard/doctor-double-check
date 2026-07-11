@@ -307,15 +307,14 @@ export default function Login() {
       {/* Header */}
       <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={() => navigate('/')} className="app-shell-icon-button">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <button type="button" onClick={() => navigate('/')} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm" aria-label="Inicio">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
-              </button>
-            </div>
+          <div className="relative flex items-center justify-between min-h-14">
+            <Button variant="outline" size="icon" onClick={() => navigate('/')} className="app-shell-icon-button">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
+            <button type="button" onClick={() => navigate('/')} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm" aria-label="Inicio">
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+            </button>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
         </div>
