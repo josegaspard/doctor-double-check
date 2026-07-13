@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives } from '@/contexts/LivesContext';
@@ -40,6 +40,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getLivesByDoctor } = useLives();
@@ -80,15 +81,19 @@ export default function DoctorDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
-        {/* El panel es el HOME del médico. Si aterrizó aquí recién logueado (primera
-            página de la sesión SPA, history.state.idx===0) NO hay ningún "atrás" real
-            —dar navigate(-1) lo sacaba de la app/sesión—, así que el botón es INICIO y
-            va al home /lives. Solo cuando llegó navegando desde otra pantalla de la app
-            (idx>0) mostramos "Volver" con retroceso normal. */}
+        {/* El panel es el HOME del médico. Dos señales para decidir el botón:
+            1) `location.state.fromAuth`: el login navega aquí con replace + este flag.
+               Recién logueado NO hay "atrás" real (navigate(-1) sacaba de la app/sesión)
+               → botón INICIO (va a /lives). El flag sobrevive reload (history.state.usr).
+            2) `history.state.idx`: respaldo — si es 0 esta es la primera página de la
+               sesión SPA (deep link / cold-start PWA) → tampoco hay atrás → INICIO.
+            Solo cuando el médico llegó NAVEGANDO desde otra pantalla interna
+            (idx>0 y sin fromAuth) mostramos "Volver" con retroceso normal. */}
         {(() => {
+          const fromAuth = !!(location.state as any)?.fromAuth;
           const idx = typeof (window.history.state as any)?.idx === 'number'
             ? (window.history.state as any).idx : 0;
-          const hasBack = idx > 0;
+          const hasBack = idx > 0 && !fromAuth;
           return (
             <Button variant="back" size="sm" onClick={() => hasBack ? navigate(-1) : navigate('/lives')} className="mb-3 -ml-2 text-white hover:text-white">
               {hasBack

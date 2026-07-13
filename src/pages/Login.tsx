@@ -131,7 +131,7 @@ export default function Login() {
 
       if (sessionUser) {
         const destination = await resolvePostLoginRoute(sessionUser.id);
-        navigate(destination, { replace: true });
+        navigate(destination, { replace: true, state: { fromAuth: true } });
         return true;
       }
 
@@ -193,9 +193,11 @@ export default function Login() {
         const destination = await resolvePostLoginRoute(uid);
         // replace: /login NO debe quedar en el historial — dar "Atrás" desde el
         // panel regresaba al formulario de login y parecía que se cerró la sesión.
-        navigate(destination, { replace: true });
+        // state.fromAuth: marca "recién logueado" para que el panel muestre INICIO
+        // (no "Volver") — no hay ninguna página interna previa a la que regresar.
+        navigate(destination, { replace: true, state: { fromAuth: true } });
       } else {
-        navigate('/lives', { replace: true });
+        navigate('/lives', { replace: true, state: { fromAuth: true } });
       }
     } else {
       try { sessionStorage.removeItem('mm_role_gate'); } catch {}
