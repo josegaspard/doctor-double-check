@@ -147,11 +147,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
     dest.utm_campaign = dest.utm_campaign || slug;
   }
 
-  // Construir el destino final con UTM (mismo origen, homepage por defecto).
-  const path = dest.destination_path.startsWith("/")
-    ? dest.destination_path
-    : `/${dest.destination_path}`;
-  const target = new URL(path, APP_URL);
+  // Construir el destino final con UTM. Soporta enlace ABSOLUTO (https://... a cualquier
+  // sitio, WhatsApp, etc.) o ruta relativa del propio sitio (homepage por defecto).
+  let target: URL;
+  try {
+    if (/^https?:\/\//i.test(dest.destination_path)) {
+      target = new URL(dest.destination_path);
+    } else {
+      const path = dest.destination_path.startsWith("/")
+        ? dest.destination_path
+        : `/${dest.destination_path}`;
+      target = new URL(path, APP_URL);
+    }
+  } catch {
+    target = new URL("/", APP_URL);
+  }
   target.searchParams.set("utm_source", dest.utm_source);
   target.searchParams.set("utm_medium", dest.utm_medium);
   target.searchParams.set("utm_campaign", dest.utm_campaign);
