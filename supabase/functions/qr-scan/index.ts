@@ -23,6 +23,32 @@ const FALLBACK = {
   utm_campaign: "qr",
 };
 
+// Parseo del user-agent en dimensiones anónimas (dispositivo / SO / navegador).
+function parseUA(uaRaw: string): { device: string; os: string; browser: string } {
+  const u = (uaRaw || "").toLowerCase();
+  let device = "escritorio";
+  if (/ipad|tablet|playbook|silk/.test(u)) device = "tablet";
+  else if (/mobile|iphone|ipod|android.*mobile|windows phone/.test(u)) device = "móvil";
+  else if (/android/.test(u)) device = "móvil";
+
+  let os = "Otro";
+  if (/iphone|ipad|ipod|(cpu os)|(iphone os)/.test(u)) os = "iOS";
+  else if (/android/.test(u)) os = "Android";
+  else if (/windows/.test(u)) os = "Windows";
+  else if (/mac os x|macintosh/.test(u)) os = "macOS";
+  else if (/linux/.test(u)) os = "Linux";
+
+  let browser = "Otro";
+  if (/edg\//.test(u)) browser = "Edge";
+  else if (/opr\/|opera/.test(u)) browser = "Opera";
+  else if (/samsungbrowser/.test(u)) browser = "Samsung Internet";
+  else if (/chrome|crios/.test(u)) browser = "Chrome";
+  else if (/firefox|fxios/.test(u)) browser = "Firefox";
+  else if (/safari/.test(u)) browser = "Safari";
+
+  return { device, os, browser };
+}
+
 // sha256(ip|ua) truncado a 32 hex chars. Sirve solo para estimar personas únicas;
 // no es reversible ni permite re-identificar a nadie.
 async function hashVisitor(ip: string, ua: string): Promise<string | null> {
@@ -61,10 +87,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
     "";
+  // Geo best-effort. Al pasar por el rewrite /qr de Vercel llegan los x-vercel-ip-*;
+  // si el QR apunta directo a la función, puede venir cf-ipcountry o nada (N/D).
   const country =
     req.headers.get("x-vercel-ip-country") ||
     req.headers.get("cf-ipcountry") ||
     null;
+  const city = req.headers.get("x-vercel-ip-city") || null;
+  const region =
+    req.headers.get("x-vercel-ip-country-region") ||
+    req.headers.get("x-vercel-ip-region") ||
+    null;
+  const acceptLanguage = (req.headers.get("accept-language") || "").slice(0, 100) || null;
+  const { device, os, browser } = parseUA(ua);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -100,6 +135,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       referer: referer || null,
       ip_hash,
       country,
+      city,
+      region,
+      accept_language: acceptLanguage,
+      device_type: device,
+      os,
+      browser,
     });
   } catch (_e) {
     // Nunca romper la experiencia del que escanea: redirigimos igual.
