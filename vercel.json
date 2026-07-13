@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/qr", "destination": "https://ouawwfqexfwuptlgoksr.supabase.co/functions/v1/qr-scan" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

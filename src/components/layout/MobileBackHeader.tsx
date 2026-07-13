@@ -92,7 +92,7 @@ export function MobileBackHeader() {
     : 0;
   const hasBack = idx > 0;
 
-  const label = hasBack ? title : t('backHeader.home');
+  const label = hasBack ? t(titleKey) : t('backHeader.home');
 
   return (
     <div className="app-back-header sticky top-20 z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10">
