@@ -2514,6 +2514,7 @@ export const pt = {
     allSystems: "Todos os sistemas operacionais"
   },
   backHeader: {
+    home: 'Início',
     recordings: "Gravações",
     content: "Conteúdo",
     news: "Notícias",

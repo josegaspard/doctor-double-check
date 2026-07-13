@@ -2342,6 +2342,7 @@ export const ca = {
     "allSystems": "Tots els sistemes operatius"
   },
   "backHeader": {
+    "home": "Inici",
     "recordings": "Enregistraments",
     "content": "Contingut",
     "news": "Notícies",

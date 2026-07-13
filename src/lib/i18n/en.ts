@@ -2514,6 +2514,7 @@ export const en = {
     allSystems: "All Systems Operational"
   },
   backHeader: {
+    home: 'Home',
     recordings: "Recordings",
     content: "Content",
     news: "News",

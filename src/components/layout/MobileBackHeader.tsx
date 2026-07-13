@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -82,7 +82,17 @@ export function MobileBackHeader() {
     else titleKey = 'backHeader.back';
   }
 
-  const title = t(titleKey);
+  // React Router guarda su índice interno en history.state.idx. Si es 0, esta es la
+  // PRIMERA página de la sesión SPA (p. ej. recién te logueaste y aterrizaste aquí):
+  // no hay ningún "atrás" real dentro de la app, así que el botón NO debe decir
+  // "Volver" — debe ser un botón de INICIO (va al home). Solo cuando hay historial
+  // propio (idx>0) mostramos la flecha de retroceso con el título de la página.
+  const idx = typeof (window.history.state as any)?.idx === 'number'
+    ? (window.history.state as any).idx
+    : 0;
+  const hasBack = idx > 0;
+
+  const label = hasBack ? title : t('backHeader.home');
 
   return (
     <div className="app-back-header sticky top-20 z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10">
@@ -92,19 +102,17 @@ export function MobileBackHeader() {
           // Retroceder SOLO dentro de la app: window.history.length cuenta también
           // las páginas previas al sitio (Google, tab nueva), así que navigate(-1)
           // podía sacar al usuario de la web (y parecía que se cerraba la sesión).
-          // React Router guarda su índice interno en history.state.idx: si es 0,
-          // esta es la primera página de la sesión SPA → vamos al home /lives.
-          const idx = typeof (window.history.state as any)?.idx === 'number'
+          const curIdx = typeof (window.history.state as any)?.idx === 'number'
             ? (window.history.state as any).idx
             : 0;
-          if (idx > 0) navigate(-1);
+          if (curIdx > 0) navigate(-1);
           else navigate('/lives');
         }}
-        aria-label={t('common.back') || 'Volver'}
+        aria-label={hasBack ? (t('common.back') || 'Volver') : t('backHeader.home')}
         className="inline-flex items-center gap-1 px-2 h-9 rounded-md text-white/90 hover:text-white active:bg-white/10 transition-colors"
       >
-        <ChevronLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">{title}</span>
+        {hasBack ? <ChevronLeft className="w-5 h-5" /> : <Home className="w-[18px] h-[18px]" />}
+        <span className="text-sm font-medium">{label}</span>
       </button>
     </div>
   );

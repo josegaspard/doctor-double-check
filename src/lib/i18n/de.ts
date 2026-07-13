@@ -2514,6 +2514,7 @@ export const de = {
     allSystems: "Alle Systeme betriebsbereit"
   },
   backHeader: {
+    home: 'Start',
     recordings: "Aufzeichnungen",
     content: "Inhalt",
     news: "Nachrichten",

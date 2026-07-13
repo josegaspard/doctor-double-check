@@ -2514,6 +2514,7 @@ export const it = {
     allSystems: "Tutti i sistemi operativi"
   },
   backHeader: {
+    home: 'Home',
     recordings: "Registrazioni",
     content: "Contenuti",
     news: "Notizie",

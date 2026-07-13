@@ -2343,6 +2343,7 @@ export const zh = {
     "allSystems": "所有操作系统"
   },
   "backHeader": {
+    "home": "首页",
     "recordings": "录播",
     "content": "内容",
     "news": "新闻",

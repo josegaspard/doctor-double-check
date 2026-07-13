@@ -2557,6 +2557,7 @@ export const es = {
   },
   // Back header (mobile)
   backHeader: {
+    home: 'Inicio',
     recordings: 'Grabaciones',
     content: 'Contenido',
     news: 'Noticias',
