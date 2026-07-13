@@ -35,7 +35,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         (async () => {
           try {
             const { data } = await supabase
-              .from('consultations').select('video_room_name').eq('id', cid).single();
+              .from('consultations').select('video_room_name').eq('id', cid).maybeSingle();
             if (data?.video_room_name) {
               await supabase.functions.invoke('end-daily-room', { body: { roomName: data.video_room_name } });
             }
@@ -75,7 +75,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         .from('consultations')
         .select('video_room_name, video_room_url')
         .eq('id', consultationId)
-        .single();
+        .maybeSingle();
 
       if (data?.video_room_name && data?.video_room_url) {
         return { roomName: data.video_room_name, roomUrl: data.video_room_url };
@@ -235,7 +235,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
         .from('consultations')
         .select('video_room_name')
         .eq('id', consultationId)
-        .single();
+        .maybeSingle();
 
       if (consultation?.video_room_name) {
         supabase.functions.invoke('end-daily-room', {

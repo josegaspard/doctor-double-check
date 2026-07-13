@@ -43,7 +43,23 @@ export default function VendorEarnings() {
   const fmt = (n: number) => Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (loading) return <MainLayout><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
-  if (!vendor) return <MainLayout><div className="container mx-auto p-6 text-center">{t('fix20.pages.vendorNotFound')}</div></MainLayout>;
+  if (!vendor) return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-16 max-w-md">
+        <Card>
+          <CardContent className="p-6 flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-primary" />
+            </div>
+            <p className="text-sm text-muted-foreground">{t('fix20.pages.vendorNotFound')}</p>
+            <Button size="sm" className="gap-1.5" onClick={() => navigate('/vendor/dashboard')}>
+              {t('autoI18n.vendorEarn1')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
 
   return (
     <MainLayout>

@@ -115,7 +115,7 @@ export default function Vault() {
       .from('site_settings')
       .select('value')
       .eq('id', 'storage_pricing')
-      .single();
+      .maybeSingle();
     if (pricingData?.value) {
       const pricing = pricingData.value as any;
       if (pricing.plans && pricing.plans.length > 0) setStoragePlans(pricing.plans);

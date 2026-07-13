@@ -258,6 +258,7 @@ export default function VendorDashboard() {
   const es = language === 'es';
   const [vendor, setVendor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [feeOrders, setFeeOrders] = useState<any[]>([]); // órdenes del marketplace de intermediación
@@ -272,6 +273,8 @@ export default function VendorDashboard() {
   const fetchVendor = async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
+    setLoadError(false);
+    try {
     const { data: cfg } = await (supabase as any).from('marketplace_config').select('fee_rate').eq('id', true).maybeSingle();
     if (cfg?.fee_rate != null) setFeeRate(Number(cfg.fee_rate));
     const { data } = await supabase.from('marketplace_vendors').select('*').eq('user_id', user.id).limit(1);
@@ -300,7 +303,12 @@ export default function VendorDashboard() {
       }
       setFeeOrders(feeRows);
     }
-    setLoading(false);
+    } catch (e) {
+      console.error('Error loading vendor dashboard:', e);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchVendor(); }, [user]);
@@ -324,7 +332,7 @@ export default function VendorDashboard() {
     const { data } = await supabase.from('marketplace_products').select('*').eq('vendor_id', vendor.id).order('created_at', { ascending: false });
     setProducts((data as any[]) || []);
     setDialogOpen(false);
-    toast.success(editingId ? t('autoI18n.vendorDash47') : 'Producto enviado a revisión. El administrador lo aprobará antes de publicarse.');
+    toast.success(editingId ? t('autoI18n.vendorDash47') : t('autoI18n.vendorDashSentReview'));
   };
 
   // Acciones sobre órdenes del marketplace de intermediación (misma edge
@@ -339,12 +347,12 @@ export default function VendorDashboard() {
       if (data?.error) throw new Error(data.error);
       if (action === 'pay_fee') {
         if (data?.url) { window.location.href = data.url; return; }
-        throw new Error('No se recibió el enlace de pago');
+        throw new Error(t('autoI18n.vendorDashNoPayLink'));
       }
-      toast.success(action === 'complete' ? '🤝 Venta concretada. Recuerda pagar el fee de la plataforma.' : 'Orden cancelada.');
+      toast.success(action === 'complete' ? t('autoI18n.vendorDashSaleDone') : t('autoI18n.vendorDashOrderCancelled'));
       fetchVendor();
     } catch (e: any) {
-      toast.error(e.message || 'Error');
+      toast.error(e.message || t('autoI18n.vendorDashError'));
     } finally {
       setActingOrderId(null);
     }
@@ -370,6 +378,19 @@ export default function VendorDashboard() {
   };
 
   if (loading) return <MainLayout><div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div></MainLayout>;
+
+  if (loadError) return (
+    <MainLayout>
+      <div className="container mx-auto px-4 py-20 max-w-md flex flex-col items-center text-center gap-3">
+        <ShieldAlert className="w-10 h-10 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+        <Button variant="outline" size="sm" onClick={fetchVendor} className="gap-1.5">
+          <Loader2 className="w-3.5 h-3.5" />
+          {t('common.retry')}
+        </Button>
+      </div>
+    </MainLayout>
+  );
 
   // Not registered
   if (!vendor && !showRegistration) {

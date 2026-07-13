@@ -474,7 +474,7 @@ export default function Onboarding() {
         .from('onboarding_progress')
         .select('*')
         .eq('user_id', supabaseUser.id)
-        .single();
+        .maybeSingle();
 
       if (savedProgress) {
         if (savedProgress.step) setStep(savedProgress.step);

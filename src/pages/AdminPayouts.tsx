@@ -151,7 +151,7 @@ export default function AdminPayouts() {
     setIsLoading(true);
     try {
       // Fetch payout settings
-      const { data: settingsData } = await supabase.from('payout_settings').select('*').eq('id', 'default').single();
+      const { data: settingsData } = await supabase.from('payout_settings').select('*').eq('id', 'default').maybeSingle();
       if (settingsData) {
         setSettings({
           commission_percentage: settingsData.commission_percentage || 20,
@@ -493,7 +493,7 @@ export default function AdminPayouts() {
                 .from('profiles')
                 .select('email, name')
                 .eq('id', doctor.user_id)
-                .single();
+                .maybeSingle();
 
               if (doctorProfile?.email) {
                 await supabase.functions.invoke('send-payout-email', {
@@ -643,7 +643,7 @@ export default function AdminPayouts() {
           .from('doctor_profiles')
           .select('consultation_fee')
           .eq('user_id', doctorId)
-          .single();
+          .maybeSingle();
         const fee = dpData?.consultation_fee || 0;
 
         consults?.forEach(c => {
@@ -852,7 +852,7 @@ export default function AdminPayouts() {
                   ) : filteredDoctors.map(doctor => (
                     <Card key={doctor.user_id} className={`transition-colors ${selectedDoctors.has(doctor.user_id) ? 'border-primary bg-primary/5' : ''}`}>
                       <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                           <Checkbox
                             checked={selectedDoctors.has(doctor.user_id)}
                             onCheckedChange={() => toggleDoctor(doctor.user_id)}
@@ -866,7 +866,7 @@ export default function AdminPayouts() {
                             )}
                           </div>
 
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-[150px]">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-semibold truncate">{doctor.name}</p>
                               <Badge variant="outline" className="text-xs">{doctor.specialty}</Badge>
@@ -896,6 +896,7 @@ export default function AdminPayouts() {
                             )}
                           </div>
 
+                          <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-auto">
                           <div className="text-right flex-shrink-0">
                             <p className="text-xs text-muted-foreground">{tt('adminPayoutsPage.doctor.net')}</p>
                             <p className="font-bold text-success">{formatCurrency(doctor.pending_earnings)}</p>
@@ -919,6 +920,7 @@ export default function AdminPayouts() {
                               {expandedDoctor === doctor.user_id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               {tt('adminPayoutsPage.doctor.detail')}
                             </Button>
+                          </div>
                           </div>
                         </div>
 

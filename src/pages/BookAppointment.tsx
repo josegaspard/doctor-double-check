@@ -361,7 +361,7 @@ export default function BookAppointment() {
                         >
                           <p className="text-sm font-medium flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5 text-primary" />
-                            {formatTime(s.scheduled_at)}
+                            {formatTime(s.scheduled_at, language)}
                           </p>
                           <p className="text-[11px] text-muted-foreground mt-0.5">{s.duration_minutes} {t('bookAppointment.minutes')}</p>
                           {s.title && <p className="text-[10px] text-muted-foreground/80 truncate mt-1">{s.title}</p>}

@@ -89,7 +89,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         .from('doctor_profiles_public')
         .select('status')
         .eq('user_id', doctor.userId)
-        .single();
+        .maybeSingle();
 
       if (doctorError || doctorProfile?.status !== 'approved') {
         throw new Error(t('doubleCheckFlow.errors.doctorNotAvailable'));

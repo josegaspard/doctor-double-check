@@ -79,7 +79,7 @@ export default function IdentityVerification() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (data && !error) {
         setVerification(data as unknown as VerificationRecord);

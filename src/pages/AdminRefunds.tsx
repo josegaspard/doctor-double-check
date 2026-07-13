@@ -155,7 +155,7 @@ export default function AdminRefunds() {
       .from('user_bank_accounts' as any)
       .select('*')
       .eq('user_id', req.user_id)
-      .single();
+      .maybeSingle();
     
     setUserBankAccount(ba as any);
     setSelectedMethod(stripePI ? 'stripe' : (ba ? 'bank_transfer' : 'wallet'));

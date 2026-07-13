@@ -10,3 +10,13 @@ const LOCALES: Record<SupportedLanguage, Locale> = {
 
 export const getDateLocale = (lang: string | undefined): Locale =>
   LOCALES[(lang as SupportedLanguage)] ?? es;
+
+// Mapa idioma → locale BCP-47 para APIs nativas (Intl.DateTimeFormat /
+// toLocaleDateString / toLocaleTimeString). Antes varias pantallas fijaban
+// 'es-MX' a mano → alemán/francés/inglés veían días y meses en español.
+const INTL_LOCALES: Record<SupportedLanguage, string> = {
+  es: 'es-MX', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', it: 'it-IT', de: 'de-DE', ca: 'ca-ES', zh: 'zh-CN',
+};
+
+export const getIntlLocale = (lang: string | undefined): string =>
+  INTL_LOCALES[(lang as SupportedLanguage)] ?? 'es-MX';

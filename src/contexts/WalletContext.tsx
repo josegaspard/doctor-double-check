@@ -49,7 +49,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         .from('wallets')
         .select('balance')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (wallet) {
         const newBal = Number(wallet.balance);

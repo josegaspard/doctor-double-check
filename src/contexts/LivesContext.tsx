@@ -519,8 +519,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
                   (async () => {
                     try {
                       const [profileRes, doctorRes] = await Promise.all([
-                        supabase.from('profiles_public').select('id, name, avatar_url').eq('id', record.doctor_id).single(),
-                        supabase.from('doctor_profiles_public').select('user_id, followers_count').eq('user_id', record.doctor_id).single(),
+                        supabase.from('profiles_public').select('id, name, avatar_url').eq('id', record.doctor_id).maybeSingle(),
+                        supabase.from('doctor_profiles_public').select('user_id, followers_count').eq('user_id', record.doctor_id).maybeSingle(),
                       ]);
                       if (profileRes.data) {
                         profileCache.current.set(record.doctor_id, { name: profileRes.data.name || 'Doctor', avatar_url: profileRes.data.avatar_url || undefined });

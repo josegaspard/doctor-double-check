@@ -14,6 +14,7 @@ import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
 import { SecureImage } from '@/components/security/SecureImage';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { getIntlLocale } from '@/lib/dateLocale';
 import {
   ArrowLeft,
   FileText,
@@ -72,7 +73,7 @@ export default function PrescriptionDetail() {
         .from('prescriptions')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         setIsLoading(false);
@@ -197,7 +198,7 @@ export default function PrescriptionDetail() {
               {t('prescriptionDetailPage.header.title')}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {new Intl.DateTimeFormat('es-MX', {
+              {new Intl.DateTimeFormat(getIntlLocale(language), {
                 day: 'numeric', month: 'long', year: 'numeric',
               }).format(prescription.createdAt)}
             </p>
@@ -398,7 +399,7 @@ export default function PrescriptionDetail() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-4 h-4" />
               <span>
-                {t('prescriptionDetailPage.signature.signedOn')} {new Intl.DateTimeFormat('es-MX', {
+                {t('prescriptionDetailPage.signature.signedOn')} {new Intl.DateTimeFormat(getIntlLocale(language), {
                   day: 'numeric', month: 'long', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 }).format(prescription.signedAt)}

@@ -82,7 +82,7 @@ export default function AdminResidents() {
             .from('profiles')
             .select('name, email, avatar_url')
             .eq('id', res.user_id)
-            .single();
+            .maybeSingle();
           return { ...res, profile } as ResidentRequest;
         })
       );

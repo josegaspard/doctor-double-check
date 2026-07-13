@@ -74,7 +74,7 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
   useEffect(() => {
     if (!doctorFilter) { setDoctorName(null); return; }
     const fetchName = async () => {
-      const { data } = await supabase.from('profiles').select('name').eq('id', doctorFilter).single();
+      const { data } = await supabase.from('profiles_public').select('name').eq('id', doctorFilter).maybeSingle();
       setDoctorName(data?.name || null);
     };
     fetchName();

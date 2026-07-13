@@ -22,6 +22,7 @@ import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
 import { FileText, Download, Loader2, Pill, ChevronRight, Image, Trash2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { getIntlLocale } from '@/lib/dateLocale';
 
 interface Prescription {
   id: string;
@@ -303,7 +304,7 @@ export function PrescriptionsList() {
                       </Badge>
                     )}
                     <span className="text-sm text-muted-foreground">
-                      {new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
+                      {new Intl.DateTimeFormat(getIntlLocale(language), {
                         day: 'numeric', month: 'short', year: 'numeric'
                       }).format(rx.createdAt)}
                     </span>

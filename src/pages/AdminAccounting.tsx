@@ -187,7 +187,7 @@ export default function AdminAccounting() {
           <TabsContent value="summary">
             <Card>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[460px] text-sm">
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="text-left p-3 font-semibold">{t('autoI18n.clAdminAccount18')}</th>
@@ -214,7 +214,7 @@ export default function AdminAccounting() {
           <TabsContent value="entries">
             <Card>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[380px] text-sm">
                   <thead className="bg-muted/40">
                     <tr>
                       <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount23')}</th>
@@ -253,10 +253,10 @@ export default function AdminAccounting() {
                   const feesPending = completed.filter(p => p.fee_status === 'pending').reduce((a, p) => a + Number(p.fee_amount || 0), 0);
                   return (
                     <>
-                      <div><p className="text-lg font-bold font-mono">{fmt(gross)}</p><p className="text-[11px] text-muted-foreground">ventas concretadas (bruto)</p></div>
-                      <div><p className="text-lg font-bold font-mono text-success">{fmt(feesPaid)}</p><p className="text-[11px] text-muted-foreground">fees cobrados</p></div>
-                      <div><p className="text-lg font-bold font-mono text-warning">{fmt(feesPending)}</p><p className="text-[11px] text-muted-foreground">fees por cobrar</p></div>
-                      <div><p className="text-lg font-bold font-mono">{purchases.length}</p><p className="text-[11px] text-muted-foreground">órdenes en el periodo</p></div>
+                      <div><p className="text-lg font-bold font-mono">{fmt(gross)}</p><p className="text-[11px] text-muted-foreground">{t('autoI18n.clAdminAccount30')}</p></div>
+                      <div><p className="text-lg font-bold font-mono text-success">{fmt(feesPaid)}</p><p className="text-[11px] text-muted-foreground">{t('autoI18n.clAdminAccount31')}</p></div>
+                      <div><p className="text-lg font-bold font-mono text-warning">{fmt(feesPending)}</p><p className="text-[11px] text-muted-foreground">{t('autoI18n.clAdminAccount32')}</p></div>
+                      <div><p className="text-lg font-bold font-mono">{purchases.length}</p><p className="text-[11px] text-muted-foreground">{t('autoI18n.clAdminAccount33')}</p></div>
                     </>
                   );
                 })()}
@@ -264,16 +264,16 @@ export default function AdminAccounting() {
             </Card>
             <Card>
               <CardContent className="p-0 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[420px] text-sm">
                   <thead className="bg-muted/40">
                     <tr>
-                      <th className="text-left p-2 font-semibold">Fecha</th>
-                      <th className="text-left p-2 font-semibold">Producto</th>
-                      <th className="text-left p-2 font-semibold hidden sm:table-cell">Proveedor</th>
-                      <th className="text-left p-2 font-semibold hidden sm:table-cell">Comprador</th>
-                      <th className="text-right p-2 font-semibold">Precio</th>
-                      <th className="text-right p-2 font-semibold">Fee</th>
-                      <th className="text-left p-2 font-semibold">Estado</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount23')}</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount34')}</th>
+                      <th className="text-left p-2 font-semibold hidden sm:table-cell">{t('autoI18n.clAdminAccount35')}</th>
+                      <th className="text-left p-2 font-semibold hidden sm:table-cell">{t('autoI18n.clAdminAccount36')}</th>
+                      <th className="text-right p-2 font-semibold">{t('autoI18n.clAdminAccount37')}</th>
+                      <th className="text-right p-2 font-semibold">{t('autoI18n.clAdminAccount38')}</th>
+                      <th className="text-left p-2 font-semibold">{t('autoI18n.clAdminAccount39')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -286,14 +286,14 @@ export default function AdminAccounting() {
                         <td className="p-2 text-right text-xs font-mono">{fmt(Number(p.product_price))}</td>
                         <td className="p-2 text-right text-xs font-mono">{fmt(Number(p.fee_amount))} <span className="text-muted-foreground">({Math.round(Number(p.fee_rate) * 100)}%)</span></td>
                         <td className="p-2 text-xs">
-                          {p.status === 'ordered' && <Badge variant="secondary" className="text-[10px]">Orden activa</Badge>}
-                          {(p.status === 'completed' || p.status === 'paid') && p.fee_status === 'paid' && <Badge variant="verified" className="text-[10px]">Concretada · fee cobrado</Badge>}
-                          {p.status === 'completed' && p.fee_status === 'pending' && <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700">Concretada · fee por cobrar</Badge>}
-                          {(p.status === 'cancelled' || p.status === 'expired') && <Badge variant="destructive" className="text-[10px]">Cancelada</Badge>}
+                          {p.status === 'ordered' && <Badge variant="secondary" className="text-[10px]">{t('autoI18n.clAdminAccount40')}</Badge>}
+                          {(p.status === 'completed' || p.status === 'paid') && p.fee_status === 'paid' && <Badge variant="verified" className="text-[10px]">{t('autoI18n.clAdminAccount41')}</Badge>}
+                          {p.status === 'completed' && p.fee_status === 'pending' && <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700">{t('autoI18n.clAdminAccount42')}</Badge>}
+                          {(p.status === 'cancelled' || p.status === 'expired') && <Badge variant="destructive" className="text-[10px]">{t('autoI18n.clAdminAccount43')}</Badge>}
                         </td>
                       </tr>
                     ))}
-                    {purchases.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Sin compras del marketplace en el periodo.</td></tr>}
+                    {purchases.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">{t('autoI18n.clAdminAccount44')}</td></tr>}
                   </tbody>
                 </table>
               </CardContent>

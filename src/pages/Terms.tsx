@@ -26,7 +26,7 @@ export default function Terms() {
           .from('site_settings')
           .select('value')
           .eq('id', 'terms_of_service')
-          .single();
+          .maybeSingle();
 
         if (data?.value) {
           const content = data.value as unknown as LegalContent;

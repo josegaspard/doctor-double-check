@@ -29,6 +29,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { VaultFilePreviewModal } from '@/components/vault/VaultFilePreviewModal';
+import { getIntlLocale } from '@/lib/dateLocale';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
@@ -134,7 +135,7 @@ export default function MedicalHistory() {
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat(language === 'es' ? 'es-MX' : 'en-US', {
+    return new Intl.DateTimeFormat(getIntlLocale(language), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

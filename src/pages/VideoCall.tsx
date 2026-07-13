@@ -293,14 +293,14 @@ export default function VideoCall() {
         .from('consultations')
         .select('doctor_id, patient_id')
         .eq('id', consultationId)
-        .single();
+        .maybeSingle();
       if (!data) return;
       setPatientId(data.patient_id);
       const otherId = isDoctor ? data.patient_id : data.doctor_id;
       // Only the doctor gets a badge; when current user is the doctor, the other
       // party is a patient → keep id null so no badge shows.
       setOtherParticipantId(isDoctor ? null : data.doctor_id);
-      const { data: profile } = await supabase.from('profiles').select('name').eq('id', otherId).single();
+      const { data: profile } = await supabase.from('profiles_public').select('name').eq('id', otherId).maybeSingle();
       setOtherParticipantName(profile?.name || t('videoCall.participant'));
 
       // Doctor credentials (visible to patient and doctor)
@@ -437,7 +437,7 @@ export default function VideoCall() {
         .from('consultations')
         .select('patient_id')
         .eq('id', consultationId)
-        .single();
+        .maybeSingle();
 
       if (consultation?.patient_id) {
         const { data: doctorProfile } = await supabase

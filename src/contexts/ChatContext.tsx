@@ -303,7 +303,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               .from('profiles_public')
               .select('name')
               .eq('id', newMessage.sender_id)
-              .single();
+              .maybeSingle();
             senderName = senderProfile?.name ?? undefined;
           } catch {}
 

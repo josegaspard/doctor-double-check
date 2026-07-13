@@ -76,7 +76,7 @@ export function OtpProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('phone')
         .eq('id', patientId)
-        .single();
+        .maybeSingle();
       setSmsAvailable(!!data?.phone);
     } catch {
       setSmsAvailable(false);

@@ -144,7 +144,7 @@ export default function RecordingPlayer() {
         .from('recordings')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       const purchasePromise = supabaseUser?.id && role !== 'admin' && role !== 'doctor'
         ? supabase
@@ -169,7 +169,7 @@ export default function RecordingPlayer() {
         .from('profiles_public')
         .select('name')
         .eq('id', recResult.data.doctor_id)
-        .single();
+        .maybeSingle();
 
       // PREFETCH del signed URL en paralelo con profile/purchase. Esto elimina
       // el ~700ms de espera entre que el video player se monta y dispara su

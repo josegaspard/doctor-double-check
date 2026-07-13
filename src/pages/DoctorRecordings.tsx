@@ -1083,7 +1083,12 @@ export default function DoctorRecordings() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {myRecordings.length === 0 ? (
+                {isLoadingRecordings ? (
+                  <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {t('doctorRecordingsPage.empty.loading')}
+                  </div>
+                ) : myRecordings.length === 0 ? (
                   <div className="text-center py-12">
                     <Video className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                     <h3 className="font-semibold text-lg mb-2">{t('doctorRecordingsPage.empty.noRecordings')}</h3>

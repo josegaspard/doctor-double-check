@@ -25,7 +25,7 @@ export default function CodigoEtica() {
           .from('site_settings')
           .select('value')
           .eq('id', 'code_of_ethics')
-          .single();
+          .maybeSingle();
 
         if (data?.value) {
           const content = data.value as unknown as LegalContent;

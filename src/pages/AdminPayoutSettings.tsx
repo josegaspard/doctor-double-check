@@ -62,7 +62,7 @@ export default function AdminPayoutSettings() {
 
   const fetchSettings = async () => {
     try {
-      const { data } = await supabase.from('payout_settings').select('*').eq('id', 'default').single();
+      const { data } = await supabase.from('payout_settings').select('*').eq('id', 'default').maybeSingle();
       if (data) {
         setSettings({
           payout_frequency: data.payout_frequency || 'weekly', payout_day: data.payout_day || 1,

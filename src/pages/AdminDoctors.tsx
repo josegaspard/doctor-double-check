@@ -113,7 +113,7 @@ export default function AdminDoctors() {
             .from('profiles')
             .select('name, email, avatar_url')
             .eq('id', doc.user_id)
-            .single();
+            .maybeSingle();
 
           // Count document signatures
           const { count } = await supabase

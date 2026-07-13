@@ -226,7 +226,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'social_links')
-          .single();
+          .maybeSingle();
 
         if (socialData?.value) {
           setSocialLinks(socialData.value as unknown as SocialLinks);
@@ -237,7 +237,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'terms_of_service')
-          .single();
+          .maybeSingle();
 
         if (termsData?.value) {
           const terms = termsData.value as unknown as LegalContent;
@@ -249,7 +249,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'privacy_policy')
-          .single();
+          .maybeSingle();
 
         if (privacyData?.value) {
           const privacy = privacyData.value as unknown as LegalContent;
@@ -261,7 +261,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'code_of_ethics')
-          .single();
+          .maybeSingle();
 
         if (ethicsData?.value) {
           const ethics = ethicsData.value as unknown as LegalContent;
@@ -285,7 +285,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'contact_info')
-          .single();
+          .maybeSingle();
 
         if (contactData?.value) {
           setContactInfo(contactData.value as unknown as ContactInfo);
@@ -296,7 +296,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'storage_pricing')
-          .single();
+          .maybeSingle();
 
         if (storageData?.value) {
           setStoragePricing(storageData.value as unknown as StoragePricing);
@@ -373,7 +373,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'footer_links')
-          .single();
+          .maybeSingle();
 
         if (footerData?.value) {
           setFooterLinks({ ...footerLinks, ...(footerData.value as unknown as FooterLinksData) });
@@ -384,7 +384,7 @@ export default function AdminSiteSettings() {
           .from('site_settings')
           .select('value')
           .eq('id', 'feature_toggles')
-          .single();
+          .maybeSingle();
 
         if (togglesData?.value) {
           setFeatureToggles(prev => ({ ...prev, ...(togglesData.value as unknown as SiteToggles) }));

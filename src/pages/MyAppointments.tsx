@@ -12,6 +12,7 @@ import { Calendar as CalendarIcon, Clock, Stethoscope, Loader2, X, Video } from 
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { getIntlLocale } from '@/lib/dateLocale';
 
 interface Appt {
   id: string;
@@ -30,16 +31,17 @@ interface Appt {
   specialty?: string | null;
 }
 
-const formatDate = (iso: string) => new Date(iso).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (iso: string, lang: string) => new Date(iso).toLocaleDateString(getIntlLocale(lang), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const formatTime = (iso: string, lang: string) => new Date(iso).toLocaleTimeString(getIntlLocale(lang), { hour: '2-digit', minute: '2-digit' });
 
 export default function MyAppointments() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const [appts, setAppts] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
 
   const STATUS_BADGE: Record<string, { label: string; variant: any; cls?: string }> = {
@@ -52,6 +54,7 @@ export default function MyAppointments() {
   const fetchAppts = async () => {
     if (!user) return;
     setLoading(true);
+    setLoadError(false);
     const now = new Date().toISOString();
     const userColumn = role === 'doctor' ? 'doctor_id' : 'patient_id';
     let q = supabase
@@ -68,6 +71,7 @@ export default function MyAppointments() {
     const { data, error } = await q;
     if (error) {
       toast.error(error.message);
+      setLoadError(true);
       setLoading(false);
       return;
     }
@@ -209,6 +213,11 @@ export default function MyAppointments() {
           <TabsContent value={tab} className="mt-4">
             {loading ? (
               <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            ) : loadError ? (
+              <Card><CardContent className="py-12 text-center">
+                <p className="text-sm text-muted-foreground mb-4">{t('common.error')}</p>
+                <Button variant="outline" size="sm" onClick={fetchAppts}>{t('common.retry')}</Button>
+              </CardContent></Card>
             ) : appts.length === 0 ? (
               <Card><CardContent className="py-12 text-center text-muted-foreground">
                 {tab === 'upcoming' ? t('myAppointments.emptyUpcoming') : t('myAppointments.emptyPast')}
@@ -243,8 +252,8 @@ export default function MyAppointments() {
                             <Badge {...({} as any)} variant={badge.variant} className={`text-[10px] ${badge.cls || ''}`}>{badge.label}</Badge>
                           </div>
                           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                            <span className="inline-flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{formatDate(a.scheduled_at)}</span>
-                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(a.scheduled_at)} · {a.duration_minutes} {t('myAppointments.minutes')}</span>
+                            <span className="inline-flex items-center gap-1"><CalendarIcon className="w-3 h-3" />{formatDate(a.scheduled_at, language)}</span>
+                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(a.scheduled_at, language)} · {a.duration_minutes} {t('myAppointments.minutes')}</span>
                           </div>
                           {a.reason && <p className="mt-2 text-xs text-foreground/80 line-clamp-2 italic">"{a.reason}"</p>}
                           {a.cancellation_reason && a.status === 'cancelled' && (

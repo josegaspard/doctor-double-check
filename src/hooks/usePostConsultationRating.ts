@@ -56,7 +56,7 @@ export function usePostConsultationRating() {
           .from('profiles_public')
           .select('name')
           .eq('id', unrated.doctor_id)
-          .single();
+          .maybeSingle();
 
         setPendingRating({
           consultationId: unrated.id,

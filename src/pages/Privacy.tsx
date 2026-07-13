@@ -26,7 +26,7 @@ export default function Privacy() {
           .from('site_settings')
           .select('value')
           .eq('id', 'privacy_policy')
-          .single();
+          .maybeSingle();
 
         if (data?.value) {
           const content = data.value as unknown as LegalContent;

@@ -107,14 +107,14 @@ export default function LivePlayer() {
           .from('lives')
           .select('*')
           .eq('id', id)
-          .single();
+          .maybeSingle();
         
         if (data) {
           const { data: profile } = await supabase
             .from('profiles_public')
             .select('id, name, avatar_url')
             .eq('id', data.doctor_id)
-            .single();
+            .maybeSingle();
           
           setDirectLive({
             id: data.id,
@@ -161,14 +161,19 @@ export default function LivePlayer() {
   // Fetch consultation fee & live interaction limits
   useEffect(() => {
     if (!live?.doctorId) return;
-    supabase.from('doctor_profiles').select('consultation_fee, cedula_profesional').eq('user_id', live.doctorId).single().then(({ data }) => {
-      if (data) {
-        setConsultationFee(Number(data.consultation_fee) || 0);
-        setDoctorCedula((data as any).cedula_profesional || null);
-      }
+    // El espectador NO puede leer doctor_profiles de OTRO usuario (RLS) → daba 406
+    // y el fee nunca se mostraba. Usamos el RPC público (mismo que /doctor/:id).
+    supabase.rpc('get_doctor_public_profile', { p_user_id: live.doctorId }).then(({ data }) => {
+      const dp = (data as any[])?.[0];
+      if (dp) setConsultationFee(Number(dp.consultation_fee) || 0);
+    });
+    // Cédula: best-effort. Solo el dueño del perfil la lee (RLS); para el resto
+    // maybeSingle devuelve null sin 406.
+    supabase.from('doctor_profiles').select('cedula_profesional').eq('user_id', live.doctorId).maybeSingle().then(({ data }) => {
+      if (data) setDoctorCedula((data as any).cedula_profesional || null);
     });
     if (id) {
-      supabase.from('lives').select('chat_enabled, max_paid_chats, paid_chats_count').eq('id', id).single().then(({ data }) => {
+      supabase.from('lives').select('chat_enabled, max_paid_chats, paid_chats_count').eq('id', id).maybeSingle().then(({ data }) => {
         if (data) setLiveInteraction({ chat_enabled: data.chat_enabled, max_paid_chats: data.max_paid_chats, paid_chats_count: data.paid_chats_count });
       });
       // Email público del doctor que transmite (decisión del cliente 2026-06-16:

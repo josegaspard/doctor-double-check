@@ -142,7 +142,9 @@ export function UnifiedFooter({ variant }: Props) {
   const year = new Date().getFullYear();
   const lang = String(language);
   const adminCopyright = footerLinks.copyright?.trim();
-  const copyright = adminCopyright
+  // El copyright del admin está en español; solo se usa cuando el idioma es es.
+  // En otros idiomas se usa el texto localizado (antes salía español en de/fr/etc.).
+  const copyright = (adminCopyright && lang === 'es')
     ? adminCopyright
     : lang === 'es'
     ? `${year} Medical Masters. Todos los derechos reservados.`

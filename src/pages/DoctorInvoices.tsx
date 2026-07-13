@@ -79,6 +79,7 @@ export default function DoctorInvoices() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState('invoices');
@@ -101,6 +102,7 @@ export default function DoctorInvoices() {
 
   const fetchData = async () => {
     setIsLoading(true);
+    setLoadError(false);
     try {
       // Fetch invoices
       const { data: invoicesData } = await supabase
@@ -125,7 +127,7 @@ export default function DoctorInvoices() {
         .from('doctor_profiles')
         .select('pending_earnings, total_earnings, payouts_enabled')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         setEarnings({
@@ -136,6 +138,7 @@ export default function DoctorInvoices() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -446,6 +449,17 @@ export default function DoctorInvoices() {
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </CardContent>
               </Card>
+            ) : loadError ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                  <FileText className="w-10 h-10 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+                  <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5" />
+                    {t('common.retry')}
+                  </Button>
+                </CardContent>
+              </Card>
             ) : invoices.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
@@ -527,6 +541,17 @@ export default function DoctorInvoices() {
               <Card>
                 <CardContent className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </CardContent>
+              </Card>
+            ) : loadError ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                  <DollarSign className="w-10 h-10 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+                  <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5" />
+                    {t('common.retry')}
+                  </Button>
                 </CardContent>
               </Card>
             ) : payouts.length === 0 ? (

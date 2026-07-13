@@ -70,7 +70,7 @@ export default function AdminUsers() {
             .from('user_roles')
             .select('role')
             .eq('user_id', profile.id)
-            .single();
+            .maybeSingle();
           return { 
             ...profile, 
             role: roleData?.role || 'patient',

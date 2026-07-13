@@ -7,7 +7,7 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
     const [profileResult, roleResult, walletResult, entitlementsResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('user_roles').select('role').eq('user_id', userId).single(),
-      supabase.from('wallets').select('*').eq('user_id', userId).single(),
+      supabase.from('wallets').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('entitlements').select('*').eq('user_id', userId).eq('is_active', true),
     ]);
 

@@ -62,6 +62,7 @@ export default function DoctorEarnings() {
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [commissionRate, setCommissionRate] = useState(20);
@@ -90,6 +91,7 @@ export default function DoctorEarnings() {
     if (!user?.id) return;
 
     setIsLoading(true);
+    setLoadError(false);
     try {
       const { data: txData } = await supabase
         .from('wallet_transactions')
@@ -138,7 +140,7 @@ export default function DoctorEarnings() {
           .from('doctor_profiles')
           .select('pending_earnings, total_earnings')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         const totalPaid = profile?.total_earnings || 0;
         const pending = profile?.pending_earnings || 0;
@@ -168,6 +170,7 @@ export default function DoctorEarnings() {
       }
     } catch (error) {
       console.error('Error loading earnings:', error);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -261,6 +264,15 @@ export default function DoctorEarnings() {
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+            <DollarSign className="w-10 h-10 text-muted-foreground/40" />
+            <p className="text-sm text-muted-foreground">{t('common.error')}</p>
+            <Button variant="outline" size="sm" onClick={loadEarningsData} className="gap-1.5">
+              <Loader2 className="w-3.5 h-3.5" />
+              {t('common.retry')}
+            </Button>
           </div>
         ) : (
           <>

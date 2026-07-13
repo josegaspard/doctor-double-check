@@ -104,7 +104,7 @@ export default function AdminVerifications() {
           .from('profiles')
           .select('name, email, avatar_url')
           .eq('id', v.user_id)
-          .single();
+          .maybeSingle();
 
         verificationsWithUsers.push({
           ...v,

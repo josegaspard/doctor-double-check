@@ -98,7 +98,7 @@ export function UserManagementDialog({ user, isOpen, onClose, onUserUpdated }: U
         .from('wallets')
         .select('balance')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       // Transactions summary
       const { data: txs } = await supabase

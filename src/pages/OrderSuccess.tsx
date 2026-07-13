@@ -34,7 +34,7 @@ export default function OrderSuccess() {
         .eq('buyer_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       setOrder(data);
       setLoading(false);
     };

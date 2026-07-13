@@ -299,7 +299,7 @@ export function ChatMessagesPanel({
         .from('consultations')
         .select('video_room_name')
         .eq('id', consultationId)
-        .single();
+        .maybeSingle();
 
       if (data?.video_room_name) {
         // Verify the Daily room actually exists (not stale from a previous call)

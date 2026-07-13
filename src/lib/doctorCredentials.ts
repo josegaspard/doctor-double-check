@@ -71,7 +71,7 @@ export const fetchDoctorCredentials = async (userId?: string): Promise<DoctorCre
         .from('doctor_profiles')
         .select('specialty, secondary_specialties, license, cedula_profesional, cedula_especialidad, numero_consejo, university, workplaces, practice_hospital, cofepris_permit, signature_url')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       if (data) creds = { ...mapRow(data), ...creds };
     } catch { /* RLS puede bloquear a pacientes; el membrete cae al snapshot de la receta */ }
   }

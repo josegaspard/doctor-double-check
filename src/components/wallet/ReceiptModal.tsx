@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Printer, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getIntlLocale } from '@/lib/dateLocale';
 
 export interface ReceiptTransaction {
   id: string;
@@ -24,7 +25,7 @@ interface ReceiptModalProps {
 
 function formatDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleString(locale === 'en' ? 'en-US' : 'es-MX', {
+  return d.toLocaleString(getIntlLocale(locale), {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -88,7 +89,7 @@ export function ReceiptModal({ open, onOpenChange, transaction }: ReceiptModalPr
             <div className="flex justify-between pt-2 border-t border-border">
               <span className="text-muted-foreground font-semibold">{t('receipt.amount')}</span>
               <span className={`text-lg font-bold ${transaction.amount >= 0 ? 'text-success' : 'text-destructive'}`} data-testid="receipt-amount">
-                {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString(language === 'en' ? 'en-US' : 'es-MX')} MXN
+                {transaction.amount >= 0 ? '+' : ''}${Math.abs(transaction.amount).toLocaleString(getIntlLocale(language))} MXN
               </span>
             </div>
             {transaction.metadata?.stripe_payment_intent && (
