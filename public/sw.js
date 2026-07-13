@@ -3,7 +3,7 @@
 // NO recargar pestañas desde aquí: client.navigate() en iOS Safari provocaba
 // recarga en bucle y dejaba la página EN BLANCO (regresión batch67, revertido
 // en batch68, 8-jul). Purgar caché sí es seguro; forzar navegación NO.
-// SW_VERSION: 2026-07-12-batch85-ux-sweep
+// SW_VERSION: 2026-07-12-batch86-admfee-i18n
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();
