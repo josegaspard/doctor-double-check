@@ -3844,6 +3844,7 @@ export const zh = {
     "rejectionReason": "原因"
   },
   "doctorDashboardPage": {
+    "home": "首页",
     "back": "返回",
     "tabs": {
       "overview": "常规",

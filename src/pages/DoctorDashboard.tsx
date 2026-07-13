@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Folder, BarChart3, Settings, ChevronDown, Megaphone, ArrowLeft, BookOpen, ChevronRight } from 'lucide-react';
+import { Folder, BarChart3, Settings, ChevronDown, Megaphone, ArrowLeft, Home, BookOpen, ChevronRight } from 'lucide-react';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
 import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { EmailStatsCard } from '@/components/doctor/EmailStatsCard';
@@ -80,9 +80,23 @@ export default function DoctorDashboard() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-7xl">
-        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
-        </Button>
+        {/* El panel es el HOME del médico. Si aterrizó aquí recién logueado (primera
+            página de la sesión SPA, history.state.idx===0) NO hay ningún "atrás" real
+            —dar navigate(-1) lo sacaba de la app/sesión—, así que el botón es INICIO y
+            va al home /lives. Solo cuando llegó navegando desde otra pantalla de la app
+            (idx>0) mostramos "Volver" con retroceso normal. */}
+        {(() => {
+          const idx = typeof (window.history.state as any)?.idx === 'number'
+            ? (window.history.state as any).idx : 0;
+          const hasBack = idx > 0;
+          return (
+            <Button variant="back" size="sm" onClick={() => hasBack ? navigate(-1) : navigate('/lives')} className="mb-3 -ml-2 text-white hover:text-white">
+              {hasBack
+                ? <><ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}</>
+                : <><Home className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.home')}</>}
+            </Button>
+          );
+        })()}
         <DoctorDashboardHeader
           userName={user?.name}
           userId={user?.id}

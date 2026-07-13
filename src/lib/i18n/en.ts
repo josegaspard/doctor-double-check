@@ -4026,6 +4026,7 @@ export const en = {
     cofeprisEmpty: "Not registered"
   },
   doctorDashboardPage: {
+    home: 'Home',
     back: "Back",
     tabs: {
       overview: "Overview",

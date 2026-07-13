@@ -4083,6 +4083,7 @@ export const es = {
     cofeprisEmpty: 'No registrado',
   },
   doctorDashboardPage: {
+    home: 'Inicio',
     back: 'Volver',
     tabs: {
       overview: 'General',

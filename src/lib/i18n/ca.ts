@@ -3827,6 +3827,7 @@ export const ca = {
     "rejectionReason": "Motiu"
   },
   "doctorDashboardPage": {
+    "home": "Inici",
     "back": "Tornar",
     "tabs": {
       "overview": "General",
