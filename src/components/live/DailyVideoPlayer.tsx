@@ -34,6 +34,7 @@ import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLiveBackgrounds } from '@/hooks/useLiveBackgrounds';
+import { VirtualBackgroundEngine, type BgMode } from '@/lib/virtualBackground';
 import logoMmWhite from '@/assets/logo-medical-masters-white.png';
 
 // Selección de fondo virtual del broadcaster (estilo Google Meet):
@@ -420,64 +421,66 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     setIsVideoOff(newVideoOff);
   }, [isVideoOff]);
 
-  // Aplica (o quita) el fondo virtual de marca a la cámara del doctor. Solo el
-  // broadcaster, y SOLO cuando el doctor lo activa con el botón (OFF por
-  // defecto). El procesador de segmentación de Daily reemplaza el track de
-  // video; en algunos equipos/navegadores eso dejaba la cámara EN NEGRO, así
-  // que: (1) nunca se toca la cámara si nunca se activó, y (2) si el procesador
-  // falla, revertimos a cámara normal y apagamos el toggle. Cliente 2026-06-16.
-  const bgAppliedRef = useRef(false);
-
-  // Reinicia la cámara local (off→on) para RECUPERAR el track si el procesador
-  // de fondo de Daily lo dejó en negro/congelado. Garantía de "nunca se queda
-  // en negro" al activar/desactivar el fondo (bug reportado cliente 2026-06-16).
-  const restartLocalCamera = useCallback(async () => {
-    const call = callRef.current;
-    if (!call) return;
-    try {
-      call.setLocalVideo(false);
-      await new Promise((r) => setTimeout(r, 220));
-      call.setLocalVideo(true);
-    } catch { /* noop */ }
-  }, []);
+  // FONDO VIRTUAL cross-device (cliente 15-jul-2026): el procesador de Daily solo
+  // funciona en ESCRITORIO y en móvil deja la pantalla NEGRA (apaga el video).
+  // Usamos un motor propio (MediaPipe en canvas) que produce un track procesado y
+  // se lo damos a Daily con setInputDevicesAsync → funciona en escritorio y móvil.
+  const bgEngineRef = useRef<VirtualBackgroundEngine | null>(null);
+  const bgBusyRef = useRef(false);
+  const cameraDeviceIdRef = useRef<string | null>(null);
 
   const applyVideoBackground = useCallback(async (sel: LiveBgSelection) => {
     const call = callRef.current;
     if (!call || !isOwner) return;
-    // Si se pide "sin fondo" y nunca se aplicó nada, NO tocar el pipeline (cámara pristina).
-    if (sel.type === 'none' && !bgAppliedRef.current) return;
+    if (bgBusyRef.current) return; // evita solapamiento en cambios rápidos
+    bgBusyRef.current = true;
     try {
-      if (sel.type === 'blur') {
-        // Difuminado estilo Google Meet (segmentación de Daily).
-        await call.updateInputSettings({
-          video: { processor: { type: 'background-blur', config: { strength: 0.6 } } },
-        });
-        bgAppliedRef.current = true;
-      } else if (sel.type === 'image') {
-        // Daily necesita URL absoluta para las imágenes de fondo.
-        const src = sel.src.startsWith('http')
-          ? sel.src
-          : (typeof window !== 'undefined' ? `${window.location.origin}${sel.src}` : sel.src);
-        await call.updateInputSettings({
-          video: { processor: { type: 'background-image', config: { source: src } } },
-        });
-        bgAppliedRef.current = true;
+      // Recuerda la cámara original la primera vez, para poder revertir.
+      if (!cameraDeviceIdRef.current) {
+        try { cameraDeviceIdRef.current = ((await call.getInputDevices())?.camera as any)?.deviceId || null; } catch { /* noop */ }
+      }
+
+      if (sel.type === 'none') {
+        if (bgEngineRef.current) {
+          try {
+            if (cameraDeviceIdRef.current) await call.setInputDevicesAsync({ videoDeviceId: cameraDeviceIdRef.current });
+            else await call.setInputDevicesAsync({ videoSource: true } as any);
+          } catch { /* noop */ }
+          bgEngineRef.current.stop();
+          bgEngineRef.current = null;
+          call.setLocalVideo(true);
+        }
+        return;
+      }
+
+      const mode: BgMode = sel.type === 'blur'
+        ? { type: 'blur' }
+        : { type: 'image', url: sel.src.startsWith('http') ? sel.src : `${window.location.origin}${sel.src}` };
+
+      if (bgEngineRef.current) {
+        // Ya corriendo: solo cambiar el fondo (sin reabrir cámara).
+        await bgEngineRef.current.setMode(mode);
       } else {
-        await call.updateInputSettings({ video: { processor: { type: 'none' } } });
-        bgAppliedRef.current = false;
-        // RECUPERACIÓN: al quitar el procesador reiniciamos la cámara para que
-        // NUNCA quede en negro (es justo donde el cliente vio el bug).
-        await restartLocalCamera();
+        const engine = new VirtualBackgroundEngine();
+        const track = await engine.start(mode);
+        bgEngineRef.current = engine;
+        await call.setInputDevicesAsync({ videoSource: track });
+        call.setLocalVideo(true);
       }
     } catch (err) {
-      console.warn('[DAILY] fondo virtual no disponible, revierto a cámara normal:', err);
-      bgAppliedRef.current = false;
+      console.warn('[bg] fondo virtual falló, revierto a cámara normal:', err);
+      try { bgEngineRef.current?.stop(); } catch { /* noop */ }
+      bgEngineRef.current = null;
+      try {
+        if (cameraDeviceIdRef.current) await call.setInputDevicesAsync({ videoDeviceId: cameraDeviceIdRef.current });
+      } catch { /* noop */ }
+      call.setLocalVideo(true);
       setBgSelection({ type: 'none' });
-      try { await call.updateInputSettings({ video: { processor: { type: 'none' } } }); } catch { /* noop */ }
-      await restartLocalCamera();
       toast.error(t('dailyVideoPlayer.bgUnavailable'));
+    } finally {
+      bgBusyRef.current = false;
     }
-  }, [isOwner, restartLocalCamera, t]);
+  }, [isOwner, t]);
 
   // Solo reacciona a CAMBIOS de la selección de fondo (no en cada conexión): el
   // live arranca siempre con la cámara normal (se ve la persona).
@@ -485,6 +488,9 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     if (!isOwner || !isConnected) return;
     applyVideoBackground(bgSelection);
   }, [isOwner, isConnected, bgSelection, applyVideoBackground]);
+
+  // Limpieza: detén el motor de fondo al desmontar (libera cámara + WASM).
+  useEffect(() => () => { try { bgEngineRef.current?.stop(); } catch { /* noop */ } bgEngineRef.current = null; }, []);
 
   const toggleScreenShare = async () => {
     if (!callRef.current) return;

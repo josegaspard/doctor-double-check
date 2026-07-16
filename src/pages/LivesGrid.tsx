@@ -33,7 +33,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
-import { useDoctorFilterFields, uniqueFieldOptions } from '@/hooks/useDoctorFilterFields';
+import { useDoctorFilterFields, useDoctorFilterOptions } from '@/hooks/useDoctorFilterFields';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
@@ -201,11 +201,11 @@ export default function LivesGrid() {
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
   const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
 
-  // Campos del membrete de cada doctor (país/universidad/hospital) para los filtros
+  // Campos del membrete de cada doctor (país/universidad/hospital) para el MATCHING de filtros
   const doctorFields = useDoctorFilterFields(activeLives.map(l => l.doctorId));
-  const countryOptions = uniqueFieldOptions(doctorFields, 'country');
-  const universityOptions = uniqueFieldOptions(doctorFields, 'university');
-  const hospitalOptions = uniqueFieldOptions(doctorFields, 'practiceHospital');
+  // Opciones GLOBALES (TODOS los doctores aprobados) para poblar los dropdowns SIEMPRE,
+  // aunque ahora mismo no haya lives (cliente 2026-07-15)
+  const filterOptions = useDoctorFilterOptions();
 
   // Filter lives
   const filteredLives = activeLives.filter(l => {
@@ -292,7 +292,7 @@ export default function LivesGrid() {
         </div>
 
         {/* Filter Chips */}
-        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0 || countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
+        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0 || filterOptions.countries.length > 0 || filterOptions.universities.length > 0 || filterOptions.hospitals.length > 0) && (
           <div className="space-y-2 mb-4">
             {/* Specialty chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
@@ -356,44 +356,45 @@ export default function LivesGrid() {
                 ))}
               </div>
             )}
-            {/* Filtros por membrete del doctor: país / universidad / hospital (cliente 2026-07-15) */}
-            {(countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
-              <div className="flex flex-wrap gap-2">
-                {countryOptions.length > 0 && (
-                  <SearchableFilter
-                    options={countryOptions}
-                    value={selectedCountry}
-                    onChange={setSelectedCountry}
-                    placeholder={t('doctorFilters.countryPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Globe}
-                    allLabel={t('recordingsGridPage.filterAllMasc')}
-                  />
-                )}
-                {universityOptions.length > 0 && (
-                  <SearchableFilter
-                    options={universityOptions}
-                    value={selectedUniversity}
-                    onChange={setSelectedUniversity}
-                    placeholder={t('doctorFilters.universityPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={GraduationCap}
-                    allLabel={t('recordingsGridPage.filterAll')}
-                  />
-                )}
-                {hospitalOptions.length > 0 && (
-                  <SearchableFilter
-                    options={hospitalOptions}
-                    value={selectedHospital}
-                    onChange={setSelectedHospital}
-                    placeholder={t('doctorFilters.hospitalPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Building2}
-                    allLabel={t('recordingsGridPage.filterAllMasc')}
-                  />
-                )}
-              </div>
-            )}
+            {/* Filtros por membrete del doctor: país / universidad / hospital.
+                Opciones GLOBALES (todos los doctores) → los dropdowns se muestran SIEMPRE,
+                aunque ahora no haya lives. flex-wrap para no desbordar en móvil 375px
+                (cliente 2026-07-15). */}
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.countries.length > 0 && (
+                <SearchableFilter
+                  options={filterOptions.countries}
+                  value={selectedCountry}
+                  onChange={setSelectedCountry}
+                  placeholder={t('doctorFilters.countryPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={Globe}
+                  allLabel={t('recordingsGridPage.filterAllMasc')}
+                />
+              )}
+              {filterOptions.universities.length > 0 && (
+                <SearchableFilter
+                  options={filterOptions.universities}
+                  value={selectedUniversity}
+                  onChange={setSelectedUniversity}
+                  placeholder={t('doctorFilters.universityPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={GraduationCap}
+                  allLabel={t('recordingsGridPage.filterAll')}
+                />
+              )}
+              {filterOptions.hospitals.length > 0 && (
+                <SearchableFilter
+                  options={filterOptions.hospitals}
+                  value={selectedHospital}
+                  onChange={setSelectedHospital}
+                  placeholder={t('doctorFilters.hospitalPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={Building2}
+                  allLabel={t('recordingsGridPage.filterAllMasc')}
+                />
+              )}
+            </div>
           </div>
         )}
 

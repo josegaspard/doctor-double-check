@@ -56,3 +56,40 @@ export function uniqueFieldOptions(
 ): string[] {
   return [...new Set(Object.values(fields).map((f) => (f[key] || '').trim()).filter(Boolean))].sort();
 }
+
+export interface DoctorFilterOptions {
+  countries: string[];
+  specialties: string[];
+  universities: string[];
+  hospitals: string[];
+}
+
+/**
+ * Opciones GLOBALES de filtros (país/especialidad/universidad/hospital) de TODOS
+ * los doctores aprobados, para poblar los dropdowns SIEMPRE (aunque ahora no haya
+ * lives ni grabaciones de ese doctor). Vía RPC get_doctor_filter_options.
+ */
+export function useDoctorFilterOptions(): DoctorFilterOptions {
+  const [opts, setOpts] = useState<DoctorFilterOptions>({ countries: [], specialties: [], universities: [], hospitals: [] });
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc('get_doctor_filter_options');
+        if (error) throw error;
+        if (active && data) {
+          setOpts({
+            countries: data.countries || [],
+            specialties: data.specialties || [],
+            universities: data.universities || [],
+            hospitals: data.hospitals || [],
+          });
+        }
+      } catch (e) {
+        console.error('get_doctor_filter_options error', e);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+  return opts;
+}

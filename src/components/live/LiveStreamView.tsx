@@ -252,8 +252,9 @@ export function LiveStreamView({
               </div>
             )}
 
-            {/* Control bar */}
-            <div className={`absolute ${mobileFullscreen ? 'bottom-4' : 'bottom-2'} left-0 right-0 z-30 flex items-center justify-center gap-3 px-4`}>
+            {/* Control bar — gap y padding reducidos para que los 6 botones QUEPAN
+                en móviles de 375px sin desbordar (flex-wrap por si acaso). */}
+            <div className={`absolute ${mobileFullscreen ? 'bottom-4' : 'bottom-2'} left-0 right-0 z-30 flex flex-wrap items-center justify-center gap-2 px-2`}>
               {/* Hover de cambio de color removido: hacía que el icono blanco se
                   fundiera con el fondo en la transición. Cada botón mantiene su
                   color base. La identificación pressed/active es por la diferencia
@@ -326,10 +327,10 @@ export function LiveStreamView({
                 variant="destructive"
                 size="sm"
                 onClick={(e) => { e.stopPropagation(); onEndClick(); }}
-                className="h-11 gap-1.5 rounded-full px-5"
+                className="h-11 gap-1.5 rounded-full px-3 sm:px-5"
               >
                 <StopCircle className="w-5 h-5" />
-                Finalizar
+                <span className="hidden sm:inline">Finalizar</span>
               </Button>
             </div>
             <DynamicWatermark email={user?.email} userId={user?.id} />

@@ -44,7 +44,7 @@ type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
-import { useDoctorFilterFields, uniqueFieldOptions } from '@/hooks/useDoctorFilterFields';
+import { useDoctorFilterFields, useDoctorFilterOptions } from '@/hooks/useDoctorFilterFields';
 
 export default function RecordingsGrid({ embedded = false }: { embedded?: boolean } = {}) {
   // embedded=true: se renderiza DENTRO de otra página (p.ej. /education → pestaña
@@ -91,11 +91,11 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
   const allDoctorNames = useMemo(() => [...new Set(recordings.map(r => r.doctorName))].filter(Boolean).sort(), [recordings]);
   const specialtyOptions = specialtyValues;
 
-  // Campos del membrete de cada doctor (país/universidad/hospital) para los filtros
+  // Campos del membrete de cada doctor (país/universidad/hospital) para el MATCHING de filtros
   const doctorFields = useDoctorFilterFields(recordings.map(r => r.doctorId));
-  const countryOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'country'), [doctorFields]);
-  const universityOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'university'), [doctorFields]);
-  const hospitalOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'practiceHospital'), [doctorFields]);
+  // Opciones GLOBALES (TODOS los doctores aprobados) para poblar los dropdowns SIEMPRE,
+  // aunque haya pocas grabaciones (cliente 2026-07-15)
+  const doctorFilterOptions = useDoctorFilterOptions();
 
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
@@ -389,8 +389,8 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                 </>
               )}
 
-              {/* País del doctor (cliente 2026-07-15) */}
-              {countryOptions.length > 0 && (
+              {/* País del doctor — opciones GLOBALES, dropdown SIEMPRE visible (cliente 2026-07-15) */}
+              {doctorFilterOptions.countries.length > 0 && (
                 <>
                   <div className="border-t border-border my-3" />
                   <div>
@@ -398,7 +398,7 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                       {t('doctorFilters.countryLabel')}
                     </h4>
                     <SearchableFilter
-                      options={countryOptions}
+                      options={doctorFilterOptions.countries}
                       value={selectedCountry}
                       onChange={setSelectedCountry}
                       placeholder={t('doctorFilters.countryPlaceholder')}
@@ -410,8 +410,8 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                 </>
               )}
 
-              {/* Universidad del doctor (cliente 2026-07-15) */}
-              {universityOptions.length > 0 && (
+              {/* Universidad del doctor — opciones GLOBALES, dropdown SIEMPRE visible (cliente 2026-07-15) */}
+              {doctorFilterOptions.universities.length > 0 && (
                 <>
                   <div className="border-t border-border my-3" />
                   <div>
@@ -419,7 +419,7 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                       {t('doctorFilters.universityLabel')}
                     </h4>
                     <SearchableFilter
-                      options={universityOptions}
+                      options={doctorFilterOptions.universities}
                       value={selectedUniversity}
                       onChange={setSelectedUniversity}
                       placeholder={t('doctorFilters.universityPlaceholder')}
@@ -431,8 +431,8 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                 </>
               )}
 
-              {/* Hospital del doctor (cliente 2026-07-15) */}
-              {hospitalOptions.length > 0 && (
+              {/* Hospital del doctor — opciones GLOBALES, dropdown SIEMPRE visible (cliente 2026-07-15) */}
+              {doctorFilterOptions.hospitals.length > 0 && (
                 <>
                   <div className="border-t border-border my-3" />
                   <div>
@@ -440,7 +440,7 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                       {t('doctorFilters.hospitalLabel')}
                     </h4>
                     <SearchableFilter
-                      options={hospitalOptions}
+                      options={doctorFilterOptions.hospitals}
                       value={selectedHospital}
                       onChange={setSelectedHospital}
                       placeholder={t('doctorFilters.hospitalPlaceholder')}
@@ -485,8 +485,8 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
               ))}
             </div>
 
-            {/* Mobile: Smart filters */}
-            <div className="flex gap-2 mb-3 md:hidden">
+            {/* Mobile: Smart filters — flex-wrap para no desbordar en 375px (cliente 2026-07-15) */}
+            <div className="flex flex-wrap gap-2 mb-3 md:hidden">
               <SearchableFilter
                 options={specialtyOptions}
                 value={selectedSpecialty}
@@ -523,44 +523,44 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
               )}
             </div>
 
-            {/* Mobile: filtros por membrete del doctor — país / universidad / hospital (cliente 2026-07-15) */}
-            {(countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
-              <div className="flex gap-2 mb-3 md:hidden">
-                {countryOptions.length > 0 && (
-                  <SearchableFilter
-                    options={countryOptions}
-                    value={selectedCountry}
-                    onChange={setSelectedCountry}
-                    placeholder={t('doctorFilters.countryPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Globe}
-                    allLabel={t('recordingsGridPage.filterAllMasc')}
-                  />
-                )}
-                {universityOptions.length > 0 && (
-                  <SearchableFilter
-                    options={universityOptions}
-                    value={selectedUniversity}
-                    onChange={setSelectedUniversity}
-                    placeholder={t('doctorFilters.universityPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={GraduationCap}
-                    allLabel={t('recordingsGridPage.filterAll')}
-                  />
-                )}
-                {hospitalOptions.length > 0 && (
-                  <SearchableFilter
-                    options={hospitalOptions}
-                    value={selectedHospital}
-                    onChange={setSelectedHospital}
-                    placeholder={t('doctorFilters.hospitalPlaceholder')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Building2}
-                    allLabel={t('recordingsGridPage.filterAllMasc')}
-                  />
-                )}
-              </div>
-            )}
+            {/* Mobile: filtros por membrete del doctor — país / universidad / hospital.
+                Opciones GLOBALES → dropdowns SIEMPRE visibles. flex-wrap para no desbordar
+                en 375px (cliente 2026-07-15). */}
+            <div className="flex flex-wrap gap-2 mb-3 md:hidden">
+              {doctorFilterOptions.countries.length > 0 && (
+                <SearchableFilter
+                  options={doctorFilterOptions.countries}
+                  value={selectedCountry}
+                  onChange={setSelectedCountry}
+                  placeholder={t('doctorFilters.countryPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={Globe}
+                  allLabel={t('recordingsGridPage.filterAllMasc')}
+                />
+              )}
+              {doctorFilterOptions.universities.length > 0 && (
+                <SearchableFilter
+                  options={doctorFilterOptions.universities}
+                  value={selectedUniversity}
+                  onChange={setSelectedUniversity}
+                  placeholder={t('doctorFilters.universityPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={GraduationCap}
+                  allLabel={t('recordingsGridPage.filterAll')}
+                />
+              )}
+              {doctorFilterOptions.hospitals.length > 0 && (
+                <SearchableFilter
+                  options={doctorFilterOptions.hospitals}
+                  value={selectedHospital}
+                  onChange={setSelectedHospital}
+                  placeholder={t('doctorFilters.hospitalPlaceholder')}
+                  emptyLabel={t('recordingsGridPage.filterNoResults')}
+                  icon={Building2}
+                  allLabel={t('recordingsGridPage.filterAllMasc')}
+                />
+              )}
+            </div>
 
             {/* No balance CTA */}
             {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
