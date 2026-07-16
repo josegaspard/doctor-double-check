@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useDevToolsDetector } from '@/hooks/useDevToolsDetector';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBunnyCaptionTracks } from '@/hooks/useBunnyCaptionTracks';
 
 interface BunnyHLSPlayerProps {
   /** Master HLS manifest signed URL */
@@ -24,11 +25,6 @@ interface BunnyHLSPlayerProps {
   onRefreshSignedUrl?: () => void;
 }
 
-// Nombres nativos para el menú CC del reproductor.
-const CAPTION_LABELS: Record<string, string> = {
-  es: 'Español', en: 'English', pt: 'Português', fr: 'Français',
-  it: 'Italiano', de: 'Deutsch', ca: 'Català', zh: '中文',
-};
 
 /**
  * Player HLS para Bunny Stream con ABR adaptativo.
@@ -68,40 +64,10 @@ export function BunnyHLSPlayer({
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // SUBTÍTULOS (batch93): el playlist directo de Bunny NO incluye las pistas
-  // SUBTITLES en el manifest (verificado: CLOSED-CAPTIONS=NONE), así que las
-  // inyectamos como <track>. Los .vtt viven en el CDN bajo el MISMO token de
-  // directorio del playlist ({vid}/captions/{lang}-auto.vtt?token=…). Se traen
-  // por fetch → blob URL para NO poner crossOrigin en el <video> (riesgo de
-  // romper el HLS nativo de iOS si algún segmento no trae CORS).
-  const [captionTracks, setCaptionTracks] = useState<{ lang: string; label: string; src: string }[]>([]);
-  useEffect(() => {
-    if (!videoId || !captionLanguages || captionLanguages.length === 0) return;
-    let active = true;
-    const blobUrls: string[] = [];
-    (async () => {
-      try {
-        const base = new URL(signedUrl);
-        const query = base.search; // ?token=…&expires=…
-        const results = await Promise.all(captionLanguages.map(async (lang) => {
-          try {
-            const res = await fetch(`https://${base.host}/${videoId}/captions/${lang}-auto.vtt${query}`);
-            if (!res.ok) return null;
-            const blob = await res.blob();
-            const src = URL.createObjectURL(blob);
-            blobUrls.push(src);
-            return { lang, label: CAPTION_LABELS[lang] || lang.toUpperCase(), src };
-          } catch { return null; }
-        }));
-        if (active) setCaptionTracks(results.filter(Boolean) as { lang: string; label: string; src: string }[]);
-      } catch { /* sin subtítulos: el player sigue normal */ }
-    })();
-    return () => {
-      active = false;
-      blobUrls.forEach((u) => URL.revokeObjectURL(u));
-      setCaptionTracks([]);
-    };
-  }, [videoId, signedUrl, captionLanguages]);
+  // SUBTÍTULOS (batch93): el manifest de Bunny NO expone las pistas SUBTITLES
+  // (CLOSED-CAPTIONS=NONE), así que las inyectamos como <track> (hook compartido
+  // con la ruta MP4 /original).
+  const captionTracks = useBunnyCaptionTracks(videoId, signedUrl, captionLanguages);
 
   // DevTools detection: pause playback + log forensic event.
   // If the user reopens DevTools, video stays paused until they close them.

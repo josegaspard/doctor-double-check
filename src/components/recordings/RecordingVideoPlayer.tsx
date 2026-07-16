@@ -97,6 +97,10 @@ export function RecordingVideoPlayer({
   // Cuando bunny_status != ready, usamos /original mientras procesa
   const isStillProcessing = bunnyStatus === 'processing' || bunnyStatus === 'uploading';
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Subtítulos también en la ruta MP4 /original (mismo token de la hlsUrl): hoy
+  // casi todos los videos caen aquí porque el webhook de bunny_status no marca
+  // 'ready'. Sin esto el CC solo saldría en la ruta HLS (que casi nunca ocurre).
+  const fallbackCaptionTracks = useBunnyCaptionTracks(bunnyVideoId, bunnyUrls?.hlsUrl, captionLanguages);
   const MAX_AUTO_RETRIES = 3;
 
   const cacheKey = useMemo(
@@ -399,7 +403,13 @@ export function RecordingVideoPlayer({
             setError('No se pudo reproducir el video. Verifica tu conexión e intenta de nuevo.');
           }
         }}
-      />
+      >
+        {/* Subtítulos generados en Bunny (pistas blob same-origin); el botón CC
+            nativo aparece solo cuando hay al menos una pista. */}
+        {fallbackCaptionTracks.map((tr) => (
+          <track key={tr.lang} kind="subtitles" srcLang={tr.lang} label={tr.label} src={tr.src} />
+        ))}
+      </video>
       <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
     </div>
   );
