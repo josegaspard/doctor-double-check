@@ -42,7 +42,15 @@ export default function Login() {
       navigate('/lives', { replace: true });
     }
   }, [isLoading, isAuthenticated, role, navigate]);
-  
+
+  // Aviso al regresar automáticamente por agotarse los 10 min del modo Descubre.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('reason') === 'discover_expired') {
+      toast.info(t('discover.expiredTitle'), { description: t('discover.expiredDescription') });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const preferredRole = (location.state as any)?.preferredRole || 'patient';
 
   // Insignia de rol (cliente 2026-06-26): login y registro deben verse DISTINTOS según

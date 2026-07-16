@@ -7274,6 +7274,7 @@ export const it = {
     registerCta: "Crea account gratuito",
     loginCta: "Ho già un account — Accedi",
     footnote: "Modalità Scopri MedicalMasters",
+    redirecting: 'Ti portiamo al login…',
   },
   rxExtra: {
     dciHint: "Inserisci il nome commerciale E il generico: la farmacia può richiedere uno dei due.",

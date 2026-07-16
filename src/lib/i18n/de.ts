@@ -7274,6 +7274,7 @@ export const de = {
     registerCta: "Kostenloses Konto erstellen",
     loginCta: "Ich habe ein Konto — Anmelden",
     footnote: "Entdecken-Modus MedicalMasters",
+    redirecting: 'Weiterleitung zur Anmeldung…',
   },
   rxExtra: {
     dciHint: "Geben Sie Handelsnamen UND Wirkstoffnamen an: Apotheken können einen von beiden verlangen.",

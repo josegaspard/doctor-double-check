@@ -7332,6 +7332,7 @@ export const es = {
     registerCta: 'Crear cuenta gratis',
     loginCta: 'Ya tengo cuenta — Iniciar sesión',
     footnote: 'Modo Descubre MedicalMasters',
+    redirecting: 'Te llevamos al inicio de sesión…',
   },
   rxExtra: {
     dciHint: 'Captura el nombre comercial Y el genérico: la farmacia puede exigir cualquiera de los dos.',

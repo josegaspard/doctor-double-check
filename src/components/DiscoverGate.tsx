@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Eye, Lock, Timer } from 'lucide-react';
+import { Lock, Timer } from 'lucide-react';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 // Modo "Descubre MedicalMasters" (cliente 15-jul-2026): el visitante navega
@@ -33,6 +33,20 @@ export function DiscoverGate() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [isVisitor, expired]);
+
+  // Al cumplirse los 10 minutos (cliente 16-jul-2026): regresar SOLO al login de
+  // forma automática. Se limpia la sesión de visitante para dejar el estado
+  // anónimo, pero mm_discover_started_at PERMANECE en localStorage → el modo
+  // Descubre es de una sola vez por navegador (no se reinician los 10 min).
+  // window.location.replace fuerza una rehidratación limpia de la auth.
+  useEffect(() => {
+    if (!expired) return;
+    try { sessionStorage.removeItem('medicalMasters_visitor'); } catch { /* noop */ }
+    const id = setTimeout(() => {
+      window.location.replace('/login?reason=discover_expired');
+    }, 1600);
+    return () => clearTimeout(id);
+  }, [expired]);
 
   if (!isVisitor || startedAt === null) return null;
 
@@ -66,23 +80,24 @@ export function DiscoverGate() {
         <h2 className="font-heading text-2xl font-bold mb-2 drop-shadow">{t('discover.expiredTitle')}</h2>
         <p className="text-white/85 text-sm leading-relaxed mb-8">{t('discover.expiredDescription')}</p>
         <div className="space-y-3">
+          {/* El login es lo primario: al expirar te regresamos aquí automáticamente. */}
           <Button
             className="w-full h-12 text-base bg-white text-[#0a1f47] hover:bg-white/90 font-semibold"
-            onClick={() => navigate('/login', { state: { preferredRole: 'patient' } })}
+            onClick={() => window.location.replace('/login?reason=discover_expired')}
           >
-            {t('discover.registerCta')}
+            {t('discover.loginCta')}
           </Button>
           <Button
             variant="outline"
             className="w-full h-11 border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { preferredRole: 'patient', mode: 'signup' } })}
           >
-            {t('discover.loginCta')}
+            {t('discover.registerCta')}
           </Button>
         </div>
-        <p className="mt-6 text-[11px] text-white/60 flex items-center justify-center gap-1.5">
-          <Eye className="w-3.5 h-3.5" />
-          {t('discover.footnote')}
+        <p className="mt-6 text-[11px] text-white/70 flex items-center justify-center gap-2">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          {t('discover.redirecting')}
         </p>
       </div>
     </div>

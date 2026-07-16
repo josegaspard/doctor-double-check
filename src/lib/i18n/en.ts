@@ -7274,6 +7274,7 @@ export const en = {
     registerCta: "Create free account",
     loginCta: "I have an account — Log in",
     footnote: "Discover MedicalMasters mode",
+    redirecting: 'Taking you to the login…',
   },
   rxExtra: {
     dciHint: "Enter both the brand name AND the generic name: pharmacies may require either one.",

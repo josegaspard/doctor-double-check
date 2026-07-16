@@ -7274,6 +7274,7 @@ export const pt = {
     registerCta: "Criar conta grátis",
     loginCta: "Já tenho conta — Entrar",
     footnote: "Modo Descubra MedicalMasters",
+    redirecting: 'Levando você para o login…',
   },
   rxExtra: {
     dciHint: "Informe o nome comercial E o genérico: a farmácia pode exigir qualquer um dos dois.",
