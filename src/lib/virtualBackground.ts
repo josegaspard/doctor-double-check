@@ -1,5 +1,3 @@
-import { SelfieSegmentation, type Results } from '@mediapipe/selfie_segmentation';
-
 // Motor de FONDO VIRTUAL propio (segmentación en canvas), independiente del
 // procesador de Daily. Daily solo soporta fondos en navegadores de ESCRITORIO
 // y ante fallos apaga el video (pantalla NEGRA en móvil). Este motor corre
@@ -8,11 +6,55 @@ import { SelfieSegmentation, type Results } from '@mediapipe/selfie_segmentation
 // entrega el track resultante con canvas.captureStream(). Funciona en escritorio
 // e iOS Safari 15+/Android. Si algo falla, NUNCA deja la cámara en negro: se
 // revierte a la cámara normal.
+//
+// ⚠️ NO importar '@mediapipe/selfie_segmentation' (npm): es un UMD cuya interop
+// con el build de Rollup produce una clase cuyo initialize() se cuelga PARA
+// SIEMPRE sin cargar ningún asset (verificado E2E en live real 16-jul-2026).
+// La versión UMD cargada en runtime desde /mediapipe/ sí funciona — es la misma
+// que usan los tests y comparte versión con los assets auto-hospedados.
 
 export type BgMode = { type: 'blur' } | { type: 'image'; url: string };
 
 const MP_FILE_BASE = '/mediapipe';
 const TARGET_FPS = 24;
+const INIT_TIMEOUT_MS = 20000;
+
+// Tipos mínimos del UMD (window.SelfieSegmentation).
+type Results = { segmentationMask: CanvasImageSource; image: CanvasImageSource };
+interface SelfieSegmentation {
+  setOptions(o: { modelSelection: number; selfieMode: boolean }): void;
+  onResults(cb: (r: Results) => void): void;
+  initialize(): Promise<void>;
+  send(i: { image: HTMLVideoElement }): Promise<void>;
+  close(): Promise<void> | void;
+}
+
+// Carga única del UMD. No confiar en un window.SelfieSegmentation preexistente:
+// solo vale el que deja NUESTRO <script> de /mediapipe/.
+let umdReady: Promise<void> | null = null;
+function loadSelfieSegmentationUmd(): Promise<void> {
+  if (!umdReady) {
+    umdReady = new Promise<void>((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = `${MP_FILE_BASE}/selfie_segmentation.js`;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => {
+        umdReady = null; // permitir reintento en el siguiente uso
+        reject(new Error('mediapipe umd load failed'));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  return umdReady;
+}
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`${label} timeout ${ms}ms`)), ms)),
+  ]);
+}
 
 export class VirtualBackgroundEngine {
   private segmenter: SelfieSegmentation | null = null;
@@ -35,11 +77,22 @@ export class VirtualBackgroundEngine {
   async start(mode: BgMode, facingMode: 'user' | 'environment' = 'user'): Promise<MediaStreamTrack> {
     this.mode = mode;
 
-    // 1) Cámara cruda (nuestra, para poder segmentar los frames).
-    this.rawStream = await navigator.mediaDevices.getUserMedia({
+    // 0) UMD de MediaPipe (en paralelo con abrir la cámara).
+    const umdLoading = loadSelfieSegmentationUmd();
+
+    // 1) Cámara cruda (nuestra, para poder segmentar los frames). Daily ya
+    //    tiene la cámara abierta: una segunda captura puede fallar transitoria-
+    //    mente (NotReadableError) mientras Daily ajusta dispositivos → reintento.
+    const gumConstraints = {
       video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false,
-    });
+    } as const;
+    try {
+      this.rawStream = await navigator.mediaDevices.getUserMedia(gumConstraints);
+    } catch {
+      await new Promise((r) => setTimeout(r, 400));
+      this.rawStream = await navigator.mediaDevices.getUserMedia(gumConstraints);
+    }
 
     // 2) <video> oculto que consume la cámara.
     const video = document.createElement('video');
@@ -71,19 +124,25 @@ export class VirtualBackgroundEngine {
       this.bgImage = await this.loadImage(mode.url);
     }
 
-    // 5) MediaPipe (WASM auto-hospedado; CSP solo permite 'self').
-    const segmenter = new SelfieSegmentation({ locateFile: (f) => `${MP_FILE_BASE}/${f}` });
+    // 5) MediaPipe (WASM auto-hospedado; CSP solo permite 'self'). Clase del
+    //    UMD runtime — con timeout: si initialize se atora, lanzamos y el
+    //    caller revierte a cámara normal (nunca colgado en silencio).
+    await withTimeout(umdLoading, INIT_TIMEOUT_MS, 'mediapipe umd');
+    const Ctor = (window as unknown as { SelfieSegmentation?: new (o: { locateFile: (f: string) => string }) => SelfieSegmentation }).SelfieSegmentation;
+    if (typeof Ctor !== 'function') throw new Error('SelfieSegmentation UMD missing');
+    const segmenter = new Ctor({ locateFile: (f) => `${MP_FILE_BASE}/${f}` });
     segmenter.setOptions({ modelSelection: 1, selfieMode: false });
     segmenter.onResults((results) => this.draw(results));
-    await segmenter.initialize();
+    await withTimeout(segmenter.initialize(), INIT_TIMEOUT_MS, 'mediapipe initialize');
     this.segmenter = segmenter;
 
     // 6) Loop de segmentación.
     this.running = true;
     this.loop();
 
-    // 7) Espera al PRIMER frame pintado (si no llega en 6s → error → revertir).
-    await this.waitForFirstFrame(6000);
+    // 7) Espera al PRIMER frame pintado. El warmup del WASM tarda ~6s en frío
+    //    (medido E2E); 15s de margen. Si no llega → error → revertir.
+    await this.waitForFirstFrame(15000);
 
     this.outStream = canvas.captureStream(TARGET_FPS);
     return this.outStream.getVideoTracks()[0];
