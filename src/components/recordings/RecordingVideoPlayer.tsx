@@ -98,10 +98,13 @@ export function RecordingVideoPlayer({
   // Cuando bunny_status != ready, usamos /original mientras procesa
   const isStillProcessing = bunnyStatus === 'processing' || bunnyStatus === 'uploading';
   const videoRef = useRef<HTMLVideoElement>(null);
-  // Subtítulos también en la ruta MP4 /original (mismo token de la hlsUrl): hoy
-  // casi todos los videos caen aquí porque el webhook de bunny_status no marca
-  // 'ready'. Sin esto el CC solo saldría en la ruta HLS (que casi nunca ocurre).
-  const fallbackCaptionTracks = useBunnyCaptionTracks(bunnyVideoId, bunnyUrls?.hlsUrl, captionLanguages);
+  // Subtítulos también en la ruta MP4 /original: hoy casi todos los videos caen
+  // aquí porque el webhook de bunny_status no marca 'ready'. Usa `signedUrl` (no
+  // bunnyUrls.hlsUrl) como fuente del token porque la ruta de arranque rápido
+  // (prefetchedSignedUrl) setea signedUrl pero NUNCA bunnyUrls → si no, el hook
+  // se quedaba sin token y no bajaba ningún .vtt. El token firma el directorio
+  // /{videoId}/, así que sirve igual para /original, /playlist.m3u8 y /captions.
+  const fallbackCaptionTracks = useBunnyCaptionTracks(bunnyVideoId, signedUrl, captionLanguages);
   const MAX_AUTO_RETRIES = 3;
 
   const cacheKey = useMemo(
