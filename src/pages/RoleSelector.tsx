@@ -73,12 +73,13 @@ export default function RoleSelector() {
     },
     // 4ª opción "Descubre MedicalMasters" (cliente 15-jul-2026): acceso libre SIN
     // cuenta por 10 minutos; al agotarse, DiscoverGate bloquea y pide registro.
+    // Imagen restaurada (cliente pidió la que tenía antes): collage de lives.
     {
       id: 'visitor',
       title: t('roleSelector.discoverTitle'),
       description: t('roleSelector.discoverDescription'),
       icon: Eye,
-      bgImage: '',
+      bgImage: '/app-roles/visitor.webp',
       fallbackGradient: 'linear-gradient(180deg, #227787 0%, #163a83 60%, #0a1f47 100%)',
       action: 'visitor',
     },
