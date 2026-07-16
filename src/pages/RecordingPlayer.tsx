@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
+import { RecordingCaptionsControl } from '@/components/recordings/RecordingCaptionsControl';
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
 import { AdPreroll } from '@/components/ads/AdPreroll';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -43,6 +44,7 @@ interface Recording {
   tags: string[];
   bunnyStatus?: 'uploading' | 'processing' | 'ready' | 'failed' | string | null;
   captionsLanguages?: string[];
+  captionsStatus?: string | null;
 }
 
 export default function RecordingPlayer() {
@@ -273,6 +275,7 @@ export default function RecordingPlayer() {
         // Idiomas de subtítulos generados (batch92); el player inyecta las
         // pistas <track> porque el manifest HLS de Bunny NO las incluye.
         captionsLanguages: ((recResult.data as any).captions_languages || []) as string[],
+        captionsStatus: (recResult.data as any).captions_status || null,
       });
 
       if (role === 'admin' || role === 'doctor') {
@@ -414,6 +417,15 @@ export default function RecordingPlayer() {
                 </div>
               )}
             </div>
+
+            {/* Control intuitivo de subtítulos, DEBAJO del reproductor (solo dueño/admin) */}
+            <RecordingCaptionsControl
+              recordingId={recording.id}
+              videoUrl={recording.videoUrl}
+              captionsStatus={recording.captionsStatus}
+              captionsLanguages={recording.captionsLanguages}
+              canManage={role === 'admin' || (!!supabaseUser && recording.doctorId === supabaseUser.id)}
+            />
 
             <div>
               <h1 className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-2 sm:mb-3">

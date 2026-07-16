@@ -1188,15 +1188,6 @@ export default function DoctorRecordings() {
                                    <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
                                      <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
                                    </DropdownMenuItem>
-                                   <DropdownMenuItem
-                                     disabled={captioningId === recording.id || !isBunnyRecording(recording)}
-                                     onClick={() => handleGenerateCaptions(recording)}
-                                   >
-                                     {captioningId === recording.id
-                                       ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                       : <Captions className="w-4 h-4 mr-2" />}
-                                     {captioningId === recording.id ? t('recordings.captions.generating') : t('recordings.captions.generate')}
-                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
                                     <Trash2 className="w-4 h-4 mr-2" />{t('doctorRecordingsPage.menu.delete')}
@@ -1376,15 +1367,6 @@ export default function DoctorRecordings() {
                                        </DropdownMenuItem>
                                        <DropdownMenuItem onClick={() => handleEditThumbnail(recording)}>
                                          <ImageIcon className="w-4 h-4 mr-2" />{t('recordings.editCover')}
-                                       </DropdownMenuItem>
-                                       <DropdownMenuItem
-                                         disabled={captioningId === recording.id || !isBunnyRecording(recording)}
-                                         onClick={() => handleGenerateCaptions(recording)}
-                                       >
-                                         {captioningId === recording.id
-                                           ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                           : <Captions className="w-4 h-4 mr-2" />}
-                                         {captioningId === recording.id ? t('recordings.captions.generating') : t('recordings.captions.generate')}
                                        </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(recording)}>
