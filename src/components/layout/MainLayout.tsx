@@ -111,8 +111,10 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.myVault', href: '/vault', icon: Folder, roles: ['patient', 'resident'] },
   // Foro RETIRADO del menú por completo (cliente 2026-07-02); la ruta /foro sigue
   // viva por URL directa, pero no aparece en barra ni en "Más".
-  // Foro visible desde 15-jul-2026 (antes hidden): discusión del gremio.
-  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
+  // Foro: hidden en navItems (NO debe salir en "Más" ni en el nav principal) —
+  // se muestra SOLO como ícono+texto a la izquierda de la lupa (Link explícito
+  // en el header). Cliente 15-jul-2026.
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'], hidden: true },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   // ===== Hidden — accesibles por URL pero fuera del menú =====
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'], hidden: true },
@@ -607,7 +609,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     }`}
                   >
                     <MessageSquare className="w-5 h-5" />
-                    <span className="hidden lg:inline">{t('nav.foro')}</span>
+                    <span className="hidden sm:inline">{t('nav.foro')}</span>
                   </Link>
                 )}
                 <GlobalSearch />

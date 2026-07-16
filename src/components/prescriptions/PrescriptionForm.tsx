@@ -430,7 +430,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         />
       </div>
 
-      <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full gap-2 h-12">
+      <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full gap-2 h-12 bg-red-600 hover:bg-red-700 text-white">
         {isSubmitting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
