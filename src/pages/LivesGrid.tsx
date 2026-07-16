@@ -31,9 +31,11 @@ import {
   Globe,
   GraduationCap,
   Building2,
+  Stethoscope,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
-import { useDoctorFilterFields, useDoctorFilterOptions } from '@/hooks/useDoctorFilterFields';
+import { useDoctorFilterFields } from '@/hooks/useDoctorFilterFields';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
@@ -196,16 +198,29 @@ export default function LivesGrid() {
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
 
-  // Extract unique specialties, tags, and cities from active lives
-  const specialties = [...new Set(activeLives.map(l => l.specialty))];
+  // Extract unique tags and cities from active lives (las especialidades se
+  // derivan más abajo como liveSpecialties, ya ordenadas y sin vacíos).
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
   const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
 
   // Campos del membrete de cada doctor (país/universidad/hospital) para el MATCHING de filtros
   const doctorFields = useDoctorFilterFields(activeLives.map(l => l.doctorId));
-  // Opciones GLOBALES (TODOS los doctores aprobados) para poblar los dropdowns SIEMPRE,
-  // aunque ahora mismo no haya lives (cliente 2026-07-15)
-  const filterOptions = useDoctorFilterOptions();
+
+  // Opciones de filtro derivadas SOLO de los lives activos (cliente 16-jul-2026):
+  // los filtros se activan únicamente cuando hay transmisiones y muestran solo lo
+  // que de verdad está al aire — nada de dropdowns vacíos con 0 lives.
+  const liveSpecialties = [...new Set(activeLives.map(l => l.specialty).filter(Boolean))].sort() as string[];
+  const liveCountries = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.country).filter(Boolean))].sort() as string[];
+  const liveUniversities = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.university).filter(Boolean))].sort() as string[];
+  const liveHospitals = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.practiceHospital).filter(Boolean))].sort() as string[];
+  const anyFilterActive = !!(selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital);
+  const hasAnyFilterOption =
+    liveSpecialties.length > 1 || liveCountries.length > 0 || liveUniversities.length > 0 ||
+    liveHospitals.length > 0 || allTags.length > 0 || allCities.length > 0;
+  const clearAllFilters = () => {
+    setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null);
+    setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital('');
+  };
 
   // Filter lives
   const filteredLives = activeLives.filter(l => {
@@ -291,38 +306,89 @@ export default function LivesGrid() {
           </div>
         </div>
 
-        {/* Filter Chips */}
-        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0 || filterOptions.countries.length > 0 || filterOptions.universities.length > 0 || filterOptions.hospitals.length > 0) && (
-          <div className="space-y-2 mb-4">
-            {/* Specialty chips */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
-              <button
-                onClick={() => setSelectedSpecialty(null)}
-                className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                  !selectedSpecialty
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background text-foreground border-border hover:border-primary/50'
-                }`}
-              >
-                Todas
-              </button>
-              {specialties.map(spec => (
+        {/* FILTROS — solo cuando HAY lives activos y hay algo por lo que filtrar
+            (cliente 16-jul-2026). Fila compacta y ordenada de dropdowns con
+            etiqueta de categoría clara (País · Especialidad · Universidad ·
+            Hospital); en móvil 2 columnas, en desktop en línea. */}
+        {activeLives.length > 0 && hasAnyFilterOption && (
+          <div className="mb-4 sm:mb-6 rounded-xl border border-border bg-card/80 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {t('doctorFilters.filtersLabel')}
+              </span>
+              {anyFilterActive && (
                 <button
-                  key={spec}
-                  onClick={() => setSelectedSpecialty(selectedSpecialty === spec ? null : spec)}
-                  className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                    selectedSpecialty === spec
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-foreground border-border hover:border-primary/50'
-                  }`}
+                  onClick={clearAllFilters}
+                  className="ml-auto text-[11px] sm:text-xs font-medium text-primary hover:underline underline-offset-2"
                 >
-                  {spec}
+                  {t('lives.clearFilters')}
                 </button>
-              ))}
+              )}
             </div>
-            {/* Tag chips */}
+
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+              {liveSpecialties.length > 1 && (
+                <div className="flex min-w-0 sm:w-44">
+                  <SearchableFilter
+                    label={t('doctorFilters.specialtyLabel')}
+                    options={liveSpecialties}
+                    value={selectedSpecialty || ''}
+                    onChange={(v) => setSelectedSpecialty(v || null)}
+                    placeholder={t('doctorFilters.specialtyLabel')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Stethoscope}
+                    allLabel={t('doctorFilters.specialtyPlaceholder')}
+                  />
+                </div>
+              )}
+              {liveCountries.length > 0 && (
+                <div className="flex min-w-0 sm:w-44">
+                  <SearchableFilter
+                    label={t('doctorFilters.countryLabel')}
+                    options={liveCountries}
+                    value={selectedCountry}
+                    onChange={setSelectedCountry}
+                    placeholder={t('doctorFilters.countryLabel')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Globe}
+                    allLabel={t('doctorFilters.countryPlaceholder')}
+                  />
+                </div>
+              )}
+              {liveUniversities.length > 0 && (
+                <div className="flex min-w-0 sm:w-44">
+                  <SearchableFilter
+                    label={t('doctorFilters.universityLabel')}
+                    options={liveUniversities}
+                    value={selectedUniversity}
+                    onChange={setSelectedUniversity}
+                    placeholder={t('doctorFilters.universityLabel')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={GraduationCap}
+                    allLabel={t('doctorFilters.universityPlaceholder')}
+                  />
+                </div>
+              )}
+              {liveHospitals.length > 0 && (
+                <div className="flex min-w-0 sm:w-44">
+                  <SearchableFilter
+                    label={t('doctorFilters.hospitalLabel')}
+                    options={liveHospitals}
+                    value={selectedHospital}
+                    onChange={setSelectedHospital}
+                    placeholder={t('doctorFilters.hospitalLabel')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Building2}
+                    allLabel={t('doctorFilters.hospitalPlaceholder')}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Tags (#) como chips secundarios, solo si existen */}
             {allTags.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x mt-2.5">
                 {allTags.map(tag => (
                   <button
                     key={tag}
@@ -338,9 +404,10 @@ export default function LivesGrid() {
                 ))}
               </div>
             )}
-            {/* City chips */}
+
+            {/* Ciudades como chips secundarios, solo si existen */}
             {allCities.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x mt-2">
                 {allCities.map(city => (
                   <button
                     key={city}
@@ -356,45 +423,6 @@ export default function LivesGrid() {
                 ))}
               </div>
             )}
-            {/* Filtros por membrete del doctor: país / universidad / hospital.
-                Opciones GLOBALES (todos los doctores) → los dropdowns se muestran SIEMPRE,
-                aunque ahora no haya lives. flex-wrap para no desbordar en móvil 375px
-                (cliente 2026-07-15). */}
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.countries.length > 0 && (
-                <SearchableFilter
-                  options={filterOptions.countries}
-                  value={selectedCountry}
-                  onChange={setSelectedCountry}
-                  placeholder={t('doctorFilters.countryPlaceholder')}
-                  emptyLabel={t('recordingsGridPage.filterNoResults')}
-                  icon={Globe}
-                  allLabel={t('recordingsGridPage.filterAllMasc')}
-                />
-              )}
-              {filterOptions.universities.length > 0 && (
-                <SearchableFilter
-                  options={filterOptions.universities}
-                  value={selectedUniversity}
-                  onChange={setSelectedUniversity}
-                  placeholder={t('doctorFilters.universityPlaceholder')}
-                  emptyLabel={t('recordingsGridPage.filterNoResults')}
-                  icon={GraduationCap}
-                  allLabel={t('recordingsGridPage.filterAll')}
-                />
-              )}
-              {filterOptions.hospitals.length > 0 && (
-                <SearchableFilter
-                  options={filterOptions.hospitals}
-                  value={selectedHospital}
-                  onChange={setSelectedHospital}
-                  placeholder={t('doctorFilters.hospitalPlaceholder')}
-                  emptyLabel={t('recordingsGridPage.filterNoResults')}
-                  icon={Building2}
-                  allLabel={t('recordingsGridPage.filterAllMasc')}
-                />
-              )}
-            </div>
           </div>
         )}
 

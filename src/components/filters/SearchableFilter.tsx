@@ -29,6 +29,9 @@ interface SearchableFilterProps {
   emptyLabel?: string;
   icon?: LucideIcon;
   allLabel?: string;
+  /** Etiqueta de categoría visible en reposo (País, Especialidad…) — cuando no
+   *  hay valor seleccionado se muestra ésta, no el "Todos/Todas". */
+  label?: string;
 }
 
 export function SearchableFilter({
@@ -40,12 +43,16 @@ export function SearchableFilter({
   emptyLabel = 'Sin resultados',
   icon: Icon,
   allLabel = 'Todas',
+  label,
 }: SearchableFilterProps) {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  const displayValue = value || allLabel || placeholder;
-  const showPlaceholderStyle = !value && !allLabel;
+  // En reposo mostramos la etiqueta de categoría (País/Especialidad…) en estilo
+  // atenuado; al elegir, el valor en estilo normal. El "Todos/Todas" queda como
+  // opción de reset dentro de la lista.
+  const displayValue = value || label || allLabel || placeholder;
+  const showPlaceholderStyle = !value;
 
   const handleSelect = (selected: string) => {
     onChange(selected === allLabel ? '' : selected);
@@ -120,7 +127,7 @@ export function SearchableFilter({
         </div>
         <DrawerContent>
           <DrawerHeader className="pb-2">
-            <DrawerTitle>{placeholder}</DrawerTitle>
+            <DrawerTitle>{label || placeholder}</DrawerTitle>
           </DrawerHeader>
           <div className="px-2 pb-4">
             {listContent}

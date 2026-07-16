@@ -7228,6 +7228,9 @@ export const en = {
     countryPlaceholder: "All countries",
     universityPlaceholder: "All universities",
     hospitalPlaceholder: "All hospitals",
+    specialtyLabel: 'Specialty',
+    specialtyPlaceholder: 'All specialties',
+    filtersLabel: 'Filter broadcasts',
     hospitalProfileLabel: "Hospital / Workplace",
     countryProfileLabel: "Country"
   },
