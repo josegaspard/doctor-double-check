@@ -295,6 +295,9 @@ export default function Login() {
       hospital: registerHospital,
       university: registerUniversity,
       doctorCode: registerDoctorCode,
+      acceptedLegal,
+      acceptedEthics,
+      consentVersion: '2026-07-16',
     });
 
     if (result.success) {

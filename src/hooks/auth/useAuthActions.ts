@@ -89,6 +89,12 @@ export function useAuthActions(
             hospital: data.hospital,
             university: data.university,
             doctor_code: data.doctorCode,
+            // Evidencia de consentimiento (LFPDPPP) → el trigger record_signup_consent
+            // la persiste en public.consent_log de forma server-side.
+            consent_accepted: data.acceptedLegal ? 'true' : 'false',
+            consent_ethics: data.acceptedEthics ? 'true' : 'false',
+            consent_version: data.consentVersion ?? '',
+            consent_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
           },
         },
       });

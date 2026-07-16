@@ -70,7 +70,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       "doctor_subscribers",
       "consultations",
       "chat_messages",
-      "patient_clinical_history",
       "medical_records",
       "wallet_transactions",
       "wallets",
@@ -78,6 +77,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       "hospital_reviews",
       "hospital_doctors",
       "onboarding_progress",
+      // Datos personales/sensibles que NO tienen FK ON DELETE CASCADE a auth.users
+      // (antes quedaban huérfanos → incumplimiento LFPDPPP/ARCO al ejercer supresión).
+      "identity_verifications",
+      "cedula_verifications",
+      "phone_verifications",
+      "notifications",
       "user_roles",
       "profiles",
     ];
@@ -91,6 +96,44 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
       } catch (e) {
         console.warn(`cleanup ${table} failed`, e);
+      }
+    }
+
+    // Tablas clínicas que referencian al usuario por `patient_id` (NO `user_id`).
+    // patient_clinical_history no tiene FK con CASCADE → hay que borrarla explícita
+    // por su columna real, o el expediente quedaba intacto tras "eliminar cuenta".
+    const patientIdTables = ["patient_clinical_history"];
+    for (const table of patientIdTables) {
+      try {
+        await admin.from(table).delete().eq("patient_id", uid);
+      } catch (e) {
+        console.warn(`cleanup ${table} (patient_id) failed`, e);
+      }
+    }
+
+    // Purga de Storage: los buckets PRIVADOS guardan los archivos del usuario bajo
+    // la carpeta `${uid}/...`. Sin esto, estudios médicos, historia clínica, cédulas
+    // e identificaciones escaneadas quedaban en Storage para siempre tras la supresión
+    // (PHI/identidad sensible → riesgo de multa LFPDPPP). Best-effort: no bloquea el borrado.
+    const privateBuckets = ["vault-files", "medical-history", "documents", "doctor-credentials", "doctor-content"];
+    for (const bucket of privateBuckets) {
+      try {
+        const toRemove: string[] = [];
+        // Raíz del usuario
+        const { data: rootList } = await admin.storage.from(bucket).list(uid, { limit: 1000 });
+        for (const obj of rootList ?? []) {
+          if (obj.id) toRemove.push(`${uid}/${obj.name}`);
+        }
+        // Subcarpeta history/ (medical-history usa `${uid}/history/...`)
+        const { data: subList } = await admin.storage.from(bucket).list(`${uid}/history`, { limit: 1000 });
+        for (const obj of subList ?? []) {
+          if (obj.id) toRemove.push(`${uid}/history/${obj.name}`);
+        }
+        if (toRemove.length > 0) {
+          await admin.storage.from(bucket).remove(toRemove);
+        }
+      } catch (e) {
+        console.warn(`storage purge ${bucket} failed`, e);
       }
     }
 

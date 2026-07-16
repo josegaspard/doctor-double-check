@@ -304,8 +304,34 @@ Deno.serve(async (req) => {
         .eq("id", transaction_id)
         .single();
 
-      if (originalTx?.metadata?.type === 'consultation' && originalTx?.metadata?.doctor_id) {
-        const doctorId = originalTx.metadata.doctor_id;
+      // Resolver a QUÉ doctor y con qué comisión revertir. Antes SOLO 'consultation'
+      // revertía; las compras de grabación/libro (metadata {recording_id}/{content_id},
+      // sin doctor_id) nunca revertían → el doctor cobraba de más en cada reembolso.
+      const meta = originalTx?.metadata || {};
+      let doctorId: string | null = meta.doctor_id ?? null;
+      let commissionKind = "consultation";
+
+      if (meta.type === 'consultation') {
+        commissionKind = "consultation";
+      } else if (meta.recording_id) {
+        commissionKind = "recording";
+        if (!doctorId) {
+          const { data: rec } = await supabaseAdmin
+            .from("recordings").select("doctor_id").eq("id", meta.recording_id).maybeSingle();
+          doctorId = (rec as any)?.doctor_id ?? null;
+        }
+      } else if (meta.content_id) {
+        commissionKind = "content";
+        if (!doctorId) {
+          const { data: dc } = await supabaseAdmin
+            .from("doctor_content").select("creator_id").eq("id", meta.content_id).maybeSingle();
+          doctorId = (dc as any)?.creator_id ?? null;
+        }
+      } else {
+        doctorId = null; // recarga de wallet u otro: nada que revertir al doctor
+      }
+
+      if (doctorId) {
         const { data: doctorProfile } = await supabaseAdmin
           .from("doctor_profiles")
           .select("pending_earnings")
@@ -314,13 +340,14 @@ Deno.serve(async (req) => {
 
         if (doctorProfile) {
           // Al doctor se le acreditó el NETO (bruto − comisión), NO el bruto. Revertir el
-          // bruto lo dejaba perdiendo de más. Se resta el neto usando la tasa de comisión.
-          const { data: rate } = await supabaseAdmin.rpc("fn_commission_rate", { p_kind: "consultation" });
+          // bruto lo dejaba perdiendo de más. Se resta el neto usando la tasa de comisión
+          // correspondiente al tipo de venta (consultation/recording/content).
+          const { data: rate } = await supabaseAdmin.rpc("fn_commission_rate", { p_kind: commissionKind });
           const commissionRate = Number.isFinite(Number(rate)) ? Number(rate) : 0.20;
           const netToReverse = Number((amount * (1 - commissionRate)).toFixed(2));
           const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - netToReverse);
           await supabaseAdmin.from("doctor_profiles").update({ pending_earnings: newPendingEarnings }).eq("user_id", doctorId);
-          logStep("Reversed doctor earnings (net)", { doctorId, amount, commissionRate, netToReverse, newPendingEarnings });
+          logStep("Reversed doctor earnings (net)", { doctorId, amount, commissionKind, commissionRate, netToReverse, newPendingEarnings });
 
           await supabaseAdmin.from("notifications").insert({
             user_id: doctorId, type: "system",

@@ -19,6 +19,16 @@ export interface ClinicalSummaryInput {
 const fmt = (d: Date) =>
   new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(d);
 
+// Escapa datos clínicos controlados por el paciente (medicamentos, antecedentes,
+// notas, nombre) antes de interpolarlos → evita XSS almacenado al abrir/imprimir.
+const esc = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 function row(label: string, value: any): string {
   if (value === null || value === undefined || value === '' || (typeof value === 'object' && Object.keys(value).length === 0)) return '';
   let display = '';
@@ -31,8 +41,8 @@ function row(label: string, value: any): string {
   }
   return `
     <tr>
-      <td style="padding:8px 12px;color:#64748b;font-size:12px;border-bottom:1px solid #f1f5f9;width:40%;">${label}</td>
-      <td style="padding:8px 12px;color:#1e293b;font-size:13px;border-bottom:1px solid #f1f5f9;font-weight:500;">${display}</td>
+      <td style="padding:8px 12px;color:#64748b;font-size:12px;border-bottom:1px solid #f1f5f9;width:40%;">${esc(label)}</td>
+      <td style="padding:8px 12px;color:#1e293b;font-size:13px;border-bottom:1px solid #f1f5f9;font-weight:500;">${esc(display)}</td>
     </tr>`;
 }
 
@@ -121,7 +131,7 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
 <head>
   <meta charset="UTF-8">
   <meta name="robots" content="noindex,nofollow">
-  <title>Resumen Clínico — ${patient.name}</title>
+  <title>Resumen Clínico — ${esc(patient.name)}</title>
   <style>
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -140,7 +150,7 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
   </style>
 </head>
 <body oncontextmenu="return false" oncopy="return false" oncut="return false">
-  <div class="watermark">${patient.name.toUpperCase()} · MEDICAL MASTERS</div>
+  <div class="watermark">${esc(patient.name.toUpperCase())} · MEDICAL MASTERS</div>
   <div class="container">
     <header style="text-align:center;margin-bottom:24px;padding:18px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:12px;color:white;">
       <h1 style="margin:0 0 4px 0;font-size:22px;">📋 Resumen Clínico</h1>
@@ -148,8 +158,8 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
     </header>
 
     <div style="background:white;padding:14px 18px;border-radius:10px;margin-bottom:18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-      <div><strong>Paciente:</strong> ${patient.name}</div>
-      <div><strong>Email:</strong> ${patient.email}</div>
+      <div><strong>Paciente:</strong> ${esc(patient.name)}</div>
+      <div><strong>Email:</strong> ${esc(patient.email)}</div>
       <div><strong>Generado:</strong> ${fmt(now)}</div>
     </div>
 

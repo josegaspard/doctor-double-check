@@ -33,6 +33,16 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+// Escapa datos controlados por el paciente (títulos, descripciones, nombre, email)
+// antes de interpolarlos en el HTML → evita XSS almacenado al abrir/imprimir el PDF.
+const esc = (value: unknown): string =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const getFileIcon = (type: string): string => {
   switch (type) {
     case 'pdf':
@@ -69,8 +79,8 @@ export const generateMedicalHistoryHTML = (
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 20px;">${getFileIcon(item.fileType)}</span>
               <div>
-                <strong style="color: #1e293b;">${item.title}</strong>
-                ${item.description ? `<br><span style="color: #64748b; font-size: 12px;">${item.description}</span>` : ''}
+                <strong style="color: #1e293b;">${esc(item.title)}</strong>
+                ${item.description ? `<br><span style="color: #64748b; font-size: 12px;">${esc(item.description)}</span>` : ''}
               </div>
             </div>
           </td>
@@ -88,7 +98,7 @@ export const generateMedicalHistoryHTML = (
       return `
       <div style="margin-bottom: 32px;">
         <h3 style="color: #0ea5e9; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #0ea5e9;">
-          📂 ${category} (${categoryItems.length})
+          📂 ${esc(category)} (${categoryItems.length})
         </h3>
         <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <thead>
@@ -112,7 +122,7 @@ export const generateMedicalHistoryHTML = (
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Historial Médico - ${patient.name}</title>
+  <title>Historial Médico - ${esc(patient.name)}</title>
   <style>
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -140,11 +150,11 @@ export const generateMedicalHistoryHTML = (
     <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       <div>
         <p style="margin: 0 0 4px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Paciente</p>
-        <p style="margin: 0; font-size: 18px; font-weight: 600;">${patient.name}</p>
+        <p style="margin: 0; font-size: 18px; font-weight: 600;">${esc(patient.name)}</p>
       </div>
       <div>
         <p style="margin: 0 0 4px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Email</p>
-        <p style="margin: 0; font-size: 14px;">${patient.email}</p>
+        <p style="margin: 0; font-size: 14px;">${esc(patient.email)}</p>
       </div>
       <div>
         <p style="margin: 0 0 4px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Fecha de Exportación</p>
@@ -184,8 +194,8 @@ export const exportMedicalHistoryToPDF = (
 ): void => {
   const html = generateMedicalHistoryHTML(items, patient);
   
-  // Open in new window for printing
-  const printWindow = window.open('', '_blank');
+  // Open in new window for printing (noopener/noreferrer: corta acceso a window.opener)
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer');
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();

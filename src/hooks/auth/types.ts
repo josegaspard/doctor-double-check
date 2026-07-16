@@ -70,6 +70,10 @@ export interface RegisterData {
   hospital?: string;
   university?: string;
   doctorCode?: string;
+  // Consentimiento LFPDPPP: evidencia de aceptación del aviso de privacidad/ética.
+  acceptedLegal?: boolean;
+  acceptedEthics?: boolean;
+  consentVersion?: string;
 }
 
 export interface AuthContextType {

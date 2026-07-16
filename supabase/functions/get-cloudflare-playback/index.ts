@@ -114,6 +114,10 @@ Deno.serve(async (req) => {
 
     const isLiveRequest = type === "live" && !!liveInputUid;
 
+    // Anti-IDOR: para grabaciones servimos el asset DE la grabación autorizada,
+    // nunca el videoUid arbitrario del body. Se rellena tras validar el acceso.
+    let overrideVideoUid: string | null = null;
+
     // Keep auth required for recordings, but allow live playback for any viewer
     let authedUserId: string | null = null;
     if (!isLiveRequest) {
@@ -153,6 +157,18 @@ Deno.serve(async (req) => {
         );
       }
       logStep("Access granted", { userId: authedUserId, recordingId, reason: access.reason });
+
+      // Derivar el asset a servir DEL recordingId autorizado (no del videoUid del body).
+      // Así, aunque el atacante pase el recordingId de una grabación gratis/suya y el
+      // videoUid de una grabación de pago ajena, se sirve el asset de SU grabación.
+      const { data: authRec } = await supabaseClient
+        .from("recordings")
+        .select("video_url")
+        .eq("id", recordingId)
+        .maybeSingle();
+      if (authRec?.video_url) {
+        overrideVideoUid = authRec.video_url as string;
+      }
     } else {
       logStep("Public live playback request", { liveInputUid });
     }
@@ -207,9 +223,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if the video UID is a pending marker
-    const isPending = videoUid && videoUid.startsWith("pending:");
-    const actualVideoUid = isPending ? videoUid.replace("pending:", "") : videoUid;
+    // Check if the video UID is a pending marker. Para grabaciones usamos el asset
+    // autorizado (overrideVideoUid); para live seguimos con el videoUid del body.
+    const effectiveVideoUid = overrideVideoUid ?? videoUid;
+    const isPending = effectiveVideoUid && effectiveVideoUid.startsWith("pending:");
+    const actualVideoUid = isPending ? effectiveVideoUid.replace("pending:", "") : effectiveVideoUid;
 
     if (isPending) {
       logStep("Recording is pending, checking live input outputs", { liveInputUid: actualVideoUid });
