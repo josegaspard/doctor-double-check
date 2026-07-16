@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,11 +18,11 @@ export function DiscoverGate() {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => Date.now());
 
-  const startedAt = useMemo(() => {
-    const raw = localStorage.getItem('mm_discover_started_at');
-    const n = raw ? Number(raw) : NaN;
-    return Number.isFinite(n) ? n : null;
-  }, [role]);
+  // Se lee fresco en cada render: al re-entrar como visitante loginAsVisitor
+  // reinicia el reloj y el chip debe reflejar los 10 min nuevos al instante.
+  const rawStarted = localStorage.getItem('mm_discover_started_at');
+  const startedNum = rawStarted ? Number(rawStarted) : NaN;
+  const startedAt = Number.isFinite(startedNum) ? startedNum : null;
 
   const isVisitor = role === 'visitor';
   const remainingMs = startedAt ? Math.max(0, DISCOVER_LIMIT_MS - (now - startedAt)) : DISCOVER_LIMIT_MS;

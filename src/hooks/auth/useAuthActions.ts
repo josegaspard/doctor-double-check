@@ -41,8 +41,9 @@ export function useAuthActions(
     setUser(null);
     setSupabaseUser(null);
     sessionStorage.removeItem('medicalMasters_visitor');
-    // NO borrar mm_discover_started_at: el modo Descubre es de UNA sola vez por
-    // navegador — al cerrar sesión NO se reinician los 10 minutos (cliente 16-jul).
+    // Limpiar el reloj de Descubre: cada nueva entrada como visitante arranca
+    // sus propios 10 minutos frescos (cliente 16-jul).
+    try { localStorage.removeItem('mm_discover_started_at'); } catch { /* noop */ }
     
     // Sign out from Supabase FIRST, then redirect a la landing pública.
     await supabase.auth.signOut();
@@ -60,12 +61,11 @@ export function useAuthActions(
     };
     setUser(visitorUser);
     sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
-    // Modo "Descubre MedicalMasters": el reloj de los 10 minutos arranca la
-    // PRIMERA vez y persiste en localStorage — cerrar la pestaña o volver a
-    // entrar como visitante NO lo reinicia. Lo consume DiscoverGate.
-    if (!localStorage.getItem('mm_discover_started_at')) {
-      localStorage.setItem('mm_discover_started_at', String(Date.now()));
-    }
+    // Modo "Descubre MedicalMasters": cada entrada arranca un ciclo FRESCO de 10
+    // minutos. Al agotarse, DiscoverGate limpia la sesión y regresa al login;
+    // volver a entrar da otros 10 min. El acceso a lives desde Descubre nunca se
+    // bloquea (cliente 16-jul).
+    localStorage.setItem('mm_discover_started_at', String(Date.now()));
   };
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean; userId?: string }> => {

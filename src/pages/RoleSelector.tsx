@@ -95,13 +95,10 @@ export default function RoleSelector() {
         navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/lives');
         return;
       }
-      // Modo Descubre = UNA sola vez por navegador. Si ya se usaron (o agotaron)
-      // los 10 min, NO se reinicia: se manda a registrarse.
-      const started = Number(localStorage.getItem('mm_discover_started_at') || 0);
-      if (started > 0) {
-        navigate('/login', { state: { preferredRole: 'patient', mode: 'signup' } });
-        return;
-      }
+      // Descubre MedicalMasters (cliente 16-jul): el clic SIEMPRE deja entrar a
+      // lives sin login. Arranca 10 min frescos; al agotarse, DiscoverGate
+      // regresa al login. Volver a dar clic da otros 10 min (nunca bloquea el
+      // acceso a lives desde aquí).
       loginAsVisitor();
       navigate('/lives');
       return;
