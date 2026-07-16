@@ -41,6 +41,9 @@ export function useAuthActions(
     setUser(null);
     setSupabaseUser(null);
     sessionStorage.removeItem('medicalMasters_visitor');
+    // Reloj del modo Descubre: si el siguiente que entra es otro visitante en el
+    // mismo navegador, que empiece sus 10 min limpios.
+    localStorage.removeItem('mm_discover_started_at');
     
     // Sign out from Supabase FIRST, then redirect a la landing pública.
     await supabase.auth.signOut();
@@ -58,6 +61,12 @@ export function useAuthActions(
     };
     setUser(visitorUser);
     sessionStorage.setItem('medicalMasters_visitor', JSON.stringify(visitorUser));
+    // Modo "Descubre MedicalMasters": el reloj de los 10 minutos arranca la
+    // PRIMERA vez y persiste en localStorage — cerrar la pestaña o volver a
+    // entrar como visitante NO lo reinicia. Lo consume DiscoverGate.
+    if (!localStorage.getItem('mm_discover_started_at')) {
+      localStorage.setItem('mm_discover_started_at', String(Date.now()));
+    }
   };
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean; userId?: string }> => {

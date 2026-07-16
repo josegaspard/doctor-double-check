@@ -34,11 +34,12 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   const { language, t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [patientAge, setPatientAge] = useState('');
+  const [patientBirthDate, setPatientBirthDate] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [instructions, setInstructions] = useState('');
   const [notes, setNotes] = useState('');
   const [medications, setMedications] = useState<Medication[]>([
-    { name: '', dosage: '', route: '', frequency: '', duration: '' },
+    { name: '', genericName: '', dosage: '', route: '', frequency: '', duration: '' },
   ]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
   }, [user?.id]);
 
   const addMedication = () => {
-    setMedications([...medications, { name: '', dosage: '', route: '', frequency: '', duration: '' }]);
+    setMedications([...medications, { name: '', genericName: '', dosage: '', route: '', frequency: '', duration: '' }]);
   };
 
   const removeMedication = (index: number) => {
@@ -119,11 +120,20 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
     const credentials = await fetchDoctorCredentials(user.id);
     const doctorSignatureUrl = credentials.doctorSignatureUrl;
 
-    const validMeds = medications.filter(m => m.name.trim());
+    // Una fila cuenta como "escrita" si tiene comercial O genérico (antes solo
+    // miraba name → una fila con solo genérico se perdía en silencio).
+    const validMeds = medications.filter(m => m.name.trim() || m.genericName?.trim());
 
     // Must have at least one medication OR an attached file
     if (validMeds.length === 0 && !attachedFile) {
       toast.error(t('autoI18n.prescForm2'));
+      return;
+    }
+
+    // Nombre comercial Y genérico obligatorios en cada fila escrita: las
+    // farmacias pueden negarse a surtir con solo uno de los dos (pedido cliente).
+    if (validMeds.some(m => !m.name.trim() || !m.genericName?.trim())) {
+      toast.error(t('rxExtra.genericRequired'));
       return;
     }
 
@@ -158,6 +168,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         consultation_id: consultationId || null,
         patient_name: patientName,
         patient_age: patientAge || null,
+        patient_birth_date: patientBirthDate || null,
         diagnosis: diagnosis || null,
         medications: validMeds as any,
         instructions: instructions || null,
@@ -169,9 +180,11 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         file_url: fileUrl,
       };
 
+      // `as any`: patient_birth_date es columna nueva aún no regenerada en los
+      // tipos de Supabase (mismo patrón que el resto del repo).
       const { data, error } = await supabase
         .from('prescriptions')
-        .insert([prescriptionData])
+        .insert([prescriptionData as any])
         .select()
         .single();
 
@@ -203,6 +216,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
           id: data.id,
           patientName,
           patientAge: patientAge || undefined,
+          patientBirthDate: patientBirthDate || undefined,
           diagnosis: diagnosis || undefined,
           medications: validMeds,
           instructions: instructions || undefined,
@@ -244,6 +258,14 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
             placeholder={t('autoI18n.prescForm11')}
             value={patientAge}
             onChange={(e) => setPatientAge(e.target.value)}
+          />
+        </div>
+        <div className="col-span-2 sm:col-span-1">
+          <Label>{t('rxExtra.birthDate')}</Label>
+          <Input
+            type="date"
+            value={patientBirthDate}
+            onChange={(e) => setPatientBirthDate(e.target.value)}
           />
         </div>
       </div>
@@ -343,9 +365,14 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Input
-                  placeholder={t('autoI18n.prescForm21')}
+                  placeholder={t('rxExtra.commercialName')}
                   value={med.name}
                   onChange={(e) => updateMedication(i, 'name', e.target.value)}
+                />
+                <Input
+                  placeholder={t('rxExtra.genericName')}
+                  value={med.genericName || ''}
+                  onChange={(e) => updateMedication(i, 'genericName', e.target.value)}
                 />
                 <Input
                   placeholder={t('autoI18n.prescForm22')}

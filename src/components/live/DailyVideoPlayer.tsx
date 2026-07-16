@@ -19,17 +19,36 @@ import {
   VolumeX,
   Image as ImageIcon,
   ImageOff,
+  Droplets,
+  Check,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useConnectionQuality } from '@/hooks/useConnectionQuality';
 import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQualityIndicator';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useLiveBackgrounds } from '@/hooks/useLiveBackgrounds';
 import logoMmWhite from '@/assets/logo-medical-masters-white.png';
+
+// Selección de fondo virtual del broadcaster (estilo Google Meet):
+// cámara normal, difuminado, o una imagen gestionada por el súper admin.
+export type LiveBgSelection =
+  | { type: 'none' }
+  | { type: 'blur' }
+  | { type: 'image'; src: string; id: string };
 
 export interface DailyVideoPlayerHandle {
   toggleMute: () => void;
   toggleVideo: () => void;
   leaveCall: () => void;
   toggleFullscreen: () => void;
+  setBackground: (sel: LiveBgSelection) => void;
   isMuted: boolean;
   isVideoOff: boolean;
   isFullscreen: boolean;
@@ -85,7 +104,8 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
   // Fondo virtual de marca Medical Masters para el broadcaster (default ON).
   // El procesador de Daily reemplaza el fondo de la cámara del doctor por el
   // arte de marca, así lo ven todos los espectadores. Reversible con el botón.
-  const [brandedBg, setBrandedBg] = useState(false);
+  const [bgSelection, setBgSelection] = useState<LiveBgSelection>({ type: 'none' });
+  const { backgrounds: liveBackgrounds } = useLiveBackgrounds();
   // Cada bump reintenta el join (re-ejecuta el effect de abajo). Lo usa el
   // watchdog anti-"Conectando..." infinito y el botón Reintentar del error.
   const [joinAttempt, setJoinAttempt] = useState(0);
@@ -421,16 +441,23 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     } catch { /* noop */ }
   }, []);
 
-  const applyVideoBackground = useCallback(async (enabled: boolean) => {
+  const applyVideoBackground = useCallback(async (sel: LiveBgSelection) => {
     const call = callRef.current;
     if (!call || !isOwner) return;
-    // Si está apagado y nunca se aplicó, NO tocar el pipeline (cámara pristina).
-    if (!enabled && !bgAppliedRef.current) return;
+    // Si se pide "sin fondo" y nunca se aplicó nada, NO tocar el pipeline (cámara pristina).
+    if (sel.type === 'none' && !bgAppliedRef.current) return;
     try {
-      if (enabled) {
-        const src = typeof window !== 'undefined'
-          ? `${window.location.origin}/live-bg-mm.jpg`
-          : '/live-bg-mm.jpg';
+      if (sel.type === 'blur') {
+        // Difuminado estilo Google Meet (segmentación de Daily).
+        await call.updateInputSettings({
+          video: { processor: { type: 'background-blur', config: { strength: 0.6 } } },
+        });
+        bgAppliedRef.current = true;
+      } else if (sel.type === 'image') {
+        // Daily necesita URL absoluta para las imágenes de fondo.
+        const src = sel.src.startsWith('http')
+          ? sel.src
+          : (typeof window !== 'undefined' ? `${window.location.origin}${sel.src}` : sel.src);
         await call.updateInputSettings({
           video: { processor: { type: 'background-image', config: { source: src } } },
         });
@@ -443,21 +470,21 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
         await restartLocalCamera();
       }
     } catch (err) {
-      console.warn('[DAILY] fondo de marca no disponible, revierto a cámara normal:', err);
+      console.warn('[DAILY] fondo virtual no disponible, revierto a cámara normal:', err);
       bgAppliedRef.current = false;
-      setBrandedBg(false);
+      setBgSelection({ type: 'none' });
       try { await call.updateInputSettings({ video: { processor: { type: 'none' } } }); } catch { /* noop */ }
       await restartLocalCamera();
       toast.error(t('dailyVideoPlayer.bgUnavailable'));
     }
   }, [isOwner, restartLocalCamera, t]);
 
-  // Solo reacciona a CAMBIOS del toggle del fondo (no en cada conexión): el
+  // Solo reacciona a CAMBIOS de la selección de fondo (no en cada conexión): el
   // live arranca siempre con la cámara normal (se ve la persona).
   useEffect(() => {
     if (!isOwner || !isConnected) return;
-    applyVideoBackground(brandedBg);
-  }, [isOwner, isConnected, brandedBg, applyVideoBackground]);
+    applyVideoBackground(bgSelection);
+  }, [isOwner, isConnected, bgSelection, applyVideoBackground]);
 
   const toggleScreenShare = async () => {
     if (!callRef.current) return;
@@ -523,6 +550,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
     toggleVideo,
     leaveCall,
     toggleFullscreen,
+    setBackground: (sel: LiveBgSelection) => setBgSelection(sel),
     get isMuted() { return isMuted; },
     get isVideoOff() { return isVideoOff; },
     get isFullscreen() { return isFullscreen; },
@@ -754,17 +782,46 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
                     );
                   })()}
 
-                  {/* Fondo virtual de marca Medical Masters (on/off) */}
-                  <Button
-                    size="icon"
-                    variant={brandedBg ? "default" : "secondary"}
-                    onClick={() => setBrandedBg((v) => !v)}
-                    title={brandedBg ? t('dailyVideoPlayer.tipBgOff') : t('dailyVideoPlayer.tipBgOn')}
-                    aria-label={brandedBg ? t('dailyVideoPlayer.tipBgOff') : t('dailyVideoPlayer.tipBgOn')}
-                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
-                  >
-                    {brandedBg ? <ImageIcon className="w-4 h-4" /> : <ImageOff className="w-4 h-4" />}
-                  </Button>
+                  {/* Selector de fondo virtual (Google Meet-style): normal / difuminado /
+                      imágenes gestionadas por el súper admin (site_settings) */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant={bgSelection.type !== 'none' ? "default" : "secondary"}
+                        title={t('dailyVideoPlayer.tipBgPicker')}
+                        aria-label={t('dailyVideoPlayer.tipBgPicker')}
+                        className="rounded-full h-9 w-9 sm:h-10 sm:w-10"
+                      >
+                        {bgSelection.type === 'blur'
+                          ? <Droplets className="w-4 h-4" />
+                          : bgSelection.type === 'image'
+                            ? <ImageIcon className="w-4 h-4" />
+                            : <ImageOff className="w-4 h-4" />}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" side="top" className="z-[70]" container={wrapperRef.current ?? undefined}>
+                      <DropdownMenuLabel>{t('dailyVideoPlayer.bgPickerTitle')}</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => setBgSelection({ type: 'none' })}>
+                        <ImageOff className="w-4 h-4 mr-2" />
+                        {t('dailyVideoPlayer.bgNone')}
+                        {bgSelection.type === 'none' && <Check className="w-4 h-4 ml-auto" />}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setBgSelection({ type: 'blur' })}>
+                        <Droplets className="w-4 h-4 mr-2" />
+                        {t('dailyVideoPlayer.bgBlur')}
+                        {bgSelection.type === 'blur' && <Check className="w-4 h-4 ml-auto" />}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {liveBackgrounds.map((bg) => (
+                        <DropdownMenuItem key={bg.id} onClick={() => setBgSelection({ type: 'image', src: bg.url, id: bg.id })}>
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          {bg.label}
+                          {bgSelection.type === 'image' && bgSelection.id === bg.id && <Check className="w-4 h-4 ml-auto" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
 

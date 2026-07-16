@@ -121,8 +121,9 @@ export default function Prescriptions() {
           </div>
 
           {role === 'doctor' && (
-            <Button 
-              className="gap-2 w-full sm:w-auto flex-shrink-0 h-12 text-base" 
+            <Button
+              // Rojo con letras blancas (pedido de los doctores, 15-jul-2026)
+              className="gap-2 w-full sm:w-auto flex-shrink-0 h-12 text-base bg-red-600 hover:bg-red-700 text-white"
               onClick={() => {
                 setShowPatientPicker(true);
                 fetchPatients();

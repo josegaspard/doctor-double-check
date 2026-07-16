@@ -214,6 +214,10 @@ export default function Onboarding() {
   const [license, setLicense] = useState('');
   // Cédula de especialista (opcional), además de la profesional — solo doctor (cliente 2026-07-07)
   const [cedulaEspecialidad, setCedulaEspecialidad] = useState('');
+  // Universidad y hospital (opcionales) — alimentan los filtros públicos por membrete
+  // del doctor (país/universidad/hospital) en contenido premium y lives (cliente 2026-07-15)
+  const [university, setUniversity] = useState('');
+  const [hospital, setHospital] = useState('');
   // Foto de la cédula profesional (obligatoria) para checar identidad — solo doctor (cliente 2026-07-08).
   // Guarda el PATH dentro del bucket privado 'doctor-credentials'.
   const [cedulaPhotoUrl, setCedulaPhotoUrl] = useState<string | null>(null);
@@ -427,11 +431,15 @@ export default function Onboarding() {
       }
 
       // Foto de la cédula ya ligada al perfil: precargarla para no pedirla dos veces.
+      // También universidad/hospital (pudieron llegar vía metadata del registro) para
+      // no pisarlos con null en el upsert final (cliente 2026-07-15).
       const { data: dp } = await (supabase as any)
         .from('doctor_profiles')
-        .select('cedula_photo_url')
+        .select('cedula_photo_url, university, practice_hospital')
         .eq('user_id', supabaseUser.id)
         .maybeSingle();
+      if (dp?.university) setUniversity(dp.university);
+      if (dp?.practice_hospital) setHospital(dp.practice_hospital);
       if (dp?.cedula_photo_url) {
         setCedulaPhotoUrl(dp.cedula_photo_url);
       } else {
@@ -578,6 +586,9 @@ export default function Onboarding() {
           cedula_especialidad: cedulaEspecialidad.trim() || null,
           cedula_especialidad_status: cedulaEspecialidad.trim() ? 'pending' : null,
           cedula_photo_url: cedulaPhotoUrl,
+          // Universidad y hospital — alimentan los filtros públicos por membrete (cliente 2026-07-15)
+          university: university.trim() || null,
+          practice_hospital: hospital.trim() || null,
         };
 
         // Link cedula verification if available
@@ -1515,6 +1526,36 @@ export default function Onboarding() {
                             value={cedulaEspecialidad}
                             onChange={(e) => setCedulaEspecialidad(e.target.value.slice(0, 50))}
                             maxLength={50}
+                          />
+                        </motion.div>
+                      )}
+
+                      {/* Universidad (opcional) — alimenta el filtro público por universidad (cliente 2026-07-15) */}
+                      {selectedRole === 'doctor' && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label htmlFor="doctor-university">
+                            {t('doctorFilters.universityLabel')} <span className="text-muted-foreground font-normal text-xs">{t('onboardingPage.phoneOptional')}</span>
+                          </Label>
+                          <Input
+                            id="doctor-university"
+                            value={university}
+                            onChange={(e) => setUniversity(e.target.value.slice(0, 200))}
+                            maxLength={200}
+                          />
+                        </motion.div>
+                      )}
+
+                      {/* Hospital / lugar de trabajo (opcional) — alimenta el filtro público por hospital (cliente 2026-07-15) */}
+                      {selectedRole === 'doctor' && (
+                        <motion.div className="space-y-2" variants={itemVariants}>
+                          <Label htmlFor="doctor-hospital">
+                            {t('doctorFilters.hospitalProfileLabel')} <span className="text-muted-foreground font-normal text-xs">{t('onboardingPage.phoneOptional')}</span>
+                          </Label>
+                          <Input
+                            id="doctor-hospital"
+                            value={hospital}
+                            onChange={(e) => setHospital(e.target.value.slice(0, 200))}
+                            maxLength={200}
                           />
                         </motion.div>
                       )}

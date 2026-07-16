@@ -36,12 +36,15 @@ import {
   Stethoscope,
   Tag,
   User,
+  GraduationCap,
+  Building2,
 } from 'lucide-react';
 
 type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { useDoctorFilterFields, uniqueFieldOptions } from '@/hooks/useDoctorFilterFields';
 
 export default function RecordingsGrid({ embedded = false }: { embedded?: boolean } = {}) {
   // embedded=true: se renderiza DENTRO de otra página (p.ej. /education → pestaña
@@ -68,6 +71,10 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
+  // Filtros por membrete del doctor: país / universidad / hospital (cliente 2026-07-15)
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+  const [selectedHospital, setSelectedHospital] = useState('');
 
   useEffect(() => { refreshRecordings(); }, [refreshRecordings]);
 
@@ -84,6 +91,12 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
   const allDoctorNames = useMemo(() => [...new Set(recordings.map(r => r.doctorName))].filter(Boolean).sort(), [recordings]);
   const specialtyOptions = specialtyValues;
 
+  // Campos del membrete de cada doctor (país/universidad/hospital) para los filtros
+  const doctorFields = useDoctorFilterFields(recordings.map(r => r.doctorId));
+  const countryOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'country'), [doctorFields]);
+  const universityOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'university'), [doctorFields]);
+  const hospitalOptions = useMemo(() => uniqueFieldOptions(doctorFields, 'practiceHospital'), [doctorFields]);
+
   const ownsRecording = (recording: Recording): boolean => {
     if (!user) return false;
     if (role === 'admin' || role === 'doctor') return true;
@@ -98,8 +111,11 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
     const matchesDoctor = !doctorFilter || rec.doctorId === doctorFilter;
     const matchesTag = !selectedTag || (rec.tags || []).includes(selectedTag);
     const matchesDoctorName = !selectedDoctor || rec.doctorName === selectedDoctor;
-    
-    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag || !matchesDoctorName) return false;
+    const matchesCountry = !selectedCountry || doctorFields[rec.doctorId]?.country === selectedCountry;
+    const matchesUniversity = !selectedUniversity || doctorFields[rec.doctorId]?.university === selectedUniversity;
+    const matchesHospital = !selectedHospital || doctorFields[rec.doctorId]?.practiceHospital === selectedHospital;
+
+    if (!matchesSearch || !matchesSpecialty || !matchesDoctor || !matchesTag || !matchesDoctorName || !matchesCountry || !matchesUniversity || !matchesHospital) return false;
     
     const owned = ownsRecording(rec);
     switch (contentFilter) {
@@ -111,7 +127,7 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
 
   // Recomendación (cliente 2026-06-30): sin filtro manual, priorizar grabaciones
   // afines a lo que el usuario ha buscado (sus intereses).
-  if (!searchQuery && !selectedSpecialty && !doctorFilter && !selectedTag && !selectedDoctor && interests.length) {
+  if (!searchQuery && !selectedSpecialty && !doctorFilter && !selectedTag && !selectedDoctor && !selectedCountry && !selectedUniversity && !selectedHospital && interests.length) {
     filteredRecordings.sort((a, b) =>
       interestScore(`${b.title} ${b.specialty}`, interests) -
       interestScore(`${a.title} ${a.specialty}`, interests)
@@ -372,6 +388,69 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                   </div>
                 </>
               )}
+
+              {/* País del doctor (cliente 2026-07-15) */}
+              {countryOptions.length > 0 && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      {t('doctorFilters.countryLabel')}
+                    </h4>
+                    <SearchableFilter
+                      options={countryOptions}
+                      value={selectedCountry}
+                      onChange={setSelectedCountry}
+                      placeholder={t('doctorFilters.countryPlaceholder')}
+                      emptyLabel={t('recordingsGridPage.filterNoResults')}
+                      icon={Globe}
+                      allLabel={t('recordingsGridPage.filterAllMasc')}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Universidad del doctor (cliente 2026-07-15) */}
+              {universityOptions.length > 0 && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      {t('doctorFilters.universityLabel')}
+                    </h4>
+                    <SearchableFilter
+                      options={universityOptions}
+                      value={selectedUniversity}
+                      onChange={setSelectedUniversity}
+                      placeholder={t('doctorFilters.universityPlaceholder')}
+                      emptyLabel={t('recordingsGridPage.filterNoResults')}
+                      icon={GraduationCap}
+                      allLabel={t('recordingsGridPage.filterAll')}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Hospital del doctor (cliente 2026-07-15) */}
+              {hospitalOptions.length > 0 && (
+                <>
+                  <div className="border-t border-border my-3" />
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                      {t('doctorFilters.hospitalLabel')}
+                    </h4>
+                    <SearchableFilter
+                      options={hospitalOptions}
+                      value={selectedHospital}
+                      onChange={setSelectedHospital}
+                      placeholder={t('doctorFilters.hospitalPlaceholder')}
+                      emptyLabel={t('recordingsGridPage.filterNoResults')}
+                      icon={Building2}
+                      allLabel={t('recordingsGridPage.filterAllMasc')}
+                    />
+                  </div>
+                </>
+              )}
             </aside>
           )}
 
@@ -443,6 +522,45 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                 />
               )}
             </div>
+
+            {/* Mobile: filtros por membrete del doctor — país / universidad / hospital (cliente 2026-07-15) */}
+            {(countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
+              <div className="flex gap-2 mb-3 md:hidden">
+                {countryOptions.length > 0 && (
+                  <SearchableFilter
+                    options={countryOptions}
+                    value={selectedCountry}
+                    onChange={setSelectedCountry}
+                    placeholder={t('doctorFilters.countryPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Globe}
+                    allLabel={t('recordingsGridPage.filterAllMasc')}
+                  />
+                )}
+                {universityOptions.length > 0 && (
+                  <SearchableFilter
+                    options={universityOptions}
+                    value={selectedUniversity}
+                    onChange={setSelectedUniversity}
+                    placeholder={t('doctorFilters.universityPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={GraduationCap}
+                    allLabel={t('recordingsGridPage.filterAll')}
+                  />
+                )}
+                {hospitalOptions.length > 0 && (
+                  <SearchableFilter
+                    options={hospitalOptions}
+                    value={selectedHospital}
+                    onChange={setSelectedHospital}
+                    placeholder={t('doctorFilters.hospitalPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Building2}
+                    allLabel={t('recordingsGridPage.filterAllMasc')}
+                  />
+                )}
+              </div>
+            )}
 
             {/* No balance CTA */}
             {isAuthenticated && (role === 'patient' || role === 'resident') && balance === 0 && (
@@ -617,13 +735,13 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
               <Card className="p-8 sm:p-12 text-center">
                 <PlayCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-                  {contentFilter !== 'all' || selectedSpecialty ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
+                  {contentFilter !== 'all' || selectedSpecialty || selectedCountry || selectedUniversity || selectedHospital ? t('ads.noRecordingsFilters') : t('recordings.noRecordings')}
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   {t('common.noResults')}
                 </p>
-                {(contentFilter !== 'all' || selectedSpecialty) && (
-                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(''); setSelectedDoctor(''); setSelectedTag(''); }}>
+                {(contentFilter !== 'all' || selectedSpecialty || selectedCountry || selectedUniversity || selectedHospital) && (
+                  <Button variant="outline" className="mt-3" onClick={() => { setContentFilter('all'); setSelectedSpecialty(''); setSelectedDoctor(''); setSelectedTag(''); setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital(''); }}>
                     {t('ads.removeFilters')}
                   </Button>
                 )}

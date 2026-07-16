@@ -71,10 +71,27 @@ export default function RoleSelector() {
       action: 'login',
       role: 'resident',
     },
+    // 4ª opción "Descubre MedicalMasters" (cliente 15-jul-2026): acceso libre SIN
+    // cuenta por 10 minutos; al agotarse, DiscoverGate bloquea y pide registro.
+    {
+      id: 'visitor',
+      title: t('roleSelector.discoverTitle'),
+      description: t('roleSelector.discoverDescription'),
+      icon: Eye,
+      bgImage: '',
+      fallbackGradient: 'linear-gradient(180deg, #227787 0%, #163a83 60%, #0a1f47 100%)',
+      action: 'visitor',
+    },
   ];
 
   const handleRoleSelect = (option: RoleOption) => {
     if (option.action === 'visitor') {
+      // No degradar cuentas reales: el modo Descubre es SOLO para quien no tiene
+      // sesión. Un usuario logueado que toca la tarjeta va a su destino normal.
+      if (isAuthenticated && role && role !== 'visitor') {
+        navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/lives');
+        return;
+      }
       loginAsVisitor();
       navigate('/lives');
       return;
@@ -143,7 +160,7 @@ export default function RoleSelector() {
       </div>
 
       {/* Mobile: 1 col stack. Tablet (sm): 2x2. Desktop (lg): 4 col full-height */}
-      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:min-h-screen">
+      <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:min-h-screen">
         {roleOptions.map((option, idx) => {
           const Icon = option.icon;
           return (

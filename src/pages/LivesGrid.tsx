@@ -28,7 +28,12 @@ import {
   ShieldCheck,
   AlertCircle,
   RefreshCw,
+  Globe,
+  GraduationCap,
+  Building2,
 } from 'lucide-react';
+import { SearchableFilter } from '@/components/filters/SearchableFilter';
+import { useDoctorFilterFields, uniqueFieldOptions } from '@/hooks/useDoctorFilterFields';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
@@ -177,6 +182,10 @@ export default function LivesGrid() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  // Filtros por membrete del doctor: país / universidad / hospital ('' = todos) — cliente 2026-07-15
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+  const [selectedHospital, setSelectedHospital] = useState('');
 
   // Force a fresh fetch on mount so credential fields are populated
   // even if the cache was filled before this version was deployed.
@@ -192,17 +201,26 @@ export default function LivesGrid() {
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
   const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
 
+  // Campos del membrete de cada doctor (país/universidad/hospital) para los filtros
+  const doctorFields = useDoctorFilterFields(activeLives.map(l => l.doctorId));
+  const countryOptions = uniqueFieldOptions(doctorFields, 'country');
+  const universityOptions = uniqueFieldOptions(doctorFields, 'university');
+  const hospitalOptions = uniqueFieldOptions(doctorFields, 'practiceHospital');
+
   // Filter lives
   const filteredLives = activeLives.filter(l => {
     if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
     if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
     if (selectedCity && (l as any).location !== selectedCity) return false;
+    if (selectedCountry && doctorFields[l.doctorId]?.country !== selectedCountry) return false;
+    if (selectedUniversity && doctorFields[l.doctorId]?.university !== selectedUniversity) return false;
+    if (selectedHospital && doctorFields[l.doctorId]?.practiceHospital !== selectedHospital) return false;
     return true;
   });
 
   // Recomendación (cliente 2026-06-29): cuando el usuario NO eligió un filtro
   // manual, priorizamos los lives afines a lo que ha buscado (sus intereses).
-  if (!selectedSpecialty && !selectedTag && !selectedCity && interests.length) {
+  if (!selectedSpecialty && !selectedTag && !selectedCity && !selectedCountry && !selectedUniversity && !selectedHospital && interests.length) {
     filteredLives.sort((a, b) =>
       interestScore(`${b.title} ${b.specialty}`, interests) -
       interestScore(`${a.title} ${a.specialty}`, interests)
@@ -274,7 +292,7 @@ export default function LivesGrid() {
         </div>
 
         {/* Filter Chips */}
-        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0) && (
+        {(specialties.length > 1 || allTags.length > 0 || allCities.length > 0 || countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
           <div className="space-y-2 mb-4">
             {/* Specialty chips */}
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x">
@@ -336,6 +354,44 @@ export default function LivesGrid() {
                     📍 {city}
                   </button>
                 ))}
+              </div>
+            )}
+            {/* Filtros por membrete del doctor: país / universidad / hospital (cliente 2026-07-15) */}
+            {(countryOptions.length > 0 || universityOptions.length > 0 || hospitalOptions.length > 0) && (
+              <div className="flex flex-wrap gap-2">
+                {countryOptions.length > 0 && (
+                  <SearchableFilter
+                    options={countryOptions}
+                    value={selectedCountry}
+                    onChange={setSelectedCountry}
+                    placeholder={t('doctorFilters.countryPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Globe}
+                    allLabel={t('recordingsGridPage.filterAllMasc')}
+                  />
+                )}
+                {universityOptions.length > 0 && (
+                  <SearchableFilter
+                    options={universityOptions}
+                    value={selectedUniversity}
+                    onChange={setSelectedUniversity}
+                    placeholder={t('doctorFilters.universityPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={GraduationCap}
+                    allLabel={t('recordingsGridPage.filterAll')}
+                  />
+                )}
+                {hospitalOptions.length > 0 && (
+                  <SearchableFilter
+                    options={hospitalOptions}
+                    value={selectedHospital}
+                    onChange={setSelectedHospital}
+                    placeholder={t('doctorFilters.hospitalPlaceholder')}
+                    emptyLabel={t('recordingsGridPage.filterNoResults')}
+                    icon={Building2}
+                    allLabel={t('recordingsGridPage.filterAllMasc')}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -412,15 +468,15 @@ export default function LivesGrid() {
           <Card className="p-8 sm:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {selectedSpecialty || selectedTag || selectedCity ? t('lives.noLivesFiltered') : t('lives.noLives')}
+              {selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital ? t('lives.noLivesFiltered') : t('lives.noLives')}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {selectedSpecialty || selectedTag || selectedCity
+              {selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital
                 ? t('lives.noLivesFilteredDesc')
                 : t('lives.noLivesDescription')}
             </p>
-            {(selectedSpecialty || selectedTag || selectedCity) && (
-              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); }}>
+            {(selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital) && (
+              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital(''); }}>
                 {t('lives.clearFilters')}
               </Button>
             )}

@@ -69,6 +69,7 @@ import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
+import { DiscoverGate } from '@/components/DiscoverGate';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -110,7 +111,8 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.myVault', href: '/vault', icon: Folder, roles: ['patient', 'resident'] },
   // Foro RETIRADO del menú por completo (cliente 2026-07-02); la ruta /foro sigue
   // viva por URL directa, pero no aparece en barra ni en "Más".
-  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'], hidden: true },
+  // Foro visible desde 15-jul-2026 (antes hidden): discusión del gremio.
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'] },
   { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   // ===== Hidden — accesibles por URL pero fuera del menú =====
   { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'], hidden: true },
@@ -389,6 +391,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       ref={ref}
       className="min-h-screen flex flex-col overflow-x-clip"
     >
+      {/* Modo "Descubre MedicalMasters": contador de 10 min para visitantes y
+          bloqueo con registro al agotarse. No renderiza nada para usuarios reales. */}
+      <DiscoverGate />
       {/* Header — usa color del footer cuando el fondo es imagen */}
       <header
         className={`sticky top-0 z-50 backdrop-blur ${
@@ -586,8 +591,25 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             {/* Right Side */}
               <div className="flex items-center gap-1.5">
               {/* Global Search — en móvil vive a la IZQUIERDA del header (absoluto sobre la fila)
-                  para que el logo centrado no choque con los controles de la derecha */}
+                  para que el logo centrado no choque con los controles de la derecha.
+                  FORO (cliente 15-jul-2026): ítem inmediatamente a la IZQUIERDA de la lupa,
+                  solo para el gremio (doctores/residentes/admin). */}
               <span className="absolute left-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0 flex items-center">
+                {(role === 'doctor' || role === 'resident' || role === 'admin') && (
+                  <Link
+                    to="/foro"
+                    aria-label={t('nav.foro')}
+                    title={t('nav.foro')}
+                    className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === '/foro'
+                        ? 'text-primary'
+                        : 'text-foreground/80 hover:text-foreground hover:bg-accent/60'
+                    }`}
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                    <span className="hidden lg:inline">{t('nav.foro')}</span>
+                  </Link>
+                )}
                 <GlobalSearch />
               </span>
               

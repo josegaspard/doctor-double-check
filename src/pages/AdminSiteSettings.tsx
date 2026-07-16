@@ -42,6 +42,7 @@ import {
   Film,
 } from 'lucide-react';
 import { AdminVideoManager } from '@/components/admin/AdminVideoManager';
+import { AdminLiveBackgroundsManager } from '@/components/admin/AdminLiveBackgroundsManager';
 import { Badge } from '@/components/ui/badge';
 
 interface SocialLinks {
@@ -764,10 +765,14 @@ export default function AdminSiteSettings() {
           </div>
         ) : (
           <Tabs defaultValue="social" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="videos" className="gap-2 text-xs">
                 <Film className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('adminVideos.tab')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="backgrounds" className="gap-2 text-xs">
+                <Film className="w-4 h-4" />
+                <span className="hidden sm:inline">Fondos Lives</span>
               </TabsTrigger>
               <TabsTrigger value="social" className="gap-2 text-xs">
                 <Globe className="w-4 h-4" />
@@ -819,6 +824,22 @@ export default function AdminSiteSettings() {
                 </CardHeader>
                 <CardContent>
                   <AdminVideoManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Fondos virtuales de Lives (agregar/quitar imágenes del picker del doctor) */}
+            <TabsContent value="backgrounds">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Film className="w-5 h-5" />
+                    Fondos de Lives
+                  </CardTitle>
+                  <CardDescription>Imágenes que el doctor puede elegir como fondo virtual al transmitir.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminLiveBackgroundsManager />
                 </CardContent>
               </Card>
             </TabsContent>

@@ -15,12 +15,20 @@ interface BunnyHLSPlayerProps {
   /** MP4 fallback URL si HLS falla en el browser */
   mp4FallbackUrl?: string;
   recordingId: string;
+  /** Idiomas con subtítulos generados (recordings.captions_languages, batch93) */
+  captionLanguages?: string[];
   onDurationUpdate?: (s: number) => void;
   onTimeUpdate?: (s: number) => void;
   autoPlay?: boolean;
   sessionId?: string;
   onRefreshSignedUrl?: () => void;
 }
+
+// Nombres nativos para el menú CC del reproductor.
+const CAPTION_LABELS: Record<string, string> = {
+  es: 'Español', en: 'English', pt: 'Português', fr: 'Français',
+  it: 'Italiano', de: 'Deutsch', ca: 'Català', zh: '中文',
+};
 
 /**
  * Player HLS para Bunny Stream con ABR adaptativo.
@@ -40,6 +48,7 @@ export function BunnyHLSPlayer({
   thumbnailUrl,
   mp4FallbackUrl,
   recordingId,
+  captionLanguages,
   onDurationUpdate,
   onTimeUpdate,
   autoPlay,
@@ -58,6 +67,41 @@ export function BunnyHLSPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // SUBTÍTULOS (batch93): el playlist directo de Bunny NO incluye las pistas
+  // SUBTITLES en el manifest (verificado: CLOSED-CAPTIONS=NONE), así que las
+  // inyectamos como <track>. Los .vtt viven en el CDN bajo el MISMO token de
+  // directorio del playlist ({vid}/captions/{lang}-auto.vtt?token=…). Se traen
+  // por fetch → blob URL para NO poner crossOrigin en el <video> (riesgo de
+  // romper el HLS nativo de iOS si algún segmento no trae CORS).
+  const [captionTracks, setCaptionTracks] = useState<{ lang: string; label: string; src: string }[]>([]);
+  useEffect(() => {
+    if (!videoId || !captionLanguages || captionLanguages.length === 0) return;
+    let active = true;
+    const blobUrls: string[] = [];
+    (async () => {
+      try {
+        const base = new URL(signedUrl);
+        const query = base.search; // ?token=…&expires=…
+        const results = await Promise.all(captionLanguages.map(async (lang) => {
+          try {
+            const res = await fetch(`https://${base.host}/${videoId}/captions/${lang}-auto.vtt${query}`);
+            if (!res.ok) return null;
+            const blob = await res.blob();
+            const src = URL.createObjectURL(blob);
+            blobUrls.push(src);
+            return { lang, label: CAPTION_LABELS[lang] || lang.toUpperCase(), src };
+          } catch { return null; }
+        }));
+        if (active) setCaptionTracks(results.filter(Boolean) as { lang: string; label: string; src: string }[]);
+      } catch { /* sin subtítulos: el player sigue normal */ }
+    })();
+    return () => {
+      active = false;
+      blobUrls.forEach((u) => URL.revokeObjectURL(u));
+      setCaptionTracks([]);
+    };
+  }, [videoId, signedUrl, captionLanguages]);
 
   // DevTools detection: pause playback + log forensic event.
   // If the user reopens DevTools, video stays paused until they close them.
@@ -268,7 +312,12 @@ export function BunnyHLSPlayer({
             onDurationUpdate(Math.floor(vid.duration));
           }
         }}
-      />
+      >
+        {/* Pistas de subtítulos (blob same-origin); el botón CC nativo aparece solo */}
+        {captionTracks.map((tr) => (
+          <track key={tr.lang} kind="subtitles" srcLang={tr.lang} label={tr.label} src={tr.src} />
+        ))}
+      </video>
 
       {/* Anti-piracy: watermark centrado tenue — sobrevive capturas de pantalla */}
       {user?.email && (

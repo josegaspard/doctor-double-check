@@ -20,7 +20,19 @@ import {
   VideoOff,
   Maximize,
   Minimize,
+  Image as ImageIcon,
+  ImageOff,
+  Droplets,
+  Check,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useLiveBackgrounds } from '@/hooks/useLiveBackgrounds';
 
 interface LiveStreamViewProps {
   liveData: {
@@ -57,6 +69,12 @@ export function LiveStreamView({
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
+  // Fondo virtual desde la barra móvil ('none' | 'blur' | id de imagen del admin)
+  const [mobileBg, setMobileBg] = useState<'none' | 'blur' | string>('none');
+  const { backgrounds: liveBackgrounds } = useLiveBackgrounds();
+  // Wrapper de pantalla completa: destino del Portal del picker de fondo para
+  // que el menú sea visible en fullscreen (si no, queda oculto tras el video).
+  const fsWrapRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<DailyVideoPlayerHandle>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, supabaseUser } = useAuth();
@@ -196,7 +214,7 @@ export function LiveStreamView({
         )}
 
         {/* Video area — single player, wrapped in fullscreen container when active */}
-        <div className={mobileFullscreen ? 'mobile-doctor-fullscreen' : 'contents'}>
+        <div ref={fsWrapRef} className={mobileFullscreen ? 'mobile-doctor-fullscreen' : 'contents'}>
           <DailyVideoPlayer
             ref={playerRef}
             roomUrl={roomUrl}
@@ -256,6 +274,36 @@ export function LiveStreamView({
               >
                 {isVideoOff ? <VideoOff className="w-5 h-5" /> : <VideoIcon className="w-5 h-5" />}
               </Button>
+              {/* Fondo virtual (paridad con desktop): normal / difuminado / imágenes admin */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => e.stopPropagation()}
+                    className={`h-11 w-11 rounded-full border-white/20 text-white ${mobileBg !== 'none' ? 'bg-primary/70' : 'bg-white/10'}`}
+                  >
+                    {mobileBg === 'blur' ? <Droplets className="w-5 h-5" /> : mobileBg !== 'none' ? <ImageIcon className="w-5 h-5" /> : <ImageOff className="w-5 h-5" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" side="top" className="z-[70]" container={fsWrapRef.current ?? undefined}>
+                  <DropdownMenuItem onClick={() => { setMobileBg('none'); playerRef.current?.setBackground({ type: 'none' }); }}>
+                    <ImageOff className="w-4 h-4 mr-2" />Cámara normal
+                    {mobileBg === 'none' && <Check className="w-4 h-4 ml-auto" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setMobileBg('blur'); playerRef.current?.setBackground({ type: 'blur' }); }}>
+                    <Droplets className="w-4 h-4 mr-2" />Fondo difuminado
+                    {mobileBg === 'blur' && <Check className="w-4 h-4 ml-auto" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {liveBackgrounds.map((bg) => (
+                    <DropdownMenuItem key={bg.id} onClick={() => { setMobileBg(bg.id); playerRef.current?.setBackground({ type: 'image', src: bg.url, id: bg.id }); }}>
+                      <ImageIcon className="w-4 h-4 mr-2" />{bg.label}
+                      {mobileBg === bg.id && <Check className="w-4 h-4 ml-auto" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="outline"
                 size="icon"

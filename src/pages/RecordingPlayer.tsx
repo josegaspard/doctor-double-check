@@ -42,6 +42,7 @@ interface Recording {
   createdAt: Date;
   tags: string[];
   bunnyStatus?: 'uploading' | 'processing' | 'ready' | 'failed' | string | null;
+  captionsLanguages?: string[];
 }
 
 export default function RecordingPlayer() {
@@ -269,6 +270,9 @@ export default function RecordingPlayer() {
         createdAt: new Date(recResult.data.created_at),
         tags: recResult.data.tags || [],
         bunnyStatus: (recResult.data as any).bunny_status,
+        // Idiomas de subtítulos generados (batch92); el player inyecta las
+        // pistas <track> porque el manifest HLS de Bunny NO las incluye.
+        captionsLanguages: ((recResult.data as any).captions_languages || []) as string[],
       });
 
       if (role === 'admin' || role === 'doctor') {
@@ -389,6 +393,7 @@ export default function RecordingPlayer() {
                     videoUrl={recording.videoUrl}
                     recordingId={recording.id}
                     bunnyStatus={recording.bunnyStatus}
+                    captionLanguages={recording.captionsLanguages}
                     onDurationUpdate={handleDurationUpdate}
                     onTimeUpdate={setVideoCurrentTime}
                     autoPlay={prerollDone || skipPreroll}

@@ -35,6 +35,7 @@ interface PrescriptionDetail {
   id: string;
   patientName: string;
   patientAge?: string;
+  patientBirthDate?: string;
   diagnosis?: string;
   medications: any[];
   instructions?: string;
@@ -84,6 +85,7 @@ export default function PrescriptionDetail() {
         id: data.id,
         patientName: data.patient_name,
         patientAge: data.patient_age || undefined,
+        patientBirthDate: (data as any).patient_birth_date || undefined,
         diagnosis: data.diagnosis || undefined,
         medications: (data.medications as any[]) || [],
         instructions: data.instructions || undefined,
@@ -140,6 +142,7 @@ export default function PrescriptionDetail() {
       id: prescription.id,
       patientName: prescription.patientName,
       patientAge: prescription.patientAge,
+      patientBirthDate: prescription.patientBirthDate,
       diagnosis: prescription.diagnosis,
       medications: prescription.medications,
       instructions: prescription.instructions,
@@ -259,6 +262,9 @@ export default function PrescriptionDetail() {
                 {prescription.patientAge && (
                   <p className="text-sm text-muted-foreground">{prescription.patientAge}</p>
                 )}
+                {prescription.patientBirthDate && (
+                  <p className="text-sm text-muted-foreground">{t('rxExtra.birthDate')}: {prescription.patientBirthDate}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -327,9 +333,12 @@ export default function PrescriptionDetail() {
               <div className="space-y-3">
                 {prescription.medications.map((med: any, i: number) => (
                   <div key={i} className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <Badge variant="outline" className="text-xs">#{i + 1}</Badge>
                       <p className="font-semibold text-foreground">{med.name}</p>
+                      {med.genericName && (
+                        <span className="text-sm text-muted-foreground">({t('rxExtra.genericShort')}: {med.genericName})</span>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm mt-2">
                       {med.dosage && (
@@ -408,8 +417,9 @@ export default function PrescriptionDetail() {
           </CardContent>
         </Card>
 
-        {/* Folio + verificación pública */}
-        <Card className="border-primary/30 bg-primary/5">
+        {/* Folio + verificación pública — misma combinación de color que las
+            tarjetas "Indicaciones generales"/resto de campos (pedido cliente) */}
+        <Card className="mb-4">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>

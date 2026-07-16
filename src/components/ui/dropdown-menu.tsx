@@ -61,9 +61,12 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <DropdownMenuPrimitive.Portal>
+  // `container` opcional: destino del Portal. Por defecto document.body; se pasa
+  // el wrapper en pantalla completa (fullscreen) para que el menú sea VISIBLE
+  // dentro del elemento fullscreen (si no, queda detrás/oculto).
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content> & { container?: HTMLElement | null }
+>(({ className, sideOffset = 4, container, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal container={container ?? undefined}>
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}

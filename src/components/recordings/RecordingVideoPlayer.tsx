@@ -18,6 +18,8 @@ interface RecordingVideoPlayerProps {
   videoUrl: string;
   recordingId: string;
   bunnyStatus?: 'uploading' | 'processing' | 'ready' | 'failed' | string | null;
+  /** Idiomas con subtítulos generados en Bunny (recordings.captions_languages) */
+  captionLanguages?: string[];
   onDurationUpdate?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
   autoPlay?: boolean;
@@ -63,6 +65,7 @@ export function RecordingVideoPlayer({
   videoUrl,
   recordingId,
   bunnyStatus,
+  captionLanguages,
   onDurationUpdate,
   onTimeUpdate,
   autoPlay,
@@ -328,6 +331,7 @@ export function RecordingVideoPlayer({
           <BunnyHLSPlayer
             signedUrl={bunnyUrls.hlsUrl}
             videoId={bunnyVideoId}
+            captionLanguages={captionLanguages}
             thumbnailUrl={bunnyUrls.thumbnailUrl}
             mp4FallbackUrl={bunnyUrls.mp4Url}
             recordingId={recordingId}

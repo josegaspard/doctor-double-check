@@ -1,7 +1,9 @@
 import QRCode from 'qrcode';
+import { RECETA_LOGO_WHITE_DATAURL } from '@/lib/recetaLogo';
 
 export interface Medication {
-  name: string;
+  name: string;          // Nombre comercial
+  genericName?: string;  // Nombre genérico (sustancia activa) — las farmacias pueden exigir uno u otro
   dosage: string;
   route?: string;        // Vía de administración (Oral, IM, IV, etc.)
   frequency: string;
@@ -13,6 +15,7 @@ export interface PrescriptionData {
   id: string;
   patientName: string;
   patientAge?: string;
+  patientBirthDate?: string;   // Fecha de nacimiento (se muestra debajo de Edad)
   diagnosis?: string;
   medications: Medication[];
   instructions?: string;
@@ -101,34 +104,35 @@ const doctorCredentialsHTML = (
 export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
   const medsRows = rx.medications.map((med, i) => `
     <tr>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; font-weight: 600; color: #163a83;">${i + 1}. ${med.name}</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.dosage}</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.route || '—'}</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.frequency}</td>
-      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${med.duration}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; font-weight: 600; color: #163a83;">${i + 1}. ${esc(med.name)}${med.genericName ? `<br/><span style="font-weight: 400; font-size: 12px; color: #374a6d;">Genérico: ${esc(med.genericName)}</span>` : ''}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.dosage)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.route) || '—'}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.frequency)}</td>
+      <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.duration)}</td>
     </tr>
-    ${med.notes ? `<tr><td colspan="5" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">📝 ${med.notes}</td></tr>` : ''}
+    ${med.notes ? `<tr><td colspan="5" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">📝 ${esc(med.notes)}</td></tr>` : ''}
   `).join('');
 
   const folio = prescriptionFolio(rx.id);
   const verifyUrl = rx.verifyUrl || prescriptionVerifyUrl(rx.id);
 
-  // Use the deployed logo URL
-  const logoUrl = 'https://medical-masters.com/icon-512.png?v=18';
+  // Logo embebido en base64 (bundle local): pinta al instante, sin red.
+  const logoUrl = RECETA_LOGO_WHITE_DATAURL;
 
   return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Receta Médica - ${rx.patientName}</title>
+  <title>Receta Médica - ${esc(rx.patientName)}</title>
   <style>
     @media print {
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
     }
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      /* Solo fuentes del sistema: sin descargas de webfonts → impresión inmediata */
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
       color: #1a2744;
       margin: 0;
@@ -143,7 +147,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
     <div style="background: linear-gradient(135deg, #163a83, #227787); padding: 24px 32px; color: white;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 16px;">
-          <img src="${logoUrl}" alt="Medical Masters" style="height: 44px; width: auto; filter: brightness(0) invert(1);" onerror="this.style.display='none'" />
+          <img src="${logoUrl}" alt="Medical Masters" style="height: 48px; width: auto;" onerror="this.style.display='none'" />
           <div>
             <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Receta Médica</h1>
             <p style="margin: 4px 0 0; opacity: 0.85; font-size: 13px;">Medical Masters</p>
@@ -166,15 +170,16 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
         </div>
         <div style="background: #f5f7fa; padding: 16px; border-radius: 8px; border-left: 4px solid #839ed5;">
           <p style="margin: 0 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7fa3; letter-spacing: 0.5px;">Paciente</p>
-          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #1a2744;">${rx.patientName}</p>
-          ${rx.patientAge ? `<p style="margin: 2px 0 0; color: #374a6d; font-size: 13px;">Edad: ${rx.patientAge}</p>` : ''}
+          <p style="margin: 0; font-weight: 700; font-size: 16px; color: #1a2744;">${esc(rx.patientName)}</p>
+          ${rx.patientAge ? `<p style="margin: 2px 0 0; color: #374a6d; font-size: 13px;">Edad: ${esc(rx.patientAge)}</p>` : ''}
+          ${rx.patientBirthDate ? `<p style="margin: 2px 0 0; color: #374a6d; font-size: 13px;">Fecha de nacimiento: ${esc(rx.patientBirthDate)}</p>` : ''}
         </div>
       </div>
 
       ${rx.diagnosis ? `
       <div style="margin-bottom: 24px;">
         <p style="margin: 0 0 6px; font-size: 12px; text-transform: uppercase; color: #6b7fa3; font-weight: 600;">Diagnóstico</p>
-        <p style="margin: 0; padding: 12px; background: #fefce8; border-radius: 8px; border: 1px solid #fde68a; color: #854d0e;">${rx.diagnosis}</p>
+        <p style="margin: 0; padding: 12px; background: #fefce8; border-radius: 8px; border: 1px solid #fde68a; color: #854d0e;">${esc(rx.diagnosis)}</p>
       </div>
       ` : ''}
 
@@ -200,14 +205,14 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
       ${rx.instructions ? `
       <div style="margin-bottom: 24px;">
         <p style="margin: 0 0 6px; font-size: 12px; text-transform: uppercase; color: #6b7fa3; font-weight: 600;">Indicaciones</p>
-        <p style="margin: 0; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; color: #166534; white-space: pre-wrap;">${rx.instructions}</p>
+        <p style="margin: 0; padding: 12px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0; color: #166534; white-space: pre-wrap;">${esc(rx.instructions)}</p>
       </div>
       ` : ''}
 
       ${rx.notes ? `
       <div style="margin-bottom: 24px;">
         <p style="margin: 0 0 6px; font-size: 12px; text-transform: uppercase; color: #6b7fa3; font-weight: 600;">Notas Adicionales</p>
-        <p style="margin: 0; padding: 12px; background: #f5f7fa; border-radius: 8px; border: 1px solid #d1d9e6; color: #374a6d; white-space: pre-wrap;">${rx.notes}</p>
+        <p style="margin: 0; padding: 12px; background: #f5f7fa; border-radius: 8px; border: 1px solid #d1d9e6; color: #374a6d; white-space: pre-wrap;">${esc(rx.notes)}</p>
       </div>
       ` : ''}
 
@@ -251,6 +256,28 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
 </html>`;
 };
 
+// Convierte una URL remota (p. ej. la firma del médico en Storage) a data URL
+// con timeout: así la ventana de impresión no queda esperando a la red. Si la
+// conversión falla o tarda, se usa la URL original como estaba.
+const toDataUrlWithTimeout = async (url: string, timeoutMs = 2500): Promise<string> => {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return url;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : url);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url;
+  }
+};
+
 export const exportPrescriptionToPDF = async (
   data: PrescriptionData,
   // Ventana ya abierta de forma síncrona por quien llama (para no ser bloqueada por
@@ -263,20 +290,46 @@ export const exportPrescriptionToPDF = async (
   const printWindow = preOpenedWindow ?? window.open('', '_blank');
 
   const verifyUrl = data.verifyUrl || prescriptionVerifyUrl(data.id);
-  let verifyQrDataUrl: string | undefined;
-  try {
-    verifyQrDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, width: 240, errorCorrectionLevel: 'M' });
-  } catch { /* si falla el QR, la receta sigue mostrando folio + enlace */ }
+  // QR + firma en paralelo. Con logo embebido, QR data-url y firma data-url,
+  // la receta no depende de NINGÚN fetch dentro de la ventana de impresión.
+  const [verifyQrDataUrl, signatureDataUrl] = await Promise.all([
+    QRCode.toDataURL(verifyUrl, { margin: 1, width: 240, errorCorrectionLevel: 'M' })
+      .catch(() => undefined), // si falla el QR, la receta sigue mostrando folio + enlace
+    data.doctorSignatureUrl ? toDataUrlWithTimeout(data.doctorSignatureUrl) : Promise.resolve(undefined),
+  ]);
 
-  const html = generatePrescriptionHTML({ ...data, verifyUrl, verifyQrDataUrl });
+  const html = generatePrescriptionHTML({
+    ...data,
+    verifyUrl,
+    verifyQrDataUrl,
+    doctorSignatureUrl: signatureDataUrl ?? data.doctorSignatureUrl,
+  });
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
-    printWindow.onload = () => {
-      setTimeout(() => {
+    // Imprimir en cuanto las imágenes estén decodificadas (todas son data URLs →
+    // casi inmediato), en vez del setTimeout fijo de 250ms que además corría
+    // ANTES de que la firma remota terminara de cargar.
+    const fire = () => {
+      const imgs = Array.from(printWindow.document.images);
+      Promise.all(
+        imgs.map((img) =>
+          img.complete
+            ? Promise.resolve()
+            // addEventListener (no asignar onload/onerror) para NO pisar el
+            // handler inline onerror="this.style.display='none'" que oculta
+            // imágenes rotas (firma remota caída → sin icono de imagen rota).
+            : new Promise<void>((r) => {
+                img.addEventListener('load', () => r(), { once: true });
+                img.addEventListener('error', () => r(), { once: true });
+              }),
+        ),
+      ).then(() => {
         printWindow.focus();
         printWindow.print();
-      }, 250);
+      });
     };
+    if (printWindow.document.readyState === 'complete') fire();
+    else printWindow.onload = fire;
   }
 };

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Award, GraduationCap, Building2, FileCheck, Plus, X, Loader2, Pencil, Check } from 'lucide-react';
+import { Award, GraduationCap, Building2, FileCheck, Plus, X, Loader2, Pencil, Check, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -15,6 +15,8 @@ interface Workplace { name: string; type?: string }
 
 interface CredentialData {
   university: string | null;
+  practice_hospital: string | null;
+  country: string | null;
   secondary_specialties: string[] | null;
   workplaces: Workplace[] | null;
   cedula_especialidad: string | null;
@@ -34,6 +36,9 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
   // Editable fields
   const [university, setUniversity] = useState('');
+  // Hospital / lugar de trabajo y país — alimentan los filtros públicos por membrete (cliente 2026-07-15)
+  const [practiceHospital, setPracticeHospital] = useState('');
+  const [country, setCountry] = useState('');
   const [cedulaEsp, setCedulaEsp] = useState('');
   const [cofepris, setCofepris] = useState('');
   const [secondarySpecialties, setSecondarySpecialties] = useState<string[]>([]);
@@ -46,13 +51,15 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
       setLoading(true);
       const { data: row } = await supabase
         .from('doctor_profiles')
-        .select('university, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, cofepris_permit, license, specialty')
+        .select('university, practice_hospital, country, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, cofepris_permit, license, specialty')
         .eq('user_id', userId)
         .maybeSingle();
       if (row) {
         const d = row as any;
         setData(d);
         setUniversity(d.university || '');
+        setPracticeHospital(d.practice_hospital || '');
+        setCountry(d.country || '');
         setCedulaEsp(d.cedula_especialidad || '');
         setCofepris(d.cofepris_permit || '');
         setSecondarySpecialties(d.secondary_specialties || []);
@@ -72,6 +79,8 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
       const update: any = {
         university: trimmedUni || null,
+        practice_hospital: practiceHospital.trim().slice(0, 200) || null,
+        country: country.trim().slice(0, 100) || null,
         secondary_specialties: cleanSpecs,
         workplaces: cleanWorkplaces,
         cofepris_permit: cofepris.trim().slice(0, 50) || null,
@@ -130,7 +139,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setUniversity(data.university || ''); setCedulaEsp(data.cedula_especialidad || ''); setSecondarySpecialties(data.secondary_specialties || []); setWorkplaces(Array.isArray(data.workplaces) ? data.workplaces : []); }}>{t('doctorCredentialsCard.cancel')}</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setUniversity(data.university || ''); setPracticeHospital(data.practice_hospital || ''); setCountry(data.country || ''); setCedulaEsp(data.cedula_especialidad || ''); setSecondarySpecialties(data.secondary_specialties || []); setWorkplaces(Array.isArray(data.workplaces) ? data.workplaces : []); }}>{t('doctorCredentialsCard.cancel')}</Button>
               <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} {t('doctorCredentialsCard.save')}
               </Button>
@@ -145,6 +154,28 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
               <Input value={university} onChange={e => setUniversity(e.target.value)} placeholder={t('doctorCredentialsCard.universityPlaceholder')} maxLength={200} />
             ) : (
               <p className="text-sm font-medium ml-6">{data.university || <span className="text-muted-foreground italic">{t('doctorCredentialsCard.universityEmpty')}</span>}</p>
+            )}
+          </div>
+          <Separator />
+
+          {/* Hospital / Lugar de trabajo — alimenta el filtro público por hospital (cliente 2026-07-15) */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-2 text-sm"><Building2 className="w-4 h-4 text-muted-foreground" /> {t('doctorFilters.hospitalProfileLabel')}</Label>
+            {editing ? (
+              <Input value={practiceHospital} onChange={e => setPracticeHospital(e.target.value)} placeholder={t('doctorFilters.hospitalProfileLabel')} maxLength={200} />
+            ) : (
+              <p className="text-sm font-medium ml-6">{data.practice_hospital || <span className="text-muted-foreground italic">—</span>}</p>
+            )}
+          </div>
+          <Separator />
+
+          {/* País — alimenta el filtro público por país (cliente 2026-07-15) */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-2 text-sm"><Globe className="w-4 h-4 text-muted-foreground" /> {t('doctorFilters.countryProfileLabel')}</Label>
+            {editing ? (
+              <Input value={country} onChange={e => setCountry(e.target.value)} placeholder={t('doctorFilters.countryProfileLabel')} maxLength={100} />
+            ) : (
+              <p className="text-sm font-medium ml-6">{data.country || <span className="text-muted-foreground italic">—</span>}</p>
             )}
           </div>
           <Separator />

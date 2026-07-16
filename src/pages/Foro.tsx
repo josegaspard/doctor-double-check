@@ -1,336 +1,385 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
+} from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { es as esLocale, enUS } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { getIntlLocale } from '@/lib/dateLocale';
 import {
-  Video,
-  Users,
-  Calendar,
-  Megaphone,
-  Radio,
-  Stethoscope,
-  GraduationCap,
-  ArrowRight,
-  Eye,
+  MessagesSquare, Plus, Loader2, Stethoscope, AlertTriangle, Lightbulb, Gem, Trophy,
+  MessageCircle, Send, Trash2, EyeOff,
 } from 'lucide-react';
 
-interface ForoCard {
-  titleKey: string;
-  descriptionKey: string;
-  ctaKey: string;
-  icon: React.ElementType;
-  to: string;
-  tone: 'doctor' | 'resident' | 'event' | 'live';
-}
+// FORO (cliente 15-jul-2026): discusión del gremio — solo doctores/residentes
+// publican y comentan (admin modera). La ruta /foro está gateada por AccessGuard
+// y las políticas RLS lo refuerzan en BD (20260715_forum.sql). Reemplaza al
+// antiguo hub de cards (meetings/eventos siguen accesibles por sus rutas).
+// Las tablas forum_* aún no están en los tipos generados → (supabase as any).
+const sb = supabase as any;
 
-const cards: ForoCard[] = [
-  {
-    titleKey: 'foroPage.cards.residentMentoring.title',
-    descriptionKey: 'foroPage.cards.residentMentoring.description',
-    ctaKey: 'foroPage.cards.residentMentoring.cta',
-    icon: GraduationCap,
-    to: '/meetings?type=resident_class',
-    tone: 'resident',
-  },
-  {
-    titleKey: 'foroPage.cards.doctorToDoctor.title',
-    descriptionKey: 'foroPage.cards.doctorToDoctor.description',
-    ctaKey: 'foroPage.cards.doctorToDoctor.cta',
-    icon: Stethoscope,
-    to: '/meetings?type=case_discussion',
-    tone: 'doctor',
-  },
-  {
-    titleKey: 'foroPage.cards.events.title',
-    descriptionKey: 'foroPage.cards.events.description',
-    ctaKey: 'foroPage.cards.events.cta',
-    icon: Megaphone,
-    to: '/eventos',
-    tone: 'event',
-  },
-  {
-    titleKey: 'foroPage.cards.clinicalLives.title',
-    descriptionKey: 'foroPage.cards.clinicalLives.description',
-    ctaKey: 'foroPage.cards.clinicalLives.cta',
-    icon: Radio,
-    to: '/lives',
-    tone: 'live',
-  },
-  {
-    titleKey: 'foroPage.cards.openZooms.title',
-    descriptionKey: 'foroPage.cards.openZooms.description',
-    ctaKey: 'foroPage.cards.openZooms.cta',
-    icon: Video,
-    to: '/meetings?visibility=public',
-    tone: 'doctor',
-  },
-  {
-    titleKey: 'foroPage.cards.residentNetwork.title',
-    descriptionKey: 'foroPage.cards.residentNetwork.description',
-    ctaKey: 'foroPage.cards.residentNetwork.cta',
-    icon: Users,
-    to: '/doctors?role=resident',
-    tone: 'resident',
-  },
+type ForumCategory = 'caso_clinico' | 'complicacion' | 'innovacion' | 'perla_quirurgica' | 'caso_exito';
+
+const CATEGORIES: { id: ForumCategory; labelKey: string; icon: React.ElementType; anonymous?: boolean }[] = [
+  { id: 'caso_clinico', labelKey: 'forum.catCasoClinico', icon: Stethoscope },
+  { id: 'complicacion', labelKey: 'forum.catComplicacion', icon: AlertTriangle, anonymous: true },
+  { id: 'innovacion', labelKey: 'forum.catInnovacion', icon: Lightbulb },
+  { id: 'perla_quirurgica', labelKey: 'forum.catPerla', icon: Gem },
+  { id: 'caso_exito', labelKey: 'forum.catExito', icon: Trophy },
 ];
 
-// Paleta de marca Medical Masters (cliente 2026-06-16: "todo con la paleta de la web").
-// Antes usaba emerald/amber/rose fuera de marca; ahora navy/teal/azul-claro/cyan.
-const TONE_CLASSES: Record<ForoCard['tone'], string> = {
-  doctor:   'from-[#163a83]/15 to-[#227787]/10 text-[#163a83]',
-  resident: 'from-[#839ed5]/25 to-[#163a83]/10 text-[#163a83]',
-  event:    'from-[#227787]/18 to-[#0b1d45]/10 text-[#227787]',
-  live:     'from-[#aed3d9]/30 to-[#227787]/12 text-[#227787]',
-};
-
-interface LiveNow {
+interface ForumPost {
   id: string;
+  author_id: string | null;   // null en posts anónimos (la vista lo anula)
+  is_mine: boolean;           // dueño → puede borrar (server-side)
+  category: ForumCategory;
   title: string;
-  specialty: string | null;
-  viewer_count: number;
-  thumbnail_url: string | null;
+  body: string;
+  is_anonymous: boolean;
+  created_at: string;
+  authorName?: string;
 }
 
-interface UpcomingMeeting {
+interface ForumComment {
   id: string;
-  title: string;
-  specialty: string | null;
-  meeting_type: string | null;
-  scheduled_at: string;
-}
-
-interface UpcomingEvent {
-  id: string;
-  title: string;
-  event_type: string;
-  event_date: string;
-  is_online: boolean;
-  location: string | null;
-  organizer: string | null;
+  post_id: string;
+  author_id: string;
+  body: string;
+  created_at: string;
+  authorName?: string;
 }
 
 export default function Foro() {
-  const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const { role } = useAuth();
-  const locale = language === 'es' ? esLocale : enUS;
+  const { user, role } = useAuth();
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [commentsByPost, setCommentsByPost] = useState<Record<string, ForumComment[]>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all');
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [isSendingComment, setIsSendingComment] = useState(false);
 
-  const [livesNow, setLivesNow] = useState<LiveNow[]>([]);
-  const [upcoming, setUpcoming] = useState<UpcomingMeeting[]>([]);
-  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
-  const [stats, setStats] = useState({ doctors: 0, liveNow: 0, upcoming: 0, events: 0 });
-  const [loading, setLoading] = useState(true);
+  // Crear publicación
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState<ForumCategory>('caso_clinico');
+  const [newTitle, setNewTitle] = useState('');
+  const [newBody, setNewBody] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const nowIso = new Date().toISOString();
-        const client = supabase as any;
-        const [livesRes, meetingsRes, doctorsRes, liveCountRes, upcomingRes, eventsRes, eventsCountRes] = await Promise.all([
-          client.from('lives').select('id,title,specialty,viewer_count,thumbnail_url').eq('status', 'live').eq('is_broadcasting', true).order('viewer_count', { ascending: false }).limit(3),
-          client.from('clinical_sessions').select('id,title,specialty,meeting_type,scheduled_at').eq('is_public', true).gt('scheduled_at', nowIso).order('scheduled_at', { ascending: true }).limit(4),
-          client.from('doctor_profiles').select('user_id', { count: 'exact', head: true }).eq('status', 'approved'),
-          client.from('lives').select('id', { count: 'exact', head: true }).eq('status', 'live').eq('is_broadcasting', true),
-          client.from('clinical_sessions').select('id', { count: 'exact', head: true }).eq('is_public', true).gt('scheduled_at', nowIso),
-          client.from('foro_events').select('id,title,event_type,event_date,is_online,location,organizer').eq('is_published', true).gte('event_date', nowIso).order('event_date', { ascending: true }).limit(3),
-          client.from('foro_events').select('id', { count: 'exact', head: true }).eq('is_published', true).gte('event_date', nowIso),
-        ]);
-        setLivesNow((livesRes.data || []) as LiveNow[]);
-        setUpcoming((meetingsRes.data || []) as UpcomingMeeting[]);
-        setUpcomingEvents((eventsRes.data || []) as UpcomingEvent[]);
-        setStats({
-          doctors: doctorsRes.count || 0,
-          liveNow: liveCountRes.count || 0,
-          upcoming: upcomingRes.count || 0,
-          events: eventsCountRes.count || 0,
-        });
-      } catch (e) {
-        console.error('Foro load error:', e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const dateFmt = useMemo(
+    () => new Intl.DateTimeFormat(getIntlLocale(language), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    [language],
+  );
+
+  const resolveAuthorNames = useCallback(async (rows: { author_id: string | null; is_anonymous?: boolean }[]) => {
+    // Nombres SOLO de autores no anónimos (los anónimos llegan con author_id null).
+    const ids = [...new Set(rows.filter((r) => !r.is_anonymous && r.author_id).map((r) => r.author_id as string))];
+    if (ids.length === 0) return {} as Record<string, string>;
+    const { data } = await supabase.from('profiles_public').select('id, name').in('id', ids);
+    return Object.fromEntries(((data || []) as any[]).map((p) => [p.id, p.name || 'Dr.']));
   }, []);
 
-  const eventTypeLabel = (type: string) => {
-    const key = `eventos.types.${type}`;
-    const tr = t(key);
-    return tr && tr !== key ? tr : type;
-  };
+  const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await sb
+        .from('forum_posts_feed')   // vista: anula author_id de anónimos + is_mine
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      const rows: ForumPost[] = data || [];
+      const names = await resolveAuthorNames(rows);
+      setPosts(rows.map((p) => ({ ...p, authorName: p.is_anonymous || !p.author_id ? undefined : names[p.author_id] })));
 
-  const meetingTypeLabel = (type: string | null) => {
-    switch (type) {
-      case 'resident_class': return t('autoI18n.clForo1');
-      case 'case_discussion': return t('autoI18n.clForo2');
-      case 'open_zoom':
-      case 'public': return t('autoI18n.clForo3');
-      default: return t('autoI18n.clForo4');
+      // Comentarios de los posts listados (una sola query, agrupado client-side).
+      if (rows.length > 0) {
+        const { data: cData } = await sb
+          .from('forum_comments')
+          .select('*')
+          .in('post_id', rows.map((p: ForumPost) => p.id))
+          .order('created_at', { ascending: true });
+        const cRows: ForumComment[] = cData || [];
+        const cNames = await resolveAuthorNames(cRows);
+        const grouped: Record<string, ForumComment[]> = {};
+        for (const c of cRows) {
+          (grouped[c.post_id] ??= []).push({ ...c, authorName: cNames[c.author_id] });
+        }
+        setCommentsByPost(grouped);
+      } else {
+        setCommentsByPost({});
+      }
+    } catch (e) {
+      console.error('forum fetch error', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resolveAuthorNames]);
+
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const isAnonymousCategory = CATEGORIES.find((c) => c.id === newCategory)?.anonymous === true;
+
+  const handlePublish = async () => {
+    if (!user?.id) return;
+    if (newTitle.trim().length < 3 || !newBody.trim()) {
+      toast.error(t('forum.validation'));
+      return;
+    }
+    setIsPublishing(true);
+    try {
+      const { error } = await sb.from('forum_posts').insert({
+        author_id: user.id,
+        category: newCategory,
+        title: newTitle.trim(),
+        body: newBody.trim(),
+        is_anonymous: isAnonymousCategory,
+      });
+      if (error) throw error;
+      toast.success(t('forum.published'));
+      setCreateOpen(false);
+      setNewTitle('');
+      setNewBody('');
+      fetchPosts();
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    } finally {
+      setIsPublishing(false);
     }
   };
 
+  const handleComment = async (postId: string) => {
+    // Guard de reentrada: Enter puede disparar varias veces antes de que
+    // termine el insert → comentarios duplicados.
+    if (!user?.id || !commentDraft.trim() || isSendingComment) return;
+    setIsSendingComment(true);
+    try {
+      const { error } = await sb.from('forum_comments').insert({
+        post_id: postId,
+        author_id: user.id,
+        body: commentDraft.trim(),
+      });
+      if (error) throw error;
+      setCommentDraft('');
+      fetchPosts();
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    } finally {
+      setIsSendingComment(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const { error } = await sb.from('forum_posts').delete().eq('id', postId);
+      if (error) throw error;
+      toast.success(t('forum.deleted'));
+      fetchPosts();
+    } catch (e: any) {
+      toast.error(e?.message || 'Error');
+    }
+  };
+
+  const visiblePosts = selectedCategory === 'all' ? posts : posts.filter((p) => p.category === selectedCategory);
+  const categoryMeta = (id: ForumCategory) => CATEGORIES.find((c) => c.id === id)!;
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-5xl">
-        {/* Cabecera (título, subtítulo, botones y contadores) eliminada por petición del cliente 2026-06-17. */}
-
-        {/* Lives en vivo ahora */}
-        {livesNow.length > 0 && (
-          <div className="mb-6 sm:mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                {t('autoI18n.clForo6')}
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/lives')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {t('autoI18n.clForo8')} <ArrowRight className="w-3 h-3" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {livesNow.map((live) => (
-                <Card key={live.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/live/${live.id}`)}>
-                  <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/30 relative overflow-hidden">
-                    {live.thumbnail_url ? (
-                      <img src={live.thumbnail_url} alt={live.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Radio className="w-10 h-10 text-primary/40" />
-                      </div>
-                    )}
-                    <Badge className="absolute top-2 left-2 bg-primary hover:bg-primary text-white gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      LIVE
-                    </Badge>
-                    {live.viewer_count > 0 && (
-                      <Badge variant="secondary" className="absolute top-2 right-2 gap-1 bg-black/50 text-white border-0">
-                        <Eye className="w-3 h-3" /> {live.viewer_count}
-                      </Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-3">
-                    <p className="font-semibold text-sm line-clamp-1">{live.title}</p>
-                    {live.specialty && <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{live.specialty}</p>}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+      <div className="container mx-auto px-4 py-6 max-w-3xl">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <MessagesSquare className="w-6 h-6 text-primary" />
+              {t('forum.title')}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">{t('forum.subtitle')}</p>
           </div>
-        )}
-
-        {/* Próximas sesiones públicas */}
-        {upcoming.length > 0 && (
-          <div className="mb-6 sm:mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-secondary dark:text-secondary" />
-                {t('autoI18n.clForo9')}
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/meetings')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {t('autoI18n.clForo10')} <ArrowRight className="w-3 h-3" />
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 flex-shrink-0">
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('forum.newPost')}</span>
               </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {upcoming.map((m) => (
-                <Card key={m.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/meetings?id=${m.id}`)}>
-                  <CardContent className="p-3 sm:p-4 flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-secondary/15 flex flex-col items-center justify-center flex-shrink-0">
-                      <p className="text-[10px] uppercase text-secondary dark:text-secondary font-semibold leading-none">{format(new Date(m.scheduled_at), 'MMM', { locale })}</p>
-                      <p className="text-base font-bold text-secondary dark:text-secondary leading-none mt-0.5">{format(new Date(m.scheduled_at), 'd')}</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm line-clamp-1">{m.title}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[10px] h-5">{meetingTypeLabel(m.meeting_type)}</Badge>
-                        {m.specialty && <span className="text-[10px] text-muted-foreground">{m.specialty}</span>}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-1">{format(new Date(m.scheduled_at), 'EEEE d MMM · HH:mm', { locale })}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{t('forum.newPost')}</DialogTitle>
+                <DialogDescription>{t('forum.newPostHint')}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <select
+                  aria-label={t('forum.categoryLabel')}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value as ForumCategory)}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>{t(c.labelKey)}</option>
+                  ))}
+                </select>
+                {isAnonymousCategory && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <EyeOff className="w-3.5 h-3.5" />
+                    {t('forum.anonymousNote')}
+                  </p>
+                )}
+                <Input
+                  placeholder={t('forum.titlePlaceholder')}
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  maxLength={200}
+                />
+                <Textarea
+                  placeholder={t('forum.bodyPlaceholder')}
+                  value={newBody}
+                  onChange={(e) => setNewBody(e.target.value)}
+                  rows={6}
+                  maxLength={10000}
+                />
+              </div>
+              <DialogFooter>
+                <Button onClick={handlePublish} disabled={isPublishing} className="gap-2 w-full sm:w-auto">
+                  {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {t('forum.publish')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-        {/* Próximos eventos publicados por doctores verificados */}
-        {upcomingEvents.length > 0 && (
-          <div className="mb-6 sm:mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-secondary dark:text-secondary" />
-                {t('eventos.foroBlock.title')}
-              </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/eventos')} className="text-xs gap-1 text-slate-700 dark:text-slate-200">
-                {t('eventos.foroBlock.seeAll')} <ArrowRight className="w-3 h-3" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {upcomingEvents.map((e) => (
-                <Card key={e.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/eventos')}>
-                  <CardContent className="p-3 sm:p-4 flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-secondary/15 border border-secondary/30 flex flex-col items-center justify-center flex-shrink-0">
-                      <p className="text-[10px] uppercase text-secondary dark:text-secondary font-semibold leading-none">{format(new Date(e.event_date), 'MMM', { locale })}</p>
-                      <p className="text-lg font-bold text-secondary dark:text-secondary leading-none mt-0.5">{format(new Date(e.event_date), 'd')}</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-sm line-clamp-2 leading-snug">{e.title}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[10px] h-5 capitalize">{eventTypeLabel(e.event_type)}</Badge>
-                        {e.is_online && <span className="text-[10px] text-muted-foreground">{t('autoI18n.clForo11')}</span>}
-                        {!e.is_online && e.location && <span className="text-[10px] text-muted-foreground truncate">{e.location}</span>}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-1">{format(new Date(e.event_date), 'EEEE d MMM · HH:mm', { locale })}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Section header para las cards estáticas */}
-        <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3 sm:mb-4">
-          {t('autoI18n.clForo12')}
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cards.map((c) => {
+        {/* Category chips */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
+          <Button
+            size="sm"
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            className="rounded-full flex-shrink-0"
+            onClick={() => setSelectedCategory('all')}
+          >
+            {t('forum.allCategories')}
+          </Button>
+          {CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (
-              <Card key={c.titleKey} className="overflow-hidden">
-                <div className={`h-1.5 bg-gradient-to-r ${TONE_CLASSES[c.tone]}`} />
-                <CardHeader className="pb-2">
-                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${TONE_CLASSES[c.tone]} flex items-center justify-center`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <CardTitle className="text-base mt-2">{t(c.titleKey)}</CardTitle>
-                  <CardDescription className="text-xs leading-relaxed">{t(c.descriptionKey)}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="ghost" size="sm" className="px-0 gap-1" onClick={() => navigate(c.to)}>
-                    {t(c.ctaKey)} <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                </CardContent>
-              </Card>
+              <Button
+                key={c.id}
+                size="sm"
+                variant={selectedCategory === c.id ? 'default' : 'outline'}
+                className="rounded-full flex-shrink-0 gap-1.5"
+                onClick={() => setSelectedCategory(c.id)}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {t(c.labelKey)}
+              </Button>
             );
           })}
         </div>
 
-        {/* Aviso "Próximamente en el Foro" SOLO para residentes (cliente 2026-06-19):
-            el resto de roles (doctor, paciente, admin, visitante) no debe verlo. */}
-        {role === 'resident' && (
-          <div className="mt-10 p-4 sm:p-6 rounded-xl bg-white/95 dark:bg-slate-900/85 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/70 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-lg">
-            <p className="text-sm font-semibold mb-1 text-slate-900 dark:text-white">{t('foroPage.comingSoonTitle')}</p>
-            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
-              {t('foroPage.comingSoonBody')}
-            </p>
+        {/* Posts */}
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+            <Skeleton className="h-28 w-full" />
+          </div>
+        ) : visiblePosts.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <MessagesSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">{t('forum.empty')}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {visiblePosts.map((post) => {
+              const meta = categoryMeta(post.category);
+              const Icon = meta.icon;
+              const comments = commentsByPost[post.id] || [];
+              const isExpanded = expandedPost === post.id;
+              const canDelete = post.is_mine || role === 'admin';
+              return (
+                <Card key={post.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge variant="secondary" className="gap-1 text-[11px] mb-2">
+                        <Icon className="w-3 h-3" />
+                        {t(meta.labelKey)}
+                      </Badge>
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          aria-label={t('forum.delete')}
+                          onClick={() => handleDeletePost(post.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-foreground leading-snug">{post.title}</h3>
+                    <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap">{post.body}</p>
+                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        {post.is_anonymous ? (
+                          <><EyeOff className="w-3.5 h-3.5" />{t('forum.anonymous')}</>
+                        ) : (
+                          <>{post.authorName || 'Dr.'}</>
+                        )}
+                        <span aria-hidden>·</span>
+                        {dateFmt.format(new Date(post.created_at))}
+                      </span>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => { setExpandedPost(isExpanded ? null : post.id); setCommentDraft(''); }}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        {comments.length} {t('forum.comments')}
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-2.5">
+                        {comments.map((c) => (
+                          <div key={c.id} className="text-sm">
+                            <span className="font-medium text-foreground">{c.authorName || 'Dr.'}</span>
+                            <span className="text-muted-foreground text-xs ml-2">{dateFmt.format(new Date(c.created_at))}</span>
+                            <p className="text-foreground/90 mt-0.5 whitespace-pre-wrap">{c.body}</p>
+                          </div>
+                        ))}
+                        <div className="flex gap-2 pt-1">
+                          <Input
+                            placeholder={t('forum.commentPlaceholder')}
+                            value={commentDraft}
+                            onChange={(e) => setCommentDraft(e.target.value)}
+                            maxLength={4000}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(post.id); } }}
+                          />
+                          <Button
+                            size="icon"
+                            disabled={isSendingComment || !commentDraft.trim()}
+                            aria-label={t('forum.send')}
+                            onClick={() => handleComment(post.id)}
+                          >
+                            {isSendingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

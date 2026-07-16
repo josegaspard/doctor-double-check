@@ -132,7 +132,7 @@ export default function VerifyPrescription() {
                       <div key={i} className="flex items-start gap-2 text-sm rounded-lg border border-border p-2.5">
                         <Badge variant="outline" className="text-[10px] flex-shrink-0">#{i + 1}</Badge>
                         <div className="min-w-0">
-                          <p className="font-medium text-foreground">{m.name}</p>
+                          <p className="font-medium text-foreground">{m.name}{m.genericName ? <span className="font-normal text-muted-foreground"> ({t('rxExtra.genericShort')}: {m.genericName})</span> : null}</p>
                           <p className="text-xs text-muted-foreground">
                             {[m.dosage, m.route, m.frequency, m.duration].filter(Boolean).join(' · ')}
                           </p>
