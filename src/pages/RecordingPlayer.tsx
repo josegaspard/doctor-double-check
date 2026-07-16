@@ -498,7 +498,7 @@ export default function RecordingPlayer() {
               </CardContent>
             </Card>
 
-            <Card className="bg-muted/50">
+            <Card>
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
                   <Lock className="w-5 h-5 text-muted-foreground flex-shrink-0" />

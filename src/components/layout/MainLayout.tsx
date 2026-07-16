@@ -601,11 +601,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <Link
                     to="/foro"
                     aria-label={t('forum.title')}
-                    title={t('forum.title')}
-                    className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium transition-colors ${
-                      location.pathname === '/foro'
-                        ? 'text-primary'
-                        : 'text-foreground/80 hover:text-foreground hover:bg-accent/60'
+                    className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium ${
+                      location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
                     }`}
                   >
                     <MessageSquare className="w-5 h-5" />

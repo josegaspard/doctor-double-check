@@ -39,7 +39,18 @@ export default function RoleSelector() {
   }, []);
 
   const roleOptions: RoleOption[] = [
-    // Card "Explorar Lives Gratis" (visitor) QUITADA por el cliente (2026-06-16).
+    // "Descubre MedicalMasters" PRIMERO (cliente 16-jul-2026): acceso libre SIN
+    // cuenta por 10 min; al agotarse, DiscoverGate bloquea y pide registro.
+    // Imagen restaurada: collage de lives.
+    {
+      id: 'visitor',
+      title: t('roleSelector.discoverTitle'),
+      description: t('roleSelector.discoverDescription'),
+      icon: Eye,
+      bgImage: '/app-roles/visitor.webp',
+      fallbackGradient: 'linear-gradient(180deg, #227787 0%, #163a83 60%, #0a1f47 100%)',
+      action: 'visitor',
+    },
     {
       id: 'patient',
       title: t('roleSelector.imPatient'),
@@ -70,18 +81,6 @@ export default function RoleSelector() {
       fallbackGradient: 'linear-gradient(180deg, #163a83 0%, #0a1f47 60%, #163a83 100%)',
       action: 'login',
       role: 'resident',
-    },
-    // 4ª opción "Descubre MedicalMasters" (cliente 15-jul-2026): acceso libre SIN
-    // cuenta por 10 minutos; al agotarse, DiscoverGate bloquea y pide registro.
-    // Imagen restaurada (cliente pidió la que tenía antes): collage de lives.
-    {
-      id: 'visitor',
-      title: t('roleSelector.discoverTitle'),
-      description: t('roleSelector.discoverDescription'),
-      icon: Eye,
-      bgImage: '/app-roles/visitor.webp',
-      fallbackGradient: 'linear-gradient(180deg, #227787 0%, #163a83 60%, #0a1f47 100%)',
-      action: 'visitor',
     },
   ];
 
