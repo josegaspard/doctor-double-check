@@ -600,8 +600,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 {(role === 'doctor' || role === 'resident' || role === 'admin') && (
                   <Link
                     to="/foro"
-                    aria-label={t('nav.foro')}
-                    title={t('nav.foro')}
+                    aria-label={t('forum.title')}
+                    title={t('forum.title')}
                     className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium transition-colors ${
                       location.pathname === '/foro'
                         ? 'text-primary'
@@ -609,7 +609,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     }`}
                   >
                     <MessageSquare className="w-5 h-5" />
-                    <span className="hidden sm:inline">{t('nav.foro')}</span>
+                    <span className="hidden sm:inline">{t('forum.title')}</span>
                   </Link>
                 )}
                 <GlobalSearch />
