@@ -9,6 +9,7 @@ const BunnyHLSPlayer = React.lazy(() =>
   import('@/components/recordings/BunnyHLSPlayer').then(m => ({ default: m.BunnyHLSPlayer }))
 );
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
+import { useBunnyCaptionTracks } from '@/hooks/useBunnyCaptionTracks';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { Button } from '@/components/ui/button';
