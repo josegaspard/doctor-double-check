@@ -41,9 +41,8 @@ export function useAuthActions(
     setUser(null);
     setSupabaseUser(null);
     sessionStorage.removeItem('medicalMasters_visitor');
-    // Reloj del modo Descubre: si el siguiente que entra es otro visitante en el
-    // mismo navegador, que empiece sus 10 min limpios.
-    localStorage.removeItem('mm_discover_started_at');
+    // NO borrar mm_discover_started_at: el modo Descubre es de UNA sola vez por
+    // navegador — al cerrar sesión NO se reinician los 10 minutos (cliente 16-jul).
     
     // Sign out from Supabase FIRST, then redirect a la landing pública.
     await supabase.auth.signOut();

@@ -84,28 +84,34 @@ export default function RoleSelector() {
     },
   ];
 
+  // Un usuario REAL logueado = autenticado y con rol distinto de 'visitor'.
+  // (Un visitante también está "autenticado", por eso NO basta isAuthenticated.)
+  const isRealUser = isAuthenticated && !!user && !!role && role !== 'visitor';
+
   const handleRoleSelect = (option: RoleOption) => {
     if (option.action === 'visitor') {
-      // No degradar cuentas reales: el modo Descubre es SOLO para quien no tiene
-      // sesión. Un usuario logueado que toca la tarjeta va a su destino normal.
-      if (isAuthenticated && role && role !== 'visitor') {
+      // No degradar cuentas reales: si ya hay usuario real, va a su destino normal.
+      if (isRealUser) {
         navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/lives');
+        return;
+      }
+      // Modo Descubre = UNA sola vez por navegador. Si ya se usaron (o agotaron)
+      // los 10 min, NO se reinicia: se manda a registrarse.
+      const started = Number(localStorage.getItem('mm_discover_started_at') || 0);
+      if (started > 0) {
+        navigate('/login', { state: { preferredRole: 'patient', mode: 'signup' } });
         return;
       }
       loginAsVisitor();
       navigate('/lives');
       return;
     }
-    if (isAuthenticated && user) {
-      // Super admin entra por la vía de doctor → siempre al panel /admin (cliente 2026-06-26).
-      if (role === 'admin') {
-        navigate('/admin');
-        return;
-      }
-      if (option.role === 'doctor') {
-        navigate(role === 'doctor' ? '/doctor/dashboard' : '/lives');
-        return;
-      }
+    // Tarjetas de rol (paciente/médico/residente): SOLO un usuario REAL va a su
+    // panel. Un visitante o alguien sin sesión SIEMPRE va a login/registro con el
+    // rol elegido (antes un visitante caía en /lives → parecía "Descubre").
+    if (isRealUser) {
+      if (role === 'admin') { navigate('/admin'); return; }
+      if (option.role === 'doctor') { navigate(role === 'doctor' ? '/doctor/dashboard' : '/lives'); return; }
       navigate('/lives');
       return;
     }

@@ -369,7 +369,7 @@ export default function Login() {
             })}
           </div>
 
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={(location.state as any)?.mode === 'signup' ? 'register' : 'login'} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
               <TabsTrigger value="register">{t('login.registerTab')}</TabsTrigger>
