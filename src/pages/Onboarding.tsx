@@ -25,6 +25,7 @@ import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Badge } from '@/components/ui/badge';
 import { AppBackground } from '@/components/layout/AppBackground';
+import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 
 // Known Mexican city coordinates for geocoding
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -944,12 +945,8 @@ export default function Onboarding() {
           </motion.div>
         </main>
 
-        {/* Footer */}
-        <footer className="app-shell-footer py-4">
-          <div className="container mx-auto px-4 text-center">
-            <p className="app-shell-footer-copy text-xs">{t('onboardingPage.footerCopyright')}</p>
-          </div>
-        </footer>
+        {/* Footer COMPLETO — el mismo de toda la app (no solo el copyright). */}
+        <UnifiedFooter variant="app" />
       </AppBackground>
     );
   }
@@ -1768,12 +1765,8 @@ export default function Onboarding() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="app-shell-footer py-4">
-        <div className="container mx-auto px-4 text-center">
-          <p className="app-shell-footer-copy text-xs">&copy; 2026 Medical Masters. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      {/* Footer COMPLETO — el mismo de toda la app (no solo el copyright). */}
+      <UnifiedFooter variant="app" />
     </AppBackground>
   );
 }

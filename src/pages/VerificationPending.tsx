@@ -2,11 +2,11 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Clock, CheckCircle, ArrowRight, ArrowLeft, Home, Eye, Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
+import { Shield, Clock, CheckCircle, ArrowRight, ArrowLeft, Home, Eye } from 'lucide-react';
 import { AppBackground } from '@/components/layout/AppBackground';
+import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -14,8 +14,6 @@ import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 // (app-shell-header / app-shell-footer) para que la pantalla no salga "pelada".
 function VerificationShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
-  const { t } = useLanguage();
-  const { socialLinks } = useSocialLinks();
 
   return (
     <AppBackground className="min-h-[100dvh] flex flex-col">
@@ -40,58 +38,9 @@ function VerificationShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="app-shell-footer py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-8 w-auto" />
-                <span className="text-sm text-light">{t('footer.platform')}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                {socialLinks.facebook && (
-                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
-                    <Facebook className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.instagram && (
-                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
-                    <Instagram className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.twitter && (
-                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.linkedin && (
-                  <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                )}
-                {socialLinks.youtube && (
-                  <a href={socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="text-light/90 hover:text-light transition-colors">
-                    <Youtube className="w-5 h-5" />
-                  </a>
-                )}
-              </div>
-            </div>
-            <div className="border-t border-light/20" />
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <nav className="flex items-center gap-6">
-                <Link to="/terms" className="text-sm text-light/90 hover:text-light transition-colors">
-                  {t('footer.termsOfService')}
-                </Link>
-                <Link to="/privacy" className="text-sm text-light/90 hover:text-light transition-colors">
-                  {t('footer.privacyPolicy')}
-                </Link>
-              </nav>
-              <p className="app-shell-footer-copy text-sm">{t('footer.copyright')}</p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* Footer COMPLETO — el mismo de toda la app (marca+redes, Plataforma,
+          Recursos, Legal, copyright, DMCA). No una versión recortada. */}
+      <UnifiedFooter variant="app" />
     </AppBackground>
   );
 }
