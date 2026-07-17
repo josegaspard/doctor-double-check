@@ -76,7 +76,7 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <AppBackground className="min-h-screen flex flex-col">
+      <AppBackground className="min-h-[100dvh] flex flex-col">
         {/* Header */}
         <header className="app-shell-header">
           <div className="container mx-auto px-4 py-4">
@@ -92,7 +92,7 @@ export default function ResetPassword() {
           </div>
         </header>
         
-        <main className="flex-1 flex items-center justify-center p-4">
+        <main className="relative z-10 flex-1 flex items-center justify-center p-4">
           <Card className="max-w-md w-full border-success/30 bg-success/5">
             <CardContent className="p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
@@ -168,7 +168,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <AppBackground className="min-h-screen flex flex-col">
+    <AppBackground className="min-h-[100dvh] flex flex-col">
       {/* Header */}
       <header className="app-shell-header">
         <div className="container mx-auto px-4 py-4">
@@ -186,7 +186,7 @@ export default function ResetPassword() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
+      <main className="relative z-10 flex-1 container mx-auto px-4 py-8 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">

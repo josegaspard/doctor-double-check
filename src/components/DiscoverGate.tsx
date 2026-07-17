@@ -68,10 +68,11 @@ export function DiscoverGate() {
   // Bloqueo total: overlay no descartable sobre TODA la app.
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+      className="fixed inset-0 z-[100] overflow-y-auto"
       style={{ background: 'linear-gradient(180deg, #0a1f47 0%, #163a83 60%, #227787 130%)' }}
       data-testid="discover-gate-overlay"
     >
+      <div className="min-h-full flex items-center justify-center p-6 py-10">
       <div className="max-w-md w-full text-center text-white">
         <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto mx-auto mb-6 drop-shadow-lg" />
         <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
@@ -99,6 +100,7 @@ export function DiscoverGate() {
           <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           {t('discover.redirecting')}
         </p>
+      </div>
       </div>
     </div>
   );

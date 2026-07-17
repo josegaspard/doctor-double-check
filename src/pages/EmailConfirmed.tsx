@@ -79,8 +79,8 @@ export default function EmailConfirmed() {
   }, [navigate]);
 
   return (
-    <AppBackground className="min-h-screen flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center space-y-6 rounded-2xl border border-white/12 bg-white/5 p-6 backdrop-blur-sm">
+    <AppBackground className="min-h-[100dvh] flex items-center justify-center px-4 py-10">
+      <div className="relative z-10 max-w-md w-full text-center space-y-6 rounded-2xl border border-white/12 bg-white/5 p-6 backdrop-blur-sm">
         {status === "loading" && (
           <>
             <Loader2 className="w-16 h-16 animate-spin text-white mx-auto" />

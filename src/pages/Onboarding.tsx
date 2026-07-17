@@ -828,9 +828,9 @@ export default function Onboarding() {
 
   if (authLoading || isCheckingOnboarding || isLoadingProgress) {
     return (
-      <AppBackground className="min-h-screen flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">{t('onboarding.loadingProgress')}</p>
+      <AppBackground className="min-h-[100dvh] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="relative z-10 w-8 h-8 animate-spin text-primary" />
+        <p className="relative z-10 text-sm text-muted-foreground">{t('onboarding.loadingProgress')}</p>
       </AppBackground>
     );
   }
@@ -839,7 +839,7 @@ export default function Onboarding() {
   if (showWelcome) {
     const RoleIcon = getRoleIcon();
     return (
-      <AppBackground className="min-h-screen flex flex-col">
+      <AppBackground className="min-h-[100dvh] flex flex-col">
       <header className="app-shell-header">
           <div className="container mx-auto px-4 py-3">
             <div className="relative flex items-center justify-between min-h-14">
@@ -853,7 +853,7 @@ export default function Onboarding() {
         </header>
 
         {/* Welcome Content */}
-        <main className="flex-1 container mx-auto px-4 py-8 sm:py-12 flex items-start justify-center overflow-y-auto">
+        <main className="relative z-10 flex-1 container mx-auto px-4 py-8 sm:py-12 flex items-start justify-center overflow-y-auto">
           <motion.div
             className="w-full max-w-lg text-center pb-10 sm:pb-14"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -957,7 +957,7 @@ export default function Onboarding() {
   const totalSteps = 2; // Always 2 steps now (Patient has Clinical History, Doctors have Verification/Signature)
 
   return (
-    <AppBackground className="min-h-screen flex flex-col">
+    <AppBackground className="min-h-[100dvh] flex flex-col">
       <header className="app-shell-header">
         <div className="container mx-auto px-4 py-3">
           <div className="relative flex items-center justify-between min-h-14">
@@ -971,7 +971,7 @@ export default function Onboarding() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-12 flex items-start justify-center overflow-y-auto">
+      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-12 flex items-start justify-center overflow-y-auto">
         <div className="w-full max-w-lg pb-10 sm:pb-14">
           {/* Progress Indicator */}
           <motion.div 

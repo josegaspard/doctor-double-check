@@ -13,8 +13,8 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <AppBackground className="flex min-h-screen items-center justify-center">
-      <div className="text-center px-4">
+    <AppBackground className="flex min-h-[100dvh] items-center justify-center p-4">
+      <div className="relative z-10 text-center px-4">
         <h1 className="mb-4 text-5xl font-bold">404</h1>
         <p className="mb-6 text-xl text-muted-foreground">{t('fix20.pages.notFoundMessage')}</p>
         <Button asChild variant="outline">

@@ -20,8 +20,8 @@ export default function VerificationPending() {
 
   if (isApproved) {
     return (
-      <AppBackground className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-success/30 bg-success/5">
+      <AppBackground className="min-h-[100dvh] flex items-center justify-center p-4 py-10">
+        <Card className="relative z-10 max-w-md w-full border-success/30 bg-success/5">
           <CardHeader className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-success" />
@@ -43,8 +43,8 @@ export default function VerificationPending() {
   }
 
   return (
-    <AppBackground className="min-h-screen flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
+    <AppBackground className="min-h-[100dvh] flex items-center justify-center p-4 py-10">
+      <Card className="relative z-10 max-w-md w-full">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
             <Clock className="w-8 h-8 text-warning" />
