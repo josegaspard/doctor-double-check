@@ -210,8 +210,9 @@ export default function Landing() {
 
               {/* Video corto en autoplay debajo del texto del hero (cliente 2026-07-29):
                   sin sonido, sin controles/botones, loop continuo. Poster = frame 0 para
-                  evitar el reproductor negro en iOS Safari (mismo patrón que landing-mm-2026). */}
-              <div className="w-36 sm:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 shadow-xl bg-black/20 mt-1">
+                  evitar el reproductor negro en iOS Safari (mismo patrón que landing-mm-2026).
+                  Oculto en móvil (cliente 2026-07-29): solo desktop/tablet md+. */}
+              <div className="hidden md:block md:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 shadow-xl bg-black/20 mt-1">
                 <video
                   autoPlay
                   muted
