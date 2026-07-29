@@ -208,6 +208,24 @@ export default function Landing() {
                 {t('landing.hero.description')}
               </p>
 
+              {/* Video corto en autoplay debajo del texto del hero (cliente 2026-07-29):
+                  sin sonido, sin controles/botones, loop continuo. Poster = frame 0 para
+                  evitar el reproductor negro en iOS Safari (mismo patrón que landing-mm-2026). */}
+              <div className="w-36 sm:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 shadow-xl bg-black/20 mt-1">
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  disablePictureInPicture
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  preload="auto"
+                  poster="/hero-intro-loop-poster.jpg"
+                  className="block w-full h-auto aspect-video object-cover pointer-events-none"
+                  src="/hero-intro-loop.mp4"
+                />
+              </div>
+
               {/* Mobile stat chips — restaurados 2026-06-02 con SOLO títulos (sin números). */}
               <div className="grid grid-cols-3 gap-2 mt-3 md:hidden">
                 {[
