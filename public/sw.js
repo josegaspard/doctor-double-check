@@ -3,7 +3,7 @@
 // NO recargar pestañas desde aquí: client.navigate() en iOS Safari provocaba
 // recarga en bucle y dejaba la página EN BLANCO (regresión batch67, revertido
 // en batch68, 8-jul). Purgar caché sí es seguro; forzar navegación NO.
-// SW_VERSION: 2026-07-17-batch113-dialog-maxh-scroll-mobile
+// SW_VERSION: 2026-08-03-batch114-marca-notificaciones
 
 self.addEventListener('install', function(event) {
   self.skipWaiting();
@@ -22,7 +22,9 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('push', function(event) {
   console.log('[SW] Push received:', event);
   
-  let data = { title: 'DocSeek', body: 'Nueva notificación' };
+  // Título por defecto: marca actual. Decía 'DocSeek' (nombre viejo del proyecto),
+  // así que una notificación sin título se anunciaba con una marca que no existe.
+  let data = { title: 'Medical Masters', body: 'Nueva notificación' };
   
   if (event.data) {
     try {
@@ -34,8 +36,10 @@ self.addEventListener('push', function(event) {
 
   const options = {
     body: data.body || data.message,
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
+    // icon = logo a color (el favicon.ico es de 16-48 px y salía pixeleado);
+    // badge = silueta monocroma, que es lo que Android pinta en la barra de estado.
+    icon: data.icon || '/icon-192.png?v=18',
+    badge: '/badge-mono.png?v=18',
     vibrate: [100, 50, 100],
     data: data.data || {},
     actions: data.actions || [],

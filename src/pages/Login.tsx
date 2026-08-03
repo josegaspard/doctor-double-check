@@ -25,6 +25,7 @@ import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { translateAuthError } from '@/lib/translateAuthError';
+import { useSignupCountryGate } from '@/hooks/useSignupCountryGate';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -100,6 +101,8 @@ export default function Login() {
   const [registerUniversity, setRegisterUniversity] = useState('');
   const [registerDoctorCode, setRegisterDoctorCode] = useState('');
   const [registerError, setRegisterError] = useState('');
+  // Candado "solo México" del súper admin (apagado por defecto → no hace nada).
+  const countryGate = useSignupCountryGate();
   const [googleLoading, setGoogleLoading] = useState(false);
   // Casillas de aceptación obligatorias en el registro (pedido cliente 2026-06-30):
   // T&C + Privacidad para TODOS; Código de Ética solo doctor/residente.
@@ -240,6 +243,14 @@ export default function Login() {
     e.preventDefault();
     loginAttemptedHere.current = true;
     setRegisterError('');
+
+    // Candado de registro por país. Solo aplica si el súper admin lo encendió
+    // (Ajustes del sitio → Funciones → "Registro solo para México"); apagado, esto
+    // no hace nada y el registro sigue abierto a todo el mundo.
+    if (countryGate.blocked) {
+      setRegisterError(t('login.countryNotAvailable'));
+      return;
+    }
 
     // Validate password strength before submitting
     const { score } = getPasswordStrength(registerPassword);
@@ -782,12 +793,21 @@ export default function Login() {
                         )}
                       </div>
 
+                      {/* Aviso de país: solo se renderiza si el admin encendió el
+                          candado Y la IP resultó ser de fuera de México. */}
+                      {countryGate.blocked && (
+                        <Alert>
+                          <AlertTitle>{t('login.countryNotAvailableTitle')}</AlertTitle>
+                          <AlertDescription>{t('login.countryNotAvailable')}</AlertDescription>
+                        </Alert>
+                      )}
+
                       {registerError && (
                         <p className="text-sm text-destructive">{registerError}</p>
                       )}
 
-                      <Button type="submit" className="w-full" disabled={isLoading || !acceptedLegal || (needsEthics && !acceptedEthics)}>
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.createAccount')}
+                      <Button type="submit" className="w-full" disabled={isLoading || !acceptedLegal || (needsEthics && !acceptedEthics) || countryGate.blocked || countryGate.checking}>
+                        {isLoading || countryGate.checking ? <Loader2 className="w-4 h-4 animate-spin" /> : t('login.createAccount')}
                       </Button>
                     </form>
 

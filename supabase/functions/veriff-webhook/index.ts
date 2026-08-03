@@ -160,7 +160,7 @@ serve(async (req) => {
           const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
 
           if (vapidPublicKey && vapidPrivateKey) {
-            webpush.setVapidDetails("mailto:push@docseek.app", vapidPublicKey, vapidPrivateKey);
+            webpush.setVapidDetails("mailto:soporte@medical-masters.com", vapidPublicKey, vapidPrivateKey);
 
             const { data: pushSubs } = await supabase
               .from("push_subscriptions")

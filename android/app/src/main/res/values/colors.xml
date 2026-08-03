@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color de marca (teal del pack de logos v2). Lo usa Android para teñir el
+         ícono monocromo de las notificaciones push. -->
+    <color name="mm_brand_teal">#227787</color>
+</resources>

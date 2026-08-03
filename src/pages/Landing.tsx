@@ -87,8 +87,16 @@ export default function Landing() {
         <div className="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-[#227787]/20 rounded-full mix-blend-multiply filter blur-xl sm:blur-3xl opacity-70 animate-pulse will-change-transform" style={{ animationDelay: '4s' }} />
       </div>
 
-      {/* Navigation */}
-      <nav className={`landing-nav fixed w-full z-50 transition-all duration-500 top-0 ${scrolled ? 'is-scrolled' : ''}`}>
+      {/* Navigation.
+          padding-top = env(safe-area-inset-top) en vez de subir `top`: así el fondo
+          (.landing-nav-surface, absolute inset-0) sigue pintando hasta el borde real
+          de la pantalla (se funde con la isla dinámica / status bar, look "app"),
+          mientras el contenido (logo, CTA) queda empujado por debajo, sin quedar
+          tapado por el notch en iPhone/Android. */}
+      <nav
+        className={`landing-nav fixed w-full z-50 transition-all duration-500 top-0 ${scrolled ? 'is-scrolled' : ''}`}
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="landing-nav-surface absolute inset-0 transition-all duration-500" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
           <div className="relative flex justify-between items-center h-20 md:h-24">

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
 import { useWallet } from '@/contexts/WalletContext';
@@ -396,13 +396,19 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       {/* Modo "Descubre MedicalMasters": contador de 10 min para visitantes y
           bloqueo con registro al agotarse. No renderiza nada para usuarios reales. */}
       <DiscoverGate />
-      {/* Header — usa color del footer cuando el fondo es imagen */}
+      {/* Header — usa color del footer cuando el fondo es imagen.
+          top = env(safe-area-inset-top) (no top-0): un `position: sticky` calcula
+          su punto de anclaje contra el borde del scroller (viewport), IGNORANDO
+          cualquier padding-top puesto en body/AppBackground. Con top-0, al hacer
+          scroll el header se pega justo detrás de la isla dinámica / status bar
+          (se "come" el logo). Con env(safe-area-inset-top) se pega justo DEBAJO. */}
       <header
-        className={`sticky top-0 z-50 backdrop-blur ${
+        className={`sticky z-50 backdrop-blur ${
           useImageBackground
             ? 'app-header-bar border-b-0'
             : 'border-b border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
         }`}
+        style={{ top: 'env(safe-area-inset-top)' }}
       >
         <div className="container mx-auto px-4">
             <div className="relative flex h-20 sm:h-16 items-center justify-between">
@@ -711,9 +717,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px)] sm:min-h-0 relative z-10">
         <motion.div
           key={location.pathname}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
         >
           {children}
         </motion.div>

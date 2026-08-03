@@ -2,6 +2,7 @@
  * Export medical history to PDF
  * Uses browser's print functionality to generate a clean PDF
  */
+import { RECETA_LOGO_WHITE_DATAURL } from '@/lib/recetaLogo';
 
 export interface MedicalHistoryItem {
   id: string;
@@ -97,7 +98,7 @@ export const generateMedicalHistoryHTML = (
 
       return `
       <div style="margin-bottom: 32px;">
-        <h3 style="color: #0ea5e9; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #0ea5e9;">
+        <h3 style="color: #227787; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #227787;">
           📂 ${esc(category)} (${categoryItems.length})
         </h3>
         <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -139,10 +140,11 @@ export const generateMedicalHistoryHTML = (
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div style="text-align: center; margin-bottom: 40px; padding: 24px; background: linear-gradient(135deg, #0ea5e9, #0284c7); border-radius: 16px; color: white;">
-    <h1 style="margin: 0 0 8px 0; font-size: 28px;">🏥 Historial Médico</h1>
-    <p style="margin: 0; opacity: 0.9;">Medical Masters</p>
+  <!-- Header: mismo logo y mismos colores de marca que la receta PDF. Antes era
+       un emoji sobre un degradado celeste que no es de la marca. -->
+  <div style="text-align: center; margin-bottom: 40px; padding: 28px 24px; background: linear-gradient(135deg, #163a83, #227787); border-radius: 16px; color: white;">
+    <img src="${RECETA_LOGO_WHITE_DATAURL}" alt="Medical Masters" style="height: 44px; width: auto; margin-bottom: 12px;" onerror="this.style.display='none'" />
+    <h1 style="margin: 0; font-size: 26px; font-weight: 600;">Historial Médico</h1>
   </div>
 
   <!-- Patient Info -->
@@ -162,7 +164,7 @@ export const generateMedicalHistoryHTML = (
       </div>
       <div>
         <p style="margin: 0 0 4px 0; color: #64748b; font-size: 12px; text-transform: uppercase;">Total de Estudios</p>
-        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #0ea5e9;">${items.length}</p>
+        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #227787;">${items.length}</p>
       </div>
     </div>
   </div>
@@ -179,7 +181,7 @@ export const generateMedicalHistoryHTML = (
 
   <!-- Print Button (hidden when printing) -->
   <div class="no-print" style="position: fixed; bottom: 24px; right: 24px;">
-    <button onclick="window.print()" style="background: #0ea5e9; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);">
+    <button onclick="window.print()" style="background: #227787; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(34, 119, 135, 0.4);">
       📥 Descargar PDF
     </button>
   </div>

@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Eye, User, Stethoscope, GraduationCap } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
+import { BrandLaunchAnimation } from '@/components/BrandLaunchAnimation';
+import { hasAppBooted } from '@/lib/appBootFlag';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
 type RoleOption = {
@@ -22,6 +24,16 @@ export default function RoleSelector() {
   const navigate = useNavigate();
   const { loginAsVisitor, user, role, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
+
+  // Momento de marca al "entrar a la app" desde el CTA del landing (navegación
+  // SPA, sin recarga): mismo look que el splash de arranque en frío, para que
+  // se sienta a abrir una app y no a cargar una página. Vive como hermano ESTABLE
+  // en el árbol (no dentro de las ramas isLoading/ready de abajo) para que NO se
+  // remonte — y por lo tanto no reinicie su propio cronómetro — si isLoading
+  // cambia de valor mientras todavía se está mostrando.
+  // Si se entra AQUÍ directo (recarga dura / deep-link a /app), el splash de
+  // arranque de App.tsx ya está cubriendo la pantalla — no dupliques el overlay.
+  const [showLaunch, setShowLaunch] = useState(() => hasAppBooted());
 
   // Lives en vivo para mostrarlos difuminados de fondo (cliente 2026-06-15)
   const [liveThumbs, setLiveThumbs] = useState<string[]>([]);
@@ -117,16 +129,25 @@ export default function RoleSelector() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f47' }}>
-        <div className="flex items-center gap-3 text-white/90">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          <span>{t('common.loading')}</span>
+      <>
+        {showLaunch && (
+          <BrandLaunchAnimation onFinish={() => setShowLaunch(false)} subtitle={t('landing.nav.launching')} />
+        )}
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a1f47' }}>
+          <div className="flex items-center gap-3 text-white/90">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span>{t('common.loading')}</span>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
+    <>
+      {showLaunch && (
+        <BrandLaunchAnimation onFinish={() => setShowLaunch(false)} subtitle={t('landing.nav.launching')} />
+      )}
     <div className="min-h-screen flex flex-col relative" style={{ background: '#0a1f47' }}>
       {/* Lives transmitiendo atrás en borroso (cliente 2026-06-15): si hay lives en vivo,
           se muestran sus miniaturas difuminadas de fondo detrás de las tarjetas. */}
@@ -213,5 +234,6 @@ export default function RoleSelector() {
         <p className="text-[10px] sm:text-xs text-white/70">{t('footer.copyright')}</p>
       </footer>
     </div>
+    </>
   );
 }

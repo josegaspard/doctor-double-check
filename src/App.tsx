@@ -22,6 +22,7 @@ import { ActiveLiveProvider } from "@/contexts/ActiveLiveContext";
 import React, { Suspense, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { SplashScreen } from "@/components/SplashScreen";
+import { markAppBooted } from "@/lib/appBootFlag";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 
 // Wrapper that only mounts heavy providers when the user is authenticated
@@ -209,7 +210,10 @@ function PageLoader() {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+  const handleSplashFinish = useCallback(() => {
+    markAppBooted();
+    setShowSplash(false);
+  }, []);
 
   return (
     <>

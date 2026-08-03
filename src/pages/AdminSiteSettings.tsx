@@ -208,6 +208,7 @@ export default function AdminSiteSettings() {
     enable_vault: true,
     enable_recordings: true,
     enable_ads: true,
+    restrict_signup_to_mexico: false,
   });
 
   useEffect(() => {
@@ -1654,6 +1655,7 @@ export default function AdminSiteSettings() {
                     { key: 'enable_events' as const, label: 'Sección: Eventos', desc: 'Muestra u oculta la sección de eventos. Apagado = la sección queda no disponible.' },
                     { key: 'enable_vault' as const, label: 'Sección: Expediente / Vault', desc: 'Muestra u oculta el expediente clínico (Vault). Apagado = oculta el menú y la sección queda no disponible.' },
                     { key: 'enable_ads' as const, label: 'Publicidad (anuncios)', desc: 'Muestra u oculta todos los anuncios (banners, intersticiales, pre-roll) en la web. Apagado = no se muestra ninguna publicidad.' },
+                    { key: 'restrict_signup_to_mexico' as const, label: 'Registro solo para México', desc: 'Apagado (por defecto) = cualquier país se puede registrar, como está hoy. Encendido = quien entre desde fuera de México ve un aviso de "aún no disponible en tu país" y no puede completar el registro. Las cuentas ya creadas no se ven afectadas.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
                   ].map((toggle) => (

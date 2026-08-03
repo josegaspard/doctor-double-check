@@ -992,6 +992,8 @@ export const en = {
     readAndAccept: "I have read and accept the",
     readAndAcceptEthics: "I have read and accept the",
     mustAcceptLegal: "You must accept the Terms of Service and Privacy Policy to register.",
+    countryNotAvailableTitle: 'Not available in your country yet',
+    countryNotAvailable: 'Registration is currently open to residents of Mexico only. We are working to open the platform to more countries very soon.',
     mustAcceptEthics: "You must accept the Code of Ethics to register as a doctor or resident.",
     invalidCredentials: "Invalid credentials",
     emailRequired: "Please enter your email first",
@@ -4511,7 +4513,8 @@ export const en = {
       process: "Profiles",
       reviews: "Services",
       enterApp: "Enter the App",
-      enter: "Enter"
+      enter: "Enter",
+      launching: "Entering the platform…"
     },
     hero: {
       liveBadge: "LIVE",

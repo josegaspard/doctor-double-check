@@ -20,6 +20,12 @@ export interface SiteToggles {
   enable_vault: boolean;
   enable_recordings: boolean;
   enable_ads: boolean;
+  // Cierra el REGISTRO a residentes en México (2026-08-03, petición del cliente).
+  // APAGADO por defecto: la plataforma nació mundial (9 idiomas, filtros por país
+  // y continente), así que el candado solo se activa si el cliente lo confirma.
+  // Ojo: es distinto de la restricción de CONSULTAS solo-MX, que ya existe desde
+  // 2026-06-29 en src/lib/consultationRegions.ts y sigue independiente de esto.
+  restrict_signup_to_mexico: boolean;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -35,6 +41,7 @@ const DEFAULT_TOGGLES: SiteToggles = {
   enable_vault: true,
   enable_recordings: true,
   enable_ads: true,
+  restrict_signup_to_mexico: false,
 };
 
 let cachedToggles: SiteToggles | null = null;

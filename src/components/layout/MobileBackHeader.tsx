@@ -95,7 +95,12 @@ export function MobileBackHeader() {
   const label = hasBack ? t(titleKey) : t('backHeader.home');
 
   return (
-    <div className="app-back-header sticky top-20 z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10">
+    <div
+      className="app-back-header sticky z-40 flex items-center h-10 px-1 sm:hidden bg-[#227787] shadow-sm border-t border-white/10"
+      // top = altura del header móvil (h-20 = 5rem) + su propio inset de safe-area,
+      // para apilarse justo debajo sin solaparse en dispositivos con notch/isla dinámica.
+      style={{ top: 'calc(5rem + env(safe-area-inset-top))' }}
+    >
       <button
         type="button"
         onClick={() => {

@@ -13,7 +13,10 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2500,
       launchAutoHide: true,
-      backgroundColor: '#0F172A',
+      // Brand Blue Lagoon teal — antes #0F172A (slate genérico de scaffold, no es
+      // parte del brandbook) causaba un flash de color navy→teal al entregarle el
+      // control al splash JS (components/SplashScreen.tsx, mismo gradient).
+      backgroundColor: '#227787',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
@@ -22,7 +25,7 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'DARK',
-      backgroundColor: '#0F172A',
+      backgroundColor: '#227787',
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],

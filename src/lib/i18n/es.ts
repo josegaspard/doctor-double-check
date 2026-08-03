@@ -980,6 +980,8 @@ export const es = {
     readAndAccept: 'He leído y acepto los',
     readAndAcceptEthics: 'He leído y acepto el',
     mustAcceptLegal: 'Debes aceptar los Términos de Servicio y la Política de Privacidad para registrarte.',
+    countryNotAvailableTitle: 'Aún no disponible en tu país',
+    countryNotAvailable: 'Por el momento el registro solo está habilitado para residentes en México. Estamos trabajando para abrir la plataforma a más países muy pronto.',
     mustAcceptEthics: 'Debes aceptar el Código de Ética para registrarte como médico o residente.',
     invalidCredentials: 'Credenciales inválidas',
     emailRequired: 'Ingresa tu correo electrónico primero',
@@ -4569,6 +4571,7 @@ export const es = {
       reviews: 'Servicios',
       enterApp: 'Entrar a la App',
       enter: 'Entrar',
+      launching: 'Entrando a la plataforma…',
     },
     hero: {
       liveBadge: 'LIVE',
