@@ -155,7 +155,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ];
       if (contactEmail) rows.push(["Contacto", `<a href="mailto:${contactEmail}" style="color:#00768b;text-decoration:none;">${contactEmail}</a>`]);
       await resend.emails.send({
-        from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>",
+        from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>",
         to: adminEmails,
         reply_to: contactEmail || undefined,
         subject: `Reporte (${reportTypeLabel(type)}): ${subject}`,

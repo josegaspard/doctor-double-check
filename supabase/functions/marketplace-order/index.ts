@@ -28,7 +28,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://medical-masters.com";
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>";
 
 type Db = ReturnType<typeof createClient>;
 

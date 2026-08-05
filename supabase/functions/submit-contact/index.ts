@@ -119,7 +119,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
         .replace(/\n/g, "<br>");
       await resend.emails.send({
-        from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>",
+        from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>",
         to: adminEmails,
         reply_to: email,
         subject: `Contacto: ${subject}`,

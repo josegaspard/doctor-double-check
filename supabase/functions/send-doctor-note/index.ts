@@ -109,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const { error } = await resend.emails.send({
-      from: 'Medical Masters <no-reply@medical-masters.com>',
+      from: Deno.env.get('FROM_EMAIL') ?? 'Medical Masters <no-reply@notify.medical-masters.com>',
       to,
       subject,
       html,

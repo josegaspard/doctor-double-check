@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/auth-guards.ts";
 import { renderEmail } from "../_shared/email-template.ts";
 
 const APP_URL = "https://medical-masters.com";
-const FROM = "Medical Masters <noreply@medical-masters.com>";
+const FROM = "Medical Masters <noreply@notify.medical-masters.com>";
 
 interface InvitePayload {
   availability_id: string;

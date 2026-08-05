@@ -9,7 +9,7 @@ import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guard
 import { renderEmail, detailTable } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>";
 const APP_URL = "https://medical-masters.com";
 
 function formatDate(iso: string) {

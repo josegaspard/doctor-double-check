@@ -16,7 +16,7 @@ import { requireUserOrService, AuthError, corsHeadersFor } from "../_shared/auth
 import { renderEmail, detailTable, bigAmount } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@medical-masters.com>";
+const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>";
 const APP_URL = "https://medical-masters.com";
 
 type NotifyType = "doctor_signup" | "resident_signup" | "new_report" | "new_purchase";

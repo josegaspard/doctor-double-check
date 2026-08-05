@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResponse = await resend.emails.send({
-      from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@medical-masters.com>",
+      from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <no-reply@notify.medical-masters.com>",
       to: [doctor_email],
       subject: `Pago procesado — ${formattedAmount}`,
       attachments: attachments.length > 0 ? attachments : undefined,
