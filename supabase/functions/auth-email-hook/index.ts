@@ -296,6 +296,15 @@ async function handleWebhook(req: Request): Promise<Response> {
     }
   }
 
+  // ─── PRESUPUESTO DE 5 SEGUNDOS (auditoría 2026-08-05) ────────────────────
+  // El hook `send_email` de Supabase Auth ABORTA a los 5 s: si no respondemos a
+  // tiempo el registro muere con 422 `hook_timeout`. Render con React
+  // (renderAsync ×2) + consulta de rol + llamada a Resend se pasaba de ahí en
+  // arranque en frío, y como esta función se invoca poco, el frío es la NORMA.
+  // Todo lo que debe bloquear (firma + rate limit) ya ocurrió arriba, así que
+  // respondemos 200 ya y enviamos en segundo plano con EdgeRuntime.waitUntil,
+  // que mantiene vivo el worker hasta terminar.
+  const deliver = async (): Promise<void> => {
   // Build template props
   const templateProps: Record<string, any> = {
     siteName: SITE_NAME,
@@ -347,11 +356,8 @@ async function handleWebhook(req: Request): Promise<Response> {
   // ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   if (!resendApiKey) {
-    console.error('RESEND_API_KEY not configured')
-    return new Response(JSON.stringify({ error: 'Email service not configured' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error('RESEND_API_KEY not configured', { run_id })
+    return
   }
   const resend = new Resend(resendApiKey)
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev'
@@ -376,14 +382,17 @@ async function handleWebhook(req: Request): Promise<Response> {
     result = { message_id: sent.data?.id }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to send email'
-    console.error('Resend API error', { error: message, run_id })
-    return new Response(JSON.stringify({ error: 'Failed to send email' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error('Resend API error', { error: message, run_id, emailType })
+    return
   }
 
   console.log('Email sent successfully', { message_id: result.message_id, run_id })
+  }
+
+  // Enviar sin bloquear la respuesta.
+  const task = deliver().catch((e) => console.error('deliver() fallo', { e: String(e), run_id }))
+  const rt = (globalThis as any).EdgeRuntime
+  if (rt && typeof rt.waitUntil === 'function') rt.waitUntil(task)
 
   // Supabase Auth send_email hook spec: success response must be { error: null }
   // or empty {}. Returning anything else triggers "Invalid payload sent to hook"

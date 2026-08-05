@@ -145,6 +145,15 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         name: roomName,
+        // SEGURIDAD (auditoría 2026-08-05): sin este campo Daily crea la sala
+        // como "public" y CUALQUIERA con la URL entra SIN token. Los nombres de
+        // sala son legibles por anónimos (lives.daily_room_name,
+        // clinical_sessions.daily_room_url), así que una sala pública dejaba
+        // entrar a un desconocido a una consulta médica con cámara y micro.
+        // Todas las rutas de join del frontend ya piden token a get-daily-token
+        // (DailyVideoPlayer, LivePreviewPlayer, useWebRTCCall), y ese token se
+        // emite con room_name atado, así que "private" no rompe a nadie.
+        privacy: "private",
         properties: roomProperties,
       }),
     });
@@ -175,6 +184,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             name: `${roomName}-retry`,
+            privacy: "private", // idem: el reintento free-tier también debe ser privado
             properties: freeTierProperties,
           }),
         });

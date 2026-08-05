@@ -53,7 +53,14 @@ export default function Congresses() {
         (supabase as any).from('congress_speakers').select('id, congress_id, user_id, is_lead').in('congress_id', ids),
         (supabase as any).from('clinical_sessions').select('id, congress_id').in('congress_id', ids),
         (supabase as any).from('lives').select('id, congress_id, status').in('congress_id', ids),
-        (supabase as any).from('recordings').select('id, congress_id').in('congress_id', ids),
+        // `recordings` no tiene GRANT de SELECT para `anon` (revocado a propósito
+        // en 20260711_p1_anon_revoke_hardening). Lanzarla sin sesión devolvía
+        // siempre 42501/401 y ensuciaba la consola de todo visitante. Sin sesión
+        // simplemente no se pide: el contador de grabaciones queda en 0, que es
+        // lo que ya se mostraba. (Auditoría 2026-08-05)
+        isAuthenticated
+          ? (supabase as any).from('recordings').select('id, congress_id').in('congress_id', ids)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const speakers = await hydrateSpeakers((speakerRows as CongressSpeaker[]) || []);
@@ -82,7 +89,7 @@ export default function Congresses() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchCongresses();
