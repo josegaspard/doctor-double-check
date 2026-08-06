@@ -283,8 +283,13 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       // (migración 20260517_recordings_anon_columns.sql). El RecordingPlayer
       // pide esos campos por separado vía /recording/:id que sí requiere auth.
       // bunny_status se omite aquí (no tipado en types.ts; el grid no lo renderiza).
+      // Se lee de la VISTA pública, no de la tabla: `recordings` no tiene GRANT
+      // de SELECT para `anon` (revocado a propósito en el endurecimiento del
+      // 11-jul), así que consultarla sin sesión devolvía 401 a todo visitante.
+      // recordings_public expone justo estas columnas y deja fuera storage_path,
+      // bunny_video_id y demás. (Auditoría 2026-08-05)
       const { data: recordingsData } = await supabase
-        .from('recordings')
+        .from('recordings_public')
         .select('id, live_id, doctor_id, title, description, specialty, duration, price, thumbnail_url, peak_viewers, created_at, tags')
         .order('created_at', { ascending: false });
 

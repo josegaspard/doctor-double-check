@@ -91,7 +91,8 @@ export default function CongressDetail() {
         (supabase as any).from('lives')
           .select('id, title, specialty, doctor_id, status, started_at, ended_at')
           .eq('congress_id', id),
-        (supabase as any).from('recordings')
+        // vista pública: la tabla `recordings` no es legible sin sesión
+        (supabase as any).from('recordings_public')
           .select('id, title, thumbnail_url, duration, doctor_id')
           .eq('congress_id', id)
           .order('created_at', { ascending: false }),

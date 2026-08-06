@@ -103,7 +103,8 @@ export function GlobalSearch() {
 
         const [doctorsRes, recordingsRes, livesRes, contentRes] = await Promise.all([
           supabase.rpc('search_doctors_public', { p_term: searchTerm, p_limit: 6 }),
-          supabase.from('recordings').select('id, title, specialty, thumbnail_url').or(`title.ilike.%${searchTerm}%,specialty.ilike.%${searchTerm}%`).limit(3),
+          // vista pública: la tabla `recordings` no es legible sin sesión
+          supabase.from('recordings_public').select('id, title, specialty, thumbnail_url').or(`title.ilike.%${searchTerm}%,specialty.ilike.%${searchTerm}%`).limit(3),
           supabase.from('lives').select('id, title, specialty, status, thumbnail_url').eq('status', 'live').or(`title.ilike.%${searchTerm}%,specialty.ilike.%${searchTerm}%`).limit(3),
           supabase.from('doctor_content').select('id, title, type, thumbnail_url').ilike('title', `%${searchTerm}%`).eq('is_public', true).limit(3),
         ]);
