@@ -1,0 +1,26 @@
+-- ============================================================================
+-- RENDIMIENTO · aviso auth_rls_initplan (296 policies)
+-- Auditoria 2026-08-05. PREPARADO, NO APLICADO: el clasificador bloquea la
+-- reescritura masiva de policies de control de acceso, hace falta el OK de Jose.
+--
+-- QUE HACE: envuelve auth.uid() / auth.role() / auth.jwt() en un subselect.
+-- Sin envolver, Postgres evalua esa funcion UNA VEZ POR FILA; envuelta, una
+-- sola vez por consulta (InitPlan). Es la recomendacion oficial de Supabase y
+-- NO cambia la semantica: auth.uid() es STABLE. Con 8.668 consultas y 8.657
+-- valoraciones ya se nota.
+--
+-- COMO SE GENERO: no esta escrito a mano. Sale de la expresion REAL de cada
+-- policy (pg_policies.qual / with_check) con una sustitucion textual, asi que
+-- la logica de cada una se conserva intacta.
+--
+-- COMO APLICARLO (dentro de una transaccion):
+--   export PGPASSWORD="$(cat ~/.credentials/medical-masters-db-password.txt)"
+--   ( echo "BEGIN;"; cat 20260805d_rls_initplan.sql; echo "COMMIT;" ) | \
+--     psql "postgresql://postgres.ouawwfqexfwuptlgoksr@aws-1-us-east-1.pooler.supabase.com:5432/postgres" -v ON_ERROR_STOP=1
+--
+-- COMO VERIFICAR DESPUES:
+--   1. select count(*) from pg_policies where schemaname='public';  -- debe seguir igual
+--   2. El aviso auth_rls_initplan del advisor debe bajar de 296 a 0.
+--   3. Con sesion iniciada: leer profiles, consultations, wallets, prescriptions.
+-- ============================================================================
+
