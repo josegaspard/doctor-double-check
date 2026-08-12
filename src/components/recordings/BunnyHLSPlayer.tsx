@@ -132,12 +132,36 @@ export function BunnyHLSPlayer({
     // devuelve canPlayType('application/vnd.apple.mpegurl')="maybe" pero NO
     // reproduce HLS nativo → hls.js DEBE tener prioridad, o Chrome da error 4.
     if (!Hls.isSupported() && video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = signedUrl;
       const onLoaded = () => {
         setIsLoading(false);
         if (autoPlay) void playPreferAudio(video);
       };
       video.addEventListener('loadedmetadata', onLoaded);
+      // 🚨 iOS/Safari nativo: Bunny Token Auth firma el DIR /{videoId}/ pero el
+      // player nativo NO propaga el ?token a las sub-URLs relativas → 403 (y no
+      // admite xhrSetup como hls.js). Descargamos una variante, reescribimos sus
+      // segmentos a URLs ABSOLUTAS con token y servimos un blob (single-rendition,
+      // sin ABR pero reproduce). Si algo falla, caemos a src directo.
+      (async () => {
+        try {
+          const tokenQS = new URL(signedUrl).search; // ?token=…&expires=…
+          if (!tokenQS) { video.src = signedUrl; return; }
+          const base = signedUrl.slice(0, signedUrl.lastIndexOf('/')); // …/{videoId}
+          const masterTxt = await (await fetch(signedUrl)).text();
+          const variant = masterTxt.split('\n').map(l => l.trim())
+            .find(l => l && !l.startsWith('#') && l.includes('.m3u8'));
+          if (!variant) { video.src = signedUrl; return; }
+          const variantBase = `${base}/${variant.substring(0, variant.lastIndexOf('/'))}`;
+          const subTxt = await (await fetch(`${base}/${variant}${tokenQS}`)).text();
+          const rewritten = subTxt.split('\n').map((l) => {
+            const s = l.trim();
+            if (!s || s.startsWith('#')) return l;
+            return `${variantBase}/${s}${tokenQS}`; // segmento → absoluto con token
+          }).join('\n');
+          const blob = new Blob([rewritten], { type: 'application/vnd.apple.mpegurl' });
+          video.src = URL.createObjectURL(blob);
+        } catch { video.src = signedUrl; }
+      })();
       return () => video.removeEventListener('loadedmetadata', onLoaded);
     }
 
