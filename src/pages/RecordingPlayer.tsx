@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -61,6 +61,38 @@ export default function RecordingPlayer() {
   const [prefetchedSignedUrl, setPrefetchedSignedUrl] = useState<string | null>(null);
   const [prefetchedTtl, setPrefetchedTtl] = useState<number>(600);
   const [prefetchedThumbUrl, setPrefetchedThumbUrl] = useState<string | null>(null);
+
+  // ── Analítica de visionado (tabla recording_views) ──────────────────────────
+  // Registra hasta dónde vio cada usuario cada grabación → alimenta el panel del
+  // doctor (retención, % visto). Persiste cada 15 s, al ocultar la pestaña y al salir.
+  const maxPosRef = useRef(0);
+  useEffect(() => {
+    if (videoCurrentTime > maxPosRef.current) maxPosRef.current = videoCurrentTime;
+  }, [videoCurrentTime]);
+  useEffect(() => {
+    if (!id || !supabaseUser?.id) return;
+    const flush = async () => {
+      const pos = Math.floor(maxPosRef.current);
+      if (pos < 3) return; // ignora aperturas fugaces
+      const dur = recording?.duration || null;
+      const completed = !!(dur && pos >= dur - 5);
+      try {
+        await (supabase as any).from('recording_views').upsert({
+          recording_id: id,
+          user_id: supabaseUser.id,
+          max_position: pos,
+          watched_seconds: pos,
+          duration: dur,
+          completed,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'recording_id,user_id' });
+      } catch { /* silencioso */ }
+    };
+    const iv = setInterval(flush, 15000);
+    const onVis = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => { clearInterval(iv); void flush(); document.removeEventListener('visibilitychange', onVis); };
+  }, [id, supabaseUser?.id, recording?.duration]);
 
   const handlePrerollComplete = useCallback(() => {
     setPrerollDone(true);

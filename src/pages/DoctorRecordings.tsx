@@ -159,6 +159,33 @@ export default function DoctorRecordings() {
   const [statsDialogOpen, setStatsDialogOpen] = useState(false);
   const [selectedRecording, setSelectedRecording] = useState<Recording | null>(null);
 
+  // Analítica de visionado por grabación (tabla recording_views): espectadores
+  // únicos y % visto medio. RLS deja al doctor leer solo las de SUS grabaciones.
+  const [viewStats, setViewStats] = useState<Map<string, { viewers: number; avgPct: number }>>(new Map());
+  useEffect(() => {
+    const ids = recordings.map(r => r.id);
+    if (!ids.length) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await (supabase as any)
+        .from('recording_views')
+        .select('recording_id, max_position, duration')
+        .in('recording_id', ids);
+      if (cancelled || !data) return;
+      const agg = new Map<string, { viewers: number; sumPct: number }>();
+      for (const v of data as Array<{ recording_id: string; max_position: number; duration: number | null }>) {
+        const cur = agg.get(v.recording_id) || { viewers: 0, sumPct: 0 };
+        cur.viewers += 1;
+        if (v.duration && v.duration > 0) cur.sumPct += Math.min(100, (v.max_position / v.duration) * 100);
+        agg.set(v.recording_id, cur);
+      }
+      const out = new Map<string, { viewers: number; avgPct: number }>();
+      for (const [k, c] of agg) out.set(k, { viewers: c.viewers, avgPct: c.viewers ? Math.round(c.sumPct / c.viewers) : 0 });
+      setViewStats(out);
+    })();
+    return () => { cancelled = true; };
+  }, [recordings]);
+
   // Thumbnail Edit Dialog
   const [thumbnailDialogOpen, setThumbnailDialogOpen] = useState(false);
   const [thumbnailRecording, setThumbnailRecording] = useState<Recording | null>(null);
@@ -1215,6 +1242,14 @@ export default function DoctorRecordings() {
                               <Users className="w-3 h-3" />
                               {isLoadingStats ? '…' : stats.purchaseCount}
                             </span>
+                            {(() => {
+                              const vs = viewStats.get(recording.id);
+                              return vs && vs.viewers > 0 ? (
+                                <span className="flex items-center gap-1" title="Espectadores · % visto medio">
+                                  <Eye className="w-3 h-3" /> {vs.viewers} · {vs.avgPct}%
+                                </span>
+                              ) : null;
+                            })()}
                             {!isLoadingStats && getCombinedRevenue(recording.id) > 0 && (
                               <span className="text-success font-medium ml-auto">
                                 {formatCurrency(getCombinedRevenue(recording.id))}
