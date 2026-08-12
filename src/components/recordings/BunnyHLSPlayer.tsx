@@ -118,10 +118,15 @@ export function BunnyHLSPlayer({
       hlsRef.current = null;
     }
 
-    // Safari / iOS — HLS nativo (más eficiente, sin hls.js)
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // HLS nativo SOLO en Safari/iOS (donde hls.js NO está soportado). 🚨 Chrome
+    // devuelve canPlayType('application/vnd.apple.mpegurl')="maybe" pero NO
+    // reproduce HLS nativo → hls.js DEBE tener prioridad, o Chrome da error 4.
+    if (!Hls.isSupported() && video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = signedUrl;
-      const onLoaded = () => setIsLoading(false);
+      const onLoaded = () => {
+        setIsLoading(false);
+        if (autoPlay) void playPreferAudio(video);
+      };
       video.addEventListener('loadedmetadata', onLoaded);
       return () => video.removeEventListener('loadedmetadata', onLoaded);
     }
