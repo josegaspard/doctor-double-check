@@ -93,6 +93,14 @@ export function BunnyHLSPlayer({
   // "Continuar donde lo dejaste": posición persistida por grabación.
   const RESUME_KEY = `mm-resume-${recordingId}`;
 
+  // 🚨 Refs con los valores volátiles para que init() dependa SOLO de signedUrl.
+  // Si init dependiera de callbacks que el padre recrea en cada render
+  // (onRefreshSignedUrl, onDurationUpdate…), hls.js se reinicializaría EN BUCLE
+  // mientras el vídeo reproduce (onTimeUpdate→re-render→callback nueva→re-init→
+  // currentTime vuelve a 0). Con refs, init solo se recrea si cambia la URL.
+  const liveRef = useRef({ autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, playPreferAudio, fellBackToMp4 });
+  liveRef.current = { autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, playPreferAudio, fellBackToMp4 };
+
   // SUBTÍTULOS (batch93): el manifest de Bunny NO expone las pistas SUBTITLES
   // (CLOSED-CAPTIONS=NONE), así que las inyectamos como <track> (hook compartido
   // con la ruta MP4 /original).
@@ -112,6 +120,8 @@ export function BunnyHLSPlayer({
   const init = useCallback(() => {
     const video = videoRef.current;
     if (!video || !signedUrl) return;
+    // Valores volátiles leídos por ref → init NO se recrea en cada render (evita el bucle).
+    const { autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, playPreferAudio, fellBackToMp4 } = liveRef.current;
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -237,7 +247,8 @@ export function BunnyHLSPlayer({
           hlsRef.current = null;
       }
     });
-  }, [signedUrl, autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, fellBackToMp4, playPreferAudio]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signedUrl]);
 
   // Atajos de teclado: espacio/K = play·pausa · ←/→ = ±10s · ↑/↓ = volumen ·
   // F = pantalla completa · M = silenciar. Se ignoran si el foco está en un input.
