@@ -12,6 +12,7 @@ import { useDevToolsDetector } from '@/hooks/useDevToolsDetector';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useBunnyCaptionTracks } from '@/hooks/useBunnyCaptionTracks';
+import RecordingControls from './RecordingControls';
 
 interface BunnyHLSPlayerProps {
   /** Master HLS manifest signed URL */
@@ -67,6 +68,7 @@ export function BunnyHLSPlayer({
   const poster = thumbnailUrl
     || (videoId && derivedCdnHost ? `https://${derivedCdnHost}/${videoId}/thumbnail.jpg` : undefined);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -354,7 +356,7 @@ export function BunnyHLSPlayer({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full group/player">
       {/* Poster blur al fondo — visible instantáneo aunque HLS aún cargue */}
       {poster && (
         <img
@@ -374,10 +376,9 @@ export function BunnyHLSPlayer({
         ref={videoRef}
         className="relative w-full h-full object-contain z-[1]"
         poster={poster}
-        controls
         playsInline
         preload="auto"
-        controlsList="nodownload noremoteplayback"
+        onClick={() => { const v = videoRef.current; if (v) { if (v.paused) v.play().catch(() => {}); else v.pause(); } }}
         onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={(e) => {
           const vid = e.currentTarget as HTMLVideoElement;
@@ -407,6 +408,14 @@ export function BunnyHLSPlayer({
           <track key={tr.lang} kind="subtitles" srcLang={tr.lang} label={tr.label} src={tr.src} />
         ))}
       </video>
+
+      {/* Barra de control propia con miniaturas al pasar la barra (scrubbing) */}
+      <RecordingControls
+        videoRef={videoRef}
+        containerRef={containerRef}
+        recordingId={recordingId}
+        hasCaptions={captionTracks.length > 0}
+      />
 
       {/* AUDIO: el navegador bloqueó el arranque con sonido → un clic para activarlo */}
       {needsUnmute && (
