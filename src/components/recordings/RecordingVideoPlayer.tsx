@@ -13,7 +13,14 @@ import { useBunnyCaptionTracks } from '@/hooks/useBunnyCaptionTracks';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Volume2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
+// Etiqueta del botón "Activar sonido" en los 8 idiomas de la app.
+const SOUND_LABEL_RVP: Record<string, string> = {
+  es: 'Activar sonido', en: 'Enable sound', pt: 'Ativar som', fr: 'Activer le son',
+  it: 'Attiva audio', de: 'Ton aktivieren', ca: 'Activa el so', zh: '开启声音',
+};
 
 interface RecordingVideoPlayerProps {
   videoUrl: string;
@@ -95,6 +102,25 @@ export function RecordingVideoPlayer({
   const [urlTtlSec, setUrlTtlSec] = useState<number>(600);
   const [expired, setExpired] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [needsUnmute, setNeedsUnmute] = useState(false);
+  const { language } = useLanguage();
+  const RESUME_KEY = `mm-resume-${recordingId}`;
+  const playPreferAudio = useCallback(async (video: HTMLVideoElement) => {
+    try {
+      video.muted = false;
+      await video.play();
+      setNeedsUnmute(false);
+    } catch {
+      video.muted = true;
+      setNeedsUnmute(true);
+      try { await video.play(); } catch { /* ignore */ }
+    }
+  }, []);
+  const enableSound = useCallback(() => {
+    const v = videoRef.current;
+    if (v) { v.muted = false; v.volume = 1; v.play().catch(() => {}); }
+    setNeedsUnmute(false);
+  }, []);
   // Cuando bunny_status != ready, usamos /original mientras procesa
   const isStillProcessing = bunnyStatus === 'processing' || bunnyStatus === 'uploading';
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -223,6 +249,19 @@ export function RecordingVideoPlayer({
     if (!storagePath && !b2Path && !bunnyVideoId) return;
     if (prefetchedSignedUrl) {
       setSignedUrl(prefetchedSignedUrl);
+      // La ruta de arranque rápido debe poblar bunnyUrls; si no, el render cae a
+      // <video src={.m3u8}> nativo (rama else) que NO reproduce en Chrome/Android
+      // (HLS nativo solo va en Safari). Con bunnyUrls seteado usa BunnyHLSPlayer
+      // (hls.js) en todos los navegadores. El token firma el dir /{videoId}/, así
+      // que sirve para todas las variantes derivadas del playlist.
+      if (bunnyVideoId && !isStillProcessing) {
+        setBunnyUrls({
+          hlsUrl: prefetchedSignedUrl,
+          mp4Url: prefetchedSignedUrl.replace('/playlist.m3u8', '/play_720p.mp4'),
+          originalUrl: prefetchedSignedUrl.replace('/playlist.m3u8', '/original'),
+          thumbnailUrl: prefetchedThumbUrl || prefetchedSignedUrl.replace('/playlist.m3u8', '/thumbnail.jpg'),
+        });
+      }
       if (prefetchedThumbUrl) setPosterUrl(prefetchedThumbUrl);
       setUrlGeneratedAt(Date.now());
       setUrlTtlSec(prefetchedTtl ?? 180);
@@ -236,14 +275,41 @@ export function RecordingVideoPlayer({
     if (!signedUrl || !autoPlay) return;
     const vid = videoRef.current;
     if (!vid) return;
-    vid.muted = true;
-    const playPromise = vid.play();
-    if (playPromise) {
-      playPromise.catch((err) => {
-        console.warn('[RecordingVideoPlayer] auto-play blocked:', err?.message);
-      });
-    }
-  }, [signedUrl, autoPlay]);
+    void playPreferAudio(vid);
+  }, [signedUrl, autoPlay, playPreferAudio]);
+
+  // Atajos de teclado: espacio/K = play·pausa · ←/→ = ±10s · ↑/↓ = volumen ·
+  // F = pantalla completa · M = silenciar. Se ignoran si el foco está en un input.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const v = videoRef.current;
+      if (!v) return;
+      const tgt = e.target as HTMLElement;
+      const tag = tgt?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tgt?.isContentEditable) return;
+      switch (e.key) {
+        case ' ': case 'k': case 'K':
+          e.preventDefault(); if (v.paused) v.play().catch(() => {}); else v.pause(); break;
+        case 'ArrowRight':
+          e.preventDefault(); v.currentTime = Math.min(v.duration || Infinity, v.currentTime + 10); break;
+        case 'ArrowLeft':
+          e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 10); break;
+        case 'ArrowUp':
+          e.preventDefault(); v.volume = Math.min(1, v.volume + 0.1); break;
+        case 'ArrowDown':
+          e.preventDefault(); v.volume = Math.max(0, v.volume - 0.1); break;
+        case 'f': case 'F':
+          e.preventDefault();
+          if (document.fullscreenElement) document.exitFullscreen?.();
+          else v.requestFullscreen?.();
+          break;
+        case 'm': case 'M':
+          e.preventDefault(); v.muted = !v.muted; if (!v.muted) setNeedsUnmute(false); break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Pre-renew signed URL al 60% del TTL para evitar 403 mid-playback.
   // Con TTL=180s, renueva cada ~108s — ventana copy-and-share <3 min.
@@ -375,16 +441,28 @@ export function RecordingVideoPlayer({
         src={signedUrl}
         poster={posterUrl || undefined}
         controls
-        autoPlay={autoPlay}
-        muted={autoPlay}
         playsInline
         preload="auto"
-        controlsList="nodownload noremoteplayback noplaybackrate"
-        disablePictureInPicture
+        controlsList="nodownload noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
-        onLoadedMetadata={handleLoadedMetadata}
+        onLoadedMetadata={(e) => {
+          handleLoadedMetadata(e);
+          // Reanudar donde se quedó.
+          try {
+            const vid = e.currentTarget as HTMLVideoElement;
+            const saved = Number(localStorage.getItem(RESUME_KEY));
+            if (saved > 5 && vid.duration && saved < vid.duration - 5) vid.currentTime = saved;
+          } catch { /* ignore */ }
+        }}
         onTimeUpdate={(e) => {
-          if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
+          const vid = e.currentTarget as HTMLVideoElement;
+          if (onTimeUpdate) onTimeUpdate(Math.floor(vid.currentTime));
+          try {
+            if (vid.duration && vid.currentTime > 5) {
+              if (vid.currentTime >= vid.duration - 5) localStorage.removeItem(RESUME_KEY);
+              else localStorage.setItem(RESUME_KEY, String(Math.floor(vid.currentTime)));
+            }
+          } catch { /* ignore */ }
         }}
         onError={(e) => {
           if (urlGeneratedAt && Date.now() - urlGeneratedAt > urlTtlSec * 1000 * 0.95) {
@@ -414,6 +492,15 @@ export function RecordingVideoPlayer({
           <track key={tr.lang} kind="subtitles" srcLang={tr.lang} label={tr.label} src={tr.src} />
         ))}
       </video>
+      {needsUnmute && (
+        <button
+          type="button"
+          onClick={enableSound}
+          className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg hover:opacity-90 animate-pulse"
+        >
+          <Volume2 className="w-4 h-4" /> {SOUND_LABEL_RVP[language] || SOUND_LABEL_RVP.es}
+        </button>
+      )}
       <DynamicWatermark email={user?.email} userId={supabaseUser?.id} sessionId={sessionId} />
     </div>
   );

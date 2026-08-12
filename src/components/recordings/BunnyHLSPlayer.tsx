@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Loader2, AlertCircle, RefreshCw, Eye } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw, Eye, Volume2 } from 'lucide-react';
+
+// Etiqueta del botón "Activar sonido" en los 8 idiomas de la app.
+const SOUND_LABEL: Record<string, string> = {
+  es: 'Activar sonido', en: 'Enable sound', pt: 'Ativar som', fr: 'Activer le son',
+  it: 'Attiva audio', de: 'Ton aktivieren', ca: 'Activa el so', zh: '开启声音',
+};
 import { Button } from '@/components/ui/button';
 import { useDevToolsDetector } from '@/hooks/useDevToolsDetector';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +58,7 @@ export function BunnyHLSPlayer({
   onRefreshSignedUrl,
 }: BunnyHLSPlayerProps) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [errorKind, setErrorKind] = useState<'not_found' | 'forbidden' | 'network' | null>(null);
   const [fellBackToMp4, setFellBackToMp4] = useState(false);
   const derivedCdnHost = cdnHost || (() => {
@@ -63,6 +69,29 @@ export function BunnyHLSPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // AUDIO: intentar reproducir CON sonido; si el navegador bloquea el autoplay con
+  // audio (sin gesto previo), arrancar en silencio y ofrecer un botón para activarlo.
+  const [needsUnmute, setNeedsUnmute] = useState(false);
+  const playPreferAudio = useCallback(async (video: HTMLVideoElement) => {
+    try {
+      video.muted = false;
+      await video.play();
+      setNeedsUnmute(false);
+    } catch {
+      video.muted = true;
+      setNeedsUnmute(true);
+      try { await video.play(); } catch { /* ignore */ }
+    }
+  }, []);
+  const enableSound = useCallback(() => {
+    const v = videoRef.current;
+    if (v) { v.muted = false; v.volume = 1; v.play().catch(() => {}); }
+    setNeedsUnmute(false);
+  }, []);
+
+  // "Continuar donde lo dejaste": posición persistida por grabación.
+  const RESUME_KEY = `mm-resume-${recordingId}`;
 
   // SUBTÍTULOS (batch93): el manifest de Bunny NO expone las pistas SUBTITLES
   // (CLOSED-CAPTIONS=NONE), así que las inyectamos como <track> (hook compartido
@@ -127,8 +156,7 @@ export function BunnyHLSPlayer({
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       setIsLoading(false);
       if (autoPlay) {
-        video.muted = true;
-        video.play().catch((err) => console.warn('[BunnyHLSPlayer] autoplay blocked:', err?.message));
+        void playPreferAudio(video);
       }
     });
 
@@ -173,8 +201,7 @@ export function BunnyHLSPlayer({
         setFellBackToMp4(true);
         setIsLoading(false);
         if (autoPlay) {
-          video.muted = true;
-          video.play().catch(() => {});
+          void playPreferAudio(video);
         }
         return;
       }
@@ -193,7 +220,39 @@ export function BunnyHLSPlayer({
           hlsRef.current = null;
       }
     });
-  }, [signedUrl, autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, fellBackToMp4]);
+  }, [signedUrl, autoPlay, onDurationUpdate, onRefreshSignedUrl, mp4FallbackUrl, fellBackToMp4, playPreferAudio]);
+
+  // Atajos de teclado: espacio/K = play·pausa · ←/→ = ±10s · ↑/↓ = volumen ·
+  // F = pantalla completa · M = silenciar. Se ignoran si el foco está en un input.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const v = videoRef.current;
+      if (!v) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      switch (e.key) {
+        case ' ': case 'k': case 'K':
+          e.preventDefault(); if (v.paused) v.play().catch(() => {}); else v.pause(); break;
+        case 'ArrowRight':
+          e.preventDefault(); v.currentTime = Math.min(v.duration || Infinity, v.currentTime + 10); break;
+        case 'ArrowLeft':
+          e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 10); break;
+        case 'ArrowUp':
+          e.preventDefault(); v.volume = Math.min(1, v.volume + 0.1); break;
+        case 'ArrowDown':
+          e.preventDefault(); v.volume = Math.max(0, v.volume - 0.1); break;
+        case 'f': case 'F':
+          e.preventDefault();
+          if (document.fullscreenElement) document.exitFullscreen?.();
+          else v.requestFullscreen?.();
+          break;
+        case 'm': case 'M':
+          e.preventDefault(); v.muted = !v.muted; if (!v.muted) setNeedsUnmute(false); break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     const cleanup = init();
@@ -266,17 +325,29 @@ export function BunnyHLSPlayer({
         controls
         playsInline
         preload="auto"
-        controlsList="nodownload noremoteplayback noplaybackrate"
-        disablePictureInPicture
+        controlsList="nodownload noremoteplayback"
         onContextMenu={(e) => e.preventDefault()}
         onTimeUpdate={(e) => {
-          if (onTimeUpdate) onTimeUpdate(Math.floor((e.currentTarget as HTMLVideoElement).currentTime));
+          const vid = e.currentTarget as HTMLVideoElement;
+          if (onTimeUpdate) onTimeUpdate(Math.floor(vid.currentTime));
+          // Guardar posición para "continuar donde lo dejaste".
+          try {
+            if (vid.duration && vid.currentTime > 5) {
+              if (vid.currentTime >= vid.duration - 5) localStorage.removeItem(RESUME_KEY);
+              else localStorage.setItem(RESUME_KEY, String(Math.floor(vid.currentTime)));
+            }
+          } catch { /* ignore */ }
         }}
         onLoadedMetadata={(e) => {
           const vid = e.currentTarget as HTMLVideoElement;
           if (onDurationUpdate && Number.isFinite(vid.duration) && vid.duration > 0) {
             onDurationUpdate(Math.floor(vid.duration));
           }
+          // Reanudar donde se quedó (si hay posición guardada válida).
+          try {
+            const saved = Number(localStorage.getItem(RESUME_KEY));
+            if (saved > 5 && vid.duration && saved < vid.duration - 5) vid.currentTime = saved;
+          } catch { /* ignore */ }
         }}
       >
         {/* Pistas de subtítulos (blob same-origin); el botón CC nativo aparece solo */}
@@ -284,6 +355,17 @@ export function BunnyHLSPlayer({
           <track key={tr.lang} kind="subtitles" srcLang={tr.lang} label={tr.label} src={tr.src} />
         ))}
       </video>
+
+      {/* AUDIO: el navegador bloqueó el arranque con sonido → un clic para activarlo */}
+      {needsUnmute && (
+        <button
+          type="button"
+          onClick={enableSound}
+          className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg hover:opacity-90 animate-pulse"
+        >
+          <Volume2 className="w-4 h-4" /> {SOUND_LABEL[language] || SOUND_LABEL.es}
+        </button>
+      )}
 
       {/* Anti-piracy: watermark centrado tenue — sobrevive capturas de pantalla */}
       {user?.email && (

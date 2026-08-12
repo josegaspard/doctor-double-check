@@ -28,6 +28,51 @@ Deno.serve(async (req)=>{
     }).eq('bunny_video_id', videoId);
     if (error) console.error('[bunny-webhook] update error:', error);
     console.log('[bunny-webhook] updated', videoId, '→', bunnyStatus);
+
+    // AUTO-SUBTÍTULOS para grabaciones de LIVES: cuando el video queda 'ready' y
+    // proviene de un live (live_id != null), disparamos transcripción + traducción
+    // a los 8 idiomas de la app automáticamente (sin que el doctor pulse el botón).
+    if (bunnyStatus === 'ready') {
+      try {
+        const { data: rec } = await admin
+          .from('recordings')
+          .select('id, live_id, captions_status')
+          .eq('bunny_video_id', videoId)
+          .maybeSingle();
+        const already = rec?.captions_status === 'processing'
+          || rec?.captions_status === 'ready'
+          || rec?.captions_status === 'done';
+        if (rec?.live_id && !already) {
+          const LIBRARY_ID = Deno.env.get('BUNNY_STREAM_LIBRARY_ID');
+          const API_KEY = Deno.env.get('BUNNY_STREAM_API_KEY');
+          const APP_LANGUAGES = ['es', 'en', 'pt', 'fr', 'it', 'de', 'ca', 'zh'];
+          const sourceLanguage = 'es';
+          const targetLanguages = APP_LANGUAGES.filter((l) => l !== sourceLanguage);
+          const tRes = await fetch(
+            `https://video.bunnycdn.com/library/${LIBRARY_ID}/videos/${videoId}/transcribe?force=true`,
+            {
+              method: 'POST',
+              headers: { 'AccessKey': API_KEY, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ sourceLanguage, targetLanguages }),
+            },
+          );
+          if (tRes.ok) {
+            await admin.from('recordings').update({
+              captions_status: 'processing',
+              captions_source_lang: sourceLanguage,
+              captions_languages: [sourceLanguage, ...targetLanguages],
+              captions_updated_at: new Date().toISOString(),
+            }).eq('id', rec.id);
+            console.log('[bunny-webhook] auto-captions disparadas para live recording', rec.id);
+          } else {
+            console.error('[bunny-webhook] auto-captions transcribe failed:', tRes.status, await tRes.text());
+          }
+        }
+      } catch (capErr) {
+        console.error('[bunny-webhook] auto-captions error:', capErr);
+      }
+    }
+
     return new Response('ok');
   } catch (e) {
     console.error('[bunny-webhook] error:', e);
