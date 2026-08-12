@@ -141,6 +141,12 @@ export function BunnyHLSPlayer({
       return;
     }
 
+    // 🚨 Bunny Token Auth firma el DIRECTORIO /{videoId}/, pero hls.js resuelve las
+    // sub-playlists (240p/video.m3u8) y los segmentos (.ts) como URLs RELATIVAS
+    // que NO heredan el ?token del master → Bunny responde 403. Reinyectamos el
+    // token en cada request para que todas las variantes/segmentos vayan firmados.
+    let bunnyTokenQS = '';
+    try { bunnyTokenQS = new URL(signedUrl).search.replace(/^\?/, ''); } catch { /* ignore */ }
     const hls = new Hls({
       enableWorker: true,
       lowLatencyMode: false,
@@ -152,6 +158,12 @@ export function BunnyHLSPlayer({
       abrEwmaDefaultEstimate: 500000,
       abrBandWidthFactor: 0.95,
       abrBandWidthUpFactor: 0.7,
+      xhrSetup: (xhr: XMLHttpRequest, url: string) => {
+        if (bunnyTokenQS && !/[?&]token=/.test(url)) {
+          const merged = url + (url.includes('?') ? '&' : '?') + bunnyTokenQS;
+          xhr.open('GET', merged, true);
+        }
+      },
     });
 
     hlsRef.current = hls;
