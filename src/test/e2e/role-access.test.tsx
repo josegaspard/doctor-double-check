@@ -43,7 +43,9 @@ describe('AccessGuard role-based access', () => {
         </AccessGuard>
       );
       expect(screen.queryByText('chat content')).not.toBeInTheDocument();
-      expect(screen.getByText(/login.title/i)).toBeInTheDocument();
+      // El titular pasó de 'login.title' a 'admin.signInToContinue': sin sesión se
+      // invita a entrar en vez de dar un 'acceso denegado'. La intención no cambia.
+      expect(screen.getByText(/admin.signInToContinue/i)).toBeInTheDocument();
     });
 
     it('blocks /vault for visitors', () => {

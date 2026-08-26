@@ -1716,6 +1716,7 @@ export const en = {
     accessDenied: "Access denied",
     onlyAdmins: "Only admins can access",
     onlyMembers: "This section is for verified physicians and residents. Sign in with your professional account.",
+    onlyPatients: "This section is for registered patients. Sign in with your account.",
     signInToContinue: "Sign in to continue",
     approveDoctor2: "Approve doctor?",
     rejectDoctor2: "Reject doctor?",

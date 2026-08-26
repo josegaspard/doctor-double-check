@@ -71,8 +71,15 @@ export default function AccessGuard({
   // Sin sesión no es "acceso denegado": es que todavía no ha entrado.
   // Se le ofrece iniciar sesión en vez de darle un portazo. El permiso NO cambia.
   const effectiveFallback = !isAuthenticated ? 'login' : fallbackType;
-  // "Solo administradores" solo es cierto cuando la ruta es exclusiva de admin.
+  // El mensaje describe QUIÉN puede pasar, y eso sale de allowedRoles.
+  // Antes se decía "solo administradores" en rutas abiertas a más roles.
   const adminOnly = allowedRoles.length === 1 && allowedRoles[0] === 'admin';
+  const soloPacientes = allowedRoles.length > 0 && allowedRoles.every((r) => r === 'patient');
+  const motivo = adminOnly
+    ? t('admin.onlyAdmins')
+    : soloPacientes
+    ? t('admin.onlyPatients')
+    : t('admin.onlyMembers');
 
   // Check entitlement if required
   let hasEntitlement = true;
@@ -141,10 +148,10 @@ export default function AccessGuard({
             <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
               {fallbackMessage || (
                 effectiveFallback === 'login'
-                  ? (adminOnly ? t('admin.onlyAdmins') : t('admin.onlyMembers'))
+                  ? motivo
                   : effectiveFallback === 'upgrade'
                   ? t('chat.premiumService')
-                  : (adminOnly ? t('admin.onlyAdmins') : t('admin.onlyMembers'))
+                  : motivo
               )}
             </p>
 

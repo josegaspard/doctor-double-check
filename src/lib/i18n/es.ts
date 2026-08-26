@@ -1723,6 +1723,7 @@ export const es = {
     accessDenied: 'Acceso denegado',
     onlyAdmins: 'Solo administradores pueden acceder',
     onlyMembers: 'Esta sección es para médicos y residentes verificados. Inicia sesión con tu cuenta profesional.',
+    onlyPatients: 'Esta sección es para pacientes registrados. Inicia sesión con tu cuenta.',
     signInToContinue: 'Inicia sesión para continuar',
     approveDoctor2: '¿Aprobar doctor?',
     rejectDoctor2: '¿Rechazar doctor?',
