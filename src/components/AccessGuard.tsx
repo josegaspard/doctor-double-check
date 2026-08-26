@@ -75,11 +75,13 @@ export default function AccessGuard({
   // Antes se decía "solo administradores" en rutas abiertas a más roles.
   const adminOnly = allowedRoles.length === 1 && allowedRoles[0] === 'admin';
   const soloPacientes = allowedRoles.length > 0 && allowedRoles.every((r) => r === 'patient');
-  const motivo = adminOnly
+  const publico = adminOnly
     ? t('admin.onlyAdmins')
     : soloPacientes
     ? t('admin.onlyPatients')
     : t('admin.onlyMembers');
+  // "Inicia sesión" solo tiene sentido para quien NO ha entrado todavía.
+  const motivo = isAuthenticated ? publico : `${publico} ${t('admin.signInWithAccount')}`;
 
   // Check entitlement if required
   let hasEntitlement = true;
