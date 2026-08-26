@@ -68,6 +68,12 @@ export default function AccessGuard({
   // Check role access
   const hasRoleAccess = role && allowedRoles.includes(role);
 
+  // Sin sesión no es "acceso denegado": es que todavía no ha entrado.
+  // Se le ofrece iniciar sesión en vez de darle un portazo. El permiso NO cambia.
+  const effectiveFallback = !isAuthenticated ? 'login' : fallbackType;
+  // "Solo administradores" solo es cierto cuando la ruta es exclusiva de admin.
+  const adminOnly = allowedRoles.length === 1 && allowedRoles[0] === 'admin';
+
   // Check entitlement if required
   let hasEntitlement = true;
   let entitlementReason = '';
@@ -117,9 +123,9 @@ export default function AccessGuard({
         <Card className="max-w-md w-full">
           <CardContent className="p-6 sm:p-8 text-center">
             <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              {fallbackType === 'login' ? (
-                <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
-              ) : fallbackType === 'upgrade' ? (
+              {effectiveFallback === 'login' ? (
+                <LogIn className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
+              ) : effectiveFallback === 'upgrade' ? (
                 <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-premium" />
               ) : (
                 <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-destructive" />
@@ -127,18 +133,18 @@ export default function AccessGuard({
             </div>
 
             <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground mb-2">
-              {fallbackType === 'login' && t('login.title')}
-              {fallbackType === 'upgrade' && t('recordings.premiumContent')}
-              {fallbackType === 'forbidden' && t('admin.accessDenied')}
+              {effectiveFallback === 'login' && t('admin.signInToContinue')}
+              {effectiveFallback === 'upgrade' && t('recordings.premiumContent')}
+              {effectiveFallback === 'forbidden' && t('admin.accessDenied')}
             </h2>
 
             <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
               {fallbackMessage || (
-                fallbackType === 'login'
-                  ? t('chat.chatUnavailable')
-                  : fallbackType === 'upgrade'
+                effectiveFallback === 'login'
+                  ? (adminOnly ? t('admin.onlyAdmins') : t('admin.onlyMembers'))
+                  : effectiveFallback === 'upgrade'
                   ? t('chat.premiumService')
-                  : t('admin.onlyAdmins')
+                  : (adminOnly ? t('admin.onlyAdmins') : t('admin.onlyMembers'))
               )}
             </p>
 
@@ -177,7 +183,7 @@ export default function AccessGuard({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-              {fallbackType === 'login' && (
+              {effectiveFallback === 'login' && (
                 <>
                   <Button onClick={() => navigate('/login')} className="gap-2 min-h-[44px]">
                     <LogIn className="w-4 h-4" />
@@ -193,7 +199,7 @@ export default function AccessGuard({
                   </Button>
                 </>
               )}
-              {fallbackType === 'upgrade' && (
+              {effectiveFallback === 'upgrade' && (
                 <Button onClick={() => navigate('/wallet')} className="gap-2 min-h-[44px]">
                   <Shield className="w-4 h-4" />
                   {t('chat.viewOptions')}
