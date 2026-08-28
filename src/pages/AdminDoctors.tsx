@@ -305,10 +305,12 @@ export default function AdminDoctors() {
     setUpdatingCategoryId(doctor.id);
     try {
       const newValue = value === 'none' ? null : value;
-      const { error } = await supabase
-        .from('profiles')
-        .update({ profile_category: newValue } as any)
-        .eq('id', doctor.user_id);
+      // Por RPC (SECURITY DEFINER): la RLS de profiles solo deja actualizar la fila
+      // propia, y el UPDATE directo del admin afectaba a 0 filas sin dar error.
+      const { error } = await supabase.rpc('admin_set_profile_category' as any, {
+        p_user_id: doctor.user_id,
+        p_category: newValue,
+      });
       if (error) throw error;
       const cat = profileCats.find(c => c.key === newValue);
       toast({ title: 'Categoría actualizada', description: `${doctor.profile?.name}: ${cat ? cat.display_name : 'sin categoría'}` });
