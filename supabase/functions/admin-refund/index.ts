@@ -97,9 +97,15 @@ Deno.serve(async (req) => {
     if (refund_request_id) {
       const { data: claimed, error: claimErr } = await supabaseAdmin
         .from("refund_requests")
-        .update({ status: "processing", reviewed_by: userData.user.id })
+        // El estado inicial de una solicitud es 'pending' (default de la tabla y del
+        // insert del paciente en TransactionHistory). Antes se reclamaba 'requested',
+        // que NUNCA existe para esta tabla → todo reembolso por solicitud fallaba con
+        // "already processed". Además el candado usa 'approved' como estado transitorio
+        // (permitido por el trigger validate_refund_request_status; 'processing' NO lo
+        // está). pending → approved → processed. (Fix 2026-08-17.)
+        .update({ status: "approved", reviewed_by: userData.user.id })
         .eq("id", refund_request_id)
-        .eq("status", "requested")
+        .eq("status", "pending")
         .select("id");
       if (claimErr) throw new Error(`Could not lock refund request: ${claimErr.message}`);
       if (!claimed || claimed.length === 0) {
@@ -141,7 +147,7 @@ Deno.serve(async (req) => {
         // Liberar la reclamación para que el admin pueda reintentar.
         if (refund_request_id) {
           await supabaseAdmin.from("refund_requests")
-            .update({ status: "requested" }).eq("id", refund_request_id).eq("status", "processing");
+            .update({ status: "pending" }).eq("id", refund_request_id).eq("status", "approved");
         }
         throw new Error(`Stripe refund failed: ${stripeError.message}`);
       }

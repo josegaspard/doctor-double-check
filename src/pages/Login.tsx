@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle, Camera } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Stethoscope, GraduationCap, Mail, CheckCircle, Camera, Clock, Ticket, XCircle } from 'lucide-react';
 import { AppRole as UserRole } from '@/types/database';
 import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
@@ -26,6 +26,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { translateAuthError } from '@/lib/translateAuthError';
 import { useSignupCountryGate } from '@/hooks/useSignupCountryGate';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -52,7 +53,18 @@ export default function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const preferredRole = (location.state as any)?.preferredRole || 'patient';
+  // Pacientes en "Próximamente" (cliente 2026-08-17): mientras el súper admin no
+  // encienda "Acceso para PACIENTES" en Ajustes del sitio, ni se registran ni entran.
+  // Aquí sólo se evita que lleguen a un formulario condenado a fallar: el candado
+  // real vive en la base (handle_new_user + política de user_roles).
+  const { toggles } = useSiteToggles();
+  const patientsOpen = toggles.enable_patient_access === true;
+
+  const requestedRole = (location.state as any)?.preferredRole || (patientsOpen ? 'patient' : 'doctor');
+  // Si alguien llega pidiendo "paciente" con el acceso cerrado, se le atiende como
+  // médico y se le explica por qué (en vez de dejarlo en una pantalla muerta).
+  const patientRequestedButClosed = requestedRole === 'patient' && !patientsOpen;
+  const preferredRole = patientRequestedButClosed ? 'doctor' : requestedRole;
 
   // Insignia de rol (cliente 2026-06-26): login y registro deben verse DISTINTOS según
   // el rol elegido en /app (paciente/residente/doctor). Cada rol = ícono + degradado de marca propio.
@@ -62,13 +74,20 @@ export default function Login() {
     resident: { Icon: GraduationCap, labelKey: 'roles.resident', accent: '#5566b5', gradient: 'linear-gradient(120deg, #227787 0%, #839ed5 100%)' },
   } as const;
   type BarRole = keyof typeof ROLE_META;
+  // Barras visibles. Con pacientes cerrados quedan Médico y Residente.
+  const availableRoles = (Object.keys(ROLE_META) as BarRole[]).filter((r) => r !== 'patient' || patientsOpen);
   // Barra de acceso seleccionada. Por defecto la que llega desde /app (RoleSelector);
   // si se entró por el botón genérico, default 'patient' pero el usuario puede cambiarla
   // con el selector de abajo. La cuenta DEBE coincidir con la barra (cliente 2026-06-30).
   const [selectedRole, setSelectedRole] = useState<BarRole>(
-    (['patient', 'doctor', 'resident'].includes(preferredRole) ? preferredRole : 'patient') as BarRole
+    (['patient', 'doctor', 'resident'].includes(preferredRole) ? preferredRole : 'doctor') as BarRole
   );
-  const roleMeta = ROLE_META[selectedRole] || ROLE_META.patient;
+  // Si el admin CIERRA pacientes con alguien ya en esta pantalla con esa barra
+  // puesta, se le mueve a Médico en lugar de dejarle un formulario que fallará.
+  useEffect(() => {
+    if (!patientsOpen && selectedRole === 'patient') setSelectedRole('doctor');
+  }, [patientsOpen, selectedRole]);
+  const roleMeta = ROLE_META[selectedRole] || ROLE_META.doctor;
   const RoleBadgeIcon = roleMeta.Icon;
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -100,6 +119,11 @@ export default function Login() {
   const [registerHospital, setRegisterHospital] = useState('');
   const [registerUniversity, setRegisterUniversity] = useState('');
   const [registerDoctorCode, setRegisterDoctorCode] = useState('');
+  // Código de campaña (cliente 2026-08-17): el súper admin genera tandas de 50/100
+  // para cobrar poco a los primeros. Se valida contra la base según se escribe —
+  // sin poder listar ni adivinar códigos (RPC validate_signup_code).
+  const [registerSignupCode, setRegisterSignupCode] = useState('');
+  const [signupCodeState, setSignupCodeState] = useState<{ status: 'idle' | 'checking' | 'ok' | 'error'; message?: string }>({ status: 'idle' });
   const [registerError, setRegisterError] = useState('');
   // Candado "solo México" del súper admin (apagado por defecto → no hace nada).
   const countryGate = useSignupCountryGate();
@@ -114,6 +138,28 @@ export default function Login() {
   useEffect(() => {
     setRegisterRole(selectedRole);
   }, [selectedRole]);
+
+  // Comprobación del código de campaña mientras se escribe (con freno de 500 ms
+  // para no llamar a la base en cada tecla).
+  useEffect(() => {
+    const code = registerSignupCode.trim().toUpperCase();
+    if (!code) { setSignupCodeState({ status: 'idle' }); return; }
+    setSignupCodeState({ status: 'checking' });
+    const timer = setTimeout(async () => {
+      const { data, error } = await supabase.rpc('validate_signup_code', { _code: code });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (error || !row) { setSignupCodeState({ status: 'error', message: t('login.signupCodeInvalid') }); return; }
+      if (row.valid) { setSignupCodeState({ status: 'ok', message: row.campaign_name || t('login.signupCodeOk') }); return; }
+      const byReason: Record<string, string> = {
+        not_found: t('login.signupCodeInvalid'),
+        used: t('login.signupCodeUsed'),
+        expired: t('login.signupCodeExpired'),
+      };
+      setSignupCodeState({ status: 'error', message: byReason[row.reason] || t('login.signupCodeInvalid') });
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerSignupCode]);
 
   // MIGRATION 2026-05-08: OAuth temporalmente deshabilitado hasta que el cliente
   // tenga su propio OAuth client en Google Cloud. Flip a true para reactivar.
@@ -198,6 +244,14 @@ export default function Login() {
 
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
+      // Cuenta de PACIENTE con el acceso cerrado: la contraseña era correcta, pero
+      // no puede pasar. Se cierra la sesión recién abierta y se explica por qué —
+      // dejarla abierta la metería en una app que no le corresponde todavía.
+      if (result.role === 'patient' && !patientsOpen) {
+        await supabase.auth.signOut();
+        setLoginError(t('login.patientLoginBlocked'));
+        return;
+      }
       const { data: sessionData } = await supabase.auth.getSession();
       const uid = sessionData.session?.user?.id;
       if (uid) {
@@ -249,6 +303,13 @@ export default function Login() {
     // no hace nada y el registro sigue abierto a todo el mundo.
     if (countryGate.blocked) {
       setRegisterError(t('login.countryNotAvailable'));
+      return;
+    }
+
+    // Cinturón y tirantes: aunque la barra de "paciente" esté oculta, si por lo que
+    // sea el rol llega en 'patient' con el acceso cerrado, no se envía nada.
+    if (registerRole === 'patient' && !patientsOpen) {
+      setRegisterError(t('login.patientComingSoonBody'));
       return;
     }
 
@@ -306,6 +367,7 @@ export default function Login() {
       hospital: registerHospital,
       university: registerUniversity,
       doctorCode: registerDoctorCode,
+      signupCode: registerSignupCode.trim().toUpperCase(),
       acceptedLegal,
       acceptedEthics,
       consentVersion: '2026-07-16',
@@ -330,14 +392,14 @@ export default function Login() {
     <AppBackground className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="app-shell-header">
-        <div className="container mx-auto px-4 py-4">
-          <div className="relative flex items-center justify-between min-h-14">
+        <div className="container mx-auto px-4 py-4 land:py-1.5">
+          <div className="relative flex items-center justify-between min-h-14 land:min-h-0">
             <Button variant="outline" size="icon" onClick={() => navigate('/')} className="app-shell-icon-button">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
             <button type="button" onClick={() => navigate('/')} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm" aria-label="Inicio">
-              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 land:h-9 w-auto" />
             </button>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>
@@ -345,15 +407,30 @@ export default function Login() {
       </header>
 
       {/* Main */}
-      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 flex items-start sm:items-center justify-center">
-        <div className="w-full max-w-md">
+      <main className="relative z-10 flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-8 land:py-2 flex items-start sm:items-center land:items-start justify-center">
+        {/* En horizontal la tarjeta se ensancha: con 844px de ancho, max-w-md dejaba
+            media pantalla vacía y estiraba el formulario hacia abajo. */}
+        <div className="w-full max-w-md land:max-w-2xl">
+          {/* Llegó pidiendo "paciente" pero todavía no está abierto: se explica y se
+              le deja ya colocado en la barra de Médico. */}
+          {patientRequestedButClosed && (
+            <Alert className="mb-4 land:mb-2 border-amber-400/40 bg-amber-50 text-amber-900">
+              <Clock className="h-4 w-4" />
+              <AlertTitle>{t('login.patientComingSoonTitle')}</AlertTitle>
+              <AlertDescription className="text-xs sm:text-sm">{t('login.patientComingSoonBody')}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* En horizontal, insignia y selector van en una sola fila (apilados dejaban
+              el formulario fuera de la primera pantalla). En vertical, sin cambios. */}
+          <div className="land:flex land:items-stretch land:gap-3">
           {/* Insignia de rol (cliente 2026-06-26): muestra con qué rol estás entrando.
               El super admin entra por "Soy Médico" y el routing lo manda a /admin. */}
           <div
-            className="mb-4 flex items-center gap-3 rounded-xl px-4 py-3 text-white shadow-lg"
+            className="mb-4 land:mb-2 land:flex-1 land:min-w-0 flex items-center gap-3 rounded-xl px-4 py-3 land:py-2 text-white shadow-lg"
             style={{ backgroundImage: roleMeta.gradient }}
           >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25">
+            <div className="flex h-10 w-10 land:h-8 land:w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/25">
               <RoleBadgeIcon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -364,8 +441,8 @@ export default function Login() {
 
           {/* Selector de barra de acceso (cliente 2026-06-30): cada barra solo acepta su
               propio rol. Permite cambiar de acceso sin volver al selector de /app. */}
-          <div className="mb-4 grid grid-cols-3 gap-2">
-            {(Object.keys(ROLE_META) as BarRole[]).map((r) => {
+          <div className={`mb-4 land:mb-2 land:flex-1 grid gap-2 ${availableRoles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {availableRoles.map((r) => {
               const meta = ROLE_META[r];
               const Icon = meta.Icon;
               const active = selectedRole === r;
@@ -391,8 +468,10 @@ export default function Login() {
             })}
           </div>
 
+          </div>
+
           <Tabs defaultValue={(location.state as any)?.mode === 'signup' ? 'register' : 'login'} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 land:mb-2">
               <TabsTrigger value="login">{t('login.loginTab')}</TabsTrigger>
               <TabsTrigger value="register">{t('login.registerTab')}</TabsTrigger>
             </TabsList>
@@ -753,6 +832,34 @@ export default function Login() {
                           />
                         </div>
                       )}
+
+                      {/* Código de CAMPAÑA (cliente 2026-08-17): tandas de 50/100 que
+                          genera el súper admin para cobrar poco a los primeros. */}
+                      <div className="space-y-2">
+                        <Label>
+                          <Ticket className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                          {t('login.signupCode')} <span className="text-muted-foreground font-normal">({t('login.optional')})</span>
+                        </Label>
+                        <Input
+                          value={registerSignupCode}
+                          onChange={(e) => setRegisterSignupCode(e.target.value.toUpperCase())}
+                          placeholder={t('login.signupCodePlaceholder')}
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                        />
+                        {signupCodeState.status === 'idle' && (
+                          <p className="text-xs text-muted-foreground">{t('login.signupCodeHelp')}</p>
+                        )}
+                        {signupCodeState.status === 'checking' && (
+                          <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />…</p>
+                        )}
+                        {signupCodeState.status === 'ok' && (
+                          <p className="flex items-center gap-1.5 text-xs font-medium text-success"><CheckCircle className="h-3 w-3" />{signupCodeState.message}</p>
+                        )}
+                        {signupCodeState.status === 'error' && (
+                          <p className="flex items-center gap-1.5 text-xs font-medium text-destructive"><XCircle className="h-3 w-3" />{signupCodeState.message}</p>
+                        )}
+                      </div>
 
                       {/* Casillas de aceptación obligatorias (cliente 2026-06-30). */}
                       <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-3">

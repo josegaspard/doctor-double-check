@@ -70,6 +70,8 @@ export interface RegisterData {
   hospital?: string;
   university?: string;
   doctorCode?: string;
+  /** Código de campaña de registro (tandas de 50/100 del súper admin). */
+  signupCode?: string;
   // Consentimiento LFPDPPP: evidencia de aceptación del aviso de privacidad/ética.
   acceptedLegal?: boolean;
   acceptedEthics?: boolean;

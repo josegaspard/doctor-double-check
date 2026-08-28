@@ -17,6 +17,21 @@ export default {
       },
     },
     extend: {
+      screens: {
+        // ── Breakpoints por ALTURA (2026-08-17, cliente: "en horizontal se ve mal") ──
+        // Todo el sitio decidía SOLO por ancho: un iPhone en horizontal mide
+        // 844×390 → dispara `sm:`, `md:` y se comporta como un escritorio, pero
+        // sólo tiene 390 px de alto. Resultado: héroes de 640 px, tarjetas de
+        // 280 px y paddings de escritorio que no caben.
+        //
+        //   land  = ancho de tablet/escritorio pero MUY poca altura
+        //           (= móvil en horizontal, o una ventana muy achatada)
+        //   short = poca altura, sea cual sea el ancho
+        //
+        // Se usan como cualquier variante: `land:min-h-[300px]`, `short:py-2`.
+        land: { raw: '(max-height: 540px) and (min-width: 600px)' },
+        short: { raw: '(max-height: 540px)' },
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         heading: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],

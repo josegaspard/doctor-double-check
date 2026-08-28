@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,8 @@ export function DiscoverGate() {
   const { role } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { toggles } = useSiteToggles();
+  const patientsOpen = toggles.enable_patient_access === true;
   const [now, setNow] = useState(() => Date.now());
 
   // Se lee fresco en cada render: al re-entrar como visitante loginAsVisitor
@@ -91,7 +94,13 @@ export function DiscoverGate() {
           <Button
             variant="outline"
             className="w-full h-11 border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
-            onClick={() => navigate('/login', { state: { preferredRole: 'patient', mode: 'signup' } })}
+            onClick={() => navigate('/login', {
+              // Con el acceso de pacientes cerrado (2026-08-17) este botón ya no puede
+              // preseleccionar 'patient': llevaría al aviso de "próximamente" a alguien
+              // que sólo pulsó "Registrarme". Se le deja en la barra de Médico, que es
+              // la puerta abierta; desde ahí puede cambiar a Residente en un toque.
+              state: { preferredRole: patientsOpen ? 'patient' : 'doctor', mode: 'signup' },
+            })}
           >
             {t('discover.registerCta')}
           </Button>

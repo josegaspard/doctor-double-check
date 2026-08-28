@@ -2,9 +2,14 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageSquare, Video, FileText, Shield, Clock, Smartphone, Users, CheckCircle, Stethoscope, BookOpen } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 
 export default function ForPatients() {
   const { t } = useLanguage();
+  // Pacientes en "Próximamente" (cliente 2026-08-17): esta página sigue explicando
+  // lo que tendrán, pero deja claro arriba que todavía no pueden entrar.
+  const { toggles } = useSiteToggles();
+  const patientsOpen = toggles.enable_patient_access === true;
 
   const benefits = [
     {
@@ -58,6 +63,16 @@ export default function ForPatients() {
       <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-secondary via-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
+            {/* Tarjeta OSCURA a propósito: index.css fuerza texto blanco a todo lo que
+                cuelga de una cabecera `bg-gradient-to-br from-secondary…`, y su excepción
+                para `bg-white` sólo cubre al propio elemento, NO a sus hijos → una tarjeta
+                blanca aquí saldría blanco sobre blanco. Con fondo navy, el blanco encaja. */}
+            {!patientsOpen && (
+              <div className="mx-auto mb-4 sm:mb-6 max-w-xl rounded-xl border border-white/30 bg-[#0b1d45]/85 backdrop-blur-sm px-4 py-3 text-center shadow-xl">
+                <p className="text-sm font-bold uppercase tracking-wider">{t('roleSelector.comingSoonBadge')}</p>
+                <p className="mt-1 text-xs leading-snug opacity-85">{t('roleSelector.comingSoonPatient')}</p>
+              </div>
+            )}
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('forPatientsPage.hero.badge')}</span>

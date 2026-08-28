@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck, Presentation, QrCode,
+  ClipboardCheck, Presentation, QrCode, Ticket,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -72,6 +72,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       modules: [
         { id: 'analytics', icon: BarChart3, href: '/admin/analytics', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash2'), desc: t('autoI18n.clAdminDash3') },
         { id: 'qr', icon: QrCode, href: '/admin/qr', color: 'text-info', borderColor: 'border-l-info', title: 'Campañas QR', desc: 'Escaneos del QR impreso (invitaciones a médicos)' },
+        { id: 'campaigns', icon: Ticket, href: '/admin/campaigns', color: 'text-warning', borderColor: 'border-l-warning', title: 'Campañas de registro', desc: 'Códigos por tandas de 50 o 100 para dar de alta médicos y residentes' },
         { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash4'), desc: t('autoI18n.clAdminDash5') },
         { id: 'invoices', icon: FileText, href: '/admin/invoices', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash6'), desc: t('autoI18n.clAdminDash7'), badge: stats.pendingInvoices },
         { id: 'payout-settings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground', borderColor: 'border-l-muted-foreground', title: t('autoI18n.clAdminDash8'), desc: t('autoI18n.clAdminDash9') },
@@ -92,6 +93,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: t('autoI18n.clAdminDash23'),
       modules: [
         { id: 'news', icon: Newspaper, href: '/admin/news', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash24'), desc: t('autoI18n.clAdminDash25') },
+        // Comunidad · Día a día (módulo diario 22-ago-2026): propuestas del día, banco, actividad, revelados.
+        { id: 'forum', icon: MessageSquare, href: '/admin/forum', color: 'text-primary', borderColor: 'border-l-primary', title: t('forumAdmin.title'), desc: t('forumAdmin.subtitle') },
         { id: 'events', icon: Megaphone, href: '/admin/events', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash26'), desc: t('autoI18n.clAdminDash27') },
         // Congresos (cliente 2026-07-02): administración total de congresos por el super admin.
         { id: 'congresses', icon: Presentation, href: '/admin/congresses', color: 'text-primary', borderColor: 'border-l-primary', title: t('congresses.adminTitle'), desc: t('congresses.adminSubtitle') },

@@ -206,16 +206,23 @@
     z-index: 50 !important;
   }
 
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     overflow-wrap: anywhere;
     word-break: break-word;
     /* Safe area for notched devices */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-top: var(--sat);
+    padding-bottom: var(--sab);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
   }
 
   /* Touch-friendly tap targets — applied via component sizing, not globally */
@@ -2002,3 +2009,105 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   color: #163a83 !important;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MÓVIL EN HORIZONTAL — MODO COMPACTO           (cliente 2026-08-17)
+   ══════════════════════════════════════════════════════════════════════════
+   PROBLEMA: toda la web decidía su layout SÓLO por ANCHO. Un iPhone girado
+   mide 844×390: dispara `sm:`, `md:` (e incluso `lg:` en un iPhone Pro Max o
+   un iPad mini) y se comporta como un ESCRITORIO… con 390 px de alto. De ahí
+   lo que reportó el cliente: héroes de 640 px, tarjetas de 280 px, títulos de
+   60 px y paddings de sección de 96+96 px — cada bloque ocupaba 1,5 pantallas
+   y no cabía NADA.
+
+   SOLUCIÓN: una capa "compacta" que se activa por ALTURA, no por ancho:
+       (max-height: 540px) and (min-width: 600px)
+   = móvil/tablet pequeña en horizontal, o una ventana muy achatada.
+   NO toca escritorio (1080 de alto), NI móvil en vertical (ancho < 600),
+   NI tablet en horizontal (768 de alto) — ahí todo sigue exactamente igual.
+
+   Cómo funciona, de más general a más concreto:
+     1) `html { font-size }` → TODO lo que está en `rem` (texto, paddings,
+        gaps, alturas, anchos máximos) encoge en bloque y en proporción. Una
+        sola línea arregla la mayor parte sin tocar 117 páginas. Los
+        breakpoints de Tailwind son en px, así que NO se desplazan.
+     2) Topes para lo que NO está en rem o es desproporcionado en horizontal:
+        ritmo vertical de sección y tipografía de display.
+     3) Los ajustes por página (héroe del landing, /app, /login) van en su
+        propio JSX con la variante `land:` definida en tailwind.config.ts.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (max-height: 540px) and (min-width: 600px) {
+  /* 1) Escala global (16 → 14 px = 87,5 %). */
+  html { font-size: 14px; }
+
+  /* iOS Safari hace ZOOM automático al enfocar un campo con letra < 16 px.
+     Al bajar la raíz a 14 px, `text-base` pasaría a 14 px y cada toque en un
+     input daría un zoom que descoloca la página entera. Los campos se quedan
+     en 16 px reales, siempre. */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* 2a) Ritmo vertical de sección: py-16/20/24/28/32 son 64-128 px ARRIBA
+         Y ABAJO. En 390 px de alto, una sola sección se comía la pantalla.
+         Se listan también las variantes (`sm:py-20`, `lg:py-24`, …) porque en
+         horizontal esas variantes SÍ están activas. */
+  [class~="py-16"], [class*=":py-16"],
+  [class~="py-20"], [class*=":py-20"],
+  [class~="py-24"], [class*=":py-24"],
+  [class~="py-28"], [class*=":py-28"],
+  [class~="py-32"], [class*=":py-32"] { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+
+  [class~="pt-16"], [class*=":pt-16"],
+  [class~="pt-20"], [class*=":pt-20"],
+  [class~="pt-24"], [class*=":pt-24"],
+  [class~="pt-32"], [class*=":pt-32"] { padding-top: 2rem !important; }
+
+  /* EXCEPCIÓN — hero del landing (cliente 2026-08-18). La regla de arriba es
+     `!important` y gana a cualquier `land:pt-*` del JSX: dejaba el contenido a
+     28 px del borde, por DEBAJO de la barra de navegación, y la píldora LIVE
+     salía pisada por la hamburguesa. La nav en horizontal mide 56 px (`land:h-16`),
+     así que el contenido arranca a 68. */
+  .landing-page > header > .container { padding-top: 68px !important; }
+
+  [class~="pb-16"], [class*=":pb-16"],
+  [class~="pb-20"], [class*=":pb-20"],
+  [class~="pb-24"], [class*=":pb-24"],
+  [class~="pb-32"], [class*=":pb-32"] { padding-bottom: 2rem !important; }
+
+  [class~="mb-16"], [class*=":mb-16"],
+  [class~="mb-20"], [class*=":mb-20"],
+  [class~="mt-16"], [class*=":mt-16"],
+  [class~="mt-20"], [class*=":mt-20"] { margin-top: 1.5rem !important; margin-bottom: 1.5rem !important; }
+
+  /* 2b) Separación entre bloques de una rejilla/columna. */
+  [class~="gap-y-16"], [class*=":gap-y-16"],
+  [class~="gap-16"], [class*=":gap-16"],
+  [class~="gap-20"], [class*=":gap-20"],
+  [class~="space-y-16"], [class*=":space-y-16"] { gap: 1.5rem !important; }
+
+  /* 2c) Tipografía de display. Un `md:text-6xl` (60 px) ocupa 3 líneas de las
+         6 que caben. Se ordena de menor a mayor a propósito: si un elemento
+         lleva `text-4xl md:text-6xl`, gana la última regla que coincide (6xl),
+         que es justo la variante activa a este ancho. */
+  [class~="text-4xl"], [class*=":text-4xl"] { font-size: 1.75rem !important; line-height: 1.15 !important; }
+  [class~="text-5xl"], [class*=":text-5xl"] { font-size: 2rem    !important; line-height: 1.12 !important; }
+  [class~="text-6xl"], [class*=":text-6xl"] { font-size: 2.25rem !important; line-height: 1.1  !important; }
+  [class~="text-7xl"], [class*=":text-7xl"] { font-size: 2.5rem  !important; line-height: 1.08 !important; }
+  [class~="text-8xl"], [class*=":text-8xl"],
+  [class~="text-9xl"], [class*=":text-9xl"] { font-size: 2.75rem !important; line-height: 1.05 !important; }
+
+  /* 2d) Bloques con alto FIJO en px (no escalan con rem): ilustraciones,
+         mapas, reproductores y tarjetas grandes. Se limitan a ~1/2 pantalla
+         para que siempre se vea algo debajo y se entienda que hay más. */
+  [class~="h-\[800px\]"], [class~="h-\[600px\]"], [class~="h-\[500px\]"],
+  [class~="h-\[420px\]"], [class~="h-\[400px\]"], [class~="h-\[350px\]"],
+  [class~="h-\[300px\]"] { height: 15rem !important; }
+  [class~="min-h-\[640px\]"], [class~="min-h-\[500px\]"],
+  [class~="min-h-\[400px\]"], [class~="min-h-\[300px\]"] { min-height: 13rem !important; }
+
+  /* 2e) Diálogos: en 390 px de alto, un modal con padding de escritorio deja el
+         botón de acción fuera de pantalla. Se limita SÓLO a los diálogos de Radix
+         (los únicos con data-state): las capas propias a pantalla completa —
+         "iniciando transmisión" de DoctorGoLive, por ejemplo — llevan también
+         role="dialog" pero son `fixed inset-0` y recortarlas las rompería. */
+  [role="dialog"][data-state] { max-height: 92dvh !important; overflow-y: auto !important; }
+}

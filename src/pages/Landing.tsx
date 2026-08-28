@@ -20,6 +20,7 @@ import livesGridPhoto from '@/assets/landing/people/fotos-lives.jpg';
 import {
   ArrowRight,
   Star,
+  Play,
   PlayCircle,
   HeartPulse,
   Check,
@@ -35,6 +36,8 @@ import {
   Dna,
   Hospital,
   Video,
+  Menu,
+  X,
 } from 'lucide-react';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
@@ -49,6 +52,18 @@ export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
 
   const [showDemoModal, setShowDemoModal] = useState(false);
+
+  // Menú de secciones en móvil/tablet (cliente 2026-08-18): los 4 enlaces del
+  // menú de escritorio (`hidden lg:flex`) no existían por debajo de 1024 px —
+  // el móvil sólo tenía el botón "Entrar". Aquí viven detrás de un botón
+  // hamburguesa para que sean los MISMOS ítems en todos los tamaños.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navLinks = [
+    { href: '#red-global', label: t('landing.nav.globalNetwork') },
+    { href: '#features', label: t('landing.nav.technology') },
+    { href: '#workflow', label: t('landing.nav.process') },
+    { href: '#reviews', label: t('landing.nav.reviews') },
+  ];
 
   // Video del home: SIN autoplay (cliente 2026-06-29). Se reproduce solo cuando
   // el usuario pulsa play en los controles nativos del <video>.
@@ -77,8 +92,15 @@ export default function Landing() {
 
   return (
     <div className="landing-page font-sans text-slate-800 bg-slate-50 overflow-x-hidden relative selection:bg-[#227787] selection:text-white">
-      {/* Demo Video Modal */}
-      <DemoVideoModal open={showDemoModal} onOpenChange={setShowDemoModal} />
+      {/* Demo Video Modal — mismo vídeo del home (editable por el súper admin).
+          Antes apuntaba a gestomarketing.com.mx y la CSP lo bloqueaba: el diálogo
+          abría con una caja azul vacía («no funciona», cliente 2026-08-18). */}
+      <DemoVideoModal
+        open={showDemoModal}
+        onOpenChange={setShowDemoModal}
+        src={homeVideoSrc}
+        poster={homeVideoPoster}
+      />
 
       {/* Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -95,13 +117,25 @@ export default function Landing() {
           tapado por el notch en iPhone/Android. */}
       <nav
         className={`landing-nav fixed w-full z-50 transition-all duration-500 top-0 ${scrolled ? 'is-scrolled' : ''}`}
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ paddingTop: 'var(--sat)' }}
       >
         <div className="landing-nav-surface absolute inset-0 transition-all duration-500" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
-          <div className="relative flex justify-between items-center h-20 md:h-24">
+          <div className="relative flex justify-between items-center h-20 md:h-24 land:h-16">
             {/* Móvil/tablet: idioma a la izquierda para equilibrar el logo centrado (cliente 10-jul) */}
-            <div className="lg:hidden">
+            <div className="lg:hidden flex items-center gap-2">
+              {/* Hamburguesa: abre los MISMOS 4 enlaces que el menú de escritorio.
+                  Va a la IZQUIERDA junto al idioma porque a la derecha, con el
+                  botón "Entrar", pisaba el logo centrado. */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                aria-label={t('landing.nav.menu')}
+                aria-expanded={mobileMenuOpen}
+                className={`rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
               <LanguageSwitcher unstyled className={`rounded-full p-2 border transition-colors ${scrolled ? 'text-gray-700 border-gray-200 bg-white hover:bg-gray-100' : 'text-white border-white/40 bg-white/15 hover:bg-white/25'}`} />
             </div>
             {/* Logo: centrado y grande en móvil/tablet, a la izquierda en desktop; misma altura en todos los breakpoints */}
@@ -145,11 +179,39 @@ export default function Landing() {
               </Link>
             </div>
           </div>
+
+          {/* Panel desplegable (móvil/tablet) con las secciones del menú de escritorio */}
+          <div
+            className={`lg:hidden overflow-hidden transition-all duration-300 ${
+              mobileMenuOpen ? 'max-h-[26rem] opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className="mb-3 rounded-2xl border border-white/15 bg-[#0b1d45]/95 backdrop-blur-xl shadow-2xl p-2">
+              {navLinks.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold text-white/90 hover:bg-white/10 active:bg-white/15 transition-colors"
+                >
+                  {l.label}
+                  <ArrowRight className="w-4 h-4 text-[#aed3d9]" />
+                </a>
+              ))}
+              <Link
+                to="/app"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mt-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#227787] text-sm font-bold uppercase tracking-wider text-white"
+              >
+                {t('landing.nav.enterApp')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <header className="relative h-[100svh] min-h-[640px] max-h-[1024px] overflow-hidden bg-[#0b1d45] mb-[-1px]">
+      <header className="relative flex flex-col min-h-[calc(100svh_-_var(--sat)_-_var(--sab))] md:h-[calc(100svh_-_var(--sat)_-_var(--sab))] md:min-h-[640px] md:max-h-[1024px] land:min-h-0 overflow-hidden bg-[#0b1d45] mb-[-1px]">
         {/* Background image — desktop + mobile */}
         <picture className="absolute inset-0 z-0">
           <source media="(max-width: 767px)" srcSet={heroBgMobile} />
@@ -161,9 +223,9 @@ export default function Landing() {
         {/* Bottom fade so the floating row of feature cards sits on a dark base */}
         <div className="absolute inset-x-0 bottom-0 h-40 z-[1] bg-gradient-to-t from-[#0b1d45]/95 to-transparent" />
 
-        <div className="container mx-auto px-5 sm:px-6 lg:px-12 relative z-10 h-full flex flex-col pt-16 sm:pt-20 lg:pt-24 pb-44 sm:pb-44 lg:pb-32">
+        <div className="container mx-auto px-5 sm:px-6 lg:px-12 relative z-10 flex-1 w-full flex flex-col pt-[82px] sm:pt-20 lg:pt-24 land:pt-14 pb-3 md:pb-44 lg:pb-32 land:pb-24">
           {/* Top stats bar — visible md+. Restaurada 2026-06-02 con SOLO títulos (sin números/datos). */}
-          <div className="hidden md:flex absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl">
+          <div className="hidden md:flex land:hidden absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl whitespace-nowrap">
             <div className="flex items-center gap-2">
               <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
               <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.countriesConnected')}</p>
@@ -183,9 +245,26 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10 items-start lg:items-center flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 md:gap-4 lg:gap-10 items-start md:items-center land:items-start flex-1 min-h-0">
             {/* LEFT: copy + CTAs (kept narrower so floating cards have room beside it) */}
-            <div className="relative z-20 animate-fade-in space-y-2.5 sm:space-y-3 lg:space-y-5 max-w-md xl:max-w-lg 2xl:max-w-xl">
+            <div className="relative z-20 animate-fade-in space-y-3 sm:space-y-3 lg:space-y-5 land:space-y-2 max-w-md land:max-w-xl xl:max-w-lg 2xl:max-w-xl">
+              {/* Estadísticas en móvil: MISMA píldora que en escritorio (una sola barra
+                  con separadores), arriba del todo. El cliente pidió el mismo orden y
+                  el mismo aspecto que el PC en el teléfono (2026-08-18). */}
+              <div className="md:hidden land:hidden flex items-center justify-between gap-0.5 px-2.5 py-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg">
+                {[
+                  { img: iconGlobal, label: t('landing.hero.countriesConnected') },
+                  { img: iconMedicos, label: t('landing.hero.activeDoctors') },
+                  { img: iconStream, label: t('landing.hero.streaming') },
+                ].map((s, i) => (
+                  <div key={i} className="flex items-center gap-1 shrink-0">
+                    {i > 0 && <span className="w-px h-5 bg-white/15 mr-1 shrink-0" />}
+                    <img src={s.img} alt="" className="w-[15px] h-[15px] shrink-0" />
+                    <p className="text-[8.5px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/15 border border-[#aed3d9]/30 backdrop-blur-md">
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
@@ -220,40 +299,64 @@ export default function Landing() {
                   sin sonido, sin controles/botones, loop continuo. Poster = frame 0 para
                   evitar el reproductor negro en iOS Safari (mismo patrón que landing-mm-2026).
                   Oculto en móvil (cliente 2026-07-29): solo desktop/tablet md+. */}
-              <div className="hidden md:block md:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 shadow-xl bg-black/20 mt-1">
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  disablePictureInPicture
-                  controlsList="nodownload nofullscreen noremoteplayback"
-                  preload="auto"
-                  poster="/hero-intro-loop-poster.jpg"
-                  className="block w-full h-auto aspect-video object-cover pointer-events-none"
-                  src="/hero-intro-loop.mp4"
-                />
+              <div className="hidden md:block land:hidden mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowDemoModal(true)}
+                  aria-label={t('landing.hero.ctaSecondary')}
+                  className="group relative block md:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 hover:border-[#aed3d9]/60 shadow-xl bg-black/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#aed3d9]"
+                >
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    disablePictureInPicture
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    preload="auto"
+                    poster="/hero-intro-loop-poster.jpg"
+                    className="block w-full h-auto aspect-video object-cover pointer-events-none"
+                    src="/hero-intro-loop.mp4"
+                  />
+                  {/* Capa de "reproducir": el cliente pidió que el vídeo TAMBIÉN
+                      abra el demo completo al hacer clic (2026-08-18). */}
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                    <span className="w-11 h-11 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center">
+                      <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDemoModal(true)}
+                  className="mt-2 inline-flex items-center gap-2 text-xs lg:text-sm font-bold text-[#aed3d9] hover:text-white transition-colors"
+                >
+                  <PlayCircle className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
+                  {t('landing.hero.ctaSecondary')}
+                </button>
               </div>
 
-              {/* Mobile stat chips — restaurados 2026-06-02 con SOLO títulos (sin números). */}
-              <div className="grid grid-cols-3 gap-2 mt-3 md:hidden">
+              {/* Apaisado: las estadísticas se quedan donde estaban (debajo del texto).
+                  Arriba chocarían con la barra de navegación, que en 390 px de alto
+                  ocupa las dos primeras filas. */}
+              <div className="hidden land:grid grid-cols-3 gap-2">
                 {[
                   { img: iconGlobal, label: t('landing.hero.countriesConnected') },
                   { img: iconMedicos, label: t('landing.hero.activeDoctors') },
                   { img: iconStream, label: t('landing.hero.streaming') },
                 ].map((s, i) => (
-                  <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2.5 rounded-xl border border-white/15 shadow-lg flex flex-col items-center text-center gap-1.5">
-                    <img src={s.img} alt="" className="w-5 h-5" />
+                  <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2 rounded-xl border border-white/15 shadow-lg flex flex-col items-center text-center gap-1">
+                    <img src={s.img} alt="" className="w-[18px] h-[18px]" />
                     <p className="text-[9px] leading-tight text-slate-200 font-semibold">{s.label}</p>
                   </div>
                 ))}
               </div>
 
               {/* CTA móvil — el hero no tenía botón de acción en móvil (cliente 2026-06-17). Solo móvil; desktop intacto. */}
-              <div className="flex flex-col gap-2.5 pt-1 md:hidden">
+              <div className="flex flex-col land:flex-row gap-2 md:hidden land:flex">
                 <Link
                   to="/app"
-                  className="group inline-flex items-center justify-center gap-2 w-full bg-[#227787] hover:bg-[#1a606e] active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-full shadow-[0_10px_30px_-6px_rgba(34,119,135,0.65)] ring-1 ring-[#aed3d9]/30 transition-all text-sm uppercase tracking-wider"
+                  className="group inline-flex items-center justify-center gap-2 w-full bg-[#227787] hover:bg-[#1a606e] active:scale-[0.99] text-white font-bold py-3 px-5 rounded-full shadow-[0_10px_30px_-6px_rgba(34,119,135,0.65)] ring-1 ring-[#aed3d9]/30 transition-all text-sm uppercase tracking-wider"
                 >
                   {t('landing.hero.ctaPrimary')}
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -261,11 +364,131 @@ export default function Landing() {
                 <button
                   type="button"
                   onClick={() => setShowDemoModal(true)}
-                  className="inline-flex items-center justify-center gap-2 w-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-full border border-white/25 transition-all text-sm"
+                  className="inline-flex items-center justify-center gap-2 w-full bg-white/10 backdrop-blur-md hover:bg-white/20 text-white font-semibold py-2.5 px-5 rounded-full border border-white/25 transition-all text-[13px]"
                 >
                   <PlayCircle className="w-4 h-4 text-[#aed3d9]" />
                   {t('landing.hero.ctaSecondary')}
                 </button>
+              </div>
+            </div>
+
+            {/* ——— MÓVIL · MISMA COMPOSICIÓN QUE EL ESCRITORIO ———
+                Cliente 2026-08-18: «que se vea como la de la computadora, no con las
+                cosas abajo». Estos seis ítems vivían en una sección aparte DEBAJO del
+                hero; ahora están DENTRO del hero, flotando a izquierda y derecha del
+                doctor y en el mismo orden que en PC (médicos en directo · doctor en
+                vivo · vídeo · signos vitales · actividad global · quirófano).
+                El hueco central (30%) se deja libre a propósito: ahí cae la cara del
+                doctor de `hero-bg-mobile.png`.
+                `land:hidden` — en apaisado el hero mide 390 px de alto y no caben:
+                allí siguen mostrándose en la sección de debajo. */}
+            <div className="md:hidden land:hidden flex items-start justify-between gap-2">
+              {/* Columna izquierda */}
+              <div className="w-[35%] flex flex-col gap-4">
+                {/* Médicos en línea (tarjeta tipo FaceTime del hero de PC) */}
+                <div className="rounded-xl overflow-hidden border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform" style={{ animationDuration: '6s', animationDelay: '0s' }}>
+                  <img
+                    src={livesGridPhoto}
+                    alt=""
+                    loading="lazy"
+                    className="block w-full h-auto"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+
+                {/* Vídeo de intro en bucle (antes sólo md+). Clic → demo completo
+                    (cliente 2026-08-18: «que se pueda ver el video al dar clic»). */}
+                <div className="rounded-xl overflow-hidden border border-white/15 bg-black/25 shadow-2xl animate-float will-change-transform" style={{ animationDuration: '6.2s', animationDelay: '0.6s' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(true)}
+                    aria-label={t('landing.hero.ctaSecondary')}
+                    className="relative block w-full active:scale-[0.98] transition-transform"
+                  >
+                    <video
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      disablePictureInPicture
+                      controlsList="nodownload nofullscreen noremoteplayback"
+                      preload="metadata"
+                      poster="/hero-intro-loop-poster.jpg"
+                      className="block w-full h-auto aspect-video object-cover pointer-events-none"
+                      src="/hero-intro-loop.mp4"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <span className="w-7 h-7 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg">
+                        <Play className="w-3 h-3 text-white ml-[1px]" fill="currentColor" />
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                {/* Actividad global */}
+                <div className="rounded-xl border border-white/15 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform p-2" style={{ animationDuration: '6.5s', animationDelay: '1.2s' }}>
+                  <p className="text-[10px] font-semibold text-white/85 leading-tight">{t('landing.hero.globalActivity')}</p>
+                  <div className="h-6 rounded bg-[#0b1d45]/50 mt-1 flex items-end justify-around px-0.5 gap-0.5">
+                    {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
+                      <div key={i} className="w-0.5 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-slate-300/80 mt-1 flex items-center gap-1 leading-tight">
+                    <span className="w-1 h-1 rounded-full bg-[#aed3d9] animate-pulse shrink-0" />
+                    {t('landing.hero.realTime')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Columna derecha — desfasada hacia abajo, como en el escritorio */}
+              <div className="w-[35%] flex flex-col gap-4 mt-6">
+                {/* Doctor en directo */}
+                <div className="rounded-xl overflow-hidden border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
+                  <div className="aspect-video bg-gradient-to-br from-[#227787] to-[#163a83] relative">
+                    <img
+                      src={doctorLivePhoto}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </div>
+                </div>
+
+                {/* Signos vitales */}
+                <div className="rounded-xl border border-white/15 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform p-2" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-semibold text-white/85 leading-tight">{t('landing.hero.vitalSigns')}</span>
+                    <HeartPulse className="w-3 h-3 text-[#aed3d9] shrink-0" />
+                  </div>
+                  <p className="text-[9px] text-slate-300/80 leading-tight">{t('landing.hero.realTime')}</p>
+                  <svg className="w-full h-5 text-[#aed3d9] mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+                  </svg>
+                </div>
+
+                {/* Retransmisión quirúrgica */}
+                <div className="rounded-xl overflow-hidden border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform" style={{ animationDuration: '5.5s', animationDelay: '1.6s' }}>
+                  <div className="aspect-[16/8] bg-gradient-to-br from-[#163a83] via-[#0b1d45] to-[#227787] relative">
+                    <img
+                      src={surgeryPhoto}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                    </span>
+                  </div>
+                  <div className="px-1.5 py-1.5">
+                    <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+                    <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1 leading-tight">
+                      <span className="w-1 h-1 rounded-full bg-[#aed3d9] shrink-0" />
+                      {t('landing.hero.watchingNow')}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -274,7 +497,7 @@ export default function Landing() {
           </div>
 
           {/* Floating cards — absolute over the whole hero, spread to extreme left/right so the doctor stays clear */}
-          <div className="hidden md:block absolute inset-0 pointer-events-none z-10">
+          <div className="hidden md:block land:hidden absolute inset-0 pointer-events-none z-10">
             {/* MID LEFT-OF-DOCTOR — Tarjeta tipo FaceTime: 4 médicos en directo.
                 Reposicionada 2026-06-16 (cliente): DEBAJO de la barra de stats y a la izquierda del doctor,
                 igual que el diseño de referencia (no en la esquina superior, ya no choca con el titular). */}
@@ -291,7 +514,7 @@ export default function Landing() {
             {/* Right-side cards — restauradas 2026-06-02 con fotos ilustrativas y SIN números/datos. */}
 
             {/* TOP RIGHT — LIVE doctor card (foto de doctor en directo) */}
-            <div className="absolute top-24 lg:top-28 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[150px] lg:w-[170px]" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
+            <div className="absolute top-[150px] lg:top-28 right-3 lg:right-6 xl:right-10 pointer-events-auto bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl animate-float overflow-hidden w-[150px] lg:w-[170px]" style={{ animationDuration: '6s', animationDelay: '0.4s' }}>
               <div className="aspect-video bg-gradient-to-br from-[#227787] to-[#163a83] relative flex items-center justify-center">
                 <img
                   src={doctorLivePhoto}
@@ -356,8 +579,8 @@ export default function Landing() {
           </div>
 
           {/* Bottom feature row - 4 cards */}
-          <div className="absolute left-4 right-4 sm:left-6 sm:right-6 lg:left-12 lg:right-12 bottom-3 sm:bottom-4 lg:bottom-6 z-20">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl lg:rounded-2xl p-2.5 sm:p-3 lg:p-4 shadow-2xl">
+          <div className="mt-auto pt-4 md:pt-0 md:absolute md:left-6 md:right-6 lg:left-12 lg:right-12 md:bottom-4 lg:bottom-6 z-20">
+            <div className="grid grid-cols-2 land:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-3 lg:gap-5 land:gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl lg:rounded-2xl p-3 sm:p-3 lg:p-4 land:p-2 shadow-2xl">
               {[
                 { icon: iconEducacion, title: t('landing.heroFeatures.education.title'), desc: t('landing.heroFeatures.education.desc') },
                 { icon: iconConsultas, title: t('landing.heroFeatures.consults.title'), desc: t('landing.heroFeatures.consults.desc') },
@@ -370,7 +593,7 @@ export default function Landing() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] sm:text-xs lg:text-sm font-bold text-white leading-tight">{f.title}</p>
-                    <p className="text-[9px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 hidden lg:block">{f.desc}</p>
+                    <p className="text-[9px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 line-clamp-2 md:hidden lg:block lg:line-clamp-none land:hidden">{f.desc}</p>
                   </div>
                 </div>
               ))}
@@ -379,19 +602,149 @@ export default function Landing() {
         </div>
       </header>
 
+      {/* ——— SÓLO APAISADO (móvil en horizontal) ———
+          Los seis ítems que rodean al doctor. En VERTICAL ya viven dentro del
+          hero (cliente 2026-08-18: «como la de la computadora, no con las cosas
+          abajo»), pero en apaisado el hero mide 390 px de alto y no caben: ahí
+          se siguen mostrando aquí debajo, en rejilla de 3 columnas. */}
+      <section className="hidden land:block relative overflow-hidden bg-[#0b1d45] px-5 pt-9 pb-11 land:px-8 land:pt-6 land:pb-8">
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 w-64 h-64 rounded-full bg-[#227787]/25 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-20 w-64 h-64 rounded-full bg-[#839ed5]/20 blur-3xl" />
+
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/20 border border-[#aed3d9]/30 mb-3">
+            <span className="flex h-1.5 w-1.5 rounded-full bg-[#aed3d9] animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#aed3d9]">{t('landing.hero.showcaseEyebrow')}</span>
+          </div>
+          <h2 className="text-2xl land:text-xl font-bold text-white leading-tight mb-2">{t('landing.hero.showcaseTitle')}</h2>
+          <p className="text-sm text-slate-300/85 font-light leading-relaxed mb-5 land:mb-4">{t('landing.hero.description')}</p>
+
+          <div className="grid grid-cols-2 land:grid-cols-3 land:items-start gap-3">
+            {/* Vídeo de intro en bucle (antes sólo md+). Clic → demo completo. */}
+            <div className="col-span-2 land:col-span-1 rounded-2xl overflow-hidden border border-white/15 bg-black/25 shadow-xl">
+              <button
+                type="button"
+                onClick={() => setShowDemoModal(true)}
+                aria-label={t('landing.hero.ctaSecondary')}
+                className="relative block w-full active:scale-[0.98] transition-transform"
+              >
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  disablePictureInPicture
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  preload="metadata"
+                  poster="/hero-intro-loop-poster.jpg"
+                  className="block w-full h-auto aspect-video object-cover pointer-events-none"
+                  src="/hero-intro-loop.mp4"
+                />
+                <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <span className="w-10 h-10 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg">
+                    <Play className="w-4 h-4 text-white ml-[1px]" fill="currentColor" />
+                  </span>
+                </span>
+              </button>
+            </div>
+
+            {/* Médicos en directo (tarjeta tipo FaceTime del hero de escritorio) */}
+            <div className="rounded-2xl overflow-hidden border border-white/15 bg-white/[0.07] backdrop-blur-xl shadow-xl">
+              <img
+                src={livesGridPhoto}
+                alt=""
+                loading="lazy"
+                className="block w-full aspect-[4/3] object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <p className="px-3 py-2 text-[11px] font-semibold text-white/90 leading-tight">{t('landing.hero.doctorsOnline')}</p>
+            </div>
+
+            {/* Doctor en directo */}
+            <div className="rounded-2xl overflow-hidden border border-white/15 bg-white/[0.07] backdrop-blur-xl shadow-xl">
+              <div className="relative">
+                <img
+                  src={doctorLivePhoto}
+                  alt=""
+                  loading="lazy"
+                  className="block w-full aspect-[4/3] object-cover object-center"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                </span>
+              </div>
+              <div className="px-3 py-2">
+                <p className="text-[11px] font-semibold text-white/90 leading-tight">{t('landing.hero.streaming')}</p>
+                <p className="text-[10px] text-slate-300/80 leading-tight">{t('landing.hero.streamingSub')}</p>
+              </div>
+            </div>
+
+            {/* Retransmisión quirúrgica */}
+            <div className="col-span-2 land:col-span-1 rounded-2xl overflow-hidden border border-white/15 bg-white/[0.07] backdrop-blur-xl shadow-xl">
+              <div className="relative">
+                <img
+                  src={surgeryPhoto}
+                  alt=""
+                  loading="lazy"
+                  className="block w-full aspect-[16/7] object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                />
+                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                </span>
+              </div>
+              <div className="px-3 py-2.5">
+                <p className="text-xs font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+                <p className="text-[10px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-[#aed3d9]" />
+                  {t('landing.hero.watchingNow')}
+                </p>
+              </div>
+            </div>
+
+            {/* Signos vitales */}
+            <div className="rounded-2xl border border-white/15 bg-white/[0.07] backdrop-blur-xl shadow-xl p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-white/90">{t('landing.hero.vitalSigns')}</span>
+                <HeartPulse className="w-3.5 h-3.5 text-[#aed3d9]" />
+              </div>
+              <p className="text-[10px] text-slate-300/80 mt-0.5">{t('landing.hero.realTime')}</p>
+              <svg className="w-full h-8 text-[#aed3d9] mt-2" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+              </svg>
+            </div>
+
+            {/* Actividad global */}
+            <div className="rounded-2xl border border-white/15 bg-white/[0.07] backdrop-blur-xl shadow-xl p-3">
+              <p className="text-[11px] font-semibold text-white/90">{t('landing.hero.globalActivity')}</p>
+              <div className="h-10 rounded bg-[#0b1d45]/50 mt-2 flex items-end justify-around px-1 gap-0.5">
+                {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
+                  <div key={i} className="w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-300/80 mt-2 flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-[#aed3d9] animate-pulse" />
+                {t('landing.hero.realTime')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Ticker - Tech & compliance partners (real) */}
       <div className="bg-white border-b border-gray-100 py-4 sm:py-6 overflow-hidden relative">
         <div className="absolute left-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 h-full w-8 sm:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-        <div className="flex w-[300%] sm:w-[200%] animate-scroll">
+        <div className="flex w-max animate-scroll">
           {[1, 2].map((i) => (
-            <div key={i} className="flex w-1/2 justify-around items-center gap-4 sm:gap-0 px-4 sm:px-0">
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.licenseValidated')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.biometricId')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.doctorLives')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
+            <div key={i} className="flex shrink-0 items-center gap-8 sm:gap-14 pr-8 sm:pr-14">
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.licenseValidated')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.biometricId')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.doctorLives')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
             </div>
           ))}
         </div>
@@ -576,7 +929,7 @@ export default function Landing() {
           <div className="container mx-auto px-6">
             <h2 className="text-3xl lg:text-4xl font-bold text-center mb-4 text-[#163a83]">{t('landing.includes.title')}</h2>
             <p className="text-center text-slate-500 mb-16 max-w-2xl mx-auto">{t('landing.includes.subtitle')}</p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex flex-wrap justify-center gap-6">
               {[
                 { title: t('landing.includes.video.title'), desc: t('landing.includes.video.desc'), icon: <Video className="w-5 h-5" /> },
                 { title: t('landing.includes.lives.title'), desc: t('landing.includes.lives.desc'), icon: <PlayCircle className="w-5 h-5" /> },
@@ -584,7 +937,7 @@ export default function Landing() {
                 { title: t('landing.includes.hospitals.title'), desc: t('landing.includes.hospitals.desc'), icon: <Hospital className="w-5 h-5" /> },
                 { title: t('landing.includes.verification.title'), desc: t('landing.includes.verification.desc'), icon: <ShieldCheck className="w-5 h-5" /> },
               ].map((f) => (
-                <div key={f.title} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#227787]/30 transition-all duration-300">
+                <div key={f.title} className="w-full md:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)] p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-lg hover:border-[#227787]/30 transition-all duration-300">
                   <div className="w-11 h-11 rounded-xl bg-[#163a83]/10 text-[#163a83] flex items-center justify-center mb-4">{f.icon}</div>
                   <h3 className="font-bold text-slate-900 mb-2">{f.title}</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">{f.desc}</p>
