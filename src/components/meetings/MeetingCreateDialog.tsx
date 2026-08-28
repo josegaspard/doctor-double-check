@@ -159,6 +159,34 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
         (profs || []).forEach(d => results.push({ id: d.id, name: d.name, specialty: specMap[d.id], inviteeType: 'doctor' }));
       }
 
+      // 1b) Residentes aprobados (cliente 2026-08-28: videoconferencia
+      //     residente↔médico y residente↔residente). Sin restricción de
+      //     conexiones: los residentes se invitan entre sí libremente.
+      {
+        const { data: resProfiles } = await supabase
+          .from('resident_profiles')
+          .select('user_id, specialty')
+          .eq('status', 'approved')
+          .neq('user_id', user?.id || '')
+          .limit(20);
+        if (resProfiles && resProfiles.length > 0) {
+          const resIds = resProfiles.map(r => r.user_id);
+          const { data: resProfs } = await supabase
+            .from('profiles')
+            .select('id, name')
+            .in('id', resIds)
+            .ilike('name', `%${searchQuery}%`)
+            .limit(6);
+          const resSpec: Record<string, string> = {};
+          resProfiles.forEach(r => { resSpec[r.user_id] = r.specialty; });
+          (resProfs || []).forEach(r => {
+            if (!results.some(x => x.id === r.id)) {
+              results.push({ id: r.id, name: r.name, specialty: resSpec[r.id], inviteeType: 'resident' });
+            }
+          });
+        }
+      }
+
       // 2) Pacientes — solo si el organizador es doctor (no residente).
       // profiles_public es la vista filtrada con name+email accesible a authenticated users.
       if (role === 'doctor') {

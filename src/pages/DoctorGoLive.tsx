@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useViewerCount } from '@/hooks/useViewerCount';
 import { useDaily } from '@/hooks/useDaily';
@@ -34,6 +35,7 @@ interface LiveData {
 export default function DoctorGoLive() {
   const navigate = useNavigate();
   const { user, role, isLoading: isAuthLoading } = useAuth();
+  const { toggles } = useSiteToggles();
   const { t } = useLanguage();
   const { session: activeLiveSession, setSession: setActiveLiveSession, clearSession: clearActiveLiveSession } = useActiveLive();
 
@@ -201,7 +203,7 @@ export default function DoctorGoLive() {
         .from('doctor_profiles')
         .select('location')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();   // un residente no tiene ficha de doctor
 
       const { data: live, error: liveError } = await supabase
         .from('lives')
@@ -521,6 +523,31 @@ export default function DoctorGoLive() {
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>{t('doctorGoLivePage.loading')}</span>
           </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // ¿Tiene permitido emitir ESTE rol ahora mismo? (cliente 2026-08-28)
+  // El admin lo enciende y lo apaga en Ajustes del sitio sin desplegar nada.
+  const liveRoleEnabled =
+    role === 'doctor'   ? toggles.enable_lives_doctors !== false :
+    role === 'resident' ? toggles.enable_lives_residents === true :
+    role === 'patient'  ? toggles.enable_lives_patients === true :
+    false;
+
+  if ((role === 'doctor' || role === 'resident') && !liveRoleEnabled) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <Video className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground mb-2">{t('goLiveGate.title')}</h2>
+            <p className="text-muted-foreground mb-6">{t('goLiveGate.desc')}</p>
+            <Button onClick={() => navigate('/lives')}>{t('goLiveGate.cta')}</Button>
+          </Card>
         </div>
       </MainLayout>
     );

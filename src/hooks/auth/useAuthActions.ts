@@ -71,6 +71,19 @@ export function useAuthActions(
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string; hasSession?: boolean; userId?: string }> => {
     setIsLoading(true);
     try {
+      // Veredicto VPN / proxy (cliente 2026-08-28). Sólo bloquea si el admin
+      // encendió «Bloquear registro desde VPN». Fail-open: si la función falla,
+      // el alta sigue — un detector caído nunca frena a un médico real.
+      try {
+        const { data: rep } = await supabase.functions.invoke('check-ip-reputation', {
+          body: { action: 'signup', email: data.email },
+        });
+        if (rep && rep.allow === false) {
+          setIsLoading(false);
+          return { success: false, error: 'VPN_BLOCKED' };
+        }
+      } catch { /* fail-open */ }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -89,6 +102,8 @@ export function useAuthActions(
             hospital: data.hospital,
             university: data.university,
             doctor_code: data.doctorCode,
+            // Lo canjea el trigger handle_new_user: si el código no vale, el alta falla entera.
+            signup_code: data.signupCode || '',
             // Evidencia de consentimiento (LFPDPPP) → el trigger record_signup_consent
             // la persiste en public.consent_log de forma server-side.
             consent_accepted: data.acceptedLegal ? 'true' : 'false',

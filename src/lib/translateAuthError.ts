@@ -13,7 +13,19 @@ export function translateAuthError(
   t: (key: string) => string
 ): string {
   const msg = (rawMessage || '').toLowerCase().trim();
+  if (rawMessage === 'VPN_BLOCKED') return t('authErrors.vpnBlocked');
   if (!msg) return t('authErrors.loginError');
+
+  // Candados propios que levanta el trigger handle_new_user en la base. Supabase
+  // suele envolverlos en "Database error saving new user", así que se buscan por
+  // la etiqueta Y por el envoltorio (2026-08-17).
+  if (msg.includes('patient_signup_disabled')) {
+    return t('login.patientComingSoonBody');
+  }
+  if (msg.includes('signup_code_invalid')) return t('login.signupCodeInvalid');
+  if (msg.includes('signup_code_used')) return t('login.signupCodeUsed');
+  if (msg.includes('signup_code_expired')) return t('login.signupCodeExpired');
+  if (msg.includes('signup_code_wrong_role')) return t('login.signupCodeWrongRole');
 
   if (msg.includes('invalid login credentials') || msg.includes('invalid_grant')) {
     return t('authErrors.invalidCredentials');

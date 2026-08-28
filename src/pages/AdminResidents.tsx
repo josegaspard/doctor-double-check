@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, GraduationCap, ArrowLeft } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, GraduationCap, ArrowLeft, Loader2, Star } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ interface ResidentRequest {
     name: string;
     email: string;
     avatar_url: string | null;
+    profile_category?: string | null;
   };
 }
 
@@ -46,6 +48,33 @@ export default function AdminResidents() {
   const { toast } = useToast();
   const [residents, setResidents] = useState<ResidentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // Categoría de perfil (estrella / punto morado / punto verde) — cliente 2026-08-28.
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+  const [profileCats, setProfileCats] = useState<{ key: string; display_name: string; mark: string }[]>([]);
+  useEffect(() => {
+    supabase.from('profile_categories' as any).select('key, display_name, mark').eq('is_active', true).order('sort_order')
+      .then(({ data }) => { if (data) setProfileCats(data as any); });
+  }, []);
+
+  const updateProfileCategory = async (resident: ResidentRequest, value: string) => {
+    setUpdatingCategoryId(resident.id);
+    try {
+      const newValue = value === 'none' ? null : value;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ profile_category: newValue } as any)
+        .eq('id', resident.user_id);
+      if (error) throw error;
+      const cat = profileCats.find(c => c.key === newValue);
+      toast({ title: 'Categoría actualizada', description: `${resident.profile?.name}: ${cat ? cat.display_name : 'sin categoría'}` });
+      fetchResidents();
+    } catch (error) {
+      console.error('Error updating profile category:', error);
+      toast({ title: t('common.error'), description: 'No se pudo cambiar la categoría', variant: 'destructive' });
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [actionDialog, setActionDialog] = useState<{ open: boolean; resident: ResidentRequest | null; action: 'approve' | 'reject' }>({
@@ -80,10 +109,10 @@ export default function AdminResidents() {
         (residentProfiles || []).map(async (res) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('name, email, avatar_url')
+            .select('name, email, avatar_url, profile_category')
             .eq('id', res.user_id)
             .maybeSingle();
-          return { ...res, profile } as ResidentRequest;
+          return { ...res, profile: profile as ResidentRequest['profile'] } as ResidentRequest;
         })
       );
 
@@ -265,6 +294,32 @@ export default function AdminResidents() {
                         <p className="text-xs text-muted-foreground">
                           {t('admin.registered')}: {new Date(resident.created_at).toLocaleDateString()}
                         </p>
+                        {resident.status === 'approved' && (
+                          <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-secondary/5 border border-secondary/20 max-w-sm">
+                            <Star className="w-4 h-4 text-secondary shrink-0" />
+                            <span className="text-xs flex-1">Categoría de perfil</span>
+                            {updatingCategoryId === resident.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Select
+                                value={resident.profile?.profile_category || 'none'}
+                                onValueChange={(v) => updateProfileCategory(resident, v)}
+                              >
+                                <SelectTrigger className="w-40 h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Sin categoría</SelectItem>
+                                  {profileCats.map(c => (
+                                    <SelectItem key={c.key} value={c.key}>
+                                      {c.mark === 'star' ? '⭐' : c.mark === 'purple_dot' ? '🟣' : '🟢'} {c.display_name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {resident.status === 'pending' && (

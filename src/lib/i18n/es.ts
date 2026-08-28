@@ -1773,6 +1773,7 @@ export const es = {
   },
   // Auth errors
   authErrors: {
+    vpnBlocked: 'No se puede completar el registro desde una VPN o proxy. Desactívala e inténtalo de nuevo.',
     googleLoginError: 'Error al iniciar sesión con Google',
     googleConnectError: 'Error al conectar con Google',
     loginError: 'Error al iniciar sesión',
@@ -8883,5 +8884,42 @@ export const es = {
     followers: 'seguidores',
     credentialsError: 'Error credenciales',
     retry: 'Reintentar',
+  },
+  // Categorías de perfil y etiqueta médico/residente (cliente 2026-08-28)
+  profileCategory: {
+    doctor: 'Médico',
+    resident: 'Residente',
+  },
+  livesAuthorTabs: {
+    all: 'Todos',
+    doctors: 'Médicos',
+    residents: 'Residentes',
+    ariaLabel: 'Filtrar lives por tipo de perfil',
+  },
+  goLiveGate: {
+    title: 'Los lives no están habilitados para tu tipo de cuenta',
+    desc: 'Puedes seguir viendo y participando en los lives de la plataforma.',
+    cta: 'Ver lives',
+  },
+  // Reseñas con estrellas de contenido, lives y grabaciones (cliente 2026-08-28)
+  contentRatings: {
+    noReviews: 'Sin reseñas todavía',
+    review: 'reseña',
+    reviews: 'reseñas',
+    leave: 'Dejar reseña',
+    edit: 'Editar mi reseña',
+    titleNew: 'Deja tu reseña',
+    titleEdit: 'Editar tu reseña',
+    desc: 'Tu valoración ayuda a otros a encontrar buen contenido.',
+    commentPlaceholder: 'Comentario (opcional)',
+    cancel: 'Cancelar',
+    save: 'Guardar',
+    pickStars: 'Elige de 1 a 5 estrellas.',
+    saved: '¡Gracias por tu reseña!',
+    updated: 'Reseña actualizada',
+    errNotAllowed: 'Tu tipo de cuenta no puede reseñar a este autor.',
+    errNotPublic: 'Sólo se puede reseñar contenido público.',
+    errNotFound: 'Esa publicación ya no existe.',
+    errGeneric: 'No se pudo guardar tu reseña.',
   },
 };

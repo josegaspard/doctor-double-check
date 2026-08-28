@@ -93,6 +93,7 @@ const AdminResidents = React.lazy(() => import("./pages/AdminResidents"));
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminAnalytics = React.lazy(() => import("./pages/AdminAnalytics"));
 const AdminQR = React.lazy(() => import("./pages/AdminQR"));
+const AdminCampaigns = React.lazy(() => import("./pages/AdminCampaigns"));
 const VerificationPending = React.lazy(() => import("./pages/VerificationPending"));
 const Doctors = React.lazy(() => import("./pages/Doctors"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
@@ -135,6 +136,7 @@ const NewsArticle = React.lazy(() => import("./pages/NewsArticle"));
 const VideoCall = React.lazy(() => import("./pages/VideoCall"));
 const AdminCredentials = React.lazy(() => import("./pages/AdminCredentials"));
 const AdminNews = React.lazy(() => import("./pages/AdminNews"));
+const AdminForum = React.lazy(() => import("./pages/AdminForum"));
 const AdminEvents = React.lazy(() => import("./pages/AdminEvents"));
 const Prescriptions = React.lazy(() => import("./pages/Prescriptions"));
 const CreatePrescription = React.lazy(() => import("./pages/CreatePrescription"));
@@ -258,7 +260,10 @@ const App = () => {
                       <Route path="/doctor/content" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorContentLibrary /></AccessGuard>} />
                       {/* Libros/cursos PDF de pago (cliente 2026-07-08) */}
                       <Route path="/doctor/books" element={<AccessGuard allowedRoles={['doctor', 'admin']} requireApproved fallbackType="forbidden"><DoctorBooksManager /></AccessGuard>} />
-                      <Route path="/doctor/go-live" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorGoLive /></AccessGuard>} />
+                      {/* Lives: médicos SIEMPRE; residentes según el interruptor del admin
+                          (enable_lives_residents). El permiso fino lo comprueba la propia
+                          página y, sobre todo, la política de INSERT de `lives` en la base. */}
+                      <Route path="/doctor/go-live" element={<AccessGuard allowedRoles={['doctor', 'resident']} requireApproved fallbackType="forbidden"><DoctorGoLive /></AccessGuard>} />
                       <Route path="/doctor/subscribers" element={<SubscribersList />} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
@@ -288,6 +293,7 @@ const App = () => {
                       <Route path="/admin/users" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminUsers /></AccessGuard>} />
                       <Route path="/admin/analytics" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAnalytics /></AccessGuard>} />
                       <Route path="/admin/qr" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQR /></AccessGuard>} />
+                      <Route path="/admin/campaigns" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCampaigns /></AccessGuard>} />
                       <Route path="/admin/reports" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminReports /></AccessGuard>} />
                       <Route path="/admin/content-moderation" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminContentModeration /></AccessGuard>} />
                       <Route path="/book/:doctorId" element={<AccessGuard allowedRoles={['patient','resident']} fallbackType="forbidden"><BookAppointment /></AccessGuard>} />
@@ -301,6 +307,8 @@ const App = () => {
                       <Route path="/admin/invoices" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminInvoiceReview /></AccessGuard>} />
                       <Route path="/admin/credentials" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCredentials /></AccessGuard>} />
                       <Route path="/admin/news" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />
+                      {/* Panel «Día a día» de la Comunidad (módulo diario 22-ago-2026): solo súper admin. */}
+                      <Route path="/admin/forum" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminForum /></AccessGuard>} />
                       <Route path="/admin/events" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminEvents /></AccessGuard>} />
                       <Route path="/admin/ranks" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRanks /></AccessGuard>} />
                       <Route path="/doctor/news" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />

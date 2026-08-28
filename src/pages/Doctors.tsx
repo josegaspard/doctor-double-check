@@ -43,6 +43,7 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { ManualBadge } from '@/components/doctor/ManualBadge';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 
@@ -778,6 +779,7 @@ export default function Doctors() {
                         <div className="flex items-center gap-1 min-w-0">
                           <p className="text-xs font-medium truncate">{doc.name}</p>
                           <DoctorBadgeIcon userId={doc.user_id} size="sm" className="flex-shrink-0" />
+                          <ProfileCategoryMark userId={doc.user_id} size="sm" className="flex-shrink-0" />
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate">{doc.specialty}</p>
                       </div>

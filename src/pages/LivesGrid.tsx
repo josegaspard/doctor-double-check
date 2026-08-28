@@ -40,6 +40,9 @@ import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge
 import { LivesDebugPanel } from '@/components/live/LivesDebugPanel';
 import { useUserInterests, interestScore } from '@/hooks/useUserInterests';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
+import { useProfileCategories } from '@/hooks/useProfileCategory';
+import { ContentRating } from '@/components/ratings/ContentRating';
 
 const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
   const { t } = useLanguage();
@@ -111,8 +114,13 @@ const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boo
             <span className="inline-flex items-center gap-1 min-w-0">
               <span className="truncate text-xs sm:text-sm">{live.doctorName}</span>
               <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+              {/* Distintivo de categoría + si es médico o residente (cliente 2026-08-28) */}
+              <ProfileCategoryMark userId={live.doctorId} size="sm" className="flex-shrink-0" />
+              <AuthorRoleTag userId={live.doctorId} className="flex-shrink-0" />
             </span>
           </div>
+          {/* Reseñas del live (cliente 2026-08-28) */}
+          <ContentRating targetType="live" targetId={live.id} ownerId={live.doctorId} compact className="mt-1.5" />
           <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
             <Badge variant="outline" className="text-xs">
               {live.specialty}
@@ -188,6 +196,9 @@ export default function LivesGrid() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [selectedHospital, setSelectedHospital] = useState('');
+  // Pestaña por tipo de autor (cliente 2026-08-28): los lives de médicos y de
+  // residentes se ven en la MISMA parrilla, con un filtro para separarlos.
+  const [authorFilter, setAuthorFilter] = useState<'all' | 'doctor' | 'resident'>('all');
 
   // Force a fresh fetch on mount so credential fields are populated
   // even if the cache was filled before this version was deployed.
@@ -206,6 +217,12 @@ export default function LivesGrid() {
   // Campos del membrete de cada doctor (país/universidad/hospital) para el MATCHING de filtros
   const doctorFields = useDoctorFilterFields(activeLives.map(l => l.doctorId));
 
+  // Categoría de perfil y rol (médico / residente) de cada autor — 1 llamada.
+  const authorCats = useProfileCategories(activeLives.map(l => l.doctorId));
+  const residentLiveCount = activeLives.filter(l => authorCats[l.doctorId]?.authorRole === 'resident').length;
+  const doctorLiveCount = activeLives.filter(l => authorCats[l.doctorId]?.authorRole === 'doctor').length;
+  const showAuthorTabs = residentLiveCount > 0 && doctorLiveCount > 0;
+
   // Opciones de filtro derivadas SOLO de los lives activos (cliente 16-jul-2026):
   // los filtros se activan únicamente cuando hay transmisiones y muestran solo lo
   // que de verdad está al aire — nada de dropdowns vacíos con 0 lives.
@@ -220,6 +237,7 @@ export default function LivesGrid() {
   const clearAllFilters = () => {
     setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null);
     setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital('');
+    setAuthorFilter('all');
   };
 
   // Filter lives
@@ -230,6 +248,7 @@ export default function LivesGrid() {
     if (selectedCountry && doctorFields[l.doctorId]?.country !== selectedCountry) return false;
     if (selectedUniversity && doctorFields[l.doctorId]?.university !== selectedUniversity) return false;
     if (selectedHospital && doctorFields[l.doctorId]?.practiceHospital !== selectedHospital) return false;
+    if (authorFilter !== 'all' && authorCats[l.doctorId]?.authorRole !== authorFilter) return false;
     return true;
   });
 
@@ -279,7 +298,8 @@ export default function LivesGrid() {
           </div>
           
           <div className="flex items-center gap-2">
-            {(role === 'doctor' || role === 'resident') && (
+            {((role === 'doctor' && toggles.enable_lives_doctors !== false) ||
+              (role === 'resident' && toggles.enable_lives_residents === true)) && (
               <Link to="/doctor/go-live">
                 <Button className="gap-2 bg-live hover:bg-live/90 text-white">
                   <Plus className="w-4 h-4" />
@@ -305,6 +325,40 @@ export default function LivesGrid() {
             )}
           </div>
         </div>
+
+        {/* Médicos / Residentes — la misma parrilla, con pestañas para separarlos
+            (cliente 2026-08-28). Sólo aparecen cuando hay lives de los dos tipos:
+            si sólo emiten médicos, no se enseña una pestaña vacía. */}
+        {showAuthorTabs && (
+          <div
+            className="mb-4 flex flex-wrap items-center gap-2"
+            role="tablist"
+            aria-label={t('livesAuthorTabs.ariaLabel')}
+          >
+            {([
+              { key: 'all' as const, label: t('livesAuthorTabs.all'), count: activeLives.length },
+              { key: 'doctor' as const, label: t('livesAuthorTabs.doctors'), count: doctorLiveCount },
+              { key: 'resident' as const, label: t('livesAuthorTabs.residents'), count: residentLiveCount },
+            ]).map(tab => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={authorFilter === tab.key}
+                onClick={() => setAuthorFilter(tab.key)}
+                className={
+                  'min-h-[40px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ' +
+                  (authorFilter === tab.key
+                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                    : 'border-border bg-card text-muted-foreground hover:bg-muted')
+                }
+              >
+                {tab.label}
+                <span className="ml-1.5 opacity-70">({tab.count})</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* FILTROS — solo cuando HAY lives activos y hay algo por lo que filtrar
             (cliente 16-jul-2026). Fila compacta y ordenada de dropdowns con

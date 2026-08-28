@@ -56,6 +56,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
+import { ContentRating } from '@/components/ratings/ContentRating';
 
 export default function LivePlayer() {
   const { id } = useParams<{ id: string }>();
@@ -538,6 +540,7 @@ export default function LivePlayer() {
                   <span className="inline-flex items-center gap-1 min-w-0">
                     <span className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{live.doctorName}</span>
                     <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+                    <ProfileCategoryMark userId={live.doctorId} size="sm" className="flex-shrink-0" />
                   </span>
                   {live.specialty && (
                     <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{live.specialty}</p>
@@ -775,6 +778,9 @@ export default function LivePlayer() {
                     <div className="flex items-start gap-1.5 flex-wrap">
                       <h3 className="font-semibold text-foreground text-sm leading-tight truncate flex-1 min-w-0">{live.doctorName}</h3>
                       <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+                      {/* Distintivo de categoría + médico/residente (cliente 2026-08-28) */}
+                      <ProfileCategoryMark userId={live.doctorId} size="sm" withLabel className="flex-shrink-0" />
+                      <AuthorRoleTag userId={live.doctorId} className="flex-shrink-0" />
                       <Badge variant="verified" className="gap-0.5 text-[10px] px-1.5 py-0 h-4 leading-none whitespace-nowrap shrink-0">
                         <Award className="w-2.5 h-2.5" />
                         {t('livePlayer.verified')}
@@ -782,6 +788,8 @@ export default function LivePlayer() {
                     </div>
                     {/* Fila 2: especialidad truncada */}
                     <span className="text-xs text-muted-foreground truncate block w-full mt-0.5">{live.specialty}</span>
+                    {/* Reseñas con estrellas del live (cliente 2026-08-28) */}
+                    <ContentRating targetType="live" targetId={live.id} ownerId={live.doctorId} className="mt-1.5" />
                     {/* Credenciales: cédula + COFEPRIS con estado */}
                     {(live.doctorCedula || live.doctorCofepris) && (
                       <div className="flex flex-wrap gap-1 mt-1.5">

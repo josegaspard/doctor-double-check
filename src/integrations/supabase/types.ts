@@ -1695,6 +1695,9 @@ export type Database = {
       }
       doctor_profiles: {
         Row: {
+          doctor_code: string | null
+          doctor_number: number | null
+          specialty_number: number | null
           available_for_clinical_sessions: boolean
           available_for_double_check: boolean
           available_now: boolean | null
@@ -1753,6 +1756,9 @@ export type Database = {
           workplaces: Json | null
         }
         Insert: {
+          doctor_code?: string | null
+          doctor_number?: number | null
+          specialty_number?: number | null
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
           available_now?: boolean | null
@@ -1811,6 +1817,9 @@ export type Database = {
           workplaces?: Json | null
         }
         Update: {
+          doctor_code?: string | null
+          doctor_number?: number | null
+          specialty_number?: number | null
           available_for_clinical_sessions?: boolean
           available_for_double_check?: boolean
           available_now?: boolean | null
@@ -4380,6 +4389,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          profile_category: string | null
+          signup_code: string | null
+          signup_campaign_id: string | null
           avatar_url: string | null
           country_code: string | null
           country_flag: string | null
@@ -4402,6 +4414,9 @@ export type Database = {
           vaccine_reminders_enabled: boolean
         }
         Insert: {
+          profile_category?: string | null
+          signup_code?: string | null
+          signup_campaign_id?: string | null
           avatar_url?: string | null
           country_code?: string | null
           country_flag?: string | null
@@ -4424,6 +4439,9 @@ export type Database = {
           vaccine_reminders_enabled?: boolean
         }
         Update: {
+          profile_category?: string | null
+          signup_code?: string | null
+          signup_campaign_id?: string | null
           avatar_url?: string | null
           country_code?: string | null
           country_flag?: string | null
@@ -5001,6 +5019,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      signup_campaigns: {
+        Row: {
+          id: string
+          name: string
+          prefix: string
+          target_role: string
+          price_cents: number | null
+          currency: string
+          discount_percentage: number | null
+          notes: string | null
+          starts_at: string | null
+          expires_at: string | null
+          is_active: boolean
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          prefix: string
+          target_role?: string
+          price_cents?: number | null
+          currency?: string
+          discount_percentage?: number | null
+          notes?: string | null
+          starts_at?: string | null
+          expires_at?: string | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          prefix?: string
+          target_role?: string
+          price_cents?: number | null
+          currency?: string
+          discount_percentage?: number | null
+          notes?: string | null
+          starts_at?: string | null
+          expires_at?: string | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      signup_codes: {
+        Row: {
+          id: string
+          campaign_id: string
+          code: string
+          seq: number
+          status: string
+          redeemed_by: string | null
+          redeemed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campaign_id: string
+          code: string
+          seq: number
+          status?: string
+          redeemed_by?: string | null
+          redeemed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          campaign_id?: string
+          code?: string
+          seq?: number
+          status?: string
+          redeemed_by?: string | null
+          redeemed_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signup_codes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "signup_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialty_codes: {
+        Row: { specialty: string; code: string }
+        Insert: { specialty: string; code: string }
+        Update: { specialty?: string; code?: string }
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -5772,6 +5885,30 @@ export type Database = {
       }
     }
     Functions: {
+      generate_signup_codes: {
+        Args: { _campaign_id: string; _count: number }
+        Returns: number
+      }
+      validate_signup_code: {
+        Args: { _code: string }
+        Returns: {
+          valid: boolean
+          reason: string
+          campaign_name: string | null
+          target_role: string | null
+          price_cents: number | null
+          currency: string | null
+          discount_percentage: number | null
+        }[]
+      }
+      patient_access_enabled: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      mm_specialty_code: {
+        Args: { _specialty: string }
+        Returns: string
+      }
       admin_review_identity_verification: {
         Args: {
           p_approve: boolean

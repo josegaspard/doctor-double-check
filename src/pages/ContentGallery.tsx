@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
+import { ContentRating } from '@/components/ratings/ContentRating';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
@@ -237,8 +239,12 @@ function ContentCardBody({
             <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
               <span className="truncate">{content.creator_name}</span>
               <DoctorBadgeIcon userId={content.creator_id} size="sm" className="flex-shrink-0" />
+              {/* Distintivo de categoría + médico/residente (cliente 2026-08-28) */}
+              <ProfileCategoryMark userId={content.creator_id} size="sm" className="flex-shrink-0" />
+              <AuthorRoleTag userId={content.creator_id} className="flex-shrink-0" />
             </span>
           </p>
+          <ContentRating targetType="content" targetId={content.id} ownerId={content.creator_id} compact className="mt-0.5" />
           {(content.creator_cedula || content.creator_cofepris) && (
             <div className="flex flex-wrap gap-1 mt-1 min-w-0">
               <CredentialStatusBadge

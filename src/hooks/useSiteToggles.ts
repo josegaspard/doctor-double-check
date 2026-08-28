@@ -26,6 +26,25 @@ export interface SiteToggles {
   // Ojo: es distinto de la restricción de CONSULTAS solo-MX, que ya existe desde
   // 2026-06-29 en src/lib/consultationRegions.ts y sigue independiente de esto.
   restrict_signup_to_mexico: boolean;
+  // Abre el acceso de PACIENTES (2026-08-17, petición del cliente). APAGADO por
+  // defecto: hoy la plataforma es sólo para médicos y residentes y los pacientes
+  // ven "próximamente". Encenderlo aquí abre registro y login de pacientes sin
+  // desplegar nada. El candado de verdad está en la base (handle_new_user +
+  // política de user_roles), así que apagarlo bloquea también la API directa.
+  enable_patient_access: boolean;
+  // QUIÉN PUEDE HACER LIVE (2026-08-28, petición del cliente). El cliente cambió
+  // de idea sobre los lives de residentes, así que el permiso es un interruptor
+  // por rol y no código: se enciende y se apaga desde Ajustes del sitio.
+  // El candado de verdad está en la base (políticas de INSERT sobre `lives`),
+  // así que apagarlo cierra también la API directa.
+  enable_lives_doctors: boolean;
+  enable_lives_residents: boolean;
+  enable_lives_patients: boolean;
+  // Reseñas con estrellas de contenido y lives (2026-08-28).
+  enable_content_ratings: boolean;
+  // Bloquea el registro desde VPN/proxy/datacenter (2026-08-28). APAGADO por
+  // defecto: primero se mira el registro de veredictos, luego se cierra.
+  block_vpn_signup: boolean;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -42,6 +61,12 @@ const DEFAULT_TOGGLES: SiteToggles = {
   enable_recordings: true,
   enable_ads: true,
   restrict_signup_to_mexico: false,
+  enable_patient_access: false,
+  enable_lives_doctors: true,
+  enable_lives_residents: false,
+  enable_lives_patients: false,
+  enable_content_ratings: true,
+  block_vpn_signup: false,
 };
 
 let cachedToggles: SiteToggles | null = null;

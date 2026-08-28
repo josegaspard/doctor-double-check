@@ -24,6 +24,7 @@ import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
 import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 import { ManualBadge } from '@/components/doctor/ManualBadge';
+import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
 import { BlockUserButton } from '@/components/blocks/BlockUserButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -550,6 +551,8 @@ export default function DoctorProfile() {
                 {/* Badges — minimal on mobile */}
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5">
                   <ManualBadge badge={doctor.manualBadge} size="lg" iconOnly />
+                  {/* Categoría de perfil: estrella / punto morado / punto verde (cliente 2026-08-28) */}
+                  <ProfileCategoryMark userId={doctor.id} size="md" withLabel />
                   <DoctorBadge type={getDoctorBadgeType(doctor.totalConsultations, doctor.rating, (doctor as any).badgeOverride)} size="sm" />
                   {doctor.isIdentityVerified && (
                     <Badge variant="verified" className="gap-1 text-xs">

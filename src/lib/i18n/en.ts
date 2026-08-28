@@ -1764,6 +1764,7 @@ export const en = {
     copyright: "© 2026 Medical Masters. All rights reserved."
   },
   authErrors: {
+    vpnBlocked: 'Sign-up cannot be completed from a VPN or proxy. Turn it off and try again.',
     googleLoginError: "Error signing in with Google",
     googleConnectError: "Error connecting with Google",
     loginError: "Error signing in",
@@ -8825,5 +8826,42 @@ export const en = {
     followers: 'followers',
     credentialsError: 'Credentials error',
     retry: 'Retry',
+  },
+  // Profile categories and doctor/resident tag (client 2026-08-28)
+  profileCategory: {
+    doctor: 'Doctor',
+    resident: 'Resident',
+  },
+  livesAuthorTabs: {
+    all: 'All',
+    doctors: 'Doctors',
+    residents: 'Residents',
+    ariaLabel: 'Filter lives by profile type',
+  },
+  goLiveGate: {
+    title: 'Lives are not enabled for your account type',
+    desc: 'You can keep watching and taking part in the platform lives.',
+    cta: 'Watch lives',
+  },
+  // Star reviews for content, lives and recordings (client 2026-08-28)
+  contentRatings: {
+    noReviews: 'No reviews yet',
+    review: 'review',
+    reviews: 'reviews',
+    leave: 'Leave a review',
+    edit: 'Edit my review',
+    titleNew: 'Leave your review',
+    titleEdit: 'Edit your review',
+    desc: 'Your rating helps others find good content.',
+    commentPlaceholder: 'Comment (optional)',
+    cancel: 'Cancel',
+    save: 'Save',
+    pickStars: 'Pick 1 to 5 stars.',
+    saved: 'Thanks for your review!',
+    updated: 'Review updated',
+    errNotAllowed: 'Your account type cannot review this author.',
+    errNotPublic: 'Only public content can be reviewed.',
+    errNotFound: 'That post no longer exists.',
+    errGeneric: 'Your review could not be saved.',
   },
 };

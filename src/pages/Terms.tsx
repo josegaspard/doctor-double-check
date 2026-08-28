@@ -79,19 +79,27 @@ Los pagos se procesan a través de Stripe de forma segura. Los fondos agregados 
 
 Todo el contenido de la plataforma, incluyendo grabaciones, materiales educativos y diseño, está protegido por derechos de autor. El contenido de los profesionales pertenece a sus respectivos creadores.
 
-## 8. Limitación de Responsabilidad
+## 8. Baja de la cuenta y permanencia del contenido
+
+Cualquier usuario puede eliminar su cuenta en cualquier momento desde Configuración. Al hacerlo se eliminan sus datos personales conforme a la Política de Privacidad y a la LFPDPPP.
+
+**El contenido publicado no se elimina.** Las publicaciones, transmisiones en vivo y grabaciones que un médico o residente haya hecho públicas en la plataforma permanecen en Medical Masters después de la baja, y se muestran con la indicación "Autor dado de baja" en lugar del nombre. Al publicar contenido, el profesional concede a Medical Masters una licencia no exclusiva, mundial y sin límite de tiempo para conservarlo y seguir mostrándolo.
+
+Las reseñas y valoraciones que otros usuarios hayan dejado sobre ese contenido también se conservan.
+
+## 9. Limitación de Responsabilidad
 
 Medical Masters no es responsable de las opiniones médicas expresadas por los profesionales en la plataforma. Las consultas en línea son de carácter orientativo y no sustituyen la atención médica presencial.
 
-## 9. Privacidad
+## 10. Privacidad
 
 El tratamiento de sus datos personales se rige por nuestra Política de Privacidad. Al usar la plataforma, usted consiente la recopilación y uso de información según lo descrito.
 
-## 10. Modificaciones
+## 11. Modificaciones
 
 Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la plataforma.
 
-## 11. Contacto
+## 12. Contacto
 
 Para cualquier consulta sobre estos términos, puede contactarnos a través de la plataforma o enviando un correo electrónico a contacto@medical-masters.com
   `.trim();

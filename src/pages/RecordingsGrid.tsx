@@ -44,6 +44,8 @@ type ContentFilter = 'all' | 'free' | 'purchased';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
+import { ContentRating } from '@/components/ratings/ContentRating';
 import { useDoctorFilterFields, useDoctorFilterOptions } from '@/hooks/useDoctorFilterFields';
 
 export default function RecordingsGrid({ embedded = false }: { embedded?: boolean } = {}) {
@@ -692,8 +694,12 @@ export default function RecordingsGrid({ embedded = false }: { embedded?: boolea
                           <span className="inline-flex items-center gap-1 min-w-0">
                             <span className="truncate">{recording.doctorName}</span>
                             <DoctorBadgeIcon userId={recording.doctorId} size="sm" className="flex-shrink-0" />
+                            {/* Distintivo de categoría + médico/residente (cliente 2026-08-28) */}
+                            <ProfileCategoryMark userId={recording.doctorId} size="sm" className="flex-shrink-0" />
+                            <AuthorRoleTag userId={recording.doctorId} className="flex-shrink-0" />
                           </span>
                         </div>
+                        <ContentRating targetType="recording" targetId={recording.id} ownerId={recording.doctorId} compact className="mb-1" />
                         {recording.peakViewers != null && recording.peakViewers > 0 && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                             <Eye className="w-3.5 h-3.5" />

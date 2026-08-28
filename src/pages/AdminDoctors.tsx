@@ -43,6 +43,10 @@ interface DoctorRequest {
   bio: string | null;
   location: string | null;
   status: 'pending' | 'approved' | 'rejected';
+  // Identificación interna que pidió el cliente (2026-08-17). SÓLO la ve el súper
+  // admin: no se expone en el perfil público ni en ninguna otra pantalla.
+  doctor_code: string | null;      // OBS-001 → prefijo de especialidad + correlativo en esa especialidad
+  doctor_number: number | null;    // 1, 2, 3… correlativo GLOBAL de alta (el "del 1 al 50")
   badge_override: string | null;
   manual_badge: string | null;
   created_at: string;
@@ -52,6 +56,7 @@ interface DoctorRequest {
     name: string;
     email: string;
     avatar_url: string | null;
+    profile_category?: string | null;
   };
   cedula_verification?: {
     nombre: string | null;
@@ -111,7 +116,7 @@ export default function AdminDoctors() {
         (doctorProfiles || []).map(async (doc: any) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('name, email, avatar_url')
+            .select('name, email, avatar_url, profile_category')
             .eq('id', doc.user_id)
             .maybeSingle();
 
@@ -198,6 +203,13 @@ export default function AdminDoctors() {
   const [togglingNewsId, setTogglingNewsId] = useState<string | null>(null);
   const [updatingBadgeId, setUpdatingBadgeId] = useState<string | null>(null);
   const [updatingManualBadgeId, setUpdatingManualBadgeId] = useState<string | null>(null);
+  // Categoría de perfil (estrella / punto morado / punto verde) — cliente 2026-08-28.
+  const [updatingCategoryId, setUpdatingCategoryId] = useState<string | null>(null);
+  const [profileCats, setProfileCats] = useState<{ key: string; display_name: string; mark: string }[]>([]);
+  useEffect(() => {
+    supabase.from('profile_categories' as any).select('key, display_name, mark').eq('is_active', true).order('sort_order')
+      .then(({ data }) => { if (data) setProfileCats(data as any); });
+  }, []);
   const [verifyingCedulaId, setVerifyingCedulaId] = useState<string | null>(null);
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
 
@@ -287,6 +299,28 @@ export default function AdminDoctors() {
     }
   };
 
+  // Categoría de perfil — la asigna el súper admin (cliente 2026-08-28). Vive en
+  // profiles (no en doctor_profiles) porque también la tienen los residentes.
+  const updateProfileCategory = async (doctor: DoctorRequest, value: string) => {
+    setUpdatingCategoryId(doctor.id);
+    try {
+      const newValue = value === 'none' ? null : value;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ profile_category: newValue } as any)
+        .eq('id', doctor.user_id);
+      if (error) throw error;
+      const cat = profileCats.find(c => c.key === newValue);
+      toast({ title: 'Categoría actualizada', description: `${doctor.profile?.name}: ${cat ? cat.display_name : 'sin categoría'}` });
+      fetchDoctors();
+    } catch (error) {
+      console.error('Error updating profile category:', error);
+      toast({ title: t('common.error'), description: 'No se pudo cambiar la categoría', variant: 'destructive' });
+    } finally {
+      setUpdatingCategoryId(null);
+    }
+  };
+
   // Distintivo manual (medalla 🥇 / palomita ✔️) — lo asigna el super-admin (cliente 2026-06-30).
   const updateManualBadge = async (doctor: DoctorRequest, value: 'gold' | 'verified' | 'none') => {
     setUpdatingManualBadgeId(doctor.id);
@@ -314,7 +348,9 @@ export default function AdminDoctors() {
     const matchesSearch =
       doc.profile?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.profile?.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      doc.profile?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.doctor_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(doc.doctor_number ?? '').includes(searchQuery.trim());
     const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -409,6 +445,21 @@ export default function AdminDoctors() {
                       </Avatar>
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
+                          {/* Código interno del médico (cliente 2026-08-17): prefijo de su
+                              especialidad + correlativo, y al lado el nº global de alta.
+                              Esta pantalla ya es sólo para rol admin, así que no sale
+                              en ningún sitio más. */}
+                          {doctor.doctor_code && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold tracking-wide text-primary"
+                              title={`${doctor.doctor_code} · ${doctor.specialty || ''}${doctor.doctor_number ? ` · alta nº ${doctor.doctor_number}` : ''}`}
+                            >
+                              {doctor.doctor_code}
+                              {doctor.doctor_number != null && (
+                                <span className="font-sans font-medium text-primary/60">#{doctor.doctor_number}</span>
+                              )}
+                            </span>
+                          )}
                           <h3 className="font-semibold text-sm truncate">{doctor.profile?.name || t('admin.noName')}</h3>
                           <DoctorBadgeIcon userId={doctor.user_id} size="sm" className="flex-shrink-0" />
                           {getStatusBadge(doctor.status)}
@@ -589,6 +640,31 @@ export default function AdminDoctors() {
                                     <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
                                     <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
                                     <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                            {/* Categoría de perfil: estrella / punto morado / punto verde (cliente 2026-08-28) */}
+                            <div className="flex items-center gap-2 mt-2 p-2 rounded-md bg-secondary/5 border border-secondary/20">
+                              <Star className="w-4 h-4 text-secondary" />
+                              <Label className="text-xs flex-1">Categoría de perfil</Label>
+                              {updatingCategoryId === doctor.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Select
+                                  value={doctor.profile?.profile_category || 'none'}
+                                  onValueChange={(v) => updateProfileCategory(doctor, v)}
+                                >
+                                  <SelectTrigger className="w-40 h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Sin categoría</SelectItem>
+                                    {profileCats.map(c => (
+                                      <SelectItem key={c.key} value={c.key}>
+                                        {c.mark === 'star' ? '⭐' : c.mark === 'purple_dot' ? '🟣' : '🟢'} {c.display_name}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               )}

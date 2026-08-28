@@ -63,10 +63,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const uid = user.id;
 
     // Best-effort cleanup. We swallow errors per-table so the auth deletion still happens.
+    // ▸ 2026-08-28 (términos y condiciones): el CONTENIDO PUBLICADO, los LIVES y
+    //   las GRABACIONES NO se borran al dar de baja la cuenta. Antes doctor_content
+    //   se borraba aquí y lives/recordings caían en cascada por la FK a auth.users;
+    //   la migración 20260828 quitó esas cascadas y el trigger de profiles marca al
+    //   autor como "dado de baja" (content_authors) conservando lo publicado.
     const tables = [
       "doctor_profiles",
       "resident_profiles",
-      "doctor_content",
       "doctor_subscribers",
       "consultations",
       "chat_messages",
@@ -115,7 +119,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // la carpeta `${uid}/...`. Sin esto, estudios médicos, historia clínica, cédulas
     // e identificaciones escaneadas quedaban en Storage para siempre tras la supresión
     // (PHI/identidad sensible → riesgo de multa LFPDPPP). Best-effort: no bloquea el borrado.
-    const privateBuckets = ["vault-files", "medical-history", "documents", "doctor-credentials", "doctor-content"];
+    // "doctor-content" ya NO se purga: son los ficheros del contenido publicado,
+    // que se conserva tras la baja (2026-08-28).
+    const privateBuckets = ["vault-files", "medical-history", "documents", "doctor-credentials"];
     for (const bucket of privateBuckets) {
       try {
         const toRemove: string[] = [];

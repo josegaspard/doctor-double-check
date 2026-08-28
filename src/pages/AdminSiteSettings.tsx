@@ -209,7 +209,26 @@ export default function AdminSiteSettings() {
     enable_recordings: true,
     enable_ads: true,
     restrict_signup_to_mexico: false,
+    enable_patient_access: false,
+    enable_lives_doctors: true,
+    enable_lives_residents: false,
+    enable_lives_patients: false,
+    enable_content_ratings: true,
+    block_vpn_signup: false,
   });
+
+  // Categorías de perfil (cliente 2026-08-28): el distintivo es fijo (estrella /
+  // punto morado / punto verde); el NOMBRE de cada una lo pone el cliente aquí.
+  const [profileCats, setProfileCats] = useState<{ key: string; display_name: string; mark: string; description: string | null; sort_order: number }[]>([]);
+  const [isSavingCats, setIsSavingCats] = useState(false);
+  useEffect(() => {
+    if (role !== 'admin') return;
+    supabase
+      .from('profile_categories' as any)
+      .select('key, display_name, mark, description, sort_order')
+      .order('sort_order')
+      .then(({ data }) => { if (data) setProfileCats(data as any); });
+  }, [role]);
 
   useEffect(() => {
     if (role && role !== 'admin') {
@@ -1655,7 +1674,13 @@ export default function AdminSiteSettings() {
                     { key: 'enable_events' as const, label: 'Sección: Eventos', desc: 'Muestra u oculta la sección de eventos. Apagado = la sección queda no disponible.' },
                     { key: 'enable_vault' as const, label: 'Sección: Expediente / Vault', desc: 'Muestra u oculta el expediente clínico (Vault). Apagado = oculta el menú y la sección queda no disponible.' },
                     { key: 'enable_ads' as const, label: 'Publicidad (anuncios)', desc: 'Muestra u oculta todos los anuncios (banners, intersticiales, pre-roll) en la web. Apagado = no se muestra ninguna publicidad.' },
+                    { key: 'enable_patient_access' as const, label: 'Acceso para PACIENTES', desc: 'Apagado (por defecto, 17-ago-2026) = los pacientes ven "Próximamente" y NO pueden registrarse ni entrar; la plataforma queda sólo para médicos y residentes. Encendido = se reabre el registro y el login de pacientes. El candado también está en la base de datos, así que apagado bloquea incluso a quien intente registrarse saltándose la web.' },
                     { key: 'restrict_signup_to_mexico' as const, label: 'Registro solo para México', desc: 'Apagado (por defecto) = cualquier país se puede registrar, como está hoy. Encendido = quien entre desde fuera de México ve un aviso de "aún no disponible en tu país" y no puede completar el registro. Las cuentas ya creadas no se ven afectadas.' },
+                    { key: 'enable_lives_doctors' as const, label: 'Lives: pueden emitir los MÉDICOS', desc: 'Encendido (por defecto) = los médicos aprobados pueden iniciar transmisiones en vivo. Apagado = ningún médico puede emitir (los lives ya emitidos y las grabaciones no se tocan). El candado también está en la base de datos.' },
+                    { key: 'enable_lives_residents' as const, label: 'Lives: pueden emitir los RESIDENTES', desc: 'Apagado (por defecto, 28-ago-2026) = los residentes ven y participan en los lives pero NO pueden emitir. Encendido = los residentes aprobados también pueden iniciar transmisiones; en la parrilla de lives aparecen pestañas Médicos / Residentes y cada live lleva la etiqueta de quién lo emite. Se cambia aquí sin desplegar nada.' },
+                    { key: 'enable_lives_patients' as const, label: 'Lives: pueden emitir los PACIENTES', desc: 'Apagado (por defecto). Sólo tiene efecto si además está encendido el acceso para pacientes. Está aquí por si algún día lo piden: es un switch, no un desarrollo.' },
+                    { key: 'enable_content_ratings' as const, label: 'Reseñas con estrellas (contenido y lives)', desc: 'Encendido (por defecto) = cualquier usuario puede puntuar de 1 a 5 estrellas el contenido publicado, los lives y las grabaciones. Regla del cliente (28-ago-2026): puntúa todo el mundo MENOS un residente a un paciente, y nadie a sí mismo. Apagado = se ocultan las estrellas en toda la web.' },
+                    { key: 'block_vpn_signup' as const, label: 'Bloquear registro desde VPN / proxy', desc: 'Apagado (por defecto) = se REGISTRA el veredicto de cada intento de registro (VPN, proxy, datacenter, Tor) pero no se bloquea a nadie. Encendido = quien se registre desde una VPN o proxy ve un aviso y no puede completar el alta. Las IPs de la lista blanca nunca se bloquean.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },
                   ].map((toggle) => (
@@ -1693,6 +1718,78 @@ export default function AdminSiteSettings() {
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     {t('adminSiteSettingsPage.toggles.save')}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Categorías de perfil (cliente 2026-08-28): estrella · punto morado · punto verde */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Categorías de perfil (distintivos)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Tres categorías con un distintivo cada una, visible en el perfil del profesional y en todo lo que publica
+                    (lives, grabaciones y contenido). Aquí se les pone nombre; la categoría de cada médico o residente se asigna
+                    en <strong>Médicos</strong> y <strong>Residentes</strong>.
+                  </p>
+                  {profileCats.map((cat, idx) => (
+                    <div key={cat.key} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border border-border">
+                      <div className="flex items-center gap-2 sm:w-40 shrink-0">
+                        {cat.mark === 'star' ? (
+                          <span className="text-premium text-lg leading-none" aria-hidden="true">★</span>
+                        ) : (
+                          <span
+                            className={'inline-block w-3.5 h-3.5 rounded-full ' + (cat.mark === 'purple_dot' ? 'bg-[#7c3aed]' : 'bg-[#16a34a]')}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {cat.mark === 'star' ? 'Estrella' : cat.mark === 'purple_dot' ? 'Punto morado' : 'Punto verde'}
+                        </span>
+                      </div>
+                      <Input
+                        value={cat.display_name}
+                        maxLength={40}
+                        placeholder="Nombre de la categoría"
+                        aria-label={'Nombre de la categoría ' + (idx + 1)}
+                        onChange={(e) => setProfileCats(prev => prev.map(c => c.key === cat.key ? { ...c, display_name: e.target.value } : c))}
+                        className="flex-1"
+                      />
+                      <Input
+                        value={cat.description ?? ''}
+                        maxLength={120}
+                        placeholder="Descripción (opcional)"
+                        aria-label={'Descripción de la categoría ' + (idx + 1)}
+                        onChange={(e) => setProfileCats(prev => prev.map(c => c.key === cat.key ? { ...c, description: e.target.value } : c))}
+                        className="flex-1"
+                      />
+                    </div>
+                  ))}
+                  {profileCats.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Aún no hay categorías en la base de datos.</p>
+                  )}
+                  <Button
+                    onClick={async () => {
+                      setIsSavingCats(true);
+                      const rows = profileCats.map(c => ({
+                        key: c.key,
+                        display_name: c.display_name.trim() || c.key,
+                        mark: c.mark,
+                        description: c.description?.trim() || null,
+                        sort_order: c.sort_order,
+                        updated_at: new Date().toISOString(),
+                      }));
+                      const { error } = await supabase.from('profile_categories' as any).upsert(rows as any, { onConflict: 'key' });
+                      setIsSavingCats(false);
+                      if (error) toast.error('No se pudieron guardar las categorías');
+                      else toast.success('Categorías guardadas');
+                    }}
+                    disabled={isSavingCats || profileCats.length === 0}
+                    className="w-full"
+                  >
+                    {isSavingCats ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    Guardar categorías
                   </Button>
                 </CardContent>
               </Card>

@@ -13,6 +13,8 @@ import { RecordingCaptionsControl } from '@/components/recordings/RecordingCapti
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
 import { AdPreroll } from '@/components/ads/AdPreroll';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
+import { ContentRating } from '@/components/ratings/ContentRating';
 // RecordingChatReplay solo se monta si el recording tiene liveId asociado. Lazy
 // para que el chunk principal de RecordingPlayer no lo arrastre.
 const RecordingChatReplay = React.lazy(() =>
@@ -496,8 +498,12 @@ export default function RecordingPlayer() {
                     <span className="inline-flex items-center gap-1 min-w-0">
                       <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{recording.doctorName}</h3>
                       <DoctorBadgeIcon userId={recording.doctorId} size="sm" className="flex-shrink-0" />
+                      <ProfileCategoryMark userId={recording.doctorId} size="sm" withLabel className="flex-shrink-0" />
+                      <AuthorRoleTag userId={recording.doctorId} className="flex-shrink-0" />
                     </span>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">{recording.specialty}</p>
+                    {/* Reseñas con estrellas de la grabación (cliente 2026-08-28) */}
+                    <ContentRating targetType="recording" targetId={recording.id} ownerId={recording.doctorId} className="mt-1.5" />
                     <Badge variant="secondary" className="mt-2 gap-1 text-xs">
                       <Award className="w-3 h-3" />
                       {t('recordingPlayerPage.verified')}
