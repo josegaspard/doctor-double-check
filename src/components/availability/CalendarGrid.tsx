@@ -40,6 +40,8 @@ function getTypeConfig(t: (path: string) => string) {
     live: { color: 'bg-destructive', text: 'text-white', icon: Video, label: t('autoI18n.calendarGrid1') },
     consultation: { color: 'bg-primary', text: 'text-white', icon: MessageSquare, label: t('autoI18n.calendarGrid2') },
     office_hours: { color: 'bg-success', text: 'text-white', icon: Clock, label: t('autoI18n.calendarGrid3') },
+    // Tramo bloqueado desde la agenda profesional (7-sep-2026)
+    blocked: { color: 'bg-muted', text: 'text-muted-foreground', icon: Clock, label: t('pro.agenda.unavailable') },
   };
 }
 

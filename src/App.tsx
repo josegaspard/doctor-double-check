@@ -62,6 +62,9 @@ import AccessGuard from "./components/AccessGuard";
 
 // Lazy loaded pages
 const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
+// Diseño PRO del médico (cliente 7-sep-2026): agenda profesional y mis pacientes
+const DoctorAgenda = React.lazy(() => import("./pages/DoctorAgenda"));
+const DoctorPatients = React.lazy(() => import("./pages/DoctorPatients"));
 
 // Lazy loaded pages
 const RoleSelector = React.lazy(() => import("./pages/RoleSelector"));
@@ -253,6 +256,8 @@ const App = () => {
                       {/* Rutas operativas del doctor: requieren perfil APROBADO
                           (antes un doctor 'pending' podía entrar a operar). */}
                       <Route path="/doctor/dashboard" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorDashboard /></AccessGuard>} />
+                      <Route path="/doctor/agenda" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorAgenda /></AccessGuard>} />
+                      <Route path="/doctor/patients" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorPatients /></AccessGuard>} />
                       <Route path="/doctor/upload" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorUpload /></AccessGuard>} />
                       <Route path="/doctor/vault" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><ToggleGate toggleKey="enable_vault" feature="vault"><DoctorVault /></ToggleGate></AccessGuard>} />
                       <Route path="/doctor/availability" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorAvailability /></AccessGuard>} />

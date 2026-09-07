@@ -3,7 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type AvailabilityStatus = 'scheduled' | 'confirmed' | 'cancelled' | 'completed';
-export type AvailabilityType = 'live' | 'consultation' | 'office_hours';
+// 'blocked' (7-sep-2026, agenda profesional): tramo en el que el médico NO está
+// disponible. Se guarda en la misma tabla (type es TEXT sin restricción) y se
+// excluye de la lista pública para que ningún paciente lo vea como oferta.
+export type AvailabilityType = 'live' | 'consultation' | 'office_hours' | 'blocked';
 
 export interface DoctorAvailability {
   id: string;
@@ -49,7 +52,8 @@ export function useDoctorAvailability() {
       myQuery,
     ]);
 
-    const publicData = publicResult.data;
+    // Los bloqueos ('blocked') son privados del médico: nunca salen en la lista pública.
+    const publicData = publicResult.data?.filter(a => (a as any).type !== 'blocked');
 
     if (publicData) {
       const doctorIds = [...new Set(publicData.map(a => a.doctor_id))];

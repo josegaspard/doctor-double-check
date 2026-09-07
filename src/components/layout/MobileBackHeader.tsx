@@ -17,6 +17,9 @@ const ROOT_ROUTES = [
   '/onboarding',
   '/role-selector',
   '/doctor/dashboard',
+  // Pestañas raíz del médico en el diseño PRO (7-sep-2026)
+  '/doctor/agenda',
+  '/doctor/patients',
   '/',
 ];
 

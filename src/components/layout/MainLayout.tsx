@@ -1,14 +1,12 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
-import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useSocialLinks } from '@/hooks/useSiteSettings';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useChat } from '@/contexts/ChatContext';
 import { Button } from '@/components/ui/button';
@@ -21,17 +19,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import {
-  Menu,
   Video,
   MessageSquare,
   Folder,
+  FolderOpen,
   User,
+  Users,
   Wallet,
   DollarSign,
   Settings,
@@ -41,25 +36,20 @@ import {
   Stethoscope,
   LayoutDashboard,
   Upload,
-  Facebook,
-  Instagram,
-  Linkedin,
-  Twitter,
-  Youtube,
   Calendar,
+  CalendarDays,
+  Clock,
   FileText,
-  Search,
   Bell,
   Radio,
   MoreHorizontal,
   X,
-  Star,
-  Mail,
-  HelpCircle,
-  Shield,
   Megaphone,
   MapPin,
   Package,
+  ChevronDown,
+  BookOpen,
+  PlayCircle,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -83,60 +73,78 @@ interface NavItem {
   hidden?: boolean;
 }
 
-const navItems: NavItem[] = [
-  // ===== Orden del menú definido por el cliente (2026-06-29) =====
-  //   1. Lives  2. MM Education  3. Chat  4. Mis Pacientes  5. Directorio Médico
-  //   6. Marketplace  7. Historial Clínico  8. Foro  9. Panel
-  // Lo que no entra en la barra superior se colapsa en el botón "Más".
-  // News y Recetas quedan en el "Más" (no forman parte del orden core del cliente).
-  { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'doctor', 'resident'] },
-  { labelKey: 'nav.doctorVault', shortLabelKey: 'nav.doctorVaultShort', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'doctor', 'resident', 'admin'] },
-  // Marketplace de venta de PRODUCTOS al paciente RETIRADO (cliente 2026-06-30): /medical-supplies
-  // ya no aparece en el menú de ningún rol.
-  // Marketplace REVENTA dr↔dr con fee (cliente 2026-07-01): posición 6 del orden del cliente.
-  // Visible SOLO para doctores y residentes; se agrega abajo condicionado al feature flag.
+// ============================================================================
+// MÉDICO — diseño PRO aprobado por el cliente el 7-sep-2026.
+// Barra en píldora: Inicio · Agenda · Mis pacientes · Consultas · Lives y
+// contenidos · Comunidad · Más ▾ (todo lo demás cuelga de "Más").
+// ============================================================================
+const doctorPrimaryNav: NavItem[] = [
+  { labelKey: 'pro.nav.home', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
+  { labelKey: 'pro.nav.agenda', href: '/doctor/agenda', icon: CalendarDays, roles: ['doctor'] },
+  { labelKey: 'pro.nav.patients', shortLabelKey: 'pro.nav.patientsShort', href: '/doctor/patients', icon: Users, roles: ['doctor'] },
+  { labelKey: 'pro.nav.consultations', href: '/my-appointments', icon: Stethoscope, roles: ['doctor'] },
+  // La pestaña Lives abre la PORTADA de lives (`?vista=directo`); la parrilla es
+  // la vista inicial de /lives. Lo pidió el cliente el 7-sep-2026.
+  { labelKey: 'pro.nav.livesContent', shortLabelKey: 'nav.lives', href: '/lives?vista=directo', icon: Video, roles: ['doctor'] },
+  { labelKey: 'pro.nav.community', href: '/foro', icon: MessageSquare, roles: ['doctor'] },
+];
+
+const doctorMoreNav: NavItem[] = [
+  { labelKey: 'nav.education', href: '/education', icon: GraduationCap, roles: ['doctor'] },
+  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['doctor'] },
+  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'] },
+  { labelKey: 'pro.nav.patientFiles', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel
-    ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor', 'resident'] } as NavItem]
+    ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor'] } as NavItem]
     : []),
-  // Congresos: NO va en el menú header — vive SOLO en el footer (columna Plataforma).
-  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'doctor', 'resident', 'admin'], toggleKey: 'show_news_section' },
-  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient', 'doctor'], toggleKey: 'enable_prescriptions' },
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'doctor', 'resident'] },
-  // Antes enterradas (solo accesibles por URL o un botón perdido): ahora en el menú
-  // del paciente para que pueda volver a sus citas y a su bóveda de estudios.
+  { labelKey: 'pro.nav.myContent', href: '/doctor/content', icon: FolderOpen, roles: ['doctor'] },
+  { labelKey: 'pro.nav.myRecordings', href: '/doctor/recordings', icon: PlayCircle, roles: ['doctor'] },
+  { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
+  { labelKey: 'pro.nav.books', href: '/doctor/books', icon: BookOpen, roles: ['doctor'] },
+  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Clock, roles: ['doctor'] },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['doctor'] },
+  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['doctor'], toggleKey: 'enable_prescriptions' },
+  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['doctor'], toggleKey: 'show_news_section' },
+  { labelKey: 'nav.meetings', href: '/meetings', icon: Users, roles: ['doctor'] },
+  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['doctor'] },
+  { labelKey: 'nav.earnings', href: '/doctor/earnings', icon: DollarSign, roles: ['doctor'] },
+];
+
+// ============================================================================
+// RESTO DE ROLES — orden del menú definido por el cliente (2026-06-29).
+// ============================================================================
+const navItems: NavItem[] = [
+  { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
+  { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
+  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'resident'] },
+  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
+  ...(FEATURE_FLAGS.marketplaceFeeModel
+    ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
+    : []),
+  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'resident', 'admin'], toggleKey: 'show_news_section' },
+  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient'], toggleKey: 'enable_prescriptions' },
+  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident'] },
   { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['patient', 'resident'] },
   { labelKey: 'nav.myVault', href: '/vault', icon: Folder, roles: ['patient', 'resident'] },
-  // Foro RETIRADO del menú por completo (cliente 2026-07-02); la ruta /foro sigue
-  // viva por URL directa, pero no aparece en barra ni en "Más".
-  // Foro: hidden en navItems (NO debe salir en "Más" ni en el nav principal) —
-  // se muestra SOLO como ícono+texto a la izquierda de la lupa (Link explícito
-  // en el header). Cliente 15-jul-2026.
-  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['doctor', 'resident'], hidden: true },
-  { labelKey: 'nav.dashboard', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
-  // ===== Hidden — accesibles por URL pero fuera del menú =====
-  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Calendar, roles: ['doctor'], hidden: true },
-  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['doctor', 'resident'], hidden: true },
-  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'doctor', 'resident'], hidden: true },
+  // Foro: solo como enlace explícito junto a la lupa (cliente 15-jul-2026).
+  { labelKey: 'nav.foro', href: '/foro', icon: MessageSquare, roles: ['resident'], hidden: true },
+  { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['resident'], hidden: true },
+  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'resident'], hidden: true },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
 ];
 
+const pathOf = (href: string) => href.split('?')[0];
+
 // Bottom tab items per role — only 4 fixed tabs, 5th is "More"
 function getBottomTabs(role: string | undefined, t: (key: string) => string) {
-  // Cliente 2026-06-17: "Contenido Premium" (/recordings) RETIRADO de la barra inferior;
-  // ahora se accede desde "Contenido premium" dentro de /education. Lives queda primero.
   const lives = { label: t('nav.lives'), href: '/lives', icon: Radio };
 
   if (role === 'doctor') {
     return [
-      lives,
-      { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
-      // Etiqueta CORTA ("Directorio"): "Directorio Médico" completo se partía en
-      // dos líneas / se cortaba feo dentro del tab de ~70px de la barra inferior.
-      { label: t('nav.soyMedicoShort'), href: '/doctors', icon: Stethoscope },
-      { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
+      { label: t('pro.nav.home'), href: '/doctor/dashboard', icon: LayoutDashboard },
+      { label: t('pro.nav.agenda'), href: '/doctor/agenda', icon: CalendarDays },
+      { label: t('pro.nav.patientsShort'), href: '/doctor/patients', icon: Users },
+      { label: t('nav.lives'), href: '/lives?vista=directo', icon: Radio },
     ];
   }
 
@@ -156,8 +164,6 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // visitor (not logged in) — Contenido Premium y Directorio Médico ocultos
-  // por petición del cliente 2026-05-18; el visitor solo ve Lives + News.
   if (role === 'visitor' || !role) {
     return [
       lives,
@@ -165,8 +171,7 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // resident — "Reuniones" se movió dentro de MM Education (cliente 2026-06-16);
-  // en su lugar el directorio médico en la barra inferior.
+  // resident
   return [
     lives,
     { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
@@ -175,94 +180,32 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   ];
 }
 
-// "Más" dropdown — usa Radix DropdownMenu (renderiza vía Portal fuera del
-// <header>), evitando la regla global ".app-bg-image > header button > svg
-// { color: white }" que pintaba items y iconos blancos sobre fondo blanco.
-type MorePopoverItem = {
-  labelKey: string;
-  shortLabelKey?: string;
-  href: string;
-  icon: React.ElementType;
-};
-function MoreNavPopover({
-  items,
-  t,
-  navigate,
-  pathname,
-  triggerClass,
-}: {
-  items: MorePopoverItem[];
-  t: (key: string) => string;
-  navigate: (path: string) => void;
-  pathname: string;
-  triggerClass: string;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('nav.more')}
-          className={triggerClass}
-        >
-          <MoreHorizontal className="w-3.5 h-3.5" />
-          <span>{t('nav.more')}</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-60">
-        {items.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <DropdownMenuItem
-              key={item.href}
-              onClick={() => navigate(item.href)}
-              className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground' : ''}`}
-            >
-              <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="truncate">{t(item.labelKey)}</span>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+function initialsOf(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
 }
 
-// Animated wallet balance component
-function AnimatedBalance({ balance }: { balance: number }) {
-  const [flash, setFlash] = useState(false);
-  const prevRef = useRef(balance);
-
-  useEffect(() => {
-    if (prevRef.current !== balance) {
-      setFlash(true);
-      prevRef.current = balance;
-      const t = setTimeout(() => setFlash(false), 600);
-      return () => clearTimeout(t);
-    }
-  }, [balance]);
-
-  return (
-    <motion.span
-      key={balance}
-      initial={{ scale: 1.1 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.4 }}
-      className="font-semibold leading-none"
-    >
-      ${balance.toLocaleString()}
-    </motion.span>
-  );
+// "Dra. Demo" en la píldora de cuenta: si el nombre ya trae el tratamiento
+// (Dr./Dra.) se conserva junto al primer nombre; si no, solo el primer nombre.
+function displayNameOf(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (/^dra?\.?$/i.test(parts[0]) && parts.length > 1) return `${parts[0]} ${parts[1]}`;
+  return parts[0];
 }
 
 const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(function MainLayout({ children }, ref) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
-  const { balance } = useWallet();
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useLanguage();
-  const { socialLinks } = useSocialLinks();
   const { toggles } = useSiteToggles();
   const { unreadCount: notifUnread } = useNotifications();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
@@ -286,7 +229,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       });
     }
   }, [role, user?.id]);
-  
+
   // Enable realtime notifications
   useNotificationsRealtime();
 
@@ -300,31 +243,30 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }, 0);
   }, [getSessionsByUser]);
 
-  // Funciones activables/desactivables desde el admin (estilo "publicidad").
-  // Si el toggle está apagado: ocultamos su entrada de nav (la ruta además
-  // muestra "temporalmente no disponible").
+  // Funciones activables/desactivables desde el admin.
   const disabledHrefs = useMemo(() => {
     const s = new Set<string>();
     if (!toggles.enable_patient_chat) s.add('/chat');
     if (!toggles.enable_prescriptions) s.add('/prescriptions');
     if (!toggles.enable_video_calls) s.add('/video-call');
-    // Kill-switches de secciones: ocultar su entrada de nav cuando se apaga.
     if (!toggles.enable_lives) s.add('/lives');
-    if (!toggles.enable_recordings) s.add('/recordings');
+    if (!toggles.enable_recordings) { s.add('/recordings'); s.add('/doctor/recordings'); }
     if (!toggles.enable_vault) { s.add('/vault'); s.add('/doctor/vault'); }
     if (!toggles.enable_marketplace) s.add('/medical-supplies');
     return s;
   }, [toggles]);
 
+  const keepItem = (item: NavItem, effectiveRole: string) => {
+    if (item.hidden) return false;
+    if (disabledHrefs.has(pathOf(item.href))) return false;
+    if (!item.roles.includes(effectiveRole)) return false;
+    if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
+    return true;
+  };
+
   const filteredNavItems = useMemo(() => {
     const effectiveRole = role || 'visitor';
-    const items = navItems.filter(item => {
-      if (item.hidden) return false;
-      if (disabledHrefs.has(item.href)) return false;
-      if (!item.roles.includes(effectiveRole)) return false;
-      if (item.toggleKey && !(toggles as any)[item.toggleKey]) return false;
-      return true;
-    });
+    const items = navItems.filter(item => keepItem(item, effectiveRole));
     // Cliente 2026-07-09: en PACIENTE, Historial Clínico va ANTES que Recetas.
     if (effectiveRole === 'patient') {
       const mrIdx = items.findIndex(i => i.href === '/medical-record');
@@ -335,28 +277,42 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       }
     }
     return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, toggles, disabledHrefs]);
 
+  // Píldora superior: primarios + "Más".
+  const { primaryNav, moreNav } = useMemo(() => {
+    if (role === 'doctor') {
+      return {
+        primaryNav: doctorPrimaryNav.filter(i => keepItem(i, 'doctor')),
+        moreNav: doctorMoreNav.filter(i => keepItem(i, 'doctor')),
+      };
+    }
+    // Paciente: todos directos (cliente 2026-07-09); resto: 5 + Más.
+    if (role === 'patient') return { primaryNav: filteredNavItems, moreNav: [] as NavItem[] };
+    return { primaryNav: filteredNavItems.slice(0, 5), moreNav: filteredNavItems.slice(5) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, filteredNavItems, disabledHrefs, toggles]);
+
   const bottomTabs = useMemo(
-    () => getBottomTabs(role, t).filter(tab => !disabledHrefs.has(tab.href)),
+    () => getBottomTabs(role, t).filter(tab => !disabledHrefs.has(pathOf(tab.href))),
     [role, t, disabledHrefs]
   );
-  
-  const moreNavItems = useMemo(() => {
-    const bottomTabHrefs = bottomTabs.map(tab => tab.href);
-    return filteredNavItems.filter(item => !bottomTabHrefs.includes(item.href));
-  }, [filteredNavItems, bottomTabs]);
 
-  // Cliente 2026-06-29 (revierte 2026-06-22): TODOS los roles, incluidos los
-  // doctores, usan el botón "Más"/"+" cuando no caben todos los items en la barra
-  // (primeros N visibles + el resto dentro de "Más"). Así el menú no se satura.
-  // Cliente 2026-07-09: EXCEPTO el PACIENTE — sin botón "Más" en el header;
-  // todos sus items van directos en la barra (Historial Clínico antes que Recetas).
-  const showAllNav = role === 'patient';
+  const moreNavItems = useMemo(() => {
+    const bottomTabPaths = bottomTabs.map(tab => pathOf(tab.href));
+    const all = role === 'doctor' ? [...primaryNav, ...moreNav] : filteredNavItems;
+    return all.filter(item => !bottomTabPaths.includes(pathOf(item.href)));
+  }, [filteredNavItems, bottomTabs, primaryNav, moreNav, role]);
+
+  const isActiveHref = (href: string) => {
+    const p = pathOf(href);
+    if (p === '/lives') return location.pathname === '/lives' || location.pathname.startsWith('/live/');
+    if (p === '/') return location.pathname === '/';
+    return location.pathname === p || location.pathname.startsWith(p + '/');
+  };
 
   const handleLogout = () => {
-    // Llevar al landing inmediatamente al cerrar sesión (cliente 2026-06-19):
-    // así no se alcanza a ver el "Acceso denegado" de las páginas protegidas.
     logout();
     navigate('/', { replace: true });
   };
@@ -376,280 +332,121 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }
   };
 
-  // bottomTabs already computed above
+  // Destino del LOGO: el médico va a su panel (Inicio); el resto a /lives; visitante al landing.
+  const homeHref = !isAuthenticated || !role || role === 'visitor'
+    ? '/'
+    : role === 'doctor' ? '/doctor/dashboard' : '/lives';
 
-  // Destino del LOGO (cliente 2026-07-02): con sesión activa el "home" es /lives;
-  // sin sesión (visitor) el logo lleva al landing público /.
-  const homeHref = isAuthenticated && role && role !== 'visitor' ? '/lives' : '/';
-
-  // Hide bottom nav on certain pages (video call, live player full experience)
   const hideBottomNav = location.pathname.startsWith('/video-call');
 
   // Background mode controlado desde Admin → Site Settings → Toggles
   const useImageBackground = (toggles as any).app_background !== 'white';
+
+  const renderMoreDropdown = (align: 'center' | 'end') => (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('nav.more')}
+          className={moreNav.some(i => isActiveHref(i.href)) ? 'is-active' : ''}
+        >
+          <span>{t('nav.more')}</span>
+          <ChevronDown className="w-3.5 h-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align} className="w-64 max-h-[70vh] overflow-y-auto">
+        {moreNav.map((item) => {
+          const isActive = isActiveHref(item.href);
+          return (
+            <DropdownMenuItem
+              key={item.href}
+              onClick={() => navigate(item.href)}
+              className={`py-2.5 text-sm cursor-pointer ${isActive ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground' : ''}`}
+            >
+              <item.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate">{t(item.labelKey)}</span>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <AppBackground
       ref={ref}
       className="min-h-screen flex flex-col overflow-x-clip"
     >
-      {/* Modo "Descubre MedicalMasters": contador de 10 min para visitantes y
-          bloqueo con registro al agotarse. No renderiza nada para usuarios reales. */}
       <DiscoverGate />
-      {/* Header — usa color del footer cuando el fondo es imagen.
-          top = env(safe-area-inset-top) (no top-0): un `position: sticky` calcula
-          su punto de anclaje contra el borde del scroller (viewport), IGNORANDO
-          cualquier padding-top puesto en body/AppBackground. Con top-0, al hacer
-          scroll el header se pega justo detrás de la isla dinámica / status bar
-          (se "come" el logo). Con env(safe-area-inset-top) se pega justo DEBAJO. */}
+      {/* Barra superior — sticky bajo la safe-area (isla dinámica / status bar). */}
       <header
-        className={`sticky z-50 backdrop-blur ${
-          useImageBackground
-            ? 'app-header-bar border-b-0'
-            : 'border-b border-border bg-card/95 supports-[backdrop-filter]:bg-card/60'
-        }`}
+        className={`sticky z-50 pro-topbar ${useImageBackground ? '' : 'pro-topbar-light border-b border-border bg-card/95 backdrop-blur'}`}
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="container mx-auto px-4">
-            <div className="relative flex h-20 sm:h-16 items-center justify-between">
-            {/* Logo & Mobile Menu */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Hamburger menu - hidden on mobile (replaced by bottom nav), visible on tablet */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hidden sm:flex md:hidden flex-shrink-0">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-72 overflow-y-auto">
-                  <div className="flex items-center gap-2 mb-6">
-                    <img src={logoMedicalMasters} alt="Medical Masters" className="h-12 w-auto" />
-                  </div>
-                  
-                  {isAuthenticated && user && role !== 'visitor' && (
-                    <div className="mb-6 p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          {role === 'doctor' ? (
-                            <Stethoscope className="w-5 h-5 text-primary" />
-                          ) : (
-                            <User className="w-5 h-5 text-primary" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-sm truncate">{user.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2">{getRoleBadge()}</div>
-                    </div>
-                  )}
+        <div className="pro-container">
+          <div className="flex h-16 sm:h-[68px] items-center gap-2 sm:gap-3">
+            {/* Logo */}
+            <Link to={homeHref} className="flex items-center shrink-0" aria-label="Medical Masters">
+              <img
+                src={useImageBackground ? logoMedicalMastersWhite : logoMedicalMasters}
+                alt="Medical Masters"
+                className="h-9 sm:h-10 xl:h-11 w-auto"
+                decoding="async"
+              />
+            </Link>
 
-                  {role === 'visitor' && (
-                    <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
-                      <p className="text-sm text-muted-foreground mb-3">{t('mainLayout.loginPrompt')}</p>
-                      <div className="flex flex-col gap-2">
-                        <Button size="sm" onClick={() => navigate('/login')} className="w-full gap-2">
-                          <LogIn className="w-4 h-4" />
-                          {t('nav.login')}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <nav className="flex flex-col gap-1 pb-8">
-                    {filteredNavItems.map((item) => {
-                      const isActive = location.pathname === item.href;
-                      const isPanelItem = item.href === '/doctor/dashboard';
-                      return (
-                        <Link
-                          key={item.href}
-                          to={item.href}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                            isActive
-                              ? isPanelItem ? 'bg-primary/20 text-primary' : 'bg-accent text-accent-foreground'
-                              : isPanelItem ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                          }`}
-                        >
-                          <item.icon className="w-5 h-5" />
-                          {t(item.labelKey)}
-                        </Link>
-                      );
-                    })}
-                    
-                    {isAuthenticated && role !== 'visitor' && (
-                      <>
-                        <div className="my-2 border-t border-border" />
-                        <Link to="/profile" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/profile' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-                          <User className="w-5 h-5" />
-                          {t('nav.profile')}
-                        </Link>
-                        {(role === 'patient' || role === 'resident' || role === 'doctor') && (
-                          <Link to="/wallet" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/wallet' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-                            <Wallet className="w-5 h-5" />
-                            {t('nav.wallet')}
-                          </Link>
-                        )}
-                        {(role === 'patient' || role === 'resident') && hasCampaigns && (
-                          <Link to="/advertiser/dashboard" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/advertiser/dashboard' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-                            <Megaphone className="w-5 h-5" />
-                            {t('nav.advertising')}
-                          </Link>
-                        )}
-                        <Link to="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
-                          <Settings className="w-5 h-5" />
-                          {t('nav.settings')}
-                        </Link>
-                        <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-destructive hover:bg-destructive/10 w-full text-left">
-                          <LogOut className="w-5 h-5" />
-                          {t('nav.logout')}
-                        </button>
-                      </>
-                    )}
-                  </nav>
-                </SheetContent>
-              </Sheet>
-
-              {/* Logo móvil: GRANDE y centrado, MISMO tamaño que el landing (h-14, cliente 10-jul) */}
-              <Link to={homeHref} className="flex sm:hidden items-center absolute left-1/2 -translate-x-1/2">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" loading="lazy" decoding="async" />
-              </Link>
-
-              {/* Logo on tablet - compact */}
-              <Link to={homeHref} className="hidden sm:flex md:hidden items-center">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 w-auto" loading="lazy" decoding="async" />
-              </Link>
-
-              {/* Logo - desktop+ */}
-              <Link to={homeHref} className="hidden md:flex items-center">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-10 xl:h-11 w-auto" loading="lazy" decoding="async" />
-              </Link>
-            </div>
-
-            {/* Tablet Nav (md only): 3 primarios + Más con items 3+.
-                Doctor (showAllNav): TODOS los items, con scroll horizontal, sin Más. */}
-            <nav className="hidden md:flex lg:hidden items-center flex-1 justify-center mx-1 min-w-0">
-              <div className={`flex items-center gap-2 min-w-0 ${showAllNav ? 'w-full overflow-x-auto [&::-webkit-scrollbar]:hidden' : ''}`}>
-                {(showAllNav ? filteredNavItems : filteredNavItems.slice(0, 3)).map((item) => {
-                  const isActive = location.pathname === item.href;
-                  const isPanelItem = item.href === '/doctor/dashboard';
-                  return (
-                    <Link
-                      key={`md-${item.href}`}
-                      to={item.href}
-                      className={`relative flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                        isActive ? 'app-header-nav-active'
-                        : isPanelItem ? 'app-header-control px-2'
-                        : 'app-header-nav-link'
-                      }`}
-                    >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
-                      <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
-                    </Link>
-                  );
-                })}
-                {!showAllNav && filteredNavItems.length > 3 && (
-                  <MoreNavPopover
-                    items={filteredNavItems.slice(3)}
-                    t={t}
-                    navigate={navigate}
-                    pathname={location.pathname}
-                    triggerClass="app-header-nav-link flex items-center gap-1.5 px-2 rounded-md text-[11px] font-semibold transition-all whitespace-nowrap flex-shrink-0"
-                  />
-                )}
-              </div>
-            </nav>
-
-            {/* Desktop Nav (lg+): muestra 5 primarios + Más con items 5+
-                Threshold bajo (length > 5) para garantizar que el botón Más
-                aparezca para cualquier rol que tenga al menos 6 items en su
-                navegación filtrada. */}
-            <nav className="hidden lg:flex items-center flex-1 justify-start mx-1 lg:mx-2 min-w-0">
-              <div className={`flex items-center gap-2 min-w-0 ${showAllNav ? 'w-full overflow-x-auto [&::-webkit-scrollbar]:hidden' : ''}`}>
-                {(showAllNav ? filteredNavItems : filteredNavItems.slice(0, 5)).map((item) => {
-                  const isActive = location.pathname === item.href;
-                  const isPanelItem = item.href === '/doctor/dashboard';
-                  return (
-                    <Link
-                      key={`lg-${item.href}`}
-                      to={item.href}
-                      className={`relative flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
-                        isActive ? 'app-header-nav-active'
-                        : isPanelItem ? 'app-header-control px-2 lg:px-2.5'
-                        : 'app-header-nav-link'
-                      }`}
-                    >
-                      <item.icon className="w-3.5 h-3.5 flex-shrink-0 relative z-10" />
-                      <span className="relative z-10">{t(item.shortLabelKey || item.labelKey)}</span>
-                    </Link>
-                  );
-                })}
-                {!showAllNav && filteredNavItems.length > 5 && (
-                  <MoreNavPopover
-                    items={filteredNavItems.slice(5)}
-                    t={t}
-                    navigate={navigate}
-                    pathname={location.pathname}
-                    triggerClass="app-header-nav-link flex items-center gap-1.5 px-2 lg:px-2.5 rounded-md text-[11px] xl:text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0"
-                  />
-                )}
-              </div>
-            </nav>
-
-            {/* Right Side */}
-              <div className="flex items-center gap-1.5">
-              {/* Global Search — en móvil vive a la IZQUIERDA del header (absoluto sobre la fila)
-                  para que el logo centrado no choque con los controles de la derecha.
-                  FORO (cliente 15-jul-2026): ítem inmediatamente a la IZQUIERDA de la lupa,
-                  solo para el gremio (doctores/residentes/admin). */}
-              <span className="absolute left-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0 flex items-center">
-                {(role === 'doctor' || role === 'resident' || role === 'admin') && (
+            {/* Navegación en píldora (tablet y escritorio) */}
+            <nav className="hidden sm:flex flex-1 min-w-0 justify-center" aria-label={t('mainLayout.sectionNavigation')}>
+              <div className="pro-navpill">
+                {primaryNav.map((item) => (
                   <Link
-                    to="/foro"
-                    aria-label={t('forum.title')}
-                    className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium ${
-                      location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
-                    }`}
+                    key={item.href}
+                    to={item.href}
+                    className={isActiveHref(item.href) ? 'is-active' : ''}
+                    aria-current={isActiveHref(item.href) ? 'page' : undefined}
                   >
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="hidden sm:inline">{t('forum.title')}</span>
+                    <span className="hidden xl:inline">{t(item.labelKey)}</span>
+                    <span className="xl:hidden">{t(item.shortLabelKey || item.labelKey)}</span>
                   </Link>
-                )}
-                <GlobalSearch />
-              </span>
-              
+                ))}
+                {moreNav.length > 0 && renderMoreDropdown('center')}
+              </div>
+            </nav>
+
+            {/* Controles de la derecha */}
+            <div className="ml-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {(role === 'resident' || role === 'admin') && (
+                <Link
+                  to="/foro"
+                  aria-label={t('forum.title')}
+                  className={`hidden md:flex items-center gap-1.5 h-9 px-2.5 rounded-md text-sm font-medium ${
+                    location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="hidden lg:inline">{t('forum.title')}</span>
+                </Link>
+              )}
+              <GlobalSearch />
               <LanguageSwitcher />
-              
-              {/* Notifications - hidden on mobile (in bottom nav) */}
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
-              
-              {/* Wallet — superficie clara: usa clase semántica, sin variant outline.
-                  Doctor también ve la wallet (puede cargar saldo y comprar contenido de colegas). */}
               {(role === 'patient' || role === 'resident' || role === 'doctor') && (
-                <Link to="/wallet" aria-label={t('nav.wallet')} className="hidden sm:flex items-center app-header-surface-button">
-                    {/* Solo el icono de wallet — sin mostrar el monto en el header (cliente 2026-06-16). */}
-                    <span className="app-header-control px-2.5">
-                    <Wallet className="w-4 h-4" />
-                  </span>
+                <Link to="/wallet" aria-label={t('nav.wallet')} className="hidden sm:inline-flex app-header-control px-2.5">
+                  <Wallet className="w-4 h-4" />
                 </Link>
               )}
 
-              {/* User Menu */}
               {isAuthenticated && user && role !== 'visitor' ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="app-header-control gap-1.5 px-2 sm:px-2.5"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        {role === 'doctor' ? (
-                          <Stethoscope className="w-3.5 h-3.5" />
-                        ) : (
-                          <User className="w-3.5 h-3.5" />
-                        )}
-                      </div>
-                      <span className="text-xs sm:text-sm font-semibold max-w-[60px] sm:max-w-none truncate hidden sm:inline">{user.name.split(' ')[0]}</span>
+                    <button type="button" className="app-header-control pro-account" aria-label={user.name}>
+                      <span className="pro-avatar">
+                        {user.avatarUrl
+                          ? <img src={user.avatarUrl} alt="" />
+                          : initialsOf(user.name) || (role === 'doctor' ? <Stethoscope className="w-4 h-4" /> : <User className="w-4 h-4" />)}
+                      </span>
+                      <span className="hidden sm:inline max-w-[120px] truncate">{displayNameOf(user.name)}</span>
+                      <ChevronDown className="w-3.5 h-3.5 hidden sm:inline" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-64">
@@ -671,12 +468,27 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {t('nav.wallet')}
                       </DropdownMenuItem>
                     )}
+                    {role === 'doctor' && (
+                      <DropdownMenuItem onClick={() => navigate('/doctor/earnings')} className="py-3 text-sm">
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        {t('nav.earnings')}
+                      </DropdownMenuItem>
+                    )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
                       <DropdownMenuItem onClick={() => navigate('/advertiser/dashboard')} className="py-3 text-sm">
                         <Megaphone className="w-4 h-4 mr-2" />
                         {t('nav.advertising')}
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => navigate('/notifications')} className="py-3 text-sm">
+                      <Bell className="w-4 h-4 mr-2" />
+                      {t('nav.notifications')}
+                      {notifUnread > 0 && (
+                        <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                          {notifUnread > 99 ? '99+' : notifUnread}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
                       <Settings className="w-4 h-4 mr-2" />
                       {t('nav.settings')}
@@ -705,7 +517,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </div>
       </header>
 
-      {/* Tutorial "cómo usar la plataforma" por rol — abierto desde el menú del usuario (debajo de Configuración) */}
       {isAuthenticated && user && (
         <TutorialVideoDialog role={role} open={tutorialOpen} onOpenChange={setTutorialOpen} />
       )}
@@ -730,13 +541,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-center justify-around h-16 px-1">
             {bottomTabs.map((tab) => {
-              const isActive = location.pathname === tab.href || (tab.href !== '/lives' && location.pathname.startsWith(tab.href));
+              const isActive = isActiveHref(tab.href);
               const TabIcon = tab.icon;
-              
-              // Badge count
+
               let badgeCount = 0;
-              if (tab.href === '/chat') badgeCount = chatUnread;
-              if (tab.href === '/notifications') badgeCount = notifUnread;
+              if (pathOf(tab.href) === '/chat') badgeCount = chatUnread;
+              if (pathOf(tab.href) === '/notifications') badgeCount = notifUnread;
 
               return (
                 <Link
@@ -754,8 +564,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </span>
                     )}
                   </div>
-                  {/* Una sola línea SIEMPRE: sin truncate/nowrap las etiquetas largas
-                      se partían en dos líneas y desalineaban toda la barra. */}
                   <span className={`text-[10px] font-medium leading-tight max-w-full truncate whitespace-nowrap px-0.5 ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
@@ -783,27 +591,26 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <Sheet open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
         <SheetContent side="bottom" hideClose className="h-[85vh] rounded-t-2xl p-0 overflow-hidden">
           <div className="flex flex-col h-full overflow-y-auto">
-            {/* Header with close */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" />
               <button
                 onClick={() => setMoreSheetOpen(false)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                aria-label={t('pro.common.close')}
               >
                 <X className="w-5 h-5 text-foreground" />
               </button>
             </div>
 
-            {/* User info card */}
             {isAuthenticated && user && role !== 'visitor' && (
               <div className="mx-5 mb-4 p-4 bg-muted/50 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    {role === 'doctor' ? (
-                      <Stethoscope className="w-5 h-5 text-primary" />
-                    ) : (
-                      <User className="w-5 h-5 text-primary" />
-                    )}
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {user.avatarUrl
+                      ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      : role === 'doctor'
+                        ? <Stethoscope className="w-5 h-5 text-primary" />
+                        : <User className="w-5 h-5 text-primary" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-sm truncate">{user.name}</p>
@@ -824,26 +631,28 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               </div>
             )}
 
-            {/* Navigation items */}
             <div className="px-5 flex-1">
               {moreNavItems.length > 0 && (
                 <div className="space-y-1 mb-4">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">{t('mainLayout.sectionNavigation')}</p>
                   {moreNavItems.map((item) => {
-                    const isActive = location.pathname === item.href;
+                    const isActive = isActiveHref(item.href);
                     return (
                       <Link
                         key={item.href}
                         to={item.href}
                         onClick={() => setMoreSheetOpen(false)}
                         className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                          isActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-foreground hover:bg-muted'
+                          isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
                         }`}
                       >
                         <item.icon className="w-5 h-5" />
                         <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                        {pathOf(item.href) === '/chat' && chatUnread > 0 && (
+                          <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center">
+                            {chatUnread > 99 ? '99+' : chatUnread}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
@@ -878,7 +687,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
                       </Link>
                     )}
-                    {/* "Mis Pedidos" (marketplace Material Médico) ELIMINADO — cliente 2026-06-16. */}
                     {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                       <Link
                         to="/wallet"
@@ -889,10 +697,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       >
                         <Wallet className="w-5 h-5 text-primary" />
                         <span className="text-sm font-medium">{t('nav.wallet')}</span>
-                        {/* Saldo oculto en el wallet (cliente 2026-06-16): solo nombre + icono. */}
                       </Link>
                     )}
-                    {FEATURE_FLAGS.marketplaceFeeModel && (role === 'resident' || role === 'doctor') && (
+                    {FEATURE_FLAGS.marketplaceFeeModel && role === 'resident' && (
                       <Link
                         to="/marketplace"
                         onClick={() => setMoreSheetOpen(false)}
@@ -904,7 +711,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         <span className="text-sm font-medium">Marketplace</span>
                       </Link>
                     )}
-                    {/* "Portal de proveedores" vive en el FOOTER (cliente 2026-07-02), no aquí. */}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
                       <Link
                         to="/advertiser/dashboard"
@@ -955,7 +761,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               )}
             </div>
 
-            {/* Bottom spacer */}
             <div className="h-6" />
           </div>
         </SheetContent>
@@ -964,7 +769,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       {/* Active live banner */}
       <ActiveLiveBanner />
 
-      {/* Unified Footer - hidden on mobile (bottom nav takes its place) */}
+      {/* Unified Footer */}
       <UnifiedFooter variant="app" />
     </AppBackground>
   );

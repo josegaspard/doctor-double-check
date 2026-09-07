@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { format, addMonths, subMonths, addWeeks, subWeeks, addDays, subDays } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import MainLayout from '@/components/layout/MainLayout';
@@ -121,6 +121,36 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     inviteesCount: number;
   } | null>(null);
   const [isNotifyingMove, setIsNotifyingMove] = useState(false);
+
+  // Diseño PRO (7-sep-2026): la agenda profesional y el panel abren esta pantalla
+  // con `?nueva=consulta|live|disponible` (+ `fecha=YYYY-MM-DD&hora=HH:mm`
+  // opcionales) para que el diálogo de creación salga ya abierto con ese tipo.
+  const [searchParams, setSearchParams] = useSearchParams();
+  React.useEffect(() => {
+    const nueva = searchParams.get('nueva');
+    if (!nueva) return;
+    const typeMap: Record<string, AvailabilityType> = { consulta: 'consultation', live: 'live', disponible: 'office_hours' };
+    const type = typeMap[nueva];
+    if (!type) return;
+    const fecha = searchParams.get('fecha');
+    const hora = searchParams.get('hora');
+    const parsed = fecha ? new Date(`${fecha}T12:00:00`) : new Date();
+    setFormData(prev => ({
+      ...prev,
+      type,
+      date: isNaN(parsed.getTime()) ? new Date() : parsed,
+      time: hora && /^\d{2}:\d{2}$/.test(hora) ? hora : prev.time,
+      title: '',
+      description: '',
+    }));
+    setSelectedEvent(null);
+    setIsDialogOpen(true);
+    // Se limpian los parámetros para que un refresco no vuelva a abrir el diálogo.
+    const next = new URLSearchParams(searchParams);
+    ['nueva', 'fecha', 'hora'].forEach(k => next.delete(k));
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Cargar el horario de atención actual cuando se abre el modal en modo Orientación.
   React.useEffect(() => {

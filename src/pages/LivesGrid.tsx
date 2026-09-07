@@ -1,38 +1,35 @@
-import React, { Suspense, useRef, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { AdInterstitial } from '@/components/ads/AdInterstitial';
-import { Link } from 'react-router-dom';
 import { useLives } from '@/contexts/LivesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { useDoctorAvailability } from '@/hooks/useDoctorAvailability';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { UpcomingAvailabilities } from '@/components/availability/UpcomingAvailabilities';
 import { NewsFeed } from '@/components/news/NewsFeed';
-const LivePreviewPlayer = React.lazy(() => import('@/components/live/LivePreviewPlayer'));
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Video, 
-  Users, 
-  Clock, 
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Video,
   Radio,
   Eye,
   Lock,
   Crown,
   Plus,
   LogIn,
-  ShieldCheck,
   AlertCircle,
   RefreshCw,
   Globe,
   GraduationCap,
   Building2,
-  Stethoscope,
   SlidersHorizontal,
+  Search,
+  ArrowRight,
+  Compass,
+  CalendarDays,
+  X,
 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useDoctorFilterFields } from '@/hooks/useDoctorFilterFields';
@@ -43,552 +40,527 @@ import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
 import { useProfileCategories } from '@/hooks/useProfileCategory';
 import { ContentRating } from '@/components/ratings/ContentRating';
+import { fill, initialsOf, norm, whenLabel, tzShort } from '@/lib/proFormat';
 
-const LiveCard = React.forwardRef<HTMLDivElement, { live: any; isPremiumSub: boolean; isNew: boolean }>(function LiveCard({ live, isPremiumSub, isNew }, ref) {
-  const { t } = useLanguage();
+const LivePreviewPlayer = React.lazy(() => import('@/components/live/LivePreviewPlayer'));
 
-  const formatDuration = (startedAt: Date) => {
-    const diff = Date.now() - startedAt.getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m`;
-  };
+// ---------------------------------------------------------------------------
+// Diseño PRO de Lives (cliente, 7-sep-2026). DOS vistas de la misma página:
+//   · /lives                 → PARRILLA ("la inicial de la app"): buscador arriba
+//                              y todos los lives en rejilla.
+//   · /lives?vista=directo   → PORTADA (al pulsar la pestaña Lives): live
+//                              destacado + "También en directo" + carrusel.
+// Cada vista lleva el botón que abre la otra: en la parrilla «Explorar todo»,
+// en la portada «Ver todos los Lives» (y «Ver los N Lives» / «Ver todos»).
+// ---------------------------------------------------------------------------
 
+function LiveMedia({ live }: { live: any }) {
   return (
-    <div ref={ref}>
-    <Link to={`/live/${live.id}`}>
-      <Card className="card-live group cursor-pointer overflow-hidden hover:shadow-lg transition-all relative ring-2 ring-live animate-pulse-ring">
-        <div className="relative">
-          <Suspense fallback={<div className="aspect-video bg-gradient-to-br from-primary/20 to-info/20 animate-pulse" />}>
-            <LivePreviewPlayer
-              dailyRoomName={live.dailyRoomName || live.daily_room_name}
-              thumbnailUrl={undefined}
-            />
-          </Suspense>
-          
-          <div className="absolute top-2 left-2 flex items-center gap-1.5">
-            <Badge variant="live" className="gap-1">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              {t('lives.liveBadge')}
-            </Badge>
-            {isPremiumSub && (
-              <Badge className="gap-1 bg-warning/90 text-white border-0 text-[10px]">
-                <Crown className="w-3 h-3" />
-                Premium
-              </Badge>
-            )}
-          </div>
-          
-          <div className="absolute top-2 right-2">
-            <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-              <Users className="w-3 h-3" />
-              {live.viewerCount}
-            </Badge>
-          </div>
-          
-          <div className="absolute bottom-2 right-2">
-            <Badge variant="secondary" className="gap-1 bg-black/50 text-white border-0">
-              <Clock className="w-3 h-3" />
-              {formatDuration(live.startedAt)}
-            </Badge>
-          </div>
-          
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-white/0 group-hover:bg-white/90 flex items-center justify-center transition-colors">
-              <Video className="w-6 h-6 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          </div>
-        </div>
-        
-        <CardContent className="p-3 sm:p-4">
-          <h3 className="font-semibold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors text-sm sm:text-base">
-            {live.title}
-          </h3>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-[10px] sm:text-xs font-semibold text-primary">
-                {live.doctorName.charAt(0)}
-              </span>
-            </div>
-            <span className="inline-flex items-center gap-1 min-w-0">
-              <span className="truncate text-xs sm:text-sm">{live.doctorName}</span>
-              <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
-              {/* Distintivo de categoría + si es médico o residente (cliente 2026-08-28) */}
-              <ProfileCategoryMark userId={live.doctorId} size="sm" className="flex-shrink-0" />
-              <AuthorRoleTag userId={live.doctorId} className="flex-shrink-0" />
-            </span>
-          </div>
-          {/* Reseñas del live (cliente 2026-08-28) */}
-          <ContentRating targetType="live" targetId={live.id} ownerId={live.doctorId} compact className="mt-1.5" />
-          <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-            <Badge variant="outline" className="text-xs">
-              {live.specialty}
-            </Badge>
-            {isPremiumSub && (
-              <Badge variant="outline" className="text-xs text-warning border-warning gap-1">
-                <Crown className="w-3 h-3" />
-                {t('lives.earlyAccess')}
-              </Badge>
-            )}
-          </div>
-          {/* Verified credentials con status — SIEMPRE visible (compliance).
-              Si la cédula o el COFEPRIS aún no están cargados, los badges
-              muestran "Pendiente" en vez de ocultarse. */}
-          <>
-            <div className="flex flex-wrap gap-1 mt-2">
-              <CredentialStatusBadge
-                type="cedula"
-                status={live.doctorCedulaStatus}
-                value={live.doctorCedula}
-                rejectionReason={live.doctorCedulaRejectionReason}
-                size="xs"
-              />
-              <CredentialStatusBadge
-                type="cofepris"
-                status={live.doctorCofeprisStatus}
-                value={live.doctorCofepris}
-                rejectionReason={live.doctorCofeprisRejectionReason}
-                size="xs"
-              />
-            </div>
-            {(() => {
-              const parts: string[] = [];
-              if (live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason) {
-                parts.push(`Cédula: ${live.doctorCedulaRejectionReason}`);
-              }
-              if (live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason) {
-                parts.push(`COFEPRIS: ${live.doctorCofeprisRejectionReason}`);
-              }
-              if (
-                parts.length === 0 &&
-                (live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected')
-              ) {
-                parts.push('Credencial rechazada (sin motivo registrado)');
-              }
-              if (parts.length === 0) return null;
-              return (
-                <p className="text-[10px] text-destructive mt-1 line-clamp-2 flex items-start gap-1">
-                  <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                  <span>{parts.join(' · ')}</span>
-                </p>
-              );
-            })()}
-          </>
-        </CardContent>
-      </Card>
-    </Link>
+    <div className="pro-live-fill">
+      <Suspense fallback={<div className="w-full h-full bg-[#0f3d4a] animate-pulse" />}>
+        <LivePreviewPlayer
+          dailyRoomName={live.dailyRoomName || live.daily_room_name}
+          thumbnailUrl={live.thumbnailUrl || null}
+        />
+      </Suspense>
     </div>
   );
-});
+}
+
+function DoctorAvatar({ live, className }: { live: any; className?: string }) {
+  return (
+    <span className={`pro-initials ${className || ''}`}>
+      {live.doctorAvatar ? <img src={live.doctorAvatar} alt="" /> : initialsOf(live.doctorName)}
+    </span>
+  );
+}
+
+function CredentialRow({ live }: { live: any }) {
+  const parts: string[] = [];
+  if (live.doctorCedulaStatus === 'rejected' && live.doctorCedulaRejectionReason) parts.push(`Cédula: ${live.doctorCedulaRejectionReason}`);
+  if (live.doctorCofeprisStatus === 'rejected' && live.doctorCofeprisRejectionReason) parts.push(`COFEPRIS: ${live.doctorCofeprisRejectionReason}`);
+  if (parts.length === 0 && (live.doctorCedulaStatus === 'rejected' || live.doctorCofeprisStatus === 'rejected')) {
+    parts.push('Credencial rechazada (sin motivo registrado)');
+  }
+  return (
+    <>
+      {/* Credenciales verificadas con estado — SIEMPRE visibles (cumplimiento). */}
+      <div className="flex flex-wrap gap-1 mt-2">
+        <CredentialStatusBadge type="cedula" status={live.doctorCedulaStatus} value={live.doctorCedula} rejectionReason={live.doctorCedulaRejectionReason} size="xs" />
+        <CredentialStatusBadge type="cofepris" status={live.doctorCofeprisStatus} value={live.doctorCofepris} rejectionReason={live.doctorCofeprisRejectionReason} size="xs" />
+      </div>
+      {parts.length > 0 && (
+        <p className="text-[10px] text-red-200 mt-1 line-clamp-2 flex items-start gap-1">
+          <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+          <span>{parts.join(' · ')}</span>
+        </p>
+      )}
+    </>
+  );
+}
+
+function LiveCardPro({ live, isPremiumSub, t }: { live: any; isPremiumSub: boolean; t: (k: string) => string }) {
+  return (
+    <div className="pro-live-card h-full">
+      <Link to={`/live/${live.id}`} className="pro-live-media block" aria-label={live.title}>
+        <LiveMedia live={live} />
+        <div className="pro-live-shade" />
+        <span className="pro-live-badge"><Radio /> {t('lives.liveBadge')}</span>
+        <span className="pro-live-views"><Eye /> {fill(t('pro.lives.watching'), { n: (live.viewerCount ?? 0).toLocaleString() })}</span>
+        <div className="pro-live-title">{live.title}</div>
+      </Link>
+      <div className="pro-live-body">
+        <div className="pro-live-doc">
+          <DoctorAvatar live={live} />
+          <span className="min-w-0 flex items-center gap-1 flex-1">
+            <b>{live.doctorName}</b>
+            <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+            <ProfileCategoryMark userId={live.doctorId} size="sm" className="flex-shrink-0" />
+            <AuthorRoleTag userId={live.doctorId} className="flex-shrink-0" />
+          </span>
+          <span className="spec hidden min-[400px]:inline">{live.specialty}</span>
+        </div>
+        <div className="pro-live-meta">
+          <span className="min-[400px]:hidden">{live.specialty}</span>
+          <span className="min-[400px]:hidden sep">|</span>
+          <span>{t('pro.lives.freeAccess')}</span>
+          {isPremiumSub && (
+            <>
+              <span className="sep">|</span>
+              <span className="inline-flex items-center gap-1"><Crown className="w-3 h-3" /> {t('lives.earlyAccess')}</span>
+            </>
+          )}
+        </div>
+        {live.location && <div className="pro-live-loc">📍 {live.location}</div>}
+        <ContentRating targetType="live" targetId={live.id} ownerId={live.doctorId} compact className="mt-1.5" />
+        <CredentialRow live={live} />
+      </div>
+    </div>
+  );
+}
+
+function SideLiveItem({ live, t }: { live: any; t: (k: string) => string }) {
+  return (
+    <Link to={`/live/${live.id}`} className="pro-side-item">
+      <div className="pro-side-thumb">
+        <LiveMedia live={live} />
+        <span className="pro-live-badge"><Radio /> {t('lives.liveBadge')}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="pro-side-views"><Eye /> {fill(t('pro.lives.watching'), { n: (live.viewerCount ?? 0).toLocaleString() })}</span>
+        <div className="pro-side-title">{live.title}</div>
+        <div className="pro-side-sub">
+          <DoctorAvatar live={live} className="w-5 h-5 text-[9px]" />
+          <span className="truncate font-semibold text-white">{live.doctorName}</span>
+          <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
+          <span className="truncate">{live.specialty}</span>
+        </div>
+        <div className="pro-side-sub"><span>{t('pro.lives.freeAccess')}</span></div>
+      </div>
+    </Link>
+  );
+}
 
 export default function LivesGrid() {
   const { lives, isLoading, refreshLives, credentialsLoadError, credentialsRetrying, retryCredentials } = useLives();
   const { data: interests = [] } = useUserInterests();
-  const { role, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { role } = useAuth();
+  const { t, language } = useLanguage();
   const { getSubscription } = useSubscriptions();
   const { toggles } = useSiteToggles();
+  const { availabilities } = useDoctorAvailability();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const view: 'featured' | 'grid' = searchParams.get('vista') === 'directo' ? 'featured' : 'grid';
+  const setView = (v: 'featured' | 'grid') => {
+    const next = new URLSearchParams(searchParams);
+    if (v === 'featured') next.set('vista', 'directo'); else next.delete('vista');
+    setSearchParams(next);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const [query, setQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  // Filtros por membrete del doctor: país / universidad / hospital ('' = todos) — cliente 2026-07-15
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('');
   const [selectedHospital, setSelectedHospital] = useState('');
-  // Pestaña por tipo de autor (cliente 2026-08-28): los lives de médicos y de
-  // residentes se ven en la MISMA parrilla, con un filtro para separarlos.
   const [authorFilter, setAuthorFilter] = useState<'all' | 'doctor' | 'resident'>('all');
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
 
-  // Force a fresh fetch on mount so credential fields are populated
-  // even if the cache was filled before this version was deployed.
   useEffect(() => {
     refreshLives();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeLives = lives.filter(l => l.status === 'live').slice(0, 20);
-
-  // Extract unique tags and cities from active lives (las especialidades se
-  // derivan más abajo como liveSpecialties, ya ordenadas y sin vacíos).
   const allTags = [...new Set(activeLives.flatMap(l => l.tags || []))];
-  const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))];
-
-  // Campos del membrete de cada doctor (país/universidad/hospital) para el MATCHING de filtros
+  const allCities = [...new Set(activeLives.map(l => (l as any).location).filter(Boolean))] as string[];
   const doctorFields = useDoctorFilterFields(activeLives.map(l => l.doctorId));
-
-  // Categoría de perfil y rol (médico / residente) de cada autor — 1 llamada.
   const authorCats = useProfileCategories(activeLives.map(l => l.doctorId));
   const residentLiveCount = activeLives.filter(l => authorCats[l.doctorId]?.authorRole === 'resident').length;
   const doctorLiveCount = activeLives.filter(l => authorCats[l.doctorId]?.authorRole === 'doctor').length;
   const showAuthorTabs = residentLiveCount > 0 && doctorLiveCount > 0;
 
-  // Opciones de filtro derivadas SOLO de los lives activos (cliente 16-jul-2026):
-  // los filtros se activan únicamente cuando hay transmisiones y muestran solo lo
-  // que de verdad está al aire — nada de dropdowns vacíos con 0 lives.
   const liveSpecialties = [...new Set(activeLives.map(l => l.specialty).filter(Boolean))].sort() as string[];
   const liveCountries = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.country).filter(Boolean))].sort() as string[];
   const liveUniversities = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.university).filter(Boolean))].sort() as string[];
   const liveHospitals = [...new Set(activeLives.map(l => doctorFields[l.doctorId]?.practiceHospital).filter(Boolean))].sort() as string[];
-  const anyFilterActive = !!(selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital);
-  const hasAnyFilterOption =
-    liveSpecialties.length > 1 || liveCountries.length > 0 || liveUniversities.length > 0 ||
-    liveHospitals.length > 0 || allTags.length > 0 || allCities.length > 0;
+  const advancedFilterActive = !!(selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital);
+  const anyFilterActive = !!(query || selectedSpecialty || advancedFilterActive || authorFilter !== 'all');
+  const hasAdvancedOptions = liveCountries.length > 0 || liveUniversities.length > 0 || liveHospitals.length > 0 || allTags.length > 0 || allCities.length > 0;
+
   const clearAllFilters = () => {
+    setQuery('');
     setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null);
     setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital('');
     setAuthorFilter('all');
   };
 
-  // Filter lives
-  const filteredLives = activeLives.filter(l => {
-    if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
-    if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
-    if (selectedCity && (l as any).location !== selectedCity) return false;
-    if (selectedCountry && doctorFields[l.doctorId]?.country !== selectedCountry) return false;
-    if (selectedUniversity && doctorFields[l.doctorId]?.university !== selectedUniversity) return false;
-    if (selectedHospital && doctorFields[l.doctorId]?.practiceHospital !== selectedHospital) return false;
-    if (authorFilter !== 'all' && authorCats[l.doctorId]?.authorRole !== authorFilter) return false;
-    return true;
-  });
-
-  // Recomendación (cliente 2026-06-29): cuando el usuario NO eligió un filtro
-  // manual, priorizamos los lives afines a lo que ha buscado (sus intereses).
-  if (!selectedSpecialty && !selectedTag && !selectedCity && !selectedCountry && !selectedUniversity && !selectedHospital && interests.length) {
-    filteredLives.sort((a, b) =>
-      interestScore(`${b.title} ${b.specialty}`, interests) -
-      interestScore(`${a.title} ${a.specialty}`, interests)
-    );
-  }
-
-  // Track known IDs to detect new ones for animation
-  const knownIdsRef = useRef<Set<string>>(new Set());
-  const newIdsRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const currentIds = new Set(activeLives.map(l => l.id));
-    const freshIds = new Set<string>();
-    currentIds.forEach(id => {
-      if (!knownIdsRef.current.has(id)) freshIds.add(id);
+  const filteredLives = useMemo(() => {
+    const q = norm(query.trim());
+    const list = activeLives.filter(l => {
+      if (selectedSpecialty && l.specialty !== selectedSpecialty) return false;
+      if (selectedTag && !(l.tags || []).includes(selectedTag)) return false;
+      if (selectedCity && (l as any).location !== selectedCity) return false;
+      if (selectedCountry && doctorFields[l.doctorId]?.country !== selectedCountry) return false;
+      if (selectedUniversity && doctorFields[l.doctorId]?.university !== selectedUniversity) return false;
+      if (selectedHospital && doctorFields[l.doctorId]?.practiceHospital !== selectedHospital) return false;
+      if (authorFilter !== 'all' && authorCats[l.doctorId]?.authorRole !== authorFilter) return false;
+      if (q) {
+        const hay = norm(`${l.title} ${l.doctorName} ${l.specialty} ${(l.tags || []).join(' ')} ${(l as any).location || ''}`);
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
-    newIdsRef.current = freshIds;
-    knownIdsRef.current = currentIds;
-  }, [activeLives]);
+    if (!anyFilterActive && interests.length) {
+      list.sort((a, b) => interestScore(`${b.title} ${b.specialty}`, interests) - interestScore(`${a.title} ${a.specialty}`, interests));
+    }
+    return list;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLives, query, selectedSpecialty, selectedTag, selectedCity, selectedCountry, selectedUniversity, selectedHospital, authorFilter, doctorFields, authorCats, interests]);
+
+  const broadcastingDoctors = new Set(activeLives.map(l => l.doctorId)).size;
+  const upcomingLives = useMemo(() => {
+    const nowMs = Date.now();
+    return availabilities
+      .filter(a => a.type === 'live' && a.scheduledAt.getTime() > nowMs)
+      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+  }, [availabilities]);
+  const tz = tzShort(language);
+
+  const canGoLive =
+    (role === 'doctor' && toggles.enable_lives_doctors !== false) ||
+    (role === 'resident' && toggles.enable_lives_residents === true);
+
+  const featured = filteredLives[0];
+  const others = filteredLives.slice(1);
+
+  const broadcastingText =
+    activeLives.length === 0
+      ? t('pro.lives.noneBroadcasting')
+      : broadcastingDoctors === 1
+        ? t('pro.lives.broadcastingOne')
+        : fill(t('pro.lives.broadcasting'), { n: broadcastingDoctors });
+
+  const searchAndChips = (
+    <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+      <div className="pro-search lg:max-w-[560px] lg:flex-1">
+        <Search />
+        <input
+          type="search"
+          className="bg-white"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={t('pro.lives.searchPlaceholder')}
+          aria-label={t('pro.lives.searchPlaceholder')}
+          enterKeyHint="search"
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery('')} aria-label={t('pro.lives.clearSearch')} className="pro-kebab w-7 h-7"><X /></button>
+        )}
+      </div>
+      <div className="pro-chip-row lg:flex-1">
+        <button type="button" className={`pro-chip ${!selectedSpecialty ? 'is-active' : ''}`} onClick={() => setSelectedSpecialty(null)}>{t('pro.lives.all')}</button>
+        {liveSpecialties.map(s => (
+          <button key={s} type="button" className={`pro-chip ${selectedSpecialty === s ? 'is-active' : ''}`} onClick={() => setSelectedSpecialty(selectedSpecialty === s ? null : s)}>{s}</button>
+        ))}
+        {hasAdvancedOptions && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" className={`pro-chip ${advancedFilterActive ? 'is-active' : ''}`}><SlidersHorizontal className="w-3.5 h-3.5" /> {t('pro.lives.filters')}</button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[min(92vw,420px)] p-3 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {liveCountries.length > 0 && (
+                  <SearchableFilter label={t('doctorFilters.countryLabel')} options={liveCountries} value={selectedCountry} onChange={setSelectedCountry} placeholder={t('doctorFilters.countryLabel')} emptyLabel={t('recordingsGridPage.filterNoResults')} icon={Globe} allLabel={t('doctorFilters.countryPlaceholder')} />
+                )}
+                {liveUniversities.length > 0 && (
+                  <SearchableFilter label={t('doctorFilters.universityLabel')} options={liveUniversities} value={selectedUniversity} onChange={setSelectedUniversity} placeholder={t('doctorFilters.universityLabel')} emptyLabel={t('recordingsGridPage.filterNoResults')} icon={GraduationCap} allLabel={t('doctorFilters.universityPlaceholder')} />
+                )}
+                {liveHospitals.length > 0 && (
+                  <SearchableFilter label={t('doctorFilters.hospitalLabel')} options={liveHospitals} value={selectedHospital} onChange={setSelectedHospital} placeholder={t('doctorFilters.hospitalLabel')} emptyLabel={t('recordingsGridPage.filterNoResults')} icon={Building2} allLabel={t('doctorFilters.hospitalPlaceholder')} />
+                )}
+              </div>
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {allTags.map(tag => (
+                    <button key={tag} type="button" onClick={() => setSelectedTag(selectedTag === tag ? null : tag)} className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selectedTag === tag ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border'}`}>#{tag}</button>
+                  ))}
+                </div>
+              )}
+              {allCities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {allCities.map(city => (
+                    <button key={city} type="button" onClick={() => setSelectedCity(selectedCity === city ? null : city)} className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selectedCity === city ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border'}`}>📍 {city}</button>
+                  ))}
+                </div>
+              )}
+              {advancedFilterActive && (
+                <button type="button" onClick={() => { setSelectedTag(null); setSelectedCity(null); setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital(''); }} className="text-xs font-semibold text-primary hover:underline">{t('lives.clearFilters')}</button>
+              )}
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+    </div>
+  );
+
+  const authorTabs = showAuthorTabs && (
+    <div className="pro-chip-row mt-3" aria-label={t('livesAuthorTabs.ariaLabel')}>
+      {([
+        { key: 'all' as const, label: t('livesAuthorTabs.all'), count: activeLives.length },
+        { key: 'doctor' as const, label: t('livesAuthorTabs.doctors'), count: doctorLiveCount },
+        { key: 'resident' as const, label: t('livesAuthorTabs.residents'), count: residentLiveCount },
+      ]).map(tab => (
+        <button key={tab.key} type="button" aria-pressed={authorFilter === tab.key} onClick={() => setAuthorFilter(tab.key)} className={`pro-chip ${authorFilter === tab.key ? 'is-active' : ''}`}>
+          {tab.label} <span className="opacity-70">({tab.count})</span>
+        </button>
+      ))}
+    </div>
+  );
+
+  const credentialsBanner = (credentialsLoadError || credentialsRetrying) && filteredLives.length > 0 && (
+    <div className="mb-3 p-2 rounded-xl bg-white/90 border border-destructive/30 flex items-center justify-between gap-2 text-xs">
+      {credentialsRetrying ? (
+        <span className="flex items-center gap-2 text-muted-foreground"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Recargando credenciales…</span>
+      ) : (
+        <>
+          <span className="text-destructive flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> No se pudieron cargar todas las credenciales</span>
+          <button type="button" onClick={retryCredentials} disabled={credentialsRetrying} className="pro-btn pro-btn-outline pro-btn-xs"><RefreshCw className="w-3 h-3" /> Reintentar</button>
+        </>
+      )}
+    </div>
+  );
+
+  const emptyState = (
+    <div className="pro-card pro-card-pad bg-card text-center py-10">
+      <Video className="w-12 h-12 mx-auto pro-muted opacity-40 mb-3" />
+      <h3 className="text-base font-bold pro-ink mb-1">{anyFilterActive ? t('lives.noLivesFiltered') : t('lives.noLives')}</h3>
+      <p className="pro-muted text-sm">{anyFilterActive ? t('lives.noLivesFilteredDesc') : t('lives.noLivesDescription')}</p>
+      {anyFilterActive && (
+        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm mt-4" onClick={clearAllFilters}>{t('lives.clearFilters')}</button>
+      )}
+    </div>
+  );
+
+  const skeletonGrid = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      {[...Array(8)].map((_, i) => (
+        <div key={i} className="pro-live-card">
+          <div className="pro-live-media animate-pulse" />
+          <div className="pro-live-body space-y-2">
+            <div className="h-3.5 rounded bg-white/20 animate-pulse" />
+            <div className="h-3 rounded bg-white/10 animate-pulse w-2/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const upcomingSection = upcomingLives.length > 0 && (
+    <section className="mt-2">
+      <div className="pro-section-title">
+        <span>{t('pro.lives.upcoming')}</span>
+        {upcomingLives.length > 4 && (
+          <button type="button" className="pro-link" onClick={() => setShowAllUpcoming(v => !v)}>
+            {showAllUpcoming ? t('pro.lives.lessCalendar') : t('pro.lives.calendar')} <ArrowRight />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {(showAllUpcoming ? upcomingLives : upcomingLives.slice(0, 4)).map(a => (
+          <Link key={a.id} to={`/doctor/${a.doctorId}`} className="pro-upcoming">
+            <span className="icon"><CalendarDays className="w-5 h-5" /></span>
+            <span className="min-w-0 flex-1">
+              <b>{a.title}</b>
+              {a.doctorName && <span>{a.doctorName}</span>}
+              <span>📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+
+  const header = (
+    <div className="pro-page-head">
+      <div className="min-w-0">
+        <h1 className="pro-page-title">
+          <span className="pro-live-dot"><Radio className="w-5 h-5" style={{ color: 'var(--pro-live)' }} /></span>
+          <span className="truncate">{t('pro.lives.liveNow')}</span>
+        </h1>
+        <p className="pro-page-sub">{broadcastingText}</p>
+      </div>
+      <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+        {view === 'grid' ? (
+          <button type="button" className="pro-btn pro-btn-ghost flex-1 sm:flex-none" onClick={() => setView('featured')}>
+            <Compass /> {t('pro.lives.exploreAll')}
+          </button>
+        ) : (
+          <button type="button" className="pro-btn pro-btn-ghost flex-1 sm:flex-none" onClick={() => setView('grid')}>
+            {t('pro.lives.seeAllLives')} <ArrowRight />
+          </button>
+        )}
+        {canGoLive && (
+          <Link to="/doctor/go-live" className="pro-btn pro-btn-live flex-1 sm:flex-none">
+            <Plus /> {t('pro.lives.goLive')}
+          </Link>
+        )}
+        {role === 'visitor' && (
+          <>
+            <span className="pro-btn pro-btn-ghost flex-1 sm:flex-none cursor-default"><Eye /> <span className="truncate">{t('lives.viewerMode')}</span></span>
+            <Link to="/login" className="pro-btn pro-btn-white flex-1 sm:flex-none"><LogIn /> {t('nav.login')}</Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <MainLayout>
       <AdInterstitial />
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Ad Banner */}
+      <div className="pro-container pro-page">
         <AdBanner placementName="lives_top_banner" className="mb-4" />
+        {header}
 
-        {isAuthenticated && role !== 'visitor' && (
-          <UpcomingAvailabilities />
-        )}
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <Radio className="w-5 h-5 sm:w-6 sm:h-6 text-live animate-pulse" />
-              {t('lives.title')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {filteredLives.length} de {activeLives.length} {t('lives.activeLives')}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {((role === 'doctor' && toggles.enable_lives_doctors !== false) ||
-              (role === 'resident' && toggles.enable_lives_residents === true)) && (
-              <Link to="/doctor/go-live">
-                <Button className="gap-2 bg-live hover:bg-live/90 text-white">
-                  <Plus className="w-4 h-4" />
-                  {t('livePlayer.goLive')}
-                </Button>
-              </Link>
-            )}
-            {role === 'visitor' && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-secondary text-secondary-foreground rounded-lg px-3 sm:px-4 py-2 shadow-md ring-1 ring-secondary/40">
-                  <Eye className="w-4 h-4" />
-                  <span className="text-xs sm:text-sm font-semibold">
-                    {t('lives.viewerMode')}
-                  </span>
+        {view === 'featured' ? (
+          <>
+            {isLoading && activeLives.length === 0 ? (
+              <div className="pro-hero"><div className="pro-hero-media animate-pulse" /></div>
+            ) : featured ? (
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="pro-hero">
+                  <div className="pro-hero-media">
+                    <LiveMedia live={featured} />
+                    <div className="pro-hero-shade" />
+                    <span className="pro-live-badge sm:!top-4 sm:!left-4"><Radio /> {t('lives.liveBadge')}</span>
+                    <span className="pro-live-views sm:!top-4 sm:!right-4"><Eye /> {fill(t('pro.lives.watching'), { n: (featured.viewerCount ?? 0).toLocaleString() })}</span>
+                    <div className="pro-hero-content">
+                      <h2 className="pro-hero-title">{featured.title}</h2>
+                      <div className="pro-hero-doc">
+                        <DoctorAvatar live={featured} />
+                        <span className="inline-flex items-center gap-1.5 min-w-0">
+                          <b className="truncate">{featured.doctorName}</b>
+                          <DoctorBadgeIcon userId={featured.doctorId} size="sm" className="flex-shrink-0" />
+                          <ProfileCategoryMark userId={featured.doctorId} size="sm" className="flex-shrink-0" />
+                        </span>
+                        <span className="spec">· {featured.specialty}</span>
+                      </div>
+                      <div className="pro-hero-doc !mt-1.5 text-[13px]">
+                        <span className="meta">{t('pro.lives.freeAccess')}</span>
+                        {getSubscription(featured.doctorId)?.tier === 'premium' && (
+                          <span className="meta inline-flex items-center gap-1">| <Crown className="w-3.5 h-3.5" /> {t('lives.earlyAccess')}</span>
+                        )}
+                      </div>
+                      <div className="pro-hero-cta">
+                        <Link to={`/live/${featured.id}`} className="pro-btn pro-btn-teal">{t('pro.lives.enter')} <ArrowRight /></Link>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <Link to="/login">
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <LogIn className="w-4 h-4" />
-                    {t('nav.login')}
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Médicos / Residentes — la misma parrilla, con pestañas para separarlos
-            (cliente 2026-08-28). Sólo aparecen cuando hay lives de los dos tipos:
-            si sólo emiten médicos, no se enseña una pestaña vacía. */}
-        {showAuthorTabs && (
-          <div
-            className="mb-4 flex flex-wrap items-center gap-2"
-            role="tablist"
-            aria-label={t('livesAuthorTabs.ariaLabel')}
-          >
-            {([
-              { key: 'all' as const, label: t('livesAuthorTabs.all'), count: activeLives.length },
-              { key: 'doctor' as const, label: t('livesAuthorTabs.doctors'), count: doctorLiveCount },
-              { key: 'resident' as const, label: t('livesAuthorTabs.residents'), count: residentLiveCount },
-            ]).map(tab => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={authorFilter === tab.key}
-                onClick={() => setAuthorFilter(tab.key)}
-                className={
-                  'min-h-[40px] rounded-full border px-4 py-2 text-sm font-medium transition-colors ' +
-                  (authorFilter === tab.key
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-card text-muted-foreground hover:bg-muted')
-                }
-              >
-                {tab.label}
-                <span className="ml-1.5 opacity-70">({tab.count})</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* FILTROS — solo cuando HAY lives activos y hay algo por lo que filtrar
-            (cliente 16-jul-2026). Fila compacta y ordenada de dropdowns con
-            etiqueta de categoría clara (País · Especialidad · Universidad ·
-            Hospital); en móvil 2 columnas, en desktop en línea. */}
-        {activeLives.length > 0 && hasAnyFilterOption && (
-          <div className="mb-4 sm:mb-6 rounded-xl border border-border bg-card/80 backdrop-blur-sm p-3 sm:p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2.5">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                {t('doctorFilters.filtersLabel')}
-              </span>
-              {anyFilterActive && (
-                <button
-                  onClick={clearAllFilters}
-                  className="ml-auto text-[11px] sm:text-xs font-medium text-primary hover:underline underline-offset-2"
-                >
-                  {t('lives.clearFilters')}
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-              {liveSpecialties.length > 1 && (
-                <div className="flex min-w-0 sm:w-44">
-                  <SearchableFilter
-                    label={t('doctorFilters.specialtyLabel')}
-                    options={liveSpecialties}
-                    value={selectedSpecialty || ''}
-                    onChange={(v) => setSelectedSpecialty(v || null)}
-                    placeholder={t('doctorFilters.specialtyLabel')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Stethoscope}
-                    allLabel={t('doctorFilters.specialtyPlaceholder')}
-                  />
-                </div>
-              )}
-              {liveCountries.length > 0 && (
-                <div className="flex min-w-0 sm:w-44">
-                  <SearchableFilter
-                    label={t('doctorFilters.countryLabel')}
-                    options={liveCountries}
-                    value={selectedCountry}
-                    onChange={setSelectedCountry}
-                    placeholder={t('doctorFilters.countryLabel')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Globe}
-                    allLabel={t('doctorFilters.countryPlaceholder')}
-                  />
-                </div>
-              )}
-              {liveUniversities.length > 0 && (
-                <div className="flex min-w-0 sm:w-44">
-                  <SearchableFilter
-                    label={t('doctorFilters.universityLabel')}
-                    options={liveUniversities}
-                    value={selectedUniversity}
-                    onChange={setSelectedUniversity}
-                    placeholder={t('doctorFilters.universityLabel')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={GraduationCap}
-                    allLabel={t('doctorFilters.universityPlaceholder')}
-                  />
-                </div>
-              )}
-              {liveHospitals.length > 0 && (
-                <div className="flex min-w-0 sm:w-44">
-                  <SearchableFilter
-                    label={t('doctorFilters.hospitalLabel')}
-                    options={liveHospitals}
-                    value={selectedHospital}
-                    onChange={setSelectedHospital}
-                    placeholder={t('doctorFilters.hospitalLabel')}
-                    emptyLabel={t('recordingsGridPage.filterNoResults')}
-                    icon={Building2}
-                    allLabel={t('doctorFilters.hospitalPlaceholder')}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Tags (#) como chips secundarios, solo si existen */}
-            {allTags.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x mt-2.5">
-                {allTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                    className={`flex-shrink-0 snap-start px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                      selectedTag === tag
-                        ? 'bg-accent text-accent-foreground border-accent'
-                        : 'bg-muted/50 text-muted-foreground border-border hover:border-accent/50'
-                    }`}
-                  >
-                    #{tag}
+                <aside className="pro-panel-dark flex flex-col min-w-0">
+                  <h3 className="pro-card-title text-white mb-2"><span className="truncate">{t('pro.lives.alsoLive')}</span></h3>
+                  <div className="flex-1">
+                    {others.length === 0 ? (
+                      <p className="text-sm text-white/75 py-2">{t('pro.lives.noOthers')}</p>
+                    ) : (
+                      others.slice(0, 3).map(l => <SideLiveItem key={l.id} live={l} t={t} />)
+                    )}
+                  </div>
+                  <button type="button" className="pro-btn pro-btn-ghost w-full mt-3" onClick={() => setView('grid')}>
+                    {fill(t('pro.lives.seeAllN'), { n: filteredLives.length })} <ArrowRight />
                   </button>
-                ))}
-              </div>
-            )}
-
-            {/* Ciudades como chips secundarios, solo si existen */}
-            {allCities.length > 0 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x mt-2">
-                {allCities.map(city => (
-                  <button
-                    key={city}
-                    onClick={() => setSelectedCity(selectedCity === city ? null : city)}
-                    className={`flex-shrink-0 snap-start flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                      selectedCity === city
-                        ? 'bg-info text-info-foreground border-info'
-                        : 'bg-muted/50 text-muted-foreground border-border hover:border-info/50'
-                    }`}
-                  >
-                    📍 {city}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Credentials load error / retrying banner */}
-        {(credentialsLoadError || credentialsRetrying) && filteredLives.length > 0 && (
-          <div className="mb-3 p-2 rounded-md bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2">
-            {credentialsRetrying ? (
-              <div className="flex items-center gap-2 flex-1">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                <div className="flex-1 space-y-1">
-                  <div className="h-2 bg-muted/60 rounded animate-pulse w-1/2" />
-                  <div className="h-2 bg-muted/40 rounded animate-pulse w-1/3" />
-                </div>
+                </aside>
               </div>
             ) : (
-              <>
-                <span className="text-xs text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  No se pudieron cargar todas las credenciales
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={retryCredentials}
-                  disabled={credentialsRetrying}
-                  className="h-7 text-xs"
-                >
-                  <RefreshCw className={`w-3 h-3 mr-1 ${credentialsRetrying ? 'animate-spin' : ''}`} />
-                  {credentialsRetrying ? 'Recargando…' : 'Reintentar'}
-                </Button>
-              </>
+              emptyState
             )}
-          </div>
-        )}
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {[...Array(8)].map((_, i) => (
-              <Card key={i} className="overflow-hidden">
-                <div className="aspect-video bg-muted animate-pulse" />
-                <CardContent className="p-3 sm:p-4 space-y-2">
-                  <div className="h-4 bg-muted animate-pulse rounded" />
-                  <div className="h-3 bg-muted animate-pulse rounded w-2/3" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredLives.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            <AnimatePresence mode="sync">
-              {filteredLives.map((live) => {
-                const sub = getSubscription(live.doctorId);
-                const isPremiumSub = sub?.tier === 'premium';
-                const isNew = newIdsRef.current.has(live.id);
-                
-                return (
-                  <motion.div
-                    key={live.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  >
-                    <LiveCard live={live} isPremiumSub={isPremiumSub} isNew={isNew} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <Card className="p-8 sm:p-12 text-center">
-            <Video className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
-              {selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital ? t('lives.noLivesFiltered') : t('lives.noLives')}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital
-                ? t('lives.noLivesFilteredDesc')
-                : t('lives.noLivesDescription')}
-            </p>
-            {(selectedSpecialty || selectedTag || selectedCity || selectedCountry || selectedUniversity || selectedHospital) && (
-              <Button variant="outline" className="mt-3" onClick={() => { setSelectedSpecialty(null); setSelectedTag(null); setSelectedCity(null); setSelectedCountry(''); setSelectedUniversity(''); setSelectedHospital(''); }}>
-                {t('lives.clearFilters')}
-              </Button>
+            <div className="mt-4">{searchAndChips}</div>
+            {authorTabs}
+            <div className="mt-3">{credentialsBanner}</div>
+
+            {filteredLives.length > 0 && (
+              <section>
+                <div className="pro-section-title">
+                  <span>{t('pro.lives.allLives')}</span>
+                  <button type="button" className="pro-link" onClick={() => setView('grid')}>{t('pro.lives.seeAll')} <ArrowRight /></button>
+                </div>
+                <div className="pro-rail">
+                  {filteredLives.map(live => (
+                    <div key={live.id}>
+                      <LiveCardPro live={live} isPremiumSub={getSubscription(live.doctorId)?.tier === 'premium'} t={t} />
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
-          </Card>
+            {featured && filteredLives.length === 0 && emptyState}
+
+            {upcomingSection}
+          </>
+        ) : (
+          <>
+            {searchAndChips}
+            {authorTabs}
+            <div className="mt-4">{credentialsBanner}</div>
+
+            {isLoading && activeLives.length === 0 ? (
+              skeletonGrid
+            ) : filteredLives.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                {filteredLives.map(live => (
+                  <LiveCardPro key={live.id} live={live} isPremiumSub={getSubscription(live.doctorId)?.tier === 'premium'} t={t} />
+                ))}
+              </div>
+            ) : (
+              emptyState
+            )}
+
+            {upcomingSection}
+          </>
         )}
 
         {role === 'visitor' && (
-          <Card className="mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-info/5 border-primary/20">
+          <div className="pro-card pro-card-pad bg-card mt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Lock className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">{t('lives.wantMore')}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <Lock className="w-5 h-5" style={{ color: 'var(--pro-teal)' }} />
+                  <h3 className="font-bold pro-ink">{t('lives.wantMore')}</h3>
                 </div>
-                <p className="text-muted-foreground text-sm">
-                  {t('lives.registerPrompt')}
-                </p>
+                <p className="pro-muted text-sm">{t('lives.registerPrompt')}</p>
               </div>
-              <Link to="/login">
-                <Button>{t('lives.createAccount')}</Button>
-              </Link>
+              <Link to="/login" className="pro-btn pro-btn-teal">{t('lives.createAccount')}</Link>
             </div>
-          </Card>
+          </div>
         )}
 
-        {toggles.show_news_section && <NewsFeed />}
+        {toggles.show_news_section && <div className="mt-6"><NewsFeed /></div>}
       </div>
 
-      {/* Admin-only debug panel for credential cache visibility */}
       <LivesDebugPanel />
     </MainLayout>
   );

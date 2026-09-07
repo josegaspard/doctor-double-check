@@ -121,7 +121,7 @@ export default function BookAppointment() {
       // → esas queries .single() daban 406 y rompían TODO el booking. Usamos el RPC
       // público SECURITY DEFINER (mismo que usa /doctor/:id) que devuelve el perfil
       // público del doctor APROBADO con fee, horarios y datos de agenda.
-      const [{ data: docRows }, { data: avs }, { data: appts }] = await Promise.all([
+      const [{ data: docRows }, { data: avs }, { data: appts }, { data: blocks }] = await Promise.all([
         supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId }),
         supabase
           .from('doctor_availability')
@@ -132,7 +132,24 @@ export default function BookAppointment() {
           .order('scheduled_at', { ascending: true })
           .limit(50),
         supabase.from('appointments').select('availability_id, scheduled_at').eq('doctor_id', doctorId).in('status', ['requested', 'confirmed']),
+        // Tramos que el médico BLOQUEÓ desde su agenda profesional (7-sep-2026):
+        // ningún turno generado por horario de atención puede caer dentro.
+        supabase
+          .from('doctor_availability')
+          .select('scheduled_at, duration_minutes')
+          .eq('doctor_id', doctorId)
+          .eq('type', 'blocked')
+          .in('status', ['scheduled', 'confirmed'])
+          .gte('scheduled_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
       ]);
+      const blockedRanges = ((blocks as any[]) || []).map((b) => {
+        const s = new Date(b.scheduled_at).getTime();
+        return [s, s + (Number(b.duration_minutes) || 60) * 60000] as [number, number];
+      });
+      const isBlocked = (iso: string) => {
+        const ms = new Date(iso).getTime();
+        return blockedRanges.some(([s, e]) => ms >= s && ms < e);
+      };
 
       const dp = (docRows as any[])?.[0] ?? null;
 
@@ -161,7 +178,7 @@ export default function BookAppointment() {
         bookedTimes,
         new Date(),
       ).filter((s) => !discreteTimes.has(new Date(s.scheduled_at).toISOString()));
-      const merged = [...discreteSlots, ...officeSlots].sort(
+      const merged = [...discreteSlots, ...officeSlots].filter((s) => !isBlocked(s.scheduled_at)).sort(
         (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
       );
       setSlots(merged);
