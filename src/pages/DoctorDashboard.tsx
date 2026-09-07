@@ -6,11 +6,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useVault } from '@/contexts/VaultContext';
+import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
 import { useDoctorPatients } from '@/hooks/useDoctorPatients';
 import { useDoctorAgenda, AgendaEvent } from '@/hooks/useDoctorAgenda';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -38,6 +41,11 @@ import {
   BookOpen,
   Settings,
   Folder,
+  Megaphone,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  PlayCircle,
 } from 'lucide-react';
 import { fill, initialsOf, fmtTime, dayLabel, money, isSameDay, whenLabel } from '@/lib/proFormat';
 import { EmailHistoryCard } from '@/components/doctor/EmailHistoryCard';
@@ -50,12 +58,22 @@ import { FundHoldsCard } from '@/components/doctor/FundHoldsCard';
 import { DoctorStatsGrid } from '@/components/doctor/DoctorStatsGrid';
 import { DoctorStatusAlert } from '@/components/doctor/DoctorStatusAlert';
 import { DoctorProfileCard } from '@/components/doctor/DoctorProfileCard';
+import { DoctorPatientsList } from '@/components/doctor/DoctorPatientsList';
 import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { DoctorResidentRequests } from '@/components/doctor/DoctorResidentRequests';
 import { MyNotesWidget } from '@/components/doctor/MyNotesWidget';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
 
 const SHOW_INCOME_KEY = 'mm.pro.showIncome';
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] sm:text-xs uppercase tracking-widest font-semibold text-white/80 pl-1">
+      {children}
+    </h3>
+  );
+}
 
 function Kpi({
   icon: Icon,
@@ -95,6 +113,7 @@ export default function DoctorDashboard() {
   const { t, language } = useLanguage();
   const { getSessionsByUser } = useChat();
   const { getAccessibleFiles } = useVault();
+  const { hasCampaigns } = useHasAdCampaigns();
   const { patients } = useDoctorPatients();
   const [now] = useState(() => new Date());
   const rangeStart = useMemo(() => startOfDay(now), [now]);
@@ -104,8 +123,10 @@ export default function DoctorDashboard() {
   const [showAmount, setShowAmount] = useState<boolean>(() => {
     try { return localStorage.getItem(SHOW_INCOME_KEY) !== '0'; } catch { return true; }
   });
-  const [toolsOpen, setToolsOpen] = useState(false);
   const [recordingsCount, setRecordingsCount] = useState(0);
+  const [contentPending, setContentPending] = useState(0);
+  const [canPublishNews, setCanPublishNews] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -114,7 +135,7 @@ export default function DoctorDashboard() {
       try {
         const monthStart = startOfMonth(now);
         const monthEnd = endOfMonth(now);
-        const [txRes, recRes] = await Promise.all([
+        const [txRes, recRes, contentRes, permRes] = await Promise.all([
           supabase
             .from('wallet_transactions')
             .select('amount, created_at')
@@ -124,6 +145,8 @@ export default function DoctorDashboard() {
             .lte('created_at', monthEnd.toISOString())
             .order('created_at', { ascending: true }),
           supabase.from('recordings').select('*', { count: 'exact', head: true }).eq('doctor_id', user.id),
+          supabase.from('doctor_content').select('*', { count: 'exact', head: true }).eq('creator_id', user.id).eq('moderation_status', 'pending'),
+          supabase.from('doctor_profiles').select('can_publish_news').eq('user_id', user.id).single(),
         ]);
         if (!active) return;
         const byDay = new Map<string, number>();
@@ -139,6 +162,8 @@ export default function DoctorDashboard() {
         });
         setMonthEarnings({ total: acc, series });
         if (!recRes.error && recRes.count !== null) setRecordingsCount(recRes.count);
+        if (!contentRes.error && contentRes.count !== null) setContentPending(contentRes.count);
+        if (permRes.data) setCanPublishNews(!!(permRes.data as any)?.can_publish_news);
       } catch (e) {
         console.error('DoctorDashboard load error:', e);
         if (active) setMonthEarnings({ total: 0, series: [] });
@@ -185,6 +210,7 @@ export default function DoctorDashboard() {
   const doctorProfile = user?.doctorProfile;
   const isApproved = doctorProfile?.status === 'approved';
   const isPending = doctorProfile?.status === 'pending';
+  const isRejected = doctorProfile?.status === 'rejected';
 
   const typeLabel = (e: AgendaEvent) => {
     if (e.kind === 'appointment') {
@@ -251,6 +277,13 @@ export default function DoctorDashboard() {
       href: '/doctor/vault',
     });
   }
+  if (contentPending > 0) {
+    pendingItems.push({
+      icon: PlayCircle,
+      text: <span dangerouslySetInnerHTML={{ __html: fill(contentPending === 1 ? t('pro.dashboard.contentReview') : t('pro.dashboard.contentReviewPlural'), { n: `<b>${contentPending}</b>` }) }} />,
+      href: '/doctor/content',
+    });
+  }
 
   return (
     <MainLayout>
@@ -261,9 +294,37 @@ export default function DoctorDashboard() {
             <h1 className="pro-page-title">
               <span className="pro-live-dot"><Radio className="w-5 h-5" style={{ color: 'var(--pro-live)' }} /></span>
               <span className="truncate">{t('pro.dashboard.title')}</span>
-              <DoctorBadgeIcon userId={user?.id} size="md" className="flex-shrink-0" />
             </h1>
-            <p className="pro-page-sub">{t('pro.dashboard.subtitle')}</p>
+            <p className="pro-page-sub">
+              <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
+                <span className="truncate">{t('pro.dashboard.subtitle')} · {t('dashboard.welcome')}, {user?.name?.split(' ')[0]}</span>
+                <DoctorBadgeIcon userId={user?.id} size="md" className="flex-shrink-0" />
+              </span>
+            </p>
+            {/* Insignias de la cabecera anterior: verificado, nivel, pendiente/rechazado */}
+            <div className="pro-badges-row">
+              {isApproved && (
+                <>
+                  <Badge variant="verified" className="gap-1 px-2 py-0.5 text-[10px] sm:text-xs">
+                    <CheckCircle className="w-3 h-3" />
+                    {t('pro.dashboard.verified')}
+                  </Badge>
+                  <DoctorBadge type={getDoctorBadgeType(doctorProfile?.totalConsultations || 0, doctorProfile?.rating || 0, (doctorProfile as any)?.badgeOverride ?? null)} />
+                </>
+              )}
+              {isPending && (
+                <Badge variant="warning" className="gap-1 px-2 py-0.5 text-[10px] sm:text-xs">
+                  <Clock className="w-3 h-3" />
+                  {t('doctorStatus.pending')}
+                </Badge>
+              )}
+              {isRejected && (
+                <Badge variant="destructive" className="gap-1 px-2 py-0.5 text-[10px] sm:text-xs">
+                  <AlertTriangle className="w-3 h-3" />
+                  {t('doctorStatus.rejected')}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none" onClick={() => navigate('/doctor/availability?nueva=consulta')}>
@@ -506,66 +567,175 @@ export default function DoctorDashboard() {
           </section>
         </div>
 
-        {/* Herramientas del panel anterior: todo sigue disponible, plegado */}
-        <Collapsible open={toolsOpen} onOpenChange={setToolsOpen} className="mt-4 sm:mt-5">
-          <CollapsibleTrigger asChild>
-            <button type="button" className="pro-card pro-card-pad bg-card w-full text-left flex items-center gap-3">
-              <span className="pro-icon-box"><Settings /></span>
-              <span className="min-w-0 flex-1">
-                <span className="pro-card-title block">{t('pro.dashboard.moreTools')}</span>
-                <span className="pro-muted text-xs sm:text-sm block truncate">{t('pro.dashboard.moreToolsDesc')}</span>
-              </span>
-              <ChevronDown className={`w-5 h-5 pro-muted transition-transform ${toolsOpen ? 'rotate-180' : ''}`} />
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-3 sm:mt-4">
-            <Tabs defaultValue="overview">
-              <TabsList className="mb-3 sm:mb-4 w-full sm:w-auto grid grid-cols-2 sm:flex">
-                <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">{t('pro.dashboard.overview')}</TabsTrigger>
-                <TabsTrigger value="analytics" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm">
-                  <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  {t('pro.dashboard.analytics')}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="overview" className="space-y-4 sm:space-y-5">
-                <DoctorPatientSearch />
-                <DoctorProfileCard />
-                <DoctorStatsGrid recordingsCount={recordingsCount} vaultFilesCount={vaultFiles.length} rating={doctorProfile?.rating || 0} />
-                <DoctorResidentRequests />
-                <MyNotesWidget />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <EarningsCard />
-                  <FundHoldsCard />
-                </div>
-                <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40" onClick={() => navigate('/doctor/books')}>
-                  <CardContent className="p-3.5 sm:p-5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-sm sm:text-base text-foreground">{t('doctorBooks.dashboardCardTitle')}</h3>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorBooks.dashboardCardDesc')}</p>
-                      </div>
+        {/* ══════════ TODO EL PANEL ANTERIOR, VISIBLE (nada se quita) ══════════ */}
+        <div className="pro-tools-title">
+          <span className="pro-icon-box" style={{ background: 'rgba(255,255,255,.14)' }}><Settings style={{ color: '#fff' }} /></span>
+          <div className="min-w-0">
+            <h2>{t('pro.dashboard.toolsTitle')}</h2>
+            <p>{t('pro.dashboard.toolsDesc')}</p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="overview" className="mb-4 sm:mb-6">
+          <TabsList className="mb-3 sm:mb-5 w-full sm:w-auto grid grid-cols-2 sm:flex" style={hasCampaigns ? { gridTemplateColumns: 'repeat(3, 1fr)' } : undefined}>
+            <TabsTrigger value="overview" className="px-3 sm:px-6 text-xs sm:text-sm">{t('doctorDashboardPage.tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              {t('doctorDashboardPage.tabs.analytics')}
+            </TabsTrigger>
+            {hasCampaigns && (
+              <TabsTrigger value="advertising" className="gap-1.5 px-3 sm:px-6 text-xs sm:text-sm" onClick={() => navigate('/advertiser/dashboard')}>
+                <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                {t('doctorDashboardPage.tabs.advertising')}
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-5 sm:space-y-6">
+            {/* ── BUSCAR PACIENTE (cliente 2026-06-15) ── */}
+            <DoctorPatientSearch />
+
+            {/* ── MI PRÁCTICA ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.myPractice')}</SectionHeader>
+              <DoctorProfileCard />
+              <DoctorStatsGrid
+                recordingsCount={recordingsCount}
+                vaultFilesCount={vaultFiles.length}
+                rating={doctorProfile?.rating || 0}
+              />
+            </section>
+
+            {/* ── SOLICITUDES DE RESIDENTES ── */}
+            <DoctorResidentRequests />
+
+            {/* ── MIS NOTAS ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.myPrivateNotes')}</SectionHeader>
+              <MyNotesWidget />
+            </section>
+
+            {/* ── PACIENTES (lista del panel anterior) ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.patients')}</SectionHeader>
+              <DoctorPatientsList />
+            </section>
+
+            {/* ── FINANZAS ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.finances')}</SectionHeader>
+              <div className="grid gap-3 md:grid-cols-2">
+                <EarningsCard />
+                <FundHoldsCard />
+              </div>
+            </section>
+
+            {/* ── LIBROS Y CURSOS PDF (cliente 2026-07-08) ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorBooks.dashboardSection')}</SectionHeader>
+              <Card
+                className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40"
+                onClick={() => navigate('/doctor/books')}
+              >
+                <CardContent className="p-3.5 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary" />
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    <div>
+                      <h3 className="font-semibold text-sm sm:text-base text-foreground">{t('doctorBooks.dashboardCardTitle')}</h3>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorBooks.dashboardCardDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* ── COMUNICACIONES ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.communications')}</SectionHeader>
+              <div className="grid gap-3 md:grid-cols-2">
+                <EmailStatsCard />
+                <EmailHistoryCard />
+              </div>
+            </section>
+
+            {/* ── CONFIGURACIÓN ── */}
+            <section className="space-y-3">
+              <SectionHeader>{t('doctorDashboardPage.sections.settings')}</SectionHeader>
+              <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
+                <CollapsibleTrigger asChild>
+                  <Card className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-primary/40">
+                    <CardContent className="p-3.5 sm:p-5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Settings className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-sm sm:text-base text-foreground">{t('doctorDashboardPage.settingsCard.title')}</h3>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">{t('doctorDashboardPage.settingsCard.description')}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${configOpen ? 'rotate-180' : ''}`} />
+                    </CardContent>
+                  </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 sm:space-y-4 mt-3">
+                  <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                    <SignatureUpload />
+                  </div>
+                  <EmailTrendsChart />
+                </CollapsibleContent>
+              </Collapsible>
+            </section>
+
+            {/* ── ARCHIVOS DE PACIENTES ── */}
+            {vaultFiles.length > 0 && (
+              <section className="space-y-3">
+                <SectionHeader>{t('doctorDashboardPage.sections.patientFiles')}</SectionHeader>
+                <Card>
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                      {t('dashboard.patientFiles')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {vaultFiles.slice(0, 5).map(file => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-3 p-2.5 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors cursor-pointer"
+                          onClick={() => navigate('/doctor/vault')}
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-background flex items-center justify-center flex-shrink-0">
+                            <Folder className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{file.name}</p>
+                            <p className="text-xs text-muted-foreground">{file.category}</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] flex-shrink-0">{t('roles.patient')}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    {vaultFiles.length > 5 && (
+                      <Button variant="ghost" className="w-full mt-2 text-sm" onClick={() => navigate('/doctor/vault')}>
+                        {t('doctorDashboardPage.viewAll')} ({vaultFiles.length})
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <EmailStatsCard />
-                  <EmailHistoryCard />
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <SignatureUpload />
-                </div>
-                <EmailTrendsChart />
-              </TabsContent>
-              <TabsContent value="analytics">
-                <DoctorAnalytics />
-              </TabsContent>
-            </Tabs>
-          </CollapsibleContent>
-        </Collapsible>
+              </section>
+            )}
+            {canPublishNews && <span className="sr-only">news-publisher</span>}
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <DoctorAnalytics />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );

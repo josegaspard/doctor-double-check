@@ -419,7 +419,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <Link
                   to="/foro"
                   aria-label={t('forum.title')}
-                  className={`hidden md:flex items-center gap-1.5 h-9 px-2.5 rounded-md text-sm font-medium ${
+                  className={`flex items-center gap-1.5 h-9 px-2 sm:px-2.5 rounded-md text-sm font-medium ${
                     location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
                   }`}
                 >
@@ -578,8 +578,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 moreSheetOpen ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
-              <span className={`inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${moreSheetOpen ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
+              <span className={`relative inline-flex items-center justify-center h-9 w-12 rounded-md transition-colors ${moreSheetOpen ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-transparent'}`}>
                 <MoreHorizontal className="w-5 h-5" />
+                {/* Si el Chat no está en la barra (médico), sus mensajes sin leer se avisan aquí */}
+                {chatUnread > 0 && !bottomTabs.some(tab => pathOf(tab.href) === '/chat') && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                    {chatUnread > 99 ? '99+' : chatUnread}
+                  </span>
+                )}
               </span>
               <span className="text-[10px] font-medium leading-tight">{t('nav.more')}</span>
             </button>

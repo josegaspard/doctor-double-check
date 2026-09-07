@@ -1,5 +1,9 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
+import { es as esLocale, enUS } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import type { DoctorAvailability } from '@/hooks/useDoctorAvailability';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { AdInterstitial } from '@/components/ads/AdInterstitial';
 import { useLives } from '@/contexts/LivesContext';
@@ -30,6 +34,10 @@ import {
   Compass,
   CalendarDays,
   X,
+  Clock,
+  User,
+  Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useDoctorFilterFields } from '@/hooks/useDoctorFilterFields';
@@ -43,6 +51,15 @@ import { ContentRating } from '@/components/ratings/ContentRating';
 import { fill, initialsOf, norm, whenLabel, tzShort } from '@/lib/proFormat';
 
 const LivePreviewPlayer = React.lazy(() => import('@/components/live/LivePreviewPlayer'));
+
+// Tiempo que lleva un live emitiendo (mismo formato que la parrilla anterior)
+const formatDuration = (startedAt?: Date) => {
+  if (!startedAt) return '';
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 60000));
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
+};
 
 // ---------------------------------------------------------------------------
 // Diseño PRO de Lives (cliente, 7-sep-2026). DOS vistas de la misma página:
@@ -107,6 +124,8 @@ function LiveCardPro({ live, isPremiumSub, t }: { live: any; isPremiumSub: boole
         <div className="pro-live-shade" />
         <span className="pro-live-badge"><Radio /> {t('lives.liveBadge')}</span>
         <span className="pro-live-views"><Eye /> {fill(t('pro.lives.watching'), { n: (live.viewerCount ?? 0).toLocaleString() })}</span>
+        {live.startedAt && <span className="pro-live-dur" title={fill(t('pro.lives.startedAgo'), { t: formatDuration(live.startedAt) })}><Clock /> {formatDuration(live.startedAt)}</span>}
+        <span className="pro-play" aria-hidden="true"><Video /></span>
         <div className="pro-live-title">{live.title}</div>
       </Link>
       <div className="pro-live-body">
@@ -166,10 +185,12 @@ export default function LivesGrid() {
   const { data: interests = [] } = useUserInterests();
   const { role } = useAuth();
   const { t, language } = useLanguage();
-  const { getSubscription } = useSubscriptions();
+  const { getSubscription, subscriptions } = useSubscriptions();
   const { toggles } = useSiteToggles();
   const { availabilities } = useDoctorAvailability();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedUpcoming, setSelectedUpcoming] = useState<DoctorAvailability | null>(null);
+  const dateLocale = language === 'es' ? esLocale : enUS;
 
   const view: 'featured' | 'grid' = searchParams.get('vista') === 'directo' ? 'featured' : 'grid';
   const setView = (v: 'featured' | 'grid') => {
@@ -242,13 +263,25 @@ export default function LivesGrid() {
   }, [activeLives, query, selectedSpecialty, selectedTag, selectedCity, selectedCountry, selectedUniversity, selectedHospital, authorFilter, doctorFields, authorCats, interests]);
 
   const broadcastingDoctors = new Set(activeLives.map(l => l.doctorId)).size;
-  const upcomingLives = useMemo(() => {
+  // «Próximamente» — misma lógica que el bloque anterior de próximos eventos:
+  // si el usuario sigue a médicos, primero lo de ellos (hasta 10); si no, lo de todos.
+  // Incluye lives, consultas y horarios programados (no sólo lives), como antes.
+  const premiumDoctorIds = useMemo(() => new Set(subscriptions.filter(s => s.tier === 'premium').map(s => s.creatorId)), [subscriptions]);
+  const subscribedDoctorIds = useMemo(() => new Set(subscriptions.map(s => s.creatorId)), [subscriptions]);
+  const { upcomingLives, upcomingFromFollowed } = useMemo(() => {
     const nowMs = Date.now();
-    return availabilities
-      .filter(a => a.type === 'live' && a.scheduledAt.getTime() > nowMs)
+    const future = availabilities
+      .filter(a => a.scheduledAt.getTime() > nowMs && a.type !== 'blocked')
       .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
-  }, [availabilities]);
+    const followed = future.filter(a => subscribedDoctorIds.has(a.doctorId));
+    return followed.length > 0
+      ? { upcomingLives: followed, upcomingFromFollowed: true }
+      : { upcomingLives: future, upcomingFromFollowed: false };
+  }, [availabilities, subscribedDoctorIds]);
   const tz = tzShort(language);
+  const upcomingTypeLabel = (a: DoctorAvailability) =>
+    a.type === 'live' ? t('pro.lives.typeLive') : a.type === 'consultation' ? t('pro.lives.typeConsultation') : t('pro.lives.typeSchedule');
+  const UpcomingIcon = ({ type }: { type: string }) => (type === 'live' ? <Video className="w-5 h-5" /> : type === 'consultation' ? <MessageSquare className="w-5 h-5" /> : <Clock className="w-5 h-5" />);
 
   const canGoLive =
     (role === 'doctor' && toggles.enable_lives_doctors !== false) ||
@@ -382,26 +415,83 @@ export default function LivesGrid() {
   const upcomingSection = upcomingLives.length > 0 && (
     <section className="mt-2">
       <div className="pro-section-title">
-        <span>{t('pro.lives.upcoming')}</span>
-        {upcomingLives.length > 4 && (
-          <button type="button" className="pro-link" onClick={() => setShowAllUpcoming(v => !v)}>
-            {showAllUpcoming ? t('pro.lives.lessCalendar') : t('pro.lives.calendar')} <ArrowRight />
-          </button>
-        )}
+        <span className="min-w-0 truncate">{upcomingFromFollowed ? t('pro.lives.followedUpcoming') : t('pro.lives.upcoming')}</span>
+        <span className="flex items-center gap-3 shrink-0">
+          {!upcomingFromFollowed && subscriptions.length === 0 && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-white/80"><Bell className="w-3.5 h-3.5" /> {t('pro.lives.followHint')}</span>
+          )}
+          {upcomingLives.length > 4 && (
+            <button type="button" className="pro-link" onClick={() => setShowAllUpcoming(v => !v)}>
+              {showAllUpcoming ? t('pro.lives.lessCalendar') : t('pro.lives.calendar')} <ArrowRight />
+            </button>
+          )}
+        </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        {(showAllUpcoming ? upcomingLives : upcomingLives.slice(0, 4)).map(a => (
-          <Link key={a.id} to={`/doctor/${a.doctorId}`} className="pro-upcoming">
-            <span className="icon"><CalendarDays className="w-5 h-5" /></span>
+        {(showAllUpcoming ? upcomingLives.slice(0, 50) : upcomingLives.slice(0, 4)).map(a => (
+          <button key={a.id} type="button" className="pro-upcoming pro-upcoming-btn" onClick={() => setSelectedUpcoming(a)}>
+            <span className="icon"><UpcomingIcon type={a.type} /></span>
             <span className="min-w-0 flex-1">
-              <b>{a.title}</b>
-              {a.doctorName && <span>{a.doctorName}</span>}
-              <span>📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''}</span>
+              <b>{a.title}{premiumDoctorIds.has(a.doctorId) && a.type === 'live' ? <span className="star">⭐</span> : null}</b>
+              {a.doctorName && <span className="inline-flex items-center gap-1 max-w-full"><span className="truncate">{a.doctorName}</span><DoctorBadgeIcon userId={a.doctorId} size="sm" className="flex-shrink-0" /></span>}
+              <span>{upcomingTypeLabel(a)} · 📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''} · {formatDistanceToNow(a.scheduledAt, { addSuffix: true, locale: dateLocale })}</span>
             </span>
-          </Link>
+          </button>
         ))}
       </div>
     </section>
+  );
+
+  // Detalle de un próximo evento (lo que abría el bloque anterior al pulsar una tarjeta)
+  const upcomingDialog = (
+    <Dialog open={!!selectedUpcoming} onOpenChange={(o) => { if (!o) setSelectedUpcoming(null); }}>
+      <DialogContent className="sm:max-w-md">
+        {selectedUpcoming && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-start gap-3 text-left">
+                <span className="pro-icon-box" style={selectedUpcoming.type === 'live' ? { background: '#fde8e8', color: 'var(--pro-live)' } : undefined}>
+                  <UpcomingIcon type={selectedUpcoming.type} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block leading-snug break-words">{selectedUpcoming.title}</span>
+                  <span className="block text-sm font-normal text-muted-foreground mt-1 inline-flex items-center gap-1 max-w-full">
+                    <span className="truncate">{selectedUpcoming.doctorName}</span>
+                    <DoctorBadgeIcon userId={selectedUpcoming.doctorId} size="sm" className="flex-shrink-0" />
+                  </span>
+                </span>
+              </DialogTitle>
+              <DialogDescription className="sr-only">{selectedUpcoming.title}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`pro-pill pro-pill-plain ${selectedUpcoming.status === 'confirmed' ? 'pro-pill-ok' : 'pro-pill-muted'}`}>{upcomingTypeLabel(selectedUpcoming)}</span>
+                {premiumDoctorIds.has(selectedUpcoming.doctorId) && selectedUpcoming.type === 'live' && (
+                  <span className="pro-pill pro-pill-plain pro-pill-warn">⭐ {t('lives.earlyAccess')}</span>
+                )}
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="font-medium">{whenLabel(selectedUpcoming.scheduledAt, language, t)}{tz ? ` (${tz})` : ''}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4 flex-shrink-0" />
+                  <span>{selectedUpcoming.durationMinutes} {t('pro.common.min')} · {formatDistanceToNow(selectedUpcoming.scheduledAt, { addSuffix: true, locale: dateLocale })}</span>
+                </div>
+              </div>
+              {selectedUpcoming.description && (
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{selectedUpcoming.description}</div>
+              )}
+            </div>
+            <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+              <button type="button" className="pro-btn pro-btn-outline w-full sm:w-auto" onClick={() => setSelectedUpcoming(null)}>{t('pro.common.close')}</button>
+              <Link to={`/doctor/${selectedUpcoming.doctorId}`} className="pro-btn pro-btn-teal w-full sm:w-auto"><User /> {t('pro.lives.viewProfile')}</Link>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 
   const header = (
@@ -411,7 +501,12 @@ export default function LivesGrid() {
           <span className="pro-live-dot"><Radio className="w-5 h-5" style={{ color: 'var(--pro-live)' }} /></span>
           <span className="truncate">{t('pro.lives.liveNow')}</span>
         </h1>
-        <p className="pro-page-sub">{broadcastingText}</p>
+        <p className="pro-page-sub">
+          {broadcastingText}
+          {anyFilterActive && activeLives.length > 0 && (
+            <span className="block text-white/75 text-[13px]">{fill(t('pro.lives.activeCount'), { x: filteredLives.length, y: activeLives.length })}</span>
+          )}
+        </p>
       </div>
       <div className="flex flex-wrap gap-2 w-full sm:w-auto">
         {view === 'grid' ? (
@@ -457,6 +552,7 @@ export default function LivesGrid() {
                     <div className="pro-hero-shade" />
                     <span className="pro-live-badge sm:!top-4 sm:!left-4"><Radio /> {t('lives.liveBadge')}</span>
                     <span className="pro-live-views sm:!top-4 sm:!right-4"><Eye /> {fill(t('pro.lives.watching'), { n: (featured.viewerCount ?? 0).toLocaleString() })}</span>
+                    {featured.startedAt && <span className="pro-live-dur sm:!right-4 sm:!bottom-4" title={fill(t('pro.lives.startedAgo'), { t: formatDuration(featured.startedAt) })}><Clock /> {formatDuration(featured.startedAt)}</span>}
                     <div className="pro-hero-content">
                       <h2 className="pro-hero-title">{featured.title}</h2>
                       <div className="pro-hero-doc">
@@ -561,6 +657,7 @@ export default function LivesGrid() {
         {toggles.show_news_section && <div className="mt-6"><NewsFeed /></div>}
       </div>
 
+      {upcomingDialog}
       <LivesDebugPanel />
     </MainLayout>
   );
