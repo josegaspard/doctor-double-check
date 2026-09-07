@@ -427,6 +427,22 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <span className="hidden lg:inline">{t('forum.title')}</span>
                 </Link>
               )}
+              {/* Chat SIEMPRE a un clic (estaba en la barra del médico antes del rediseño):
+                  icono con el contador de mensajes sin leer, sin ocupar sitio en la píldora. */}
+              {(role === 'doctor' || role === 'patient' || role === 'resident') && !disabledHrefs.has('/chat') && (
+                <Link
+                  to="/chat"
+                  aria-label={t('nav.chat')}
+                  className={`app-header-control relative px-2.5 ${location.pathname === '/chat' ? 'app-header-nav-active' : ''}`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  {chatUnread > 0 && (
+                    <span className="notification-count-badge absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                      {chatUnread > 99 ? '99+' : chatUnread}
+                    </span>
+                  )}
+                </Link>
+              )}
               <GlobalSearch />
               <LanguageSwitcher />
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}

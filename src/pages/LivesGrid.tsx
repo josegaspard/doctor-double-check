@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -118,7 +119,7 @@ function CredentialRow({ live }: { live: any }) {
 
 function LiveCardPro({ live, isPremiumSub, t }: { live: any; isPremiumSub: boolean; t: (k: string) => string }) {
   return (
-    <div className="pro-live-card h-full">
+    <div className="pro-live-card is-live h-full">
       <Link to={`/live/${live.id}`} className="pro-live-media block" aria-label={live.title}>
         <LiveMedia live={live} />
         <div className="pro-live-shade" />
@@ -320,6 +321,9 @@ export default function LivesGrid() {
         {liveSpecialties.map(s => (
           <button key={s} type="button" className={`pro-chip ${selectedSpecialty === s ? 'is-active' : ''}`} onClick={() => setSelectedSpecialty(selectedSpecialty === s ? null : s)}>{s}</button>
         ))}
+        {anyFilterActive && (
+          <button type="button" className="pro-chip" onClick={clearAllFilters}><X className="w-3.5 h-3.5" /> {t('lives.clearFilters')}</button>
+        )}
         {hasAdvancedOptions && (
           <Popover>
             <PopoverTrigger asChild>
@@ -638,9 +642,21 @@ export default function LivesGrid() {
               skeletonGrid
             ) : filteredLives.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {filteredLives.map(live => (
-                  <LiveCardPro key={live.id} live={live} isPremiumSub={getSubscription(live.doctorId)?.tier === 'premium'} t={t} />
-                ))}
+                <AnimatePresence mode="sync">
+                  {filteredLives.map(live => (
+                    <motion.div
+                      key={live.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.95, y: 16 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -16 }}
+                      transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                      className="h-full"
+                    >
+                      <LiveCardPro live={live} isPremiumSub={getSubscription(live.doctorId)?.tier === 'premium'} t={t} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             ) : (
               emptyState
