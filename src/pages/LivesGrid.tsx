@@ -123,6 +123,7 @@ function LiveCardPro({ live, isPremiumSub, t }: { live: any; isPremiumSub: boole
         <LiveMedia live={live} />
         <div className="pro-live-shade" />
         <span className="pro-live-badge"><Radio /> {t('lives.liveBadge')}</span>
+        {isPremiumSub && <span className="pro-live-badge !left-auto !right-[92px] !bg-[#b7791f]"><Crown /> {t('pro.lives.premium')}</span>}
         <span className="pro-live-views"><Eye /> {fill(t('pro.lives.watching'), { n: (live.viewerCount ?? 0).toLocaleString() })}</span>
         {live.startedAt && <span className="pro-live-dur" title={fill(t('pro.lives.startedAgo'), { t: formatDuration(live.startedAt) })}><Clock /> {formatDuration(live.startedAt)}</span>}
         <span className="pro-play" aria-hidden="true"><Video /></span>
@@ -187,7 +188,7 @@ export default function LivesGrid() {
   const { t, language } = useLanguage();
   const { getSubscription, subscriptions } = useSubscriptions();
   const { toggles } = useSiteToggles();
-  const { availabilities } = useDoctorAvailability();
+  const { availabilities, isLoading: upcomingLoading } = useDoctorAvailability();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedUpcoming, setSelectedUpcoming] = useState<DoctorAvailability | null>(null);
   const dateLocale = language === 'es' ? esLocale : enUS;
@@ -412,21 +413,28 @@ export default function LivesGrid() {
     </div>
   );
 
-  const upcomingSection = upcomingLives.length > 0 && (
+  const upcomingSection = (upcomingLoading && availabilities.length === 0) ? (
+    <section className="mt-2">
+      <div className="pro-section-title"><span>{t('pro.lives.upcoming')}</span></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        {[0, 1, 2].map(i => <div key={i} className="h-[66px] rounded-[14px] bg-white/10 animate-pulse" />)}
+      </div>
+    </section>
+  ) : upcomingLives.length > 0 && (
     <section className="mt-2">
       <div className="pro-section-title">
         <span className="min-w-0 truncate">{upcomingFromFollowed ? t('pro.lives.followedUpcoming') : t('pro.lives.upcoming')}</span>
         <span className="flex items-center gap-3 shrink-0">
-          {!upcomingFromFollowed && subscriptions.length === 0 && (
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-medium text-white/80"><Bell className="w-3.5 h-3.5" /> {t('pro.lives.followHint')}</span>
-          )}
           {upcomingLives.length > 4 && (
             <button type="button" className="pro-link" onClick={() => setShowAllUpcoming(v => !v)}>
-              {showAllUpcoming ? t('pro.lives.lessCalendar') : t('pro.lives.calendar')} <ArrowRight />
+              {showAllUpcoming ? t('pro.lives.lessCalendar') : fill(t('pro.lives.seeAllUpcoming'), { n: upcomingLives.length })} <ArrowRight />
             </button>
           )}
         </span>
       </div>
+      {!upcomingFromFollowed && subscriptions.length === 0 && (
+        <p className="-mt-1 mb-2 inline-flex items-center gap-1 text-xs font-medium text-white/80"><Bell className="w-3.5 h-3.5" /> {t('pro.lives.followHint')}</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {(showAllUpcoming ? upcomingLives.slice(0, 50) : upcomingLives.slice(0, 4)).map(a => (
           <button key={a.id} type="button" className="pro-upcoming pro-upcoming-btn" onClick={() => setSelectedUpcoming(a)}>
@@ -434,7 +442,10 @@ export default function LivesGrid() {
             <span className="min-w-0 flex-1">
               <b>{a.title}{premiumDoctorIds.has(a.doctorId) && a.type === 'live' ? <span className="star">⭐</span> : null}</b>
               {a.doctorName && <span className="inline-flex items-center gap-1 max-w-full"><span className="truncate">{a.doctorName}</span><DoctorBadgeIcon userId={a.doctorId} size="sm" className="flex-shrink-0" /></span>}
-              <span>{upcomingTypeLabel(a)} · 📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''} · {formatDistanceToNow(a.scheduledAt, { addSuffix: true, locale: dateLocale })}</span>
+              <span>
+                <i className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: a.status === 'confirmed' ? '#4ade80' : 'rgba(255,255,255,.55)' }} aria-hidden="true" />
+                {upcomingTypeLabel(a)} · 📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''} · {formatDistanceToNow(a.scheduledAt, { addSuffix: true, locale: dateLocale })}
+              </span>
             </span>
           </button>
         ))}

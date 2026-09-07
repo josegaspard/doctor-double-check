@@ -9057,6 +9057,7 @@ export const es = {
       typeConsultation: 'Consulta',
       typeSchedule: 'Horario',
       moreUpcoming: 'Ver más',
+      seeAllUpcoming: 'Ver todos ({n})',
     },
     agenda: {
       title: 'Agenda profesional',

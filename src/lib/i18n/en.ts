@@ -8999,6 +8999,7 @@ export const en = {
       typeConsultation: 'Consultation',
       typeSchedule: 'Schedule',
       moreUpcoming: 'See more',
+      seeAllUpcoming: 'See all ({n})',
     },
     agenda: {
       title: 'Professional agenda',
