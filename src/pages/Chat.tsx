@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useChat, ChatSession } from '@/contexts/ChatContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,14 +8,27 @@ import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChatSessionsList } from '@/components/chat/ChatSessionsList';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ChatMessagesPanel } from '@/components/chat/ChatMessagesPanel';
 import { BadgeChatPanel } from '@/components/chat/BadgeChatPanel';
 import { TriageChat } from '@/components/chat/TriageChat';
-import { MessageSquare, Loader2, Users, User, Stethoscope, Store } from 'lucide-react';
+import { ProChatList, ConvSort } from '@/components/chat/ProChatList';
+import { ChatClinicalContext } from '@/components/chat/ChatClinicalContext';
+import {
+  MessageSquare, Loader2, Users, User, Stethoscope, Store, Sparkles, CheckCircle2,
+  Archive, Plus, ChevronDown, ClipboardList, PanelRightOpen,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
+import { norm } from '@/lib/proFormat';
+
+/** Secciones del carril izquierdo (relación + archivo) */
+type View = 'all' | 'patients' | 'doctors' | 'providers' | 'orientations' | 'badge' | 'closed' | 'archived';
+
+const archiveKey = (userId?: string) => `mm_chat_archived_${userId || 'anon'}`;
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -33,35 +46,54 @@ export default function Chat() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [consultationId, setConsultationId] = useState<string | null>(null);
-  const [chatFilter, setChatFilter] = useState<'all' | 'patients' | 'doctors' | 'providers' | 'badge'>(role === 'resident' ? 'doctors' : 'all');
+  const [view, setView] = useState<View>(role === 'resident' ? 'doctors' : 'all');
   // Distintivo del doctor (medalla/palomita) para mostrar acceso a su chat exclusivo.
   const [myBadge, setMyBadge] = useState<'gold' | 'verified' | null>(null);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<ConvSort>('recent');
+  const [contextOpen, setContextOpen] = useState(false);
+
+  // Archivo del propio médico: no borra nada ni toca la base, sólo decide qué
+  // ve él en su lista. Se guarda en su navegador.
+  const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(archiveKey(user?.id));
+      setArchivedIds(new Set(raw ? (JSON.parse(raw) as string[]) : []));
+    } catch { setArchivedIds(new Set()); }
+  }, [user?.id]);
+  const toggleArchive = (id: string) => {
+    setArchivedIds(prev => {
+      const next = new Set(prev);
+      const wasArchived = next.has(id);
+      if (wasArchived) next.delete(id); else next.add(id);
+      try { localStorage.setItem(archiveKey(user?.id), JSON.stringify([...next])); } catch { /* modo privado */ }
+      toast.success(wasArchived ? t('pro.chatPro.unarchived') : t('pro.chatPro.archived'));
+      if (!wasArchived && selectedSession === id) setSelectedSession(null);
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (role !== 'doctor' || !user?.id) return;
     supabase.from('doctor_profiles').select('manual_badge').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => setMyBadge(((data as any)?.manual_badge as 'gold' | 'verified' | null) ?? null));
   }, [role, user?.id]);
-  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
 
   const allSessions = getSessionsByUser();
 
-  // Filter sessions by chatFilter (for doctors/residents with dual windows)
-  const filterByType = (sessions: typeof allSessions) => {
-    if (chatFilter === 'all') return sessions;
-    return sessions.filter(s => {
-      // Determine the "other" participant type
-      const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
-      // Chats del marketplace (con interés de producto) = "Proveedores".
-      const isProviderChat = !!s.marketplaceInterestId;
-      if (chatFilter === 'patients') return otherType === 'patient';
-      if (chatFilter === 'doctors') return (otherType === 'doctor' || otherType === 'resident') && !isProviderChat;
-      if (chatFilter === 'providers') return isProviderChat;
-      return true;
-    });
+  const otherTypeOf = (s: ChatSession) => (s.participant1Id === user?.id ? s.participant2Type : s.participant1Type);
+  const matchesRelation = (s: ChatSession, v: View) => {
+    const otherType = otherTypeOf(s);
+    const isProviderChat = !!s.marketplaceInterestId;
+    if (v === 'patients') return otherType === 'patient' && !s.isDoubleCheck;
+    if (v === 'doctors') return (otherType === 'doctor' || otherType === 'resident') && !isProviderChat && !s.isDoubleCheck;
+    if (v === 'providers') return isProviderChat;
+    if (v === 'orientations') return s.isDoubleCheck;
+    return true;
   };
 
-  const activeSessions = filterByType(allSessions.filter(s => s.status === 'active'));
-  const closedSessions = filterByType(allSessions.filter(s => s.status === 'closed'));
   const messages = selectedSession ? getSessionMessages(selectedSession) : [];
   const selectedSessionData = allSessions.find(s => s.id === selectedSession);
   const isSessionClosed = selectedSessionData?.status === 'closed';
@@ -96,7 +128,7 @@ export default function Chat() {
       // Verificar que la sesión existe + el usuario es participante (RLS)
       const { data: session } = await (supabase as any)
         .from('chat_sessions')
-        .select('id, status, marketplace_interest_id')
+        .select('id, status, marketplace_interest_id, is_double_check')
         .eq('id', sessionParam)
         .maybeSingle();
 
@@ -105,13 +137,13 @@ export default function Chat() {
         return;
       }
 
-      // Si es un chat del marketplace (con proveedor), mover el filtro a
-      // "Proveedores" para que la sesión no quede oculta en la lista.
-      if (session.marketplace_interest_id && (role === 'doctor' || role === 'resident')) {
-        setChatFilter('providers');
-      }
+      // Colocar el carril en la sección donde vive esa conversación, para que
+      // no quede oculta por el filtro que hubiera puesto antes.
+      if (session.status === 'closed') setView('closed');
+      else if (session.is_double_check) setView('orientations');
+      else if (session.marketplace_interest_id && (role === 'doctor' || role === 'resident')) setView('providers');
+      else setView(role === 'resident' ? 'doctors' : 'all');
 
-      // Cambiar a la tab correcta según status
       setActiveTab(session.status === 'closed' ? 'history' : 'active');
       setSelectedSession(sessionParam);
       // Pre-cargar mensajes para que aparezcan al instante (en vez de empty)
@@ -258,7 +290,10 @@ export default function Chat() {
     }
   }, [selectedSession, loadMessages, markAsRead]);
 
-  useEffect(() => { setSelectedSession(null); }, [activeTab]);
+  // Al cambiar de sección del carril se suelta la conversación abierta (antes
+  // lo hacía el cambio de pestaña Activas/Historial).
+  useEffect(() => { setSelectedSession(null); }, [view]);
+  useEffect(() => { setActiveTab(view === 'closed' ? 'history' : 'active'); }, [view]);
 
   const handleSend = (replyToId?: string) => {
     if (!newMessage.trim() || !selectedSession || isSessionClosed) return;
@@ -281,7 +316,7 @@ export default function Chat() {
       } else {
         toast.success(t('chat.sessionClosed'));
         setSelectedSession(null);
-        setActiveTab('history');
+        setView('closed');
       }
     } else {
       toast.error(result.error || t('doctorProfile.chatError'));
@@ -291,7 +326,7 @@ export default function Chat() {
   const handleSummaryComplete = () => {
     toast.success(t('chat.sessionClosed'));
     setSelectedSession(null);
-    setActiveTab('history');
+    setView('closed');
     setShowSummaryDialog(false);
   };
 
@@ -318,7 +353,7 @@ export default function Chat() {
 
   const formatOfficeHours = (session: ChatSession) => {
     if (!session.officeHoursStart || !session.officeHoursEnd) return null;
-    const dayNames: Record<string, string> = language === 'en' 
+    const dayNames: Record<string, string> = language === 'en'
       ? { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' }
       : { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom' };
     const days = session.officeDays?.map(d => dayNames[d] || d).join(', ') || (language === 'en' ? 'Mon-Fri' : 'Lun-Vie');
@@ -340,6 +375,44 @@ export default function Chat() {
     const endTime = toMin(session.officeHoursEnd);
     return currentTime >= startTime && currentTime <= endTime;
   };
+
+  // ------------------------------------------------------------ carril + lista
+  const countFor = useCallback((v: View) => {
+    if (v === 'archived') return allSessions.filter(s => archivedIds.has(s.id)).length;
+    if (v === 'closed') return allSessions.filter(s => s.status === 'closed' && !archivedIds.has(s.id)).length;
+    return allSessions.filter(s => s.status === 'active' && !archivedIds.has(s.id) && matchesRelation(s, v)).length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSessions, archivedIds, user?.id]);
+
+  const visibleSessions = useMemo(() => {
+    const q = norm(query.trim());
+    let arr = allSessions.filter(s => {
+      if (view === 'archived') return archivedIds.has(s.id);
+      if (archivedIds.has(s.id)) return false;
+      if (view === 'closed') return s.status === 'closed';
+      return s.status === 'active' && matchesRelation(s, view);
+    });
+    if (q) {
+      arr = arr.filter(s => {
+        const info = getSessionDisplayInfo(s);
+        return norm(info.name).includes(q) || norm(info.specialty).includes(q) || norm(s.lastMessage).includes(q);
+      });
+    }
+    const time = (s: ChatSession) => (s.lastMessageAt ? new Date(s.lastMessageAt).getTime() : new Date(s.createdAt).getTime());
+    const sorted = [...arr];
+    sorted.sort((a, b) => {
+      if (sort === 'unread') return (b.unreadCount - a.unreadCount) || (time(b) - time(a));
+      if (sort === 'name') return getSessionDisplayInfo(a).name.localeCompare(getSessionDisplayInfo(b).name);
+      if (sort === 'priority') {
+        const pa = Number(a.priorityScore ?? 0);
+        const pb = Number(b.priorityScore ?? 0);
+        return (pb - pa) || (b.unreadCount - a.unreadCount) || (time(b) - time(a));
+      }
+      return time(b) - time(a);
+    });
+    return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSessions, view, query, sort, archivedIds, user?.id]);
 
   // Loading state
   if (role === undefined || role === null) {
@@ -401,179 +474,201 @@ export default function Chat() {
   const showMobileChat = isMobile && !!selectedSession;
   const showMobileList = isMobile && !selectedSession;
 
+  // Secciones del carril según el rol: sólo se enseña lo que ese rol usa.
+  const relationViews: View[] = role === 'doctor'
+    ? ['all', 'patients', 'doctors', 'providers', 'orientations']
+    : role === 'resident'
+      ? ['doctors', 'providers', 'orientations']
+      : ['all', 'orientations'];
+  const railIcon: Record<View, React.ElementType> = {
+    all: Users, patients: User, doctors: Stethoscope, providers: Store, orientations: Sparkles,
+    badge: CheckCircle2, closed: CheckCircle2, archived: Archive,
+  };
+  const railLabel = (v: View) => ({
+    all: t('pro.chatPro.railAll'),
+    patients: t('pro.chatPro.railPatients'),
+    doctors: t('pro.chatPro.railDoctors'),
+    providers: t('pro.chatPro.railProviders'),
+    orientations: t('pro.chatPro.railOrientations'),
+    badge: t('pro.chatPro.railRoom'),
+    closed: t('pro.chatPro.railClosed'),
+    archived: t('pro.chatPro.railArchived'),
+  }[v]);
+
+  const hasBadgeRoom = myBadge === 'gold' || myBadge === 'verified';
+  const otherInfo = selectedSessionData ? getSessionDisplayInfo(selectedSessionData) : null;
+
+  const railButton = (v: View, withCount = true) => {
+    const Icon = railIcon[v];
+    const n = withCount ? countFor(v) : 0;
+    return (
+      <button
+        key={v}
+        type="button"
+        className={`pro-lane-item ${view === v ? 'is-active' : ''}`}
+        aria-pressed={view === v}
+        onClick={() => setView(v)}
+      >
+        {v === 'badge' && hasBadgeRoom
+          ? <img src={myBadge === 'gold' ? '/badge-gold.png' : '/badge-verified.png'} alt="" aria-hidden="true" className="w-[18px] h-[18px] object-contain flex-shrink-0" />
+          : <Icon />}
+        <span className="label">{railLabel(v)}</span>
+        {withCount && n > 0 && <span className="count">{n}</span>}
+      </button>
+    );
+  };
+
+  const rail = (
+    <>
+      {relationViews.map(v => railButton(v))}
+      {hasBadgeRoom && railButton('badge', false)}
+      <span className="pro-lane-sep" />
+      {railButton('closed')}
+      {railButton('archived')}
+    </>
+  );
+
+  const newConversation = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className="pro-btn pro-btn-live w-full sm:w-auto">
+          <Plus /> {t('pro.chatPro.newConversation')} <ChevronDown />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {role === 'doctor' && (
+          <DropdownMenuItem onClick={() => navigate('/doctor/patients')}>
+            <User className="w-4 h-4 mr-2" /> {t('pro.chatPro.railPatients')}
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={() => navigate('/doctors')}>
+          <Stethoscope className="w-4 h-4 mr-2" /> {t('pro.chatPro.railDoctors')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-1 sm:px-4 py-2 sm:py-6 max-w-6xl flex flex-col h-[calc(100dvh-56px-72px)] sm:h-[calc(100vh-56px-96px)] overflow-hidden">
-        <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0 px-2 sm:px-0">
-          <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+      <div className="pro-container pro-page">
+        <div className="pro-page-head">
+          <div className="min-w-0">
+            <h1 className="pro-page-title"><MessageSquare className="w-7 h-7" /> <span className="truncate">{t('pro.chatPro.title')}</span></h1>
+            <p className="pro-page-sub">{t('pro.chatPro.subtitle')}</p>
+          </div>
+          {newConversation}
+        </div>
+
+        <div className="pro-card pro-tall flex flex-col overflow-hidden">
+          {/* Carril como fila de chips cuando no cabe de columna */}
+          {!showMobileChat && (
+            <div className="pro-lane pro-lane-row flex xl:hidden" style={{ borderBottom: '1px solid var(--pro-line)' }}>
+              {rail}
             </div>
-            <span>Chat</span>
-          </h1>
-          <div className="flex items-center gap-2">
-            {/* La sala exclusiva por insignia ("Doctores verificados") ya no es un
-                botón aquí: aparece como fila fija dentro de ChatSessionsList. */}
-            {activeSessions.length > 0 && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md text-[11px] sm:text-xs font-bold whitespace-nowrap">
-                <span className="relative flex w-2 h-2">
-                  <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-70" />
-                  <span className="relative w-2 h-2 rounded-full bg-white" />
-                </span>
-                <span>
-                  {/* i18n 'chat.active' ya devuelve "Activas" (plural) en ES.
-                      No append +s — daba bug "activass". */}
-                  {activeSessions.length} {t('chat.active').toLowerCase()}
-                </span>
+          )}
+
+          <div className="pro-work pro-work-chat flex-1 min-h-0">
+            {/* Columna 1 — carril */}
+            <nav className="pro-lane hidden xl:flex" aria-label={t('pro.chatPro.title')}>
+              {rail}
+            </nav>
+
+            {/* Columna 2 — lista */}
+            {view === 'badge' && hasBadgeRoom ? null : (
+              <div className={`pro-col ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
+                <ProChatList
+                  sessions={visibleSessions}
+                  selectedSession={selectedSession}
+                  query={query}
+                  sort={sort}
+                  archivedIds={archivedIds}
+                  showingArchived={view === 'archived'}
+                  onQueryChange={setQuery}
+                  onSortChange={setSort}
+                  onSelect={setSelectedSession}
+                  onToggleArchive={toggleArchive}
+                  getDisplayInfo={getSessionDisplayInfo}
+                  isWithinOfficeHours={isWithinOfficeHours}
+                  emptyLabel={view === 'archived' ? t('pro.chatPro.emptyArchived') : t('pro.chatPro.empty')}
+                />
               </div>
+            )}
+
+            {/* Columna 3 — hilo (o sala por insignia) */}
+            {view === 'badge' && hasBadgeRoom ? (
+              <div className="pro-chat-full min-h-0 overflow-hidden w-full max-w-full">
+                <BadgeChatPanel badge={myBadge} />
+              </div>
+            ) : (
+              <div className={`pro-col pro-thread-col min-w-0 ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
+                {selectedSessionData && (
+                  <div className="flex items-center justify-end gap-2 px-3 pt-2 2xl:hidden">
+                    <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={() => setContextOpen(true)}>
+                      <PanelRightOpen /> {t('pro.chatPro.showContext')}
+                    </button>
+                  </div>
+                )}
+                <ChatMessagesPanel
+                  session={selectedSessionData}
+                  messages={messages}
+                  userId={user?.id}
+                  userRole={role}
+                  newMessage={newMessage}
+                  isClosed={isSessionClosed || false}
+                  isClosing={isClosingSession}
+                  otherUserTyping={otherUserTyping}
+                  activeTab={activeTab}
+                  consultationId={consultationId}
+                  isMobile={isMobile}
+                  hidden={showMobileList}
+                  onInputChange={handleInputChange}
+                  onSend={handleSend}
+                  onCloseSession={handleCloseSession}
+                  onBack={() => setSelectedSession(null)}
+                  onFileUploaded={handleFileUploaded}
+                  getDoctorId={getDoctorIdForSession}
+                  getDisplayInfo={getSessionDisplayInfo}
+                  formatOfficeHours={formatOfficeHours}
+                  isWithinOfficeHours={isWithinOfficeHours}
+                  onDoctorProfileClick={goToDoctorProfile}
+                />
+              </div>
+            )}
+
+            {/* Columna 4 — contexto clínico */}
+            {view !== 'badge' && (
+              <aside className="hidden 2xl:flex pro-col p-3" aria-label={t('pro.chatPro.context')}>
+                <h2 className="pro-card-title text-[15px] mb-2"><ClipboardList /> {t('pro.chatPro.context')}</h2>
+                {selectedSessionData && otherInfo ? (
+                  <ChatClinicalContext
+                    session={selectedSessionData}
+                    other={otherInfo}
+                    officeHours={formatOfficeHours(selectedSessionData)}
+                    isAvailable={isWithinOfficeHours(selectedSessionData)}
+                  />
+                ) : (
+                  <p className="text-[12.5px] pro-muted">{t('pro.chatPro.pickHint')}</p>
+                )}
+              </aside>
             )}
           </div>
         </div>
-
-        {/* Filtro de chat por tipo de contacto: control segmentado (un solo contenedor
-            neutro; el activo se pinta con su color de marca, los inactivos quedan en
-            texto neutro). Solo doctores ven a pacientes; residentes chatean con
-            doctores/residentes y proveedores. */}
-        {(role === 'doctor' || role === 'resident') && !showMobileChat && (() => {
-          // Colores de marca oscurecidos para que el texto blanco del chip activo
-          // cumpla contraste WCAG (≥4.5:1).
-          const allTabs = [
-            { key: 'all',       label: t('chat.filterAll'),       Icon: Users,       color: '#1D6673' }, // teal
-            { key: 'patients',  label: t('chat.filterPatients'),  Icon: User,        color: '#44598E' }, // comfort blue
-            { key: 'doctors',   label: t('chat.filterDoctors'),   Icon: Stethoscope, color: '#163A83' }, // navy
-            { key: 'providers', label: t('chat.filterProviders'), Icon: Store,       color: '#8A6508' }, // gold
-            // Sala grupal exclusiva por insignia — a la DERECHA de Proveedores.
-            { key: 'badge',     label: t('badgeChat.roomRowTitle'), Icon: Store,      color: myBadge === 'gold' ? '#8A6508' : '#163A83' },
-          ] as const;
-          const visibleKeys = role === 'doctor'
-            ? ['all', 'patients', 'doctors', 'providers']
-            : ['doctors', 'providers']; // residente: sin pacientes (bloqueado por permisos)
-          if (myBadge === 'gold' || myBadge === 'verified') visibleKeys.push('badge');
-          const tabs = allTabs.filter(tt => visibleKeys.includes(tt.key));
-          const colsClass = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5'][tabs.length] || 'grid-cols-4';
-          // Contador de chats activos por tipo (independiente del filtro seleccionado).
-          const countFor = (key: string) => {
-            const actives = allSessions.filter(s => s.status === 'active');
-            if (key === 'all') return actives.length;
-            return actives.filter(s => {
-              const otherType = s.participant1Id === user?.id ? s.participant2Type : s.participant1Type;
-              const isProviderChat = !!s.marketplaceInterestId;
-              if (key === 'patients') return otherType === 'patient';
-              if (key === 'doctors') return (otherType === 'doctor' || otherType === 'resident') && !isProviderChat;
-              if (key === 'providers') return isProviderChat;
-              return false;
-            }).length;
-          };
-          return (
-            <div className="mb-3 px-2 sm:px-0 flex-shrink-0">
-              {/* Contenedor SÓLIDO (bg-card): sobre el fondo teal del brandbook un
-                  bg-muted translúcido se fundía y mataba el contraste del texto.
-                  Móvil: grid full-width (todas las opciones visibles a la vez, sin
-                  scroll horizontal); sm+: pills en línea como antes. */}
-              <div
-                className={`grid w-full ${colsClass} sm:flex sm:w-auto sm:max-w-max items-stretch sm:items-center gap-1 rounded-2xl sm:rounded-full bg-card border border-border shadow-sm p-1 sm:p-1.5`}
-              >
-                {tabs.map(({ key, label, Icon, color }) => {
-                  const active = chatFilter === key;
-                  const count = countFor(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => { setChatFilter(key as typeof chatFilter); if (key === 'badge') setSelectedSession(null); }}
-                      aria-pressed={active}
-                      style={active ? { backgroundColor: color, color: '#fff' } : undefined}
-                      className={`flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 rounded-xl sm:rounded-full px-1 sm:px-4 py-1.5 sm:py-0 sm:h-9 min-w-0 text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all ${
-                        active
-                          ? 'shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-background/80'
-                      }`}
-                    >
-                      {/* Icono inactivo en currentColor: los hex de marca desaparecían
-                          sobre el muted del dark mode (navy sobre navy ≈ 1.2:1). */}
-                      <span className="relative inline-flex shrink-0">
-                        {key === 'badge'
-                          ? <img src={myBadge === 'gold' ? '/badge-gold.png' : '/badge-verified.png'} alt="" aria-hidden="true" className="w-4 h-4 object-contain" />
-                          : <Icon className="w-4 h-4" />}
-                        {/* Móvil: contador como burbuja sobre el icono (no cabe en línea). */}
-                        {count > 0 && (
-                          <span
-                            className={`sm:hidden absolute -top-1.5 -right-2.5 min-w-[15px] h-[15px] px-0.5 inline-flex items-center justify-center rounded-full text-[9px] font-bold leading-none ${
-                              active ? 'bg-white/30 text-white' : 'bg-foreground/15 text-foreground/80'
-                            }`}
-                          >
-                            {count}
-                          </span>
-                        )}
-                      </span>
-                      <span className="max-w-full truncate leading-tight">{label}</span>
-                      {count > 0 && (
-                        <span
-                          className={`hidden sm:inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full text-[10px] font-bold leading-none ${
-                            active ? 'bg-white/25 text-white' : 'bg-foreground/10 text-foreground/70'
-                          }`}
-                        >
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
-        {chatFilter === 'badge' && (myBadge === 'gold' || myBadge === 'verified') ? (
-          <div className="flex-1 min-h-0 overflow-hidden w-full max-w-full">
-            <BadgeChatPanel badge={myBadge} />
-          </div>
-        ) : (
-        <div className="grid md:grid-cols-[340px,1fr] gap-2 sm:gap-4 flex-1 min-h-0 overflow-hidden w-full max-w-full">
-          <ChatSessionsList
-            activeSessions={activeSessions}
-            closedSessions={closedSessions}
-            selectedSession={selectedSession}
-            activeTab={activeTab}
-            userRole={role}
-            onTabChange={setActiveTab}
-            onSelectSession={setSelectedSession}
-            getDisplayInfo={getSessionDisplayInfo}
-            formatOfficeHours={formatOfficeHours}
-            isWithinOfficeHours={isWithinOfficeHours}
-            getDoctorId={getDoctorIdForSession}
-            onDoctorProfileClick={goToDoctorProfile}
-            hidden={showMobileChat}
-          />
-
-          {/* Disclaimer orientación médica removido por orden del cliente. */}
-          <ChatMessagesPanel
-              session={selectedSessionData}
-              messages={messages}
-              userId={user?.id}
-              userRole={role}
-              newMessage={newMessage}
-              isClosed={isSessionClosed || false}
-              isClosing={isClosingSession}
-              otherUserTyping={otherUserTyping}
-              activeTab={activeTab}
-              consultationId={consultationId}
-              isMobile={isMobile}
-              hidden={showMobileList}
-              onInputChange={handleInputChange}
-              onSend={handleSend}
-              onCloseSession={handleCloseSession}
-              onBack={() => setSelectedSession(null)}
-              onFileUploaded={handleFileUploaded}
-              getDoctorId={getDoctorIdForSession}
-              getDisplayInfo={getSessionDisplayInfo}
-              formatOfficeHours={formatOfficeHours}
-              isWithinOfficeHours={isWithinOfficeHours}
-              onDoctorProfileClick={goToDoctorProfile}
-            />
-        </div>
-        )}
       </div>
+
+      {/* Contexto clínico en hoja lateral cuando no cabe la columna */}
+      <Sheet open={contextOpen} onOpenChange={setContextOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto bg-card">
+          <SheetHeader className="mb-3"><SheetTitle className="pro-card-title">{t('pro.chatPro.context')}</SheetTitle></SheetHeader>
+          {selectedSessionData && otherInfo && (
+            <ChatClinicalContext
+              session={selectedSessionData}
+              other={otherInfo}
+              officeHours={formatOfficeHours(selectedSessionData)}
+              isAvailable={isWithinOfficeHours(selectedSessionData)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Post-consultation summary dialog */}
       <PostConsultationSummaryDialog

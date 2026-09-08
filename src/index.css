@@ -2697,3 +2697,283 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
   .pro-hero-media { aspect-ratio: 21 / 9 !important; }
   .pro-cal { --hour: 44px; }
 }
+
+/* ==========================================================================
+   PRO 2026 · 2.ª tanda — Chat profesional · Consultas · Ingresos y pagos ·
+   Panel de contenido (maquetas del cliente, 8-sep-2026).
+   Mismo lenguaje visual que el bloque anterior: fondo teal, tarjetas blancas
+   redondeadas, píldoras de estado, tipografía Plus Jakarta Sans.
+   ========================================================================== */
+
+/* ---------- Rejilla de trabajo a 3/4 columnas (chat y consultas) ---------- */
+.pro-work {
+  display: grid;
+  gap: 0.85rem;
+  min-height: 0;
+  min-width: 0;
+}
+@media (min-width: 1024px) { .pro-work { gap: 1rem; } }
+/* Chat: carril de relaciones · lista · hilo · contexto clínico.
+   Los cortes coinciden con los de Tailwind (md 768 · xl 1280 · 2xl 1536)
+   porque la visibilidad de cada columna se controla con sus clases. */
+.pro-work-chat { grid-template-columns: 1fr; gap: 0; }
+@media (min-width: 768px) { .pro-work-chat { grid-template-columns: 300px minmax(0, 1fr); } }
+@media (min-width: 1280px) { .pro-work-chat { grid-template-columns: 200px 320px minmax(0, 1fr); } }
+@media (min-width: 1536px) { .pro-work-chat { grid-template-columns: 200px 320px minmax(0, 1fr) 288px; } }
+@media (min-width: 768px) { .pro-work-chat > * + * { border-left: 1px solid var(--pro-line); } }
+/* Consultas: lista · detalle */
+.pro-work-2 { grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .pro-work-2 { grid-template-columns: minmax(0, 1fr) 340px; } }
+/* Contenido: carril lateral · tablero */
+.pro-work-side { grid-template-columns: 1fr; }
+@media (min-width: 1024px) { .pro-work-side { grid-template-columns: 208px minmax(0, 1fr); } }
+
+/* OJO: estas clases NO fijan `display`. Tailwind controla la visibilidad con
+   `hidden`/`flex`/`lg:flex`, y una clase propia que declare `display` gana por
+   ir después en la hoja — fue lo que hizo salir el carril dos veces en móvil. */
+.pro-col { flex-direction: column; min-height: 0; min-width: 0; }
+.pro-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+.pro-scroll::-webkit-scrollbar { width: 8px; }
+.pro-scroll::-webkit-scrollbar-thumb { background: #d7e3e8; border-radius: 9999px; }
+
+/* ---------- Carril de secciones (relaciones del chat, panel de contenido) ---------- */
+.pro-lane { flex-direction: column; gap: 2px; padding: 0.6rem; }
+.pro-lane-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  height: 42px; padding: 0 11px; border-radius: 12px;
+  font-size: 13.5px; font-weight: 600; color: var(--pro-ink-2) !important;
+  background: transparent; border: 0; text-align: left; min-width: 0;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+.pro-lane-item:hover { background: #f1f6f8; color: var(--pro-ink) !important; }
+.pro-lane-item svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--pro-muted) !important; }
+.pro-lane-item .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-lane-item .count {
+  flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #eef2f5; color: var(--pro-muted) !important; font-size: 11.5px; font-weight: 700;
+}
+.pro-lane-item.is-active { background: var(--pro-teal-soft); color: var(--pro-teal) !important; }
+.pro-lane-item.is-active svg { color: var(--pro-teal) !important; }
+.pro-lane-item.is-active .count { background: var(--pro-teal); color: #fff !important; }
+.pro-lane-sep { height: 1px; background: var(--pro-line); margin: 0.5rem 0.25rem; }
+/* En móvil el carril se convierte en fila de chips desplazable */
+.pro-lane-row { flex-direction: row; gap: 6px; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
+.pro-lane-row::-webkit-scrollbar { display: none; }
+.pro-lane-row .pro-lane-item { width: auto; flex: 0 0 auto; height: 38px; border-radius: 9999px; border: 1px solid #e3ecf0; }
+.pro-lane-row .pro-lane-item.is-active { border-color: var(--pro-teal-soft); }
+
+/* ---------- Lista de conversaciones ---------- */
+.pro-conv {
+  display: flex; gap: 10px; width: 100%; text-align: left;
+  padding: 10px; border-radius: 14px; min-width: 0;
+  border: 1px solid transparent; background: transparent;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.pro-conv:hover { background: #f4f9fa; }
+.pro-conv.is-active { background: #eaf5f7; border-color: #bfdfe6; }
+.pro-conv .pro-initials { width: 44px; height: 44px; font-size: 14px; }
+.pro-conv .body { flex: 1; min-width: 0; }
+.pro-conv .top { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pro-conv .name { font-weight: 700; font-size: 13.5px; color: var(--pro-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pro-conv .time { margin-left: auto; font-size: 11.5px; color: var(--pro-muted); flex-shrink: 0; }
+.pro-conv .sub { font-size: 12px; color: var(--pro-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-conv .prev { font-size: 12.5px; color: var(--pro-ink-2); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-conv .foot { display: flex; align-items: center; gap: 8px; margin-top: 5px; min-width: 0; }
+.pro-conv .unread {
+  flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--pro-live); color: #fff !important; font-size: 11px; font-weight: 800;
+}
+.pro-tag {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 9999px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; flex-shrink: 0;
+  background: #eef2f5; color: var(--pro-ink-2);
+}
+.pro-tag-patient { background: #e8f0fd; color: #2f6fdb; }
+.pro-tag-doctor { background: #e9edf8; color: #163a83; }
+.pro-tag-provider { background: #fdf3dd; color: #8a6508; }
+.pro-tag-orientation { background: #f0e9fb; color: #6a3fb5; }
+.pro-tag-teal { background: var(--pro-teal-soft); color: var(--pro-teal); }
+.pro-mini { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.pro-mini::before { content: ""; width: 7px; height: 7px; border-radius: 9999px; background: currentColor; flex-shrink: 0; }
+.pro-mini-ok { color: var(--pro-ok); }
+.pro-mini-warn { color: var(--pro-warn); }
+.pro-mini-info { color: var(--pro-info); }
+.pro-mini-muted { color: var(--pro-muted); }
+
+/* ---------- Hilo de mensajes ---------- */
+.pro-thread { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.pro-thread-head {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border-bottom: 1px solid var(--pro-line); flex-shrink: 0;
+}
+.pro-thread-acts { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.pro-daysep { display: flex; align-items: center; justify-content: center; margin: 14px 0 10px; }
+.pro-daysep span { background: #eef2f5; color: var(--pro-muted); font-size: 11.5px; font-weight: 600; padding: 4px 12px; border-radius: 9999px; }
+
+/* ---------- Panel de contexto clínico ---------- */
+.pro-ctx-block { padding: 12px 0; border-top: 1px solid var(--pro-line); }
+.pro-ctx-block:first-child { border-top: 0; padding-top: 0; }
+.pro-ctx-h { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--pro-ink-2); margin-bottom: 8px; }
+.pro-ctx-h svg { width: 15px; height: 15px; color: var(--pro-muted) !important; flex-shrink: 0; }
+.pro-ctx-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 2px 0; min-width: 0; }
+.pro-ctx-line .k { color: var(--pro-muted); flex-shrink: 0; }
+.pro-ctx-line .v { color: var(--pro-ink); font-weight: 600; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Consultas: filas de cita ---------- */
+.pro-daygroup { font-size: 13px; font-weight: 800; color: var(--pro-ink); margin: 14px 0 6px; }
+.pro-daygroup:first-child { margin-top: 0; }
+.pro-appt {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; min-width: 0;
+  padding: 11px 12px; border-radius: 14px; border: 1px solid var(--pro-line); background: #fff;
+  transition: box-shadow 140ms ease, border-color 140ms ease;
+}
+.pro-appt:hover { border-color: #cbe0e6; box-shadow: 0 6px 18px -12px rgba(3,32,42,.5); }
+.pro-appt.is-active { border-color: var(--pro-teal); box-shadow: inset 3px 0 0 var(--pro-teal); }
+.pro-appt .when { width: 58px; flex-shrink: 0; }
+.pro-appt .when b { display: block; font-size: 14.5px; font-weight: 800; color: var(--pro-ink); line-height: 1.2; }
+.pro-appt .when span { display: block; font-size: 11.5px; color: var(--pro-muted); }
+.pro-appt .who { flex: 1 1 190px; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.pro-appt .who .pro-initials { width: 38px; height: 38px; font-size: 13px; }
+.pro-appt .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.pro-appt .acts { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+@media (max-width: 900px) {
+  .pro-appt { flex-wrap: wrap; }
+  .pro-appt .acts { margin-left: 0; width: 100%; }
+  .pro-appt .meta { width: 100%; }
+}
+
+/* Lista de preparación / pasos posteriores */
+.pro-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--pro-ink-2); padding: 4px 0; }
+.pro-check svg { width: 16px; height: 16px; flex-shrink: 0; }
+.pro-check.is-done { color: var(--pro-ok); }
+.pro-check.is-done svg { color: var(--pro-ok) !important; }
+.pro-check.is-todo svg { color: #c3ced6 !important; }
+.pro-steps { display: flex; align-items: flex-start; gap: 0; margin-top: 4px; }
+.pro-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative; min-width: 0; }
+.pro-step .dot {
+  width: 30px; height: 30px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center;
+  background: #eef2f5; color: var(--pro-muted) !important; border: 0;
+}
+.pro-step .dot svg { width: 15px; height: 15px; color: currentColor !important; }
+.pro-step.is-active .dot { background: var(--pro-teal-soft); color: var(--pro-teal) !important; }
+.pro-step .lbl { font-size: 11px; color: var(--pro-muted); text-align: center; line-height: 1.2; }
+.pro-step.is-active .lbl { color: var(--pro-teal); font-weight: 700; }
+.pro-step::after { content: ""; position: absolute; top: 15px; left: calc(50% + 20px); right: calc(-50% + 20px); height: 1px; background: var(--pro-line); }
+.pro-step:last-child::after { display: none; }
+
+/* ---------- Tabla de movimientos (ingresos) ---------- */
+.pro-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pro-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 720px; }
+.pro-table th {
+  text-align: left; font-weight: 700; font-size: 11px; letter-spacing: .02em;
+  color: var(--pro-muted); background: #f5fafb; padding: 9px 10px; white-space: nowrap;
+}
+.pro-table th:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+.pro-table th:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+.pro-table td { padding: 11px 10px; border-bottom: 1px solid var(--pro-line); color: var(--pro-ink-2); vertical-align: middle; }
+.pro-table tr:last-child td { border-bottom: 0; }
+.pro-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pro-table td.strong { color: var(--pro-ink); font-weight: 700; }
+.pro-table tbody tr:hover td { background: #f8fbfc; }
+.pro-pager { display: flex; align-items: center; justify-content: center; gap: 4px; padding-top: 12px; flex-wrap: wrap; }
+.pro-pager button {
+  min-width: 32px; height: 32px; padding: 0 8px; border-radius: 9px; border: 1px solid #e3ecf0;
+  background: #fff; color: var(--pro-ink-2) !important; font-size: 12.5px; font-weight: 600;
+}
+.pro-pager button:hover:not(:disabled) { background: #f1f6f8; }
+.pro-pager button.is-active { background: var(--pro-teal); border-color: var(--pro-teal); color: #fff !important; }
+.pro-pager button:disabled { opacity: .4; }
+
+/* Leyenda del gráfico con importes */
+.pro-legend { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.pro-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; }
+.pro-legend-row .swatch { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
+.pro-legend-row .lbl { color: var(--pro-ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-legend-row .amt { margin-left: auto; font-weight: 700; color: var(--pro-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pro-legend-row .pct { color: var(--pro-muted); width: 44px; text-align: right; flex-shrink: 0; }
+.pro-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; }
+.pro-delta-up { color: var(--pro-ok); }
+.pro-delta-down { color: var(--pro-live); }
+
+/* Cuenta bancaria / bloques de resumen */
+.pro-bank { display: flex; align-items: center; gap: 11px; padding: 11px; border-radius: 13px; background: #f5fafb; border: 1px solid #e3ecf0; min-width: 0; }
+.pro-bank .pro-icon-box { width: 38px; height: 38px; border-radius: 11px; }
+.pro-note { display: flex; gap: 9px; padding: 11px; border-radius: 13px; background: var(--pro-info-bg); font-size: 12.5px; color: #24457c; }
+.pro-note svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--pro-info) !important; margin-top: 1px; }
+
+/* ---------- Panel de contenido: tarjetas de publicación ---------- */
+.pro-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.pro-tile { border-radius: 14px; overflow: hidden; background: #fff; border: 1px solid var(--pro-line); display: flex; flex-direction: column; min-width: 0; }
+.pro-tile:hover { box-shadow: 0 10px 26px -16px rgba(3,32,42,.6); }
+.pro-tile-media { position: relative; aspect-ratio: 16 / 10; background: linear-gradient(135deg, #dff0f4, #eef4f7); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.pro-tile-media img { width: 100%; height: 100%; object-fit: cover; }
+.pro-tile-media > svg { width: 34px; height: 34px; color: #8fb9c3 !important; }
+.pro-tile-badge { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 7px; font-size: 10.5px; font-weight: 700; }
+.pro-tile-badge-ok { background: var(--pro-ok); color: #fff !important; }
+.pro-tile-badge-warn { background: var(--pro-warn); color: #fff !important; }
+.pro-tile-badge-info { background: var(--pro-info); color: #fff !important; }
+.pro-tile-badge-muted { background: rgba(23,41,61,.72); color: #fff !important; }
+.pro-tile-time { position: absolute; bottom: 8px; right: 8px; height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(0,0,0,.62); color: #fff !important; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; }
+.pro-tile-body { padding: 10px 11px 11px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pro-tile-title { font-size: 13.5px; font-weight: 700; color: var(--pro-ink); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pro-tile-meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--pro-muted); min-width: 0; }
+.pro-tile-meta .cat { text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--pro-teal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-tile-foot { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+
+/* Destacado del panel de contenido */
+.pro-feature { border-radius: 18px; overflow: hidden; background: #0b2f3a; color: #fff; position: relative; display: grid; grid-template-columns: 1fr; min-height: 220px; }
+@media (min-width: 860px) { .pro-feature { grid-template-columns: minmax(0, 1fr) 44%; } }
+.pro-feature-body { padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; gap: 9px; min-width: 0; z-index: 1; }
+.pro-feature-media { position: relative; min-height: 170px; background: #0f3d4a; overflow: hidden; }
+.pro-feature-media img { width: 100%; height: 100%; object-fit: cover; }
+.pro-feature-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to right, #0b2f3a 0%, rgba(11,47,58,.55) 32%, rgba(11,47,58,0) 72%); }
+@media (max-width: 859px) { .pro-feature-media::after { background: linear-gradient(to top, #0b2f3a 6%, rgba(11,47,58,0) 70%); } }
+.pro-feature-cat { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #9fe0ec !important; }
+.pro-feature-title { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; font-weight: 800; font-size: clamp(1.15rem, .9rem + 1.2vw, 1.75rem); line-height: 1.18; color: #fff !important; }
+.pro-feature-desc { font-size: 13px; color: rgba(255,255,255,.86); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pro-feature-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: rgba(255,255,255,.86); }
+.pro-feature-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+/* KPI compacta en fila (barra superior del panel de contenido) */
+.pro-statbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 720px) { .pro-statbar { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.pro-stat { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 13px; background: #f5fafb; border: 1px solid #e3ecf0; min-width: 0; }
+.pro-stat .pro-icon-box { width: 34px; height: 34px; border-radius: 10px; }
+.pro-stat .pro-icon-box svg { width: 17px; height: 17px; }
+.pro-stat .k { font-size: 11.5px; color: var(--pro-muted); line-height: 1.2; }
+.pro-stat .v { font-size: 16px; font-weight: 800; color: var(--pro-ink); line-height: 1.2; }
+
+/* Alto útil de las pantallas de trabajo (chat) sin doble barra de scroll */
+.pro-tall { height: calc(100dvh - 168px); min-height: 460px; }
+@media (max-width: 767px) { .pro-tall { height: calc(100dvh - 190px); min-height: 380px; } }
+
+/* Los títulos dentro de una tarjeta PRO son OSCUROS.
+   La regla «4. Headings sueltos» de más arriba pinta de blanco cualquier
+   h1–h4 que viva sobre el fondo teal salvo que un ancestro lleve una clase
+   `bg-…`. Las tarjetas PRO pintan su blanco con `.pro-card`, no con `bg-card`,
+   así que sus títulos salían en blanco sobre blanco (invisibles). Esto lo
+   arregla para TODA tarjeta PRO, presente y futura, sin tener que acordarse
+   de añadir `bg-card` a mano en cada una.
+   El destacado del panel de contenido (.pro-feature) y las tarjetas de live
+   son oscuras a propósito: ahí el blanco es correcto y no se tocan. */
+.app-bg-image :is(.pro-card, .pro-tile) :where(h1, h2, h3, h4):not([class*="text-white"]):not([class*="pro-feature"]):not([class*="pro-hero-title"]):not([class*="pro-live-title"]) {
+  color: var(--pro-ink) !important;
+  text-shadow: none !important;
+}
+.app-bg-image :is(.pro-card, .pro-tile) :where(.text-muted-foreground) { color: var(--pro-muted) !important; }
+.app-bg-image :is(.pro-card, .pro-tile) :where(.text-foreground) { color: var(--pro-ink) !important; }
+
+/* La sala por insignia ocupa todo el ancho útil del chat: debajo de xl el
+   carril está oculto y no hay columna 2, así que fijarla a `2 / -1` creaba una
+   columna implícita y desbordaba la página. */
+.pro-chat-full { grid-column: 1 / -1; }
+@media (min-width: 1280px) { .pro-chat-full { grid-column: 2 / -1; } }
+
+/* El hilo de mensajes es el componente compartido `ChatMessagesPanel`, que se
+   dibuja como tarjeta con sombra. Dentro del chat PRO vive DENTRO de otra
+   tarjeta, así que aquí se le quita el relieve y se le hace rellenar su
+   columna: si no, queda flotando arriba y el resto de la columna sale vacío. */
+.pro-thread-col { flex-direction: column; min-height: 0; }
+.pro-thread-col > * { flex: 1 1 auto; min-height: 0; max-height: 100%; box-shadow: none !important; border-radius: 0 !important; }

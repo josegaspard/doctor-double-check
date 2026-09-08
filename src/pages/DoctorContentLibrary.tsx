@@ -1,53 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
-import { 
-  FileText, 
-  Image as ImageIcon, 
-  Video, 
-  Search,
-  Filter,
-  Plus,
-  Trash2,
-  Eye,
-  Clock,
-  Users,
-  Stethoscope,
-  Globe,
-  Lock,
-  Loader2,
-  Settings2,
-  ArrowLeft,
+import {
+  FileText, Image as ImageIcon, Video, Search, Plus, Trash2, Eye, Users, Stethoscope,
+  Globe, Lock, Loader2, Settings2, LayoutGrid, FolderOpen, FilePlus2, Clock,
+  BarChart3, ShoppingBag, ChevronDown, PlayCircle, BookOpen, Presentation, Check, X,
+  Info, ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
+import { fill, money, fmtDate, norm } from '@/lib/proFormat';
 
 interface DoctorContent {
   id: string;
@@ -61,30 +36,31 @@ interface DoctorContent {
   audience_type: 'all' | 'patients' | 'professionals' | 'subscribers';
   category: string | null;
   created_at: string;
+  is_book?: boolean;
+  is_masterclass?: boolean | null;
+  moderation_status?: 'pending' | 'approved' | 'rejected';
+  moderation_note?: string | null;
 }
 
-const getAudienceIcon = (audience: string) => {
-  switch (audience) {
-    case 'professionals': return <Stethoscope className="w-3 h-3" />;
-    case 'patients': return <Users className="w-3 h-3" />;
-    default: return <Globe className="w-3 h-3" />;
-  }
-};
+interface Sale { id: string; amount: number; created_at: string; content_id: string | null }
 
-const getAudienceLabel = (audience: string, t: (key: string) => string) => {
-  switch (audience) {
-    case 'professionals': return t('content.professionals');
-    case 'patients': return t('content.patients');
-    default: return t('content.all');
-  }
+type Section = 'overview' | 'published' | 'drafts' | 'review' | 'collections' | 'sales' | 'stats';
+type Sort = 'recent' | 'old' | 'title' | 'price';
+
+/** Estado real de una pieza a partir de moderación + visibilidad */
+type State = 'published' | 'draft' | 'review' | 'rejected';
+const stateOf = (c: DoctorContent): State => {
+  if (c.moderation_status === 'pending') return 'review';
+  if (c.moderation_status === 'rejected') return 'rejected';
+  return c.is_public ? 'published' : 'draft';
 };
 
 const getTypeIcon = (type: string) => {
   switch (type) {
-    case 'video': return <Video className="w-5 h-5" />;
-    case 'pdf': return <FileText className="w-5 h-5" />;
-    case 'image': return <ImageIcon className="w-5 h-5" />;
-    default: return <FileText className="w-5 h-5" />;
+    case 'video': return <Video />;
+    case 'pdf': return <FileText />;
+    case 'image': return <ImageIcon />;
+    default: return <Presentation />;
   }
 };
 
@@ -92,16 +68,20 @@ export default function DoctorContentLibrary() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
-  const locale = language === 'es' ? es : enUS;
+
   const [contents, setContents] = useState<DoctorContent[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [sort, setSort] = useState<Sort>('recent');
+  const [section, setSection] = useState<Section>('overview');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  // Bulk management
+  // Gestión múltiple (se conserva de la versión anterior)
   const [isManaging, setIsManaging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -117,7 +97,21 @@ export default function DoctorContentLibrary() {
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      setContents(data || []);
+      const rows = (data || []) as any as DoctorContent[];
+      setContents(rows);
+
+      // Ventas reales de ese contenido
+      const ids = rows.map(r => r.id);
+      if (ids.length) {
+        const { data: purchases } = await supabase
+          .from('purchases')
+          .select('id, amount, created_at, content_id')
+          .in('content_id', ids)
+          .order('created_at', { ascending: false });
+        setSales(((purchases as any[]) || []) as Sale[]);
+      } else {
+        setSales([]);
+      }
     } catch (error) {
       console.error('Error fetching content:', error);
       toast.error(t('doctorLibrary.errorLoading'));
@@ -143,12 +137,56 @@ export default function DoctorContentLibrary() {
     );
   }
 
-  const filteredContents = contents.filter(content => {
-    const matchesSearch = content.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === 'all' || content.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
+  // ------------------------------------------------------------------ conteos
+  const counts = useMemo(() => {
+    const c = { published: 0, draft: 0, review: 0, rejected: 0, collections: 0, paid: 0, publicItems: 0 };
+    contents.forEach(x => {
+      const s = stateOf(x);
+      c[s] += 1;
+      if (x.is_book || x.is_masterclass) c.collections += 1;
+      if ((x.price || 0) > 0) c.paid += 1;
+      if (x.is_public) c.publicItems += 1;
+    });
+    return c;
+  }, [contents]);
 
+  const salesTotal = useMemo(() => sales.reduce((s, x) => s + Number(x.amount || 0), 0), [sales]);
+  const titleById = useMemo(() => {
+    const m = new Map<string, string>();
+    contents.forEach(c => m.set(c.id, c.title));
+    return m;
+  }, [contents]);
+
+  // ------------------------------------------------------------------- lista
+  const filtered = useMemo(() => {
+    const q = norm(searchQuery.trim());
+    let arr = contents.filter(c => {
+      if (typeFilter !== 'all' && c.type !== typeFilter) return false;
+      if (q && !norm(c.title).includes(q) && !norm(c.description).includes(q) && !norm(c.category).includes(q)) return false;
+      const s = stateOf(c);
+      if (section === 'published') return s === 'published';
+      if (section === 'drafts') return s === 'draft' || s === 'rejected';
+      if (section === 'review') return s === 'review';
+      if (section === 'collections') return !!(c.is_book || c.is_masterclass);
+      return true;
+    });
+    arr = [...arr].sort((a, b) => {
+      if (sort === 'old') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sort === 'title') return a.title.localeCompare(b.title);
+      if (sort === 'price') return (b.price || 0) - (a.price || 0);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return arr;
+  }, [contents, searchQuery, typeFilter, section, sort]);
+
+  const featured = useMemo(
+    () => contents.find(c => stateOf(c) === 'published') || contents[0] || null,
+    [contents],
+  );
+  const recentPublished = useMemo(() => contents.filter(c => stateOf(c) === 'published').slice(0, 8), [contents]);
+  const draftsAndReview = useMemo(() => contents.filter(c => ['draft', 'review', 'rejected'].includes(stateOf(c))).slice(0, 8), [contents]);
+
+  // ---------------------------------------------------------------- acciones
   const extractStoragePath = (url: string): string => {
     if (!url) return '';
     const decoded = decodeURIComponent(url.trim());
@@ -171,8 +209,6 @@ export default function DoctorContentLibrary() {
     const contentToDelete = contents.find(c => c.id === id);
     const { error } = await supabase.from('doctor_content').delete().eq('id', id);
     if (error) throw error;
-
-    // Best-effort storage cleanup
     if (contentToDelete?.file_url) {
       const filePath = extractStoragePath(contentToDelete.file_url);
       if (filePath) await supabase.storage.from('doctor-content').remove([filePath]).catch(() => {});
@@ -203,10 +239,7 @@ export default function DoctorContentLibrary() {
     if (selectedIds.size === 0) return;
     setIsBulkDeleting(true);
     try {
-      const ids = Array.from(selectedIds);
-      for (const id of ids) {
-        await deleteContent(id);
-      }
+      for (const id of Array.from(selectedIds)) await deleteContent(id);
       setContents(prev => prev.filter(c => !selectedIds.has(c.id)));
       setSelectedIds(new Set());
       setIsManaging(false);
@@ -227,240 +260,354 @@ export default function DoctorContentLibrary() {
       return next;
     });
   };
-
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredContents.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filteredContents.map(c => c.id)));
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(c => c.id)));
   };
+
+  /** Publicar / retirar: es un solo campo de la base, el que decide si la pieza
+      se ve en el canal. Sin esto la sección «Borradores» no tendría salida. */
+  const togglePublic = async (c: DoctorContent) => {
+    setTogglingId(c.id);
+    const { error } = await supabase.from('doctor_content').update({ is_public: !c.is_public } as any).eq('id', c.id);
+    setTogglingId(null);
+    if (error) { toast.error(error.message); return; }
+    setContents(prev => prev.map(x => (x.id === c.id ? { ...x, is_public: !c.is_public } : x)));
+    toast.success(!c.is_public ? t('pro.contentPanel.publishedOk') : t('pro.contentPanel.unpublishedOk'));
+  };
+
+  // ------------------------------------------------------------------- vista
+  const stateBadge = (s: State) => ({
+    published: { label: t('pro.contentPanel.badgePublished'), cls: 'pro-tile-badge-ok' },
+    draft: { label: t('pro.contentPanel.badgeDraft'), cls: 'pro-tile-badge-muted' },
+    review: { label: t('pro.contentPanel.badgeReview'), cls: 'pro-tile-badge-info' },
+    rejected: { label: t('pro.contentPanel.badgeRejected'), cls: 'pro-tile-badge-warn' },
+  }[s]);
+
+  const audienceLabel = (a: string) => ({
+    all: t('pro.contentPanel.audienceAll'),
+    patients: t('pro.contentPanel.audiencePatients'),
+    professionals: t('pro.contentPanel.audienceProfessionals'),
+    subscribers: t('pro.contentPanel.audienceSubscribers'),
+  }[a] || t('pro.contentPanel.audienceAll'));
+
+  const tile = (c: DoctorContent) => {
+    const s = stateOf(c);
+    const badge = stateBadge(s);
+    const checked = selectedIds.has(c.id);
+    return (
+      <article key={c.id} className={`pro-tile ${isManaging && checked ? 'ring-2' : ''}`} style={isManaging && checked ? { boxShadow: '0 0 0 2px var(--pro-teal)' } : undefined}>
+        <div className="pro-tile-media" onClick={isManaging ? () => toggleSelect(c.id) : undefined}>
+          {c.thumbnail_url ? <img src={c.thumbnail_url} alt="" loading="lazy" /> : getTypeIcon(c.type)}
+          {isManaging && (
+            <span className="absolute top-2 left-2 z-10" onClick={e => e.stopPropagation()}>
+              <Checkbox checked={checked} onCheckedChange={() => toggleSelect(c.id)} className="bg-white" />
+            </span>
+          )}
+          <span className={`pro-tile-badge ${badge.cls}`}>{badge.label}</span>
+        </div>
+        <div className="pro-tile-body">
+          <h3 className="pro-tile-title">{c.title}</h3>
+          <div className="pro-tile-meta">
+            {c.category && <span className="cat">{c.category}</span>}
+            {c.category && <span>·</span>}
+            <span>{(c.price || 0) > 0 ? money(Number(c.price), language) : t('pro.contentPanel.free')}</span>
+          </div>
+          <div className="pro-tile-meta">
+            <span>{fmtDate(new Date(c.created_at), language)}</span>
+            <span>·</span>
+            <span>{audienceLabel(c.audience_type)}</span>
+          </div>
+          {s === 'rejected' && c.moderation_note && (
+            <p className="text-[11px]" style={{ color: 'var(--pro-warn)' }}>{t('pro.contentPanel.moderationNoteLabel')}: {c.moderation_note}</p>
+          )}
+          {!isManaging && (
+            <div className="pro-tile-foot">
+              <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={() => setPreviewContent(c)}>
+                <Eye /> {t('pro.contentPanel.preview')}
+              </button>
+              {c.moderation_status !== 'pending' && (
+                <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" disabled={togglingId === c.id} onClick={() => togglePublic(c)}>
+                  {togglingId === c.id ? <Loader2 className="animate-spin" /> : c.is_public ? <Lock /> : <Globe />}
+                  {c.is_public ? t('pro.contentPanel.unpublish') : t('pro.contentPanel.publish')}
+                </button>
+              )}
+              <button type="button" className="pro-kebab ml-auto" onClick={() => setDeleteId(c.id)} aria-label={t('pro.contentPanel.delete')}>
+                <Trash2 />
+              </button>
+            </div>
+          )}
+        </div>
+      </article>
+    );
+  };
+
+  const navItems: { key: Section; label: string; Icon: React.ElementType; count?: number }[] = [
+    { key: 'overview', label: t('pro.contentPanel.navOverview'), Icon: LayoutGrid },
+    { key: 'published', label: t('pro.contentPanel.navPublished'), Icon: PlayCircle, count: counts.published },
+    { key: 'drafts', label: t('pro.contentPanel.navDrafts'), Icon: FilePlus2, count: counts.draft + counts.rejected },
+    { key: 'review', label: t('pro.contentPanel.navReview'), Icon: Clock, count: counts.review },
+    { key: 'collections', label: t('pro.contentPanel.navCollections'), Icon: FolderOpen, count: counts.collections },
+    { key: 'sales', label: t('pro.contentPanel.navSales'), Icon: ShoppingBag, count: sales.length },
+    { key: 'stats', label: t('pro.contentPanel.navStats'), Icon: BarChart3 },
+  ];
+
+  const rail = navItems.map(n => (
+    <button
+      key={n.key}
+      type="button"
+      className={`pro-lane-item ${section === n.key ? 'is-active' : ''}`}
+      aria-pressed={section === n.key}
+      onClick={() => setSection(n.key)}
+    >
+      <n.Icon />
+      <span className="label">{n.label}</span>
+      {n.count ? <span className="count">{n.count}</span> : null}
+    </button>
+  ));
+
+  const sortLabel = sort === 'old' ? t('pro.contentPanel.sortOld')
+    : sort === 'title' ? t('pro.contentPanel.sortTitle')
+    : sort === 'price' ? t('pro.contentPanel.sortPrice')
+    : t('pro.contentPanel.sortRecent');
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Volver
-        </Button>
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              {t('doctorLibrary.title')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {contents.length} {t('doctorLibrary.filesUploaded')}
-            </p>
+      <div className="pro-container pro-page">
+        <div className="pro-page-head">
+          <div className="min-w-0">
+            <h1 className="pro-page-title"><LayoutGrid className="w-7 h-7" /> <span className="truncate">{t('pro.contentPanel.title')}</span></h1>
+            <p className="pro-page-sub">{t('pro.contentPanel.subtitle')}</p>
           </div>
-          
-          <div className="flex items-center gap-2">
-            {contents.length > 0 && (
-              <Button
-                variant={isManaging ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => { setIsManaging(!isManaging); setSelectedIds(new Set()); }}
-                className="gap-1.5"
-              >
-                <Settings2 className="w-4 h-4" />
-                {isManaging ? t('manage.done') : t('manage.manage')}
-              </Button>
-            )}
-            <Link to="/doctor/upload">
-              <Button className="gap-2" size="sm">
-                <Plus className="w-4 h-4" />
-                {t('doctorLibrary.uploadContent')}
-              </Button>
-            </Link>
-          </div>
+          <Link to="/doctor/upload" className="pro-btn pro-btn-live w-full sm:w-auto">
+            <Plus /> {t('pro.contentPanel.create')}
+          </Link>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={t('inputs.searchByTitle')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder={t('doctorLibrary.fileType')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('doctorLibrary.allTypes')}</SelectItem>
-              <SelectItem value="video">{t('doctorLibrary.videos')}</SelectItem>
-              <SelectItem value="pdf">{t('doctorLibrary.pdfs')}</SelectItem>
-              <SelectItem value="image">{t('doctorLibrary.images')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="pro-work pro-work-side">
+          {/* Carril de secciones */}
+          <nav className="pro-card pro-lane hidden lg:flex self-start" aria-label={t('pro.contentPanel.title')}>
+            {rail}
+          </nav>
+          <div className="pro-card pro-lane pro-lane-row flex lg:hidden">{rail}</div>
 
-        {/* Manage bar */}
-        {isManaging && (
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 p-3 sm:p-4 rounded-xl bg-card border border-primary/30 shadow-md ring-1 ring-primary/10">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-4 h-4 text-primary" />
+          <div className="min-w-0 space-y-4">
+            {/* Barra de números + buscador */}
+            <section className="pro-card pro-card-pad min-w-0">
+              <div className="pro-statbar mb-3">
+                <div className="pro-stat">
+                  <span className="pro-icon-box"><PlayCircle /></span>
+                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statPublished')}</span><span className="v block">{counts.published}</span></span>
+                </div>
+                <div className="pro-stat">
+                  <span className="pro-icon-box"><Clock /></span>
+                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statReview')}</span><span className="v block">{counts.review}</span></span>
+                </div>
+                <div className="pro-stat">
+                  <span className="pro-icon-box"><ShoppingBag /></span>
+                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statSales')}</span><span className="v block">{money(salesTotal, language)}</span></span>
+                </div>
+                <div className="pro-stat">
+                  <span className="pro-icon-box"><Users /></span>
+                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statPurchases')}</span><span className="v block">{sales.length}</span></span>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm font-medium text-card-foreground">{t('manage.selectHint')}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={toggleSelectAll}>
-                {selectedIds.size === filteredContents.length ? t('manage.deselectAll') : t('manage.selectAll')}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={selectedIds.size === 0}
-                onClick={() => setShowBulkDeleteDialog(true)}
-                className="gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                {t('manage.deleteSelected')} ({selectedIds.size})
-              </Button>
-            </div>
-          </div>
-        )}
 
-        {/* Content Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : filteredContents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredContents.map((content) => (
-              <Card
-                key={content.id}
-                className={`group overflow-hidden hover:shadow-lg transition-all ${isManaging && selectedIds.has(content.id) ? 'ring-2 ring-primary' : ''}`}
-                onClick={isManaging ? () => toggleSelect(content.id) : undefined}
-              >
-                {/* Thumbnail */}
-                <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                  {content.thumbnail_url ? (
-                    <img src={content.thumbnail_url} alt={content.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-primary/40">{getTypeIcon(content.type)}</div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <label className="pro-search flex-1">
+                  <Search />
+                  <input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder={t('pro.contentPanel.searchPlaceholder')}
+                    aria-label={t('pro.contentPanel.searchPlaceholder')}
+                  />
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="pro-btn pro-btn-outline pro-btn-sm">
+                        {typeFilter === 'all' ? t('pro.contentPanel.filterType') : typeFilter} <ChevronDown />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setTypeFilter('all')}>{t('pro.contentPanel.allTypes')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTypeFilter('video')}>{t('doctorLibrary.videos')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTypeFilter('pdf')}>{t('doctorLibrary.pdfs')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setTypeFilter('image')}>{t('doctorLibrary.images')}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="pro-btn pro-btn-outline pro-btn-sm">{sortLabel} <ChevronDown /></button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setSort('recent')}>{t('pro.contentPanel.sortRecent')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSort('old')}>{t('pro.contentPanel.sortOld')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSort('title')}>{t('pro.contentPanel.sortTitle')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSort('price')}>{t('pro.contentPanel.sortPrice')}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {contents.length > 0 && (
+                    <button
+                      type="button"
+                      className={`pro-btn pro-btn-sm ${isManaging ? 'pro-btn-teal' : 'pro-btn-outline'}`}
+                      onClick={() => { setIsManaging(!isManaging); setSelectedIds(new Set()); }}
+                    >
+                      <Settings2 /> {isManaging ? t('pro.contentPanel.done') : t('pro.contentPanel.manage')}
+                    </button>
                   )}
-                  
-                  {/* Selection checkbox overlay */}
-                  {isManaging && (
-                    <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(content.id)}
-                        onCheckedChange={() => toggleSelect(content.id)}
-                        className="bg-background/80 backdrop-blur-sm"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Type Badge */}
-                  <div className={`absolute ${isManaging ? 'top-2 left-8' : 'top-2 left-2'}`}>
-                    <Badge variant="secondary" className="gap-1 capitalize">
-                      {getTypeIcon(content.type)}
-                      {content.type}
-                    </Badge>
-                  </div>
-                  
-                  {/* Visibility Badge */}
-                  <div className="absolute top-2 right-2">
-                    {content.is_public ? (
-                      <Badge variant="outline" className="bg-success/10 text-success border-success/30">
-                        {t('doctorLibrary.public')}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-muted">
-                        <Lock className="w-3 h-3 mr-1" />
-                        {t('doctorLibrary.private')}
-                      </Badge>
-                    )}
+                </div>
+              </div>
+
+              {isManaging && (
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-3 p-2.5 rounded-xl" style={{ background: '#f5fafb', border: '1px solid #e3ecf0' }}>
+                  <p className="text-[12.5px] pro-ink-2">{t('manage.selectHint')}</p>
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={toggleSelectAll}>
+                      {selectedIds.size === filtered.length ? t('manage.deselectAll') : t('manage.selectAll')}
+                    </button>
+                    <button type="button" className="pro-btn pro-btn-live pro-btn-xs" disabled={selectedIds.size === 0} onClick={() => setShowBulkDeleteDialog(true)}>
+                      <Trash2 /> {t('manage.deleteSelected')} ({selectedIds.size})
+                    </button>
                   </div>
                 </div>
-                
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-foreground line-clamp-2 mb-2">{content.title}</h3>
-                  
-                  {content.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{content.description}</p>
-                  )}
-                  
-                  <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {format(new Date(content.created_at), "d MMM yyyy", { locale })}
-                    <span className="mx-1">•</span>
-                    <span className="flex items-center gap-1">
-                      {getAudienceIcon(content.audience_type)}
-                      {getAudienceLabel(content.audience_type, t)}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    {content.price > 0 ? (
-                      <Badge variant="secondary" className="text-premium">${content.price}</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-success">{t('doctorLibrary.free')}</Badge>
-                    )}
-                    
-                    {!isManaging && (
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setPreviewContent(content)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setDeleteId(content.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-12 text-center">
-            <FileText className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">{t('doctorLibrary.noContent')}</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || typeFilter !== 'all' ? t('doctorLibrary.noContentFilters') : t('doctorLibrary.noContentYet')}
-            </p>
-            <Link to="/doctor/upload">
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                {t('doctorLibrary.uploadFirst')}
-              </Button>
-            </Link>
-          </Card>
-        )}
+              )}
+            </section>
 
-        {/* Sticky mobile bottom bar */}
-        {isManaging && selectedIds.size > 0 && (
-          <div className="fixed bottom-16 sm:bottom-4 left-0 right-0 z-50 px-3 pb-safe">
-            <div className="max-w-4xl mx-auto bg-destructive text-destructive-foreground rounded-lg p-3 flex items-center justify-between shadow-lg">
-              <span className="text-sm font-medium">
-                {selectedIds.size} {t('manage.selected')}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowBulkDeleteDialog(true)}
-                className="gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                {t('manage.deleteSelected')}
-              </Button>
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
+            ) : section === 'overview' ? (
+              <>
+                {featured && (
+                  <section className="pro-feature">
+                    <div className="pro-feature-body">
+                      {featured.category && <span className="pro-feature-cat">{featured.category}</span>}
+                      <h2 className="pro-feature-title">{featured.title}</h2>
+                      {featured.description && <p className="pro-feature-desc">{featured.description}</p>}
+                      <div className="pro-feature-meta">
+                        <span>{fmtDate(new Date(featured.created_at), language)}</span>
+                        <span>·</span>
+                        <span>{(featured.price || 0) > 0 ? money(Number(featured.price), language) : t('pro.contentPanel.free')}</span>
+                        <span>·</span>
+                        <span>{audienceLabel(featured.audience_type)}</span>
+                      </div>
+                      <div className="pro-feature-acts">
+                        <button type="button" className="pro-btn pro-btn-white pro-btn-sm" onClick={() => setPreviewContent(featured)}>
+                          <Eye /> {t('pro.contentPanel.preview')}
+                        </button>
+                        <Link to="/content" className="pro-btn pro-btn-ghost pro-btn-sm"><ArrowRight /> {t('pro.contentPanel.view')}</Link>
+                      </div>
+                    </div>
+                    <div className="pro-feature-media">
+                      {featured.thumbnail_url
+                        ? <img src={featured.thumbnail_url} alt="" />
+                        : <div className="w-full h-full flex items-center justify-center" style={{ color: 'rgba(255,255,255,.35)' }}>{getTypeIcon(featured.type)}</div>}
+                    </div>
+                  </section>
+                )}
+
+                {recentPublished.length > 0 && (
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h2 className="pro-card-title"><PlayCircle /> {t('pro.contentPanel.recent')}</h2>
+                      <button type="button" className="pro-link" onClick={() => setSection('published')}>{t('pro.contentPanel.seeAll')} <ArrowRight /></button>
+                    </div>
+                    <div className="pro-shelf">{recentPublished.map(tile)}</div>
+                  </section>
+                )}
+
+                {draftsAndReview.length > 0 && (
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h2 className="pro-card-title"><FilePlus2 /> {t('pro.contentPanel.draftsAndReview')}</h2>
+                      <button type="button" className="pro-link" onClick={() => setSection('drafts')}>{t('pro.contentPanel.seeAll')} <ArrowRight /></button>
+                    </div>
+                    <div className="pro-shelf">{draftsAndReview.map(tile)}</div>
+                    <div className="pro-note mt-3"><Info /><span>{t('pro.contentPanel.moderationNote')}</span></div>
+                  </section>
+                )}
+
+                {contents.length === 0 && (
+                  <section className="pro-card pro-card-pad text-center py-12">
+                    <span className="pro-icon-box mx-auto mb-3"><FileText /></span>
+                    <p className="pro-ink font-semibold">{t('doctorLibrary.noContentYet')}</p>
+                    <Link to="/doctor/upload" className="pro-btn pro-btn-teal mt-3"><Plus /> {t('pro.contentPanel.uploadFirst')}</Link>
+                  </section>
+                )}
+              </>
+            ) : section === 'sales' ? (
+              <section className="pro-card pro-card-pad">
+                <div className="pro-card-head">
+                  <h2 className="pro-card-title"><ShoppingBag /> {t('pro.contentPanel.navSales')}</h2>
+                  <Link to="/doctor/earnings" className="pro-link">{t('pro.earnings.title')} <ArrowRight /></Link>
+                </div>
+                <p className="pro-muted text-[12.5px] mb-2">{t('pro.contentPanel.salesHint')}</p>
+                {sales.length === 0 ? (
+                  <p className="pro-muted text-sm py-8 text-center">{t('pro.contentPanel.noSales')}</p>
+                ) : (
+                  <div>
+                    {sales.map(s => (
+                      <div key={s.id} className="pro-row">
+                        <span className="pro-icon-box" style={{ width: 34, height: 34 }}><ShoppingBag /></span>
+                        <span className="min-w-0 flex-1">
+                          <span className="pro-row-name block truncate">{titleById.get(s.content_id || '') || t('pro.contentPanel.navPublished')}</span>
+                          <span className="pro-row-sub block">{fmtDate(new Date(s.created_at), language)}</span>
+                        </span>
+                        <span className="pro-row-name">{money(Number(s.amount), language)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : section === 'stats' ? (
+              <section className="pro-card pro-card-pad">
+                <h2 className="pro-card-title mb-1"><BarChart3 /> {t('pro.contentPanel.navStats')}</h2>
+                <p className="pro-muted text-[12.5px] mb-3">{t('pro.contentPanel.statsHint')}</p>
+                <div className="pro-statbar">
+                  <div className="pro-stat"><span className="pro-icon-box"><FileText /></span><span className="min-w-0"><span className="k block">{t('pro.contentPanel.totalItems')}</span><span className="v block">{contents.length}</span></span></div>
+                  <div className="pro-stat"><span className="pro-icon-box"><Globe /></span><span className="min-w-0"><span className="k block">{t('pro.contentPanel.publicItems')}</span><span className="v block">{counts.publicItems}</span></span></div>
+                  <div className="pro-stat"><span className="pro-icon-box"><ShoppingBag /></span><span className="min-w-0"><span className="k block">{t('pro.contentPanel.paidItems')}</span><span className="v block">{counts.paid}</span></span></div>
+                  <div className="pro-stat"><span className="pro-icon-box"><FolderOpen /></span><span className="min-w-0"><span className="k block">{t('pro.contentPanel.navCollections')}</span><span className="v block">{counts.collections}</span></span></div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Link to="/doctor/recordings" className="pro-btn pro-btn-outline pro-btn-sm"><PlayCircle /> {t('pro.contentPanel.recordings')}</Link>
+                  <Link to="/doctor/earnings" className="pro-btn pro-btn-outline pro-btn-sm"><ShoppingBag /> {t('pro.earnings.title')}</Link>
+                </div>
+              </section>
+            ) : (
+              <section className="pro-card pro-card-pad">
+                <div className="pro-card-head">
+                  <h2 className="pro-card-title">
+                    {section === 'published' ? <><PlayCircle /> {t('pro.contentPanel.navPublished')}</>
+                      : section === 'drafts' ? <><FilePlus2 /> {t('pro.contentPanel.navDrafts')}</>
+                      : section === 'review' ? <><Clock /> {t('pro.contentPanel.navReview')}</>
+                      : <><FolderOpen /> {t('pro.contentPanel.navCollections')}</>}
+                  </h2>
+                  {section === 'collections' && (
+                    <div className="flex gap-2">
+                      <Link to="/doctor/books" className="pro-link"><BookOpen /> {t('pro.contentPanel.books')}</Link>
+                      <Link to="/doctor/recordings" className="pro-link"><PlayCircle /> {t('pro.contentPanel.recordings')}</Link>
+                    </div>
+                  )}
+                </div>
+                {section === 'collections' && <p className="pro-muted text-[12.5px] mb-2">{t('pro.contentPanel.collectionsHint')}</p>}
+                {filtered.length === 0 ? (
+                  <div className="text-center py-12">
+                    <span className="pro-icon-box mx-auto mb-3"><FileText /></span>
+                    <p className="pro-ink font-semibold">{searchQuery || typeFilter !== 'all' ? t('pro.contentPanel.emptyFilters') : t('pro.contentPanel.empty')}</p>
+                    <Link to="/doctor/upload" className="pro-btn pro-btn-teal mt-3"><Plus /> {t('pro.contentPanel.create')}</Link>
+                  </div>
+                ) : (
+                  <div className="pro-shelf">{filtered.map(tile)}</div>
+                )}
+              </section>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Single Delete Confirmation */}
+      {/* Borrado individual */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -469,20 +616,14 @@ export default function DoctorContentLibrary() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorLibrary.deleting')}</>
-              ) : t('common.delete')}
+            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isDeleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorLibrary.deleting')}</> : t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk Delete Confirmation */}
+      {/* Borrado múltiple */}
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -491,22 +632,13 @@ export default function DoctorContentLibrary() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isBulkDeleting}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isBulkDeleting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('manage.deleting')}</>
-              ) : (
-                <><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')} ({selectedIds.size})</>
-              )}
+            <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {isBulkDeleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('manage.deleting')}</> : <><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')} ({selectedIds.size})</>}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Content Preview Modal */}
       <ContentPreviewModal
         isOpen={!!previewContent}
         onClose={() => setPreviewContent(null)}

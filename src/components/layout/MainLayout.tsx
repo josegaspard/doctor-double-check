@@ -82,7 +82,7 @@ const doctorPrimaryNav: NavItem[] = [
   { labelKey: 'pro.nav.home', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
   { labelKey: 'pro.nav.agenda', href: '/doctor/agenda', icon: CalendarDays, roles: ['doctor'] },
   { labelKey: 'pro.nav.patients', shortLabelKey: 'pro.nav.patientsShort', href: '/doctor/patients', icon: Users, roles: ['doctor'] },
-  { labelKey: 'pro.nav.consultations', href: '/my-appointments', icon: Stethoscope, roles: ['doctor'] },
+  { labelKey: 'pro.nav.consultations', href: '/doctor/consultations', icon: Stethoscope, roles: ['doctor'] },
   // La pestaña Lives abre la PORTADA de lives (`?vista=directo`); la parrilla es
   // la vista inicial de /lives. Lo pidió el cliente el 7-sep-2026.
   { labelKey: 'pro.nav.livesContent', shortLabelKey: 'nav.lives', href: '/lives?vista=directo', icon: Video, roles: ['doctor'] },
@@ -92,6 +92,9 @@ const doctorPrimaryNav: NavItem[] = [
 const doctorMoreNav: NavItem[] = [
   { labelKey: 'nav.education', href: '/education', icon: GraduationCap, roles: ['doctor'] },
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['doctor'] },
+  // La vista anterior de citas sigue accesible: la pantalla nueva de Consultas
+  // no la sustituye, la amplía.
+  { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['doctor'] },
   { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'] },
   { labelKey: 'pro.nav.patientFiles', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel

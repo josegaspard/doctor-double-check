@@ -31,6 +31,8 @@ export interface ChatSession {
   // Conversación nacida del marketplace (cliente 2026-07-01): si viene con un
   // interés de producto, es un chat con "proveedor" (para el filtro del chat).
   marketplaceInterestId?: string | null;
+  /** `chat_sessions.priority_score` — lo usa el orden «por prioridad» del chat PRO */
+  priorityScore?: number | null;
   createdAt: Date;
   // Office hours (from doctor)
   officeHoursStart?: string;
@@ -214,6 +216,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             isDoubleCheck: s.is_double_check,
             originalConsultationId: s.original_consultation_id || undefined,
             marketplaceInterestId: s.marketplace_interest_id || null,
+            priorityScore: (s as any).priority_score ?? null,
             createdAt: new Date(s.created_at),
             officeHoursStart: details?.doctor_office_hours_start ?? doc?.office_hours_start ?? undefined,
             officeHoursEnd: details?.doctor_office_hours_end ?? doc?.office_hours_end ?? undefined,

@@ -111,6 +111,8 @@ vi.mock("react-router-dom", () => ({
   Link: ({ children, to }: any) => <a href={to}>{children}</a>,
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: "/lives", search: "", hash: "" }),
+  // LivesGrid lee ?vista= para alternar portada/parrilla (rediseño 7-sep-2026)
+  useSearchParams: () => [new URLSearchParams(""), vi.fn()],
 }));
 
 // ===== Mock auth/language/subscription/site contexts =====
@@ -127,7 +129,13 @@ vi.mock("@/contexts/LanguageContext", () => ({
 }));
 
 vi.mock("@/hooks/useSubscriptions", () => ({
-  useSubscriptions: () => ({ getSubscription: () => null }),
+  useSubscriptions: () => ({ getSubscription: () => null, subscriptions: [] }),
+}));
+
+// El bloque «Próximamente» del rediseño lee disponibilidades: sin este mock la
+// consulta real deja una promesa sin atender (el cliente de prueba no tiene .gte).
+vi.mock("@/hooks/useDoctorAvailability", () => ({
+  useDoctorAvailability: () => ({ availabilities: [], myAvailabilities: [], isLoading: false }),
 }));
 
 vi.mock("@/hooks/useSiteToggles", () => ({
