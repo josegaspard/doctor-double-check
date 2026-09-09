@@ -504,6 +504,7 @@ export default function Chat() {
   }[v]);
 
   const hasBadgeRoom = myBadge === 'gold' || myBadge === 'verified';
+  const activeCount = allSessions.filter(s => s.status === 'active' && !archivedIds.has(s.id)).length;
   const otherInfo = selectedSessionData ? getSessionDisplayInfo(selectedSessionData) : null;
 
   const railButton = (v: View, withCount = true) => {
@@ -564,7 +565,20 @@ export default function Chat() {
             <h1 className="pro-page-title"><MessageSquare className="w-7 h-7" /> <span className="truncate">{t('pro.chatPro.title')}</span></h1>
             <p className="pro-page-sub">{t('pro.chatPro.subtitle')}</p>
           </div>
-          {newConversation}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Indicador en vivo de conversaciones activas: lo tenía la cabecera
+                del chat anterior y se había perdido en el rediseño. */}
+            {activeCount > 0 && (
+              <span className="pro-pill pro-pill-ok pro-pill-plain" style={{ height: 34, paddingInline: 12 }}>
+                <span className="relative inline-flex w-2 h-2 mr-1">
+                  <span className="absolute inset-0 rounded-full animate-ping opacity-70" style={{ background: 'var(--pro-ok)' }} />
+                  <span className="relative w-2 h-2 rounded-full" style={{ background: 'var(--pro-ok)' }} />
+                </span>
+                {activeCount} {t('chat.active').toLowerCase()}
+              </span>
+            )}
+            {newConversation}
+          </div>
         </div>
 
         <div className="pro-card pro-tall flex flex-col overflow-hidden">

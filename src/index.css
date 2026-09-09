@@ -2887,12 +2887,14 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
 .pro-pager button:disabled { opacity: .4; }
 
 /* Leyenda del gráfico con importes */
-.pro-legend { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
-.pro-legend-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; }
-.pro-legend-row .swatch { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
-.pro-legend-row .lbl { color: var(--pro-ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pro-legend-row .amt { margin-left: auto; font-weight: 700; color: var(--pro-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.pro-legend-row .pct { color: var(--pro-muted); width: 44px; text-align: right; flex-shrink: 0; }
+/* OJO: `.pro-legend` ya existe (leyenda del calendario de la Agenda, 7-sep).
+   Esta es otra cosa y por eso se llama distinto. */
+.pro-srcleg { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+.pro-srcleg-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; }
+.pro-srcleg-row .swatch { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
+.pro-srcleg-row .lbl { color: var(--pro-ink-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pro-srcleg-row .amt { margin-left: auto; font-weight: 700; color: var(--pro-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pro-srcleg-row .pct { color: var(--pro-muted); width: 44px; text-align: right; flex-shrink: 0; }
 .pro-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; }
 .pro-delta-up { color: var(--pro-ok); }
 .pro-delta-down { color: var(--pro-live); }

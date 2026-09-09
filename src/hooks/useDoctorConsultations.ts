@@ -166,7 +166,7 @@ export function useDoctorConsultations(): ConsultationsData {
       const docsByPatient = new Map<string, number>();
       const accessRows = ((vaultRes.data as any[]) || []);
       const fileIds = [...new Set(accessRows.map(v => v.file_id).filter(Boolean))];
-      let ownerOfFile = new Map<string, string>();
+      const ownerOfFile = new Map<string, string>();
       if (fileIds.length) {
         const { data: files } = await supabase.from('vault_files').select('id, patient_id').in('id', fileIds);
         ((files as any[]) || []).forEach(f => { if (f.patient_id) ownerOfFile.set(f.id, f.patient_id); });

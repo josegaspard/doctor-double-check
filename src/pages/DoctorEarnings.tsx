@@ -78,6 +78,7 @@ export default function DoctorEarnings() {
   const [payoutFrequency, setPayoutFrequency] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
+  const [totalPaid, setTotalPaid] = useState(0);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
 
   const [range, setRange] = useState<Range>('thisMonth');
@@ -117,6 +118,7 @@ export default function DoctorEarnings() {
       setPayoutFrequency((settingsRes.data as any)?.payout_frequency || null);
       setWalletBalance(Number((walletRes.data as any)?.balance) || 0);
       setPendingEarnings(Number((profileRes.data as any)?.pending_earnings) || 0);
+      setTotalPaid(Number((profileRes.data as any)?.total_earnings) || 0);
 
       // Nombre real del paciente/cliente cuando el movimiento lo trae en metadata.
       const ids = [...new Set((((txRes.data as any[]) || [])
@@ -165,10 +167,13 @@ export default function DoctorEarnings() {
     return d >= a.getTime() && d < b.getTime();
   };
 
-  const periodTx = useMemo(
-    () => transactions.filter(tx => inRange(tx.created_at, from, to)),
-    [transactions, range],
-  );
+  const periodTx = useMemo(() => {
+    // Los límites se recalculan aquí dentro: dependen sólo de `range`, y así
+    // el linter ve todas las dependencias de verdad.
+    const { from: f, to: tt } = rangeBounds(range);
+    return transactions.filter(tx => inRange(tx.created_at, f, tt));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, range]);
 
   const filteredTx = useMemo(
     () => (sourceTab === 'total' ? periodTx : periodTx.filter(tx => sourceOf((tx.metadata as any)?.source) === sourceTab)),
@@ -177,21 +182,25 @@ export default function DoctorEarnings() {
 
   // --------------------------------------------------------------- agregados
   const rate = commissionRate / 100;
-  const netOf = (tx: Transaction) => Number(tx.amount) || 0;
-  /** El importe abonado es NETO (la comisión se aplica al concretarse la venta,
-      `credit_doctor_earnings`). El bruto se reconstruye con la comisión publicada. */
-  const grossOf = (tx: Transaction) => (rate > 0 && rate < 1 ? netOf(tx) / (1 - rate) : netOf(tx));
+  /** 🚨 `wallet_transactions.amount` de una ganancia es el importe BRUTO que pagó
+   *  el comprador (`purchaseResult.amount_charged`): la comisión la aplica aparte
+   *  `credit_doctor_earnings` sobre `pending_earnings`. Comprobado en
+   *  supabase/functions/purchase-content-wallet y purchase-recording-wallet.
+   *  Por eso el BRUTO es el dato y la comisión y el neto son CÁLCULO. */
+  const grossOf = (tx: Transaction) => Number(tx.amount) || 0;
+  const commissionOf = (tx: Transaction) => grossOf(tx) * rate;
+  const netOf = (tx: Transaction) => grossOf(tx) - commissionOf(tx);
 
   const totals = useMemo(() => {
-    const net = filteredTx.reduce((s, tx) => s + netOf(tx), 0);
     const gross = filteredTx.reduce((s, tx) => s + grossOf(tx), 0);
-    return { net, gross, commission: gross - net };
+    const commission = gross * rate;
+    return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredTx, commissionRate]);
 
   const bySource = useMemo(() => {
     const acc: Record<SourceKey, number> = { consultations: 0, subscriptions: 0, content: 0, lives: 0, other: 0 };
-    periodTx.forEach(tx => { acc[sourceOf((tx.metadata as any)?.source)] += netOf(tx); });
+    periodTx.forEach(tx => { acc[sourceOf((tx.metadata as any)?.source)] += grossOf(tx); });
     return acc;
   }, [periodTx]);
 
@@ -203,8 +212,8 @@ export default function DoctorEarnings() {
     const thisFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     const thisTo = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const cur = transactions.filter(tx => inRange(tx.created_at, thisFrom, thisTo)).reduce((s, tx) => s + netOf(tx), 0);
-    const prev = transactions.filter(tx => inRange(tx.created_at, prevFrom, thisFrom)).reduce((s, tx) => s + netOf(tx), 0);
+    const cur = transactions.filter(tx => inRange(tx.created_at, thisFrom, thisTo)).reduce((s, tx) => s + grossOf(tx), 0);
+    const prev = transactions.filter(tx => inRange(tx.created_at, prevFrom, thisFrom)).reduce((s, tx) => s + grossOf(tx), 0);
     const pct = prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
     return { cur, prev, pct };
   }, [transactions]);
@@ -223,7 +232,7 @@ export default function DoctorEarnings() {
       const d = new Date(tx.created_at);
       const k = keyOf(d);
       if (!map.has(k)) map.set(k, { k, date: d, consultations: 0, subscriptions: 0, content: 0, lives: 0, other: 0 });
-      map.get(k)[sourceOf((tx.metadata as any)?.source)] += netOf(tx);
+      map.get(k)[sourceOf((tx.metadata as any)?.source)] += grossOf(tx);
     });
     return [...map.values()]
       .sort((a, b) => a.k.localeCompare(b.k))
@@ -279,7 +288,7 @@ export default function DoctorEarnings() {
       tx.description,
       sourceLabel(sourceOf((tx.metadata as any)?.source)),
       grossOf(tx).toFixed(2),
-      (grossOf(tx) - netOf(tx)).toFixed(2),
+      commissionOf(tx).toFixed(2),
       netOf(tx).toFixed(2),
       statusLabel(tx.status),
     ]);
@@ -288,7 +297,8 @@ export default function DoctorEarnings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ingresos_${new Date().toISOString().slice(0, 10)}.csv`;
+    const slug = (str: string) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+    a.download = `ingresos_${slug(rangeLabel(range))}_${slug(sourceTab === 'total' ? t('pro.earnings.srcTotal') : sourceLabel(sourceTab))}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(t('pro.earnings.exported'));
@@ -434,13 +444,13 @@ export default function DoctorEarnings() {
                       <div className="flex items-center justify-center h-[210px] pro-muted text-sm">{t('pro.earnings.noChartData')}</div>
                     )}
 
-                    <div className="pro-legend">
+                    <div className="pro-srcleg">
                       {(['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[]).map(k => {
                         const v = bySource[k];
                         if (k === 'other' && v === 0) return null;
                         const pct = periodNet > 0 ? Math.round((v / periodNet) * 100) : 0;
                         return (
-                          <div key={k} className="pro-legend-row">
+                          <div key={k} className="pro-srcleg-row">
                             <span className="swatch" style={{ background: SOURCE_COLORS[k] }} />
                             <span className="lbl">{sourceLabel(k)}</span>
                             <span className="amt">{money2(v, language)}</span>
@@ -499,7 +509,7 @@ export default function DoctorEarnings() {
                                       <span className="pro-mini" style={{ color: SOURCE_COLORS[k] }}>{sourceLabel(k)}</span>
                                     </td>
                                     <td className="num">{money2(gross, language)}</td>
-                                    <td className="num">{money2(gross - netOf(tx), language)}</td>
+                                    <td className="num">{money2(commissionOf(tx), language)}</td>
                                     <td className="num strong">{money2(netOf(tx), language)}</td>
                                     <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
                                   </tr>
@@ -514,7 +524,7 @@ export default function DoctorEarnings() {
                         {/* Descargo: el importe abonado es el neto; bruto y comisión son cálculo */}
                         <div className="pro-note mt-2">
                           <Info />
-                          <span>{t('pro.earnings.commissionNote')} {fill(t('pro.earnings.thCommission'), { p: commissionRate })}.</span>
+                          <span>{fill(t('pro.earnings.commissionNote'), { p: commissionRate })}</span>
                         </div>
                         {pages > 1 && (
                           <div className="pro-pager">
@@ -542,12 +552,15 @@ export default function DoctorEarnings() {
                               <span className="pro-row-name block">{money2(Number(p.amount), language)}</span>
                               <span className="pro-row-sub block">
                                 {fmtDate(new Date(p.created_at), language)}
-                                {p.stripe_transfer_id?.startsWith('manual_') ? ' · manual' : p.stripe_transfer_id ? ' · Stripe' : ''}
+                                {' · '}{p.stripe_transfer_id?.startsWith('manual_') ? t('pro.earnings.methodManual') : p.stripe_transfer_id ? 'Stripe' : t('pro.earnings.methodManual')}
                               </span>
                               {p.error_message && <span className="pro-row-sub block" style={{ color: 'var(--pro-live)' }}>{p.error_message}</span>}
                             </span>
                             <span className={`pro-pill ${p.status === 'paid' ? 'pro-pill-ok' : p.status === 'failed' ? 'pro-pill-live' : 'pro-pill-warn'}`}>
-                              {p.status === 'paid' ? t('pro.earnings.statusPaid') : p.status === 'failed' ? t('pro.earnings.statusFailed') : t('pro.earnings.statusProcessing')}
+                              {p.status === 'paid' ? t('pro.earnings.statusPaid')
+                                : p.status === 'failed' ? t('pro.earnings.statusFailed')
+                                : p.status === 'processing' ? t('pro.earnings.statusProcessing')
+                                : t('pro.earnings.statusPendingPayout')}
                             </span>
                           </div>
                         ))}
@@ -610,15 +623,24 @@ export default function DoctorEarnings() {
                   <h2 className="pro-card-title mb-2"><CalendarDays /> {t('pro.earnings.nextPayout')}</h2>
                   <div className="pro-kpi-value">{money2(pendingEarnings, language)}</div>
                   <p className="pro-kpi-sub">
-                    {nextRelease
-                      ? fill(t('pro.earnings.nextPayoutOn'), { d: fmtDate(new Date(nextRelease), language) })
-                      : payoutFrequency || t('pro.earnings.nextPayoutNone')}
+                    {/* Sin importe no hay pago: anunciar una fecha sería contradecirse. */}
+                    {pendingEarnings <= 0
+                      ? t('pro.earnings.nextPayoutNone')
+                      : nextRelease
+                        ? fill(t('pro.earnings.nextPayoutOn'), { d: fmtDate(new Date(nextRelease), language) })
+                        : payoutFrequency || t('pro.earnings.nextPayoutNone')}
                   </p>
-                  {activeHolds.length > 0 && (
+                  {activeHolds.length > 0 && pendingEarnings > 0 && (
                     <div className="pro-note mt-2">
                       <Info /><span>{fill(t('pro.earnings.nextPayoutNote'), { n: activeHolds.length })}</span>
                     </div>
                   )}
+                  {/* El histórico ya cobrado: el panel anterior lo enseñaba y se
+                      había perdido (`total_earnings` se pedía y se tiraba). */}
+                  <div className="pro-ctx-line mt-2" style={{ borderTop: '1px solid var(--pro-line)', paddingTop: 8 }}>
+                    <span className="k">{t('pro.earnings.alreadyPaid')}</span>
+                    <span className="v">{money2(totalPaid, language)}</span>
+                  </div>
                 </section>
 
                 <section className="pro-card pro-card-pad">
@@ -637,7 +659,8 @@ export default function DoctorEarnings() {
                       <Download /> {t('pro.earnings.downloadReport')}
                     </button>
                   </div>
-                  <p className="text-[11.5px] pro-muted mt-2">{t('pro.earnings.withdrawInfo')}</p>
+                  <p className="text-[11.5px] pro-muted mt-2">{fill(t('pro.earnings.commissionNote'), { p: commissionRate })}</p>
+                  <p className="text-[11.5px] pro-muted mt-1">{t('pro.earnings.withdrawInfo')}</p>
                   <Link to="/wallet" className="pro-link mt-1"><ArrowRight /> {t('nav.wallet') || 'Wallet'}</Link>
                 </section>
               </aside>

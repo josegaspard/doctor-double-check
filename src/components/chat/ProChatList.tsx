@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChatSession, useChat } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { formatMessagePreview } from '@/lib/utils';
 import {
   Search, MessageSquare, Trash2, X, MoreVertical, Archive, ArchiveRestore,
   SlidersHorizontal, Check, Info,
@@ -49,7 +51,7 @@ export function ProChatList({
   onQueryChange, onSortChange, onSelect, onToggleArchive,
   getDisplayInfo, isWithinOfficeHours, emptyLabel,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { deleteSession, deleteSessions } = useChat();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -176,7 +178,7 @@ export function ProChatList({
           const tag = tagOf(s, info);
           const state = stateOf(s);
           const isArchived = archivedIds.has(s.id);
-          const available = info.type !== 'patient' && isWithinOfficeHours(s);
+          const available = isWithinOfficeHours(s);
           return (
             <div key={s.id} className={`pro-conv ${selectedSession === s.id ? 'is-active' : ''}`}>
               {isSelecting && s.status === 'closed' && (
@@ -191,16 +193,33 @@ export function ProChatList({
                 <span className="body">
                   <span className="top">
                     <span className="name">{info.name}</span>
+                    {/* La insignia del médico se veía en la lista antes del rediseño */}
+                    {info.type !== 'patient' && <DoctorBadgeIcon userId={info.userId} size="sm" className="flex-shrink-0" />}
                     <span className={`pro-tag ${tag.cls}`}>{tag.label}</span>
                     <span className="time">
-                      {s.lastMessageAt ? `${dayLabel(new Date(s.lastMessageAt), 'es', t)} ${fmtTime(new Date(s.lastMessageAt), 'es')}`.replace(/^Hoy /, '') : ''}
+                      {/* Con el idioma del usuario, no con «es» a fuego. Si es hoy
+                          solo va la hora; el resto de días, día + hora. */}
+                      {s.lastMessageAt ? (() => {
+                        const d = new Date(s.lastMessageAt);
+                        const hoy = new Date();
+                        const mismoDia = d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth() && d.getDate() === hoy.getDate();
+                        return mismoDia ? fmtTime(d, language) : `${dayLabel(d, language, t)} ${fmtTime(d, language)}`;
+                      })() : ''}
                     </span>
                   </span>
                   {info.specialty && <span className="sub block">{info.specialty}</span>}
-                  {s.lastMessage && <span className="prev block">{s.lastMessage}</span>}
+                  {/* `formatMessagePreview` convierte «📷 [Imagen: x.jpg] https://…»
+                      en «📷 Foto» (y «📋 Receta médica»), como en la campana. */}
+                  <span className="prev block">
+                    {s.lastMessage ? formatMessagePreview(s.lastMessage, 80) : t('chat.noConversations')}
+                  </span>
                   <span className="foot">
                     <span className={`pro-mini ${state.cls}`}>{state.label}</span>
-                    {available && <span className="pro-mini pro-mini-ok">{t('pro.chatPro.ctxAvailable')}</span>}
+                    {info.type !== 'patient' && (
+                      <span className={`pro-mini ${available ? 'pro-mini-ok' : 'pro-mini-muted'}`}>
+                        {available ? t('pro.chatPro.ctxAvailable') : t('pro.chatPro.ctxOutside')}
+                      </span>
+                    )}
                     {isArchived && <span className="pro-tag">{t('pro.chatPro.railArchived')}</span>}
                     {s.unreadCount > 0 && <span className="unread ml-auto">{s.unreadCount}</span>}
                   </span>
