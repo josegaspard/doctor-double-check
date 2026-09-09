@@ -28,6 +28,8 @@ import {
   Video,
   Ban,
   FileText,
+  Folder,
+  ClipboardList,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -181,6 +183,13 @@ export function ChatHeader({
                 <span className="text-primary font-medium truncate flex-shrink-0 max-w-[120px] sm:max-w-none">{displayInfo.specialty}</span>
               )
             )}
+            {/* Al médico, la especialidad no le dice nada de su paciente: lo útil
+                es desde cuándo existe la conversación. Sale de `createdAt`. */}
+            {userRole === 'doctor' && session.createdAt && (
+              <span className="truncate flex-shrink-0">
+                {t('pro.chatPro.since')} {format(session.createdAt, 'd MMM yyyy', { locale: es })}
+              </span>
+            )}
             {officeHours && userRole === 'patient' && (
               <>
                 {displayInfo.specialty && <span className="text-muted-foreground/50 flex-shrink-0">•</span>}
@@ -205,6 +214,45 @@ export function ChatHeader({
         
         {/* Actions */}
         <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Accesos directos de la maqueta del 8-sep: con texto en pantallas
+              anchas y solo icono cuando no cabe. Sólo para el médico y sobre la
+              conversación de un paciente, que es donde tienen sentido. */}
+          {userRole === 'doctor' && displayInfo.type === 'patient' && (() => {
+            const patientId = session.participant1Id === user?.id ? session.participant2Id : session.participant1Id;
+            return (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 rounded-full gap-1.5 hidden sm:inline-flex"
+                  onClick={() => navigate(`/doctor/vault?patient=${patientId}`)}
+                  title={t('pro.consults.dRecord')}
+                >
+                  <Folder className="w-4 h-4" />
+                  <span className="text-xs font-semibold">{t('pro.chatPro.ctxViewRecord')}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 rounded-full sm:hidden"
+                  onClick={() => navigate(`/doctor/vault?patient=${patientId}`)}
+                  title={t('pro.chatPro.ctxViewRecord')}
+                >
+                  <Folder className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 rounded-full gap-1.5 hidden lg:inline-flex"
+                  onClick={() => navigate('/doctor/consultations')}
+                  title={t('pro.consults.title')}
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span className="text-xs font-semibold">{t('pro.consults.title')}</span>
+                </Button>
+              </>
+            );
+          })()}
           {/* FaceTime / face-to-face video call — solo si el super admin tiene activadas las videollamadas */}
           {!isClosed && consultationId && toggles.enable_video_calls && (
             <Button
