@@ -54,8 +54,6 @@ export default function DoctorConsultations() {
   const chatEnabled = !!toggles.enable_patient_chat;
   const prescriptionsEnabled = toggles.enable_prescriptions !== false;
 
-  if (role && role !== 'doctor') return <Navigate to="/my-appointments" replace />;
-
   // ---------------------------------------------------------------- helpers
   const statusLabel = (s: ConsultStatus) => {
     switch (s) {
@@ -346,16 +344,18 @@ export default function DoctorConsultations() {
           </div>
         )}
 
-        {/* Lista de preparación — cada línea es un hecho comprobable */}
+        {/* Lista de preparación — cada línea es un HECHO comprobable en la base.
+            No hay «consentimiento» ni «expediente revisado» guardados en ninguna
+            tabla: enunciar eso sería afirmar algo que no consta. */}
         <div className="pro-ctx-block">
           <div className="pro-ctx-h"><CircleCheck /> {t('pro.consults.dChecklist')}</div>
           <div className={`pro-check ${docsReady ? 'is-done' : 'is-todo'}`}>
             {docsReady ? <CircleCheck /> : <Circle />}
-            {docsReady ? t('pro.consults.chkRecord') : t('pro.consults.chkRecordTodo')}
+            {docsReady ? fill(t('pro.consults.chkDocs'), { n: c.documentsCount }) : t('pro.consults.chkDocsTodo')}
           </div>
           <div className={`pro-check ${c.hasOpenChat ? 'is-done' : 'is-todo'}`}>
             {c.hasOpenChat ? <CircleCheck /> : <Circle />}
-            {c.hasOpenChat ? t('pro.consults.chkConsent') : t('pro.consults.chkConsentTodo')}
+            {c.hasOpenChat ? t('pro.consults.chkChat') : t('pro.consults.chkChatTodo')}
           </div>
           <div className={`pro-check ${roomReady ? 'is-done' : 'is-todo'}`}>
             {roomReady ? <CircleCheck /> : <Circle />}
@@ -404,6 +404,10 @@ export default function DoctorConsultations() {
       </div>
     );
   };
+
+  // 🚨 Después de TODOS los hooks: un `return` antes deja el render con menos
+  // hooks que el siguiente y React lanza «Rendered more hooks…».
+  if (role && role !== 'doctor') return <Navigate to="/my-appointments" replace />;
 
   return (
     <MainLayout>

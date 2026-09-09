@@ -22,7 +22,7 @@ import {
   Info, ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fill, money, fmtDate, norm } from '@/lib/proFormat';
+import { fill, money, money2, fmtDate, norm } from '@/lib/proFormat';
 
 interface DoctorContent {
   id: string;
@@ -122,21 +122,6 @@ export default function DoctorContentLibrary() {
 
   useEffect(() => { fetchContents(); }, [fetchContents]);
 
-  if (role !== 'doctor' && role !== 'resident' && role !== 'admin') {
-    return (
-      <MainLayout>
-        <div className="container mx-auto px-4 py-12">
-          <Card className="max-w-lg mx-auto text-center p-8">
-            <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="font-heading text-xl font-bold mb-2">{t('doctorLibrary.restrictedAccess')}</h2>
-            <p className="text-muted-foreground mb-4">{t('doctorLibrary.onlyDoctors')}</p>
-            <Button onClick={() => navigate('/')}>{t('doctorLibrary.goHome')}</Button>
-          </Card>
-        </div>
-      </MainLayout>
-    );
-  }
-
   // ------------------------------------------------------------------ conteos
   const counts = useMemo(() => {
     const c = { published: 0, draft: 0, review: 0, rejected: 0, collections: 0, paid: 0, publicItems: 0 };
@@ -183,8 +168,26 @@ export default function DoctorContentLibrary() {
     () => contents.find(c => stateOf(c) === 'published') || contents[0] || null,
     [contents],
   );
-  const recentPublished = useMemo(() => contents.filter(c => stateOf(c) === 'published').slice(0, 8), [contents]);
-  const draftsAndReview = useMemo(() => contents.filter(c => ['draft', 'review', 'rejected'].includes(stateOf(c))).slice(0, 8), [contents]);
+  // Salen de `filtered` (no de `contents`): si no, el buscador, el filtro de tipo
+  // y el orden no cambiaban nada en la sección que se abre por defecto.
+  const recentPublished = useMemo(() => filtered.filter(c => stateOf(c) === 'published').slice(0, 8), [filtered]);
+  const draftsAndReview = useMemo(() => filtered.filter(c => ['draft', 'review', 'rejected'].includes(stateOf(c))).slice(0, 8), [filtered]);
+
+  /** Lo que de verdad está pintado en pantalla ahora mismo. La selección múltiple
+   *  se hace SOBRE ESTO: antes «Seleccionar todo» marcaba `filtered` entero y en
+   *  «Vista general» eso son TODAS las piezas, con solo 16 tarjetas a la vista —
+   *  un borrado en lote podía llevarse contenido que el médico nunca vio marcado. */
+  const visible = useMemo(() => {
+    // «Ventas» y «Estadísticas» no pintan ni una tarjeta: ahí no hay nada que
+    // seleccionar y el botón de gestión no debe aparecer.
+    if (section === 'sales' || section === 'stats') return [];
+    if (section === 'overview') return [...recentPublished, ...draftsAndReview];
+    return filtered;
+  }, [section, recentPublished, draftsAndReview, filtered]);
+
+  // Al cambiar de sección o de filtros la selección se suelta: si no, se podía
+  // pulsar «Eliminar (20)» en una sección donde no hay ni una tarjeta pintada.
+  useEffect(() => { setSelectedIds(new Set()); }, [section, searchQuery, typeFilter]);
 
   // ---------------------------------------------------------------- acciones
   const extractStoragePath = (url: string): string => {
@@ -261,8 +264,8 @@ export default function DoctorContentLibrary() {
     });
   };
   const toggleSelectAll = () => {
-    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filtered.map(c => c.id)));
+    if (selectedIds.size === visible.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(visible.map(c => c.id)));
   };
 
   /** Publicar / retirar: es un solo campo de la base, el que decide si la pieza
@@ -311,7 +314,7 @@ export default function DoctorContentLibrary() {
           <div className="pro-tile-meta">
             {c.category && <span className="cat">{c.category}</span>}
             {c.category && <span>·</span>}
-            <span>{(c.price || 0) > 0 ? money(Number(c.price), language) : t('pro.contentPanel.free')}</span>
+            <span>{(c.price || 0) > 0 ? money2(Number(c.price), language) : t('pro.contentPanel.free')}</span>
           </div>
           <div className="pro-tile-meta">
             <span>{fmtDate(new Date(c.created_at), language)}</span>
@@ -371,6 +374,24 @@ export default function DoctorContentLibrary() {
     : sort === 'price' ? t('pro.contentPanel.sortPrice')
     : t('pro.contentPanel.sortRecent');
 
+  // 🚨 El guard de rol va AQUÍ, después de TODOS los hooks. Si va antes, el
+  // primer render (rol aún sin cargar) ejecuta menos hooks que el siguiente y
+  // React revienta con «Rendered more hooks than during the previous render».
+  if (role !== 'doctor' && role !== 'resident' && role !== 'admin') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12">
+          <Card className="max-w-lg mx-auto text-center p-8">
+            <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="font-heading text-xl font-bold mb-2">{t('doctorLibrary.restrictedAccess')}</h2>
+            <p className="text-muted-foreground mb-4">{t('doctorLibrary.onlyDoctors')}</p>
+            <Button onClick={() => navigate('/')}>{t('doctorLibrary.goHome')}</Button>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="pro-container pro-page">
@@ -405,7 +426,7 @@ export default function DoctorContentLibrary() {
                 </div>
                 <div className="pro-stat">
                   <span className="pro-icon-box"><ShoppingBag /></span>
-                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statSales')}</span><span className="v block">{money(salesTotal, language)}</span></span>
+                  <span className="min-w-0"><span className="k block">{t('pro.contentPanel.statSales')}</span><span className="v block">{money2(salesTotal, language)}</span></span>
                 </div>
                 <div className="pro-stat">
                   <span className="pro-icon-box"><Users /></span>
@@ -448,7 +469,7 @@ export default function DoctorContentLibrary() {
                       <DropdownMenuItem onClick={() => setSort('price')}>{t('pro.contentPanel.sortPrice')}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  {contents.length > 0 && (
+                  {visible.length > 0 && (
                     <button
                       type="button"
                       className={`pro-btn pro-btn-sm ${isManaging ? 'pro-btn-teal' : 'pro-btn-outline'}`}
@@ -465,7 +486,7 @@ export default function DoctorContentLibrary() {
                   <p className="text-[12.5px] pro-ink-2">{t('manage.selectHint')}</p>
                   <div className="flex items-center gap-2">
                     <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={toggleSelectAll}>
-                      {selectedIds.size === filtered.length ? t('manage.deselectAll') : t('manage.selectAll')}
+                      {selectedIds.size === visible.length && visible.length > 0 ? t('manage.deselectAll') : t('manage.selectAll')}
                     </button>
                     <button type="button" className="pro-btn pro-btn-live pro-btn-xs" disabled={selectedIds.size === 0} onClick={() => setShowBulkDeleteDialog(true)}>
                       <Trash2 /> {t('manage.deleteSelected')} ({selectedIds.size})
@@ -488,7 +509,7 @@ export default function DoctorContentLibrary() {
                       <div className="pro-feature-meta">
                         <span>{fmtDate(new Date(featured.created_at), language)}</span>
                         <span>·</span>
-                        <span>{(featured.price || 0) > 0 ? money(Number(featured.price), language) : t('pro.contentPanel.free')}</span>
+                        <span>{(featured.price || 0) > 0 ? money2(Number(featured.price), language) : t('pro.contentPanel.free')}</span>
                         <span>·</span>
                         <span>{audienceLabel(featured.audience_type)}</span>
                       </div>
@@ -554,7 +575,7 @@ export default function DoctorContentLibrary() {
                           <span className="pro-row-name block truncate">{titleById.get(s.content_id || '') || t('pro.contentPanel.navPublished')}</span>
                           <span className="pro-row-sub block">{fmtDate(new Date(s.created_at), language)}</span>
                         </span>
-                        <span className="pro-row-name">{money(Number(s.amount), language)}</span>
+                        <span className="pro-row-name">{money2(Number(s.amount), language)}</span>
                       </div>
                     ))}
                   </div>

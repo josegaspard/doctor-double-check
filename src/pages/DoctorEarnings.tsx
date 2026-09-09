@@ -14,7 +14,7 @@ import {
   Info, ArrowRight, Lock, Receipt,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { fill, money, fmtDate, fmtDayShort, norm } from '@/lib/proFormat';
+import { fill, money, money2, fmtDate, fmtDayShort, norm } from '@/lib/proFormat';
 
 interface Transaction {
   id: string;
@@ -298,25 +298,30 @@ export default function DoctorEarnings() {
 
   const kpis = [
     {
-      label: t('pro.earnings.kpiBalance'), value: money(walletBalance || pendingEarnings, language),
+      // `pending_earnings` es lo acumulado a favor del médico y todavía sin pagar.
+      // NO se mezcla con el saldo del monedero (`wallets.balance`), que es otra cosa.
+      label: t('pro.earnings.kpiBalance'), value: money2(pendingEarnings, language),
       sub: t('pro.earnings.kpiBalanceSub'), Icon: Wallet,
     },
     {
-      label: t('pro.earnings.kpiMonth'), value: money(monthDelta.cur, language),
+      label: t('pro.earnings.kpiMonth'), value: money2(monthDelta.cur, language),
       sub: monthDelta.pct != null
         ? `${monthDelta.pct >= 0 ? '+' : ''}${monthDelta.pct}% ${t('pro.earnings.vsPrevMonth')}`
         : t('pro.earnings.vsPrevMonth'),
       delta: monthDelta.pct, Icon: TrendingUp,
     },
     {
-      label: t('pro.earnings.kpiPending'), value: money(heldTotal, language),
+      // Esta tarjeta habla SOLO de cobros retenidos (`fund_holds`), que es lo
+      // único que mide. Antes se llamaba «Pendiente» y se leía como el saldo
+      // pendiente, contradiciendo a «Próximo pago».
+      label: t('pro.earnings.kpiHeld'), value: money2(heldTotal, language),
       sub: activeHolds.length === 0 ? t('pro.earnings.kpiPendingNone')
         : activeHolds.length === 1 ? t('pro.earnings.kpiPendingOne')
         : fill(t('pro.earnings.kpiPendingSub'), { n: activeHolds.length }),
       Icon: Clock,
     },
     {
-      label: t('pro.earnings.kpiCommission'), value: money(totals.commission, language),
+      label: t('pro.earnings.kpiCommission'), value: money2(totals.commission, language),
       sub: fill(t('pro.earnings.kpiCommissionSub'), { p: commissionRate }), Icon: Percent,
     },
   ];
@@ -405,7 +410,7 @@ export default function DoctorEarnings() {
                   </div>
 
                   <h2 className="pro-card-title mb-0.5">{t('pro.earnings.bySource')}</h2>
-                  <div className="pro-kpi-value mb-3">{money(periodNet, language)}</div>
+                  <div className="pro-kpi-value mb-3">{money2(periodNet, language)}</div>
 
                   <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_210px] gap-4 items-start">
                     {chartData.length > 0 ? (
@@ -438,7 +443,7 @@ export default function DoctorEarnings() {
                           <div key={k} className="pro-legend-row">
                             <span className="swatch" style={{ background: SOURCE_COLORS[k] }} />
                             <span className="lbl">{sourceLabel(k)}</span>
-                            <span className="amt">{money(v, language)}</span>
+                            <span className="amt">{money2(v, language)}</span>
                             <span className="pct">({pct}%)</span>
                           </div>
                         );
@@ -493,9 +498,9 @@ export default function DoctorEarnings() {
                                     <td>
                                       <span className="pro-mini" style={{ color: SOURCE_COLORS[k] }}>{sourceLabel(k)}</span>
                                     </td>
-                                    <td className="num">{money(gross, language)}</td>
-                                    <td className="num">{money(gross - netOf(tx), language)}</td>
-                                    <td className="num strong">{money(netOf(tx), language)}</td>
+                                    <td className="num">{money2(gross, language)}</td>
+                                    <td className="num">{money2(gross - netOf(tx), language)}</td>
+                                    <td className="num strong">{money2(netOf(tx), language)}</td>
                                     <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
                                   </tr>
                                 );
@@ -534,7 +539,7 @@ export default function DoctorEarnings() {
                           <div key={p.id} className="pro-row">
                             <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Banknote /></span>
                             <span className="min-w-0 flex-1">
-                              <span className="pro-row-name block">{money(Number(p.amount), language)}</span>
+                              <span className="pro-row-name block">{money2(Number(p.amount), language)}</span>
                               <span className="pro-row-sub block">
                                 {fmtDate(new Date(p.created_at), language)}
                                 {p.stripe_transfer_id?.startsWith('manual_') ? ' · manual' : p.stripe_transfer_id ? ' · Stripe' : ''}
@@ -556,7 +561,7 @@ export default function DoctorEarnings() {
                         <div key={h.id} className="pro-row">
                           <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Lock /></span>
                           <span className="min-w-0 flex-1">
-                            <span className="pro-row-name block">{money(Number(h.amount), language)}</span>
+                            <span className="pro-row-name block">{money2(Number(h.amount), language)}</span>
                             <span className="pro-row-sub block">
                               {h.release_at ? fill(t('pro.earnings.holdUntil'), { d: fmtDate(new Date(h.release_at), language) }) : t('pro.earnings.holdNoDate')}
                               {h.reason ? ` · ${h.reason}` : ''}
@@ -603,7 +608,7 @@ export default function DoctorEarnings() {
 
                 <section className="pro-card pro-card-pad">
                   <h2 className="pro-card-title mb-2"><CalendarDays /> {t('pro.earnings.nextPayout')}</h2>
-                  <div className="pro-kpi-value">{money(heldTotal || pendingEarnings, language)}</div>
+                  <div className="pro-kpi-value">{money2(pendingEarnings, language)}</div>
                   <p className="pro-kpi-sub">
                     {nextRelease
                       ? fill(t('pro.earnings.nextPayoutOn'), { d: fmtDate(new Date(nextRelease), language) })
@@ -618,11 +623,11 @@ export default function DoctorEarnings() {
 
                 <section className="pro-card pro-card-pad">
                   <h2 className="pro-card-title mb-2"><Receipt /> {fill(t('pro.earnings.breakdown'), { r: rangeLabel(range) })}</h2>
-                  <div className="pro-ctx-line"><span className="k">{t('pro.earnings.gross')}</span><span className="v">{money(totals.gross, language)}</span></div>
-                  <div className="pro-ctx-line"><span className="k">{fill(t('pro.earnings.commission'), { p: commissionRate })}</span><span className="v">− {money(totals.commission, language)}</span></div>
+                  <div className="pro-ctx-line"><span className="k">{t('pro.earnings.gross')}</span><span className="v">{money2(totals.gross, language)}</span></div>
+                  <div className="pro-ctx-line"><span className="k">{fill(t('pro.earnings.commission'), { p: commissionRate })}</span><span className="v">− {money2(totals.commission, language)}</span></div>
                   <div className="pro-ctx-line" style={{ borderTop: '1px solid var(--pro-line)', marginTop: 6, paddingTop: 8 }}>
                     <span className="k" style={{ fontWeight: 700 }}>{t('pro.earnings.net')}</span>
-                    <span className="v" style={{ fontSize: 15 }}>{money(totals.net, language)}</span>
+                    <span className="v" style={{ fontSize: 15 }}>{money2(totals.net, language)}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-3">
                     <Link to="/doctor/invoices" className="pro-btn pro-btn-outline pro-btn-sm">

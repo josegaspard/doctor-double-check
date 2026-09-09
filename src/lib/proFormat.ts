@@ -78,6 +78,17 @@ export const tzLabel = () => {
 export const money = (n: number, lang: string, currency = 'MXN') =>
   new Intl.NumberFormat(loc(lang), { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
 
+/** Importe EXACTO: enseña los céntimos solo cuando los tiene. `money` redondea,
+ *  y un 49,99 pintado como «$50» contradice al resto de la app (vista previa,
+ *  CSV, recibos), que sí enseña el importe con decimales. */
+export const money2 = (n: number, lang: string, currency = 'MXN') =>
+  new Intl.NumberFormat(loc(lang), {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(n) ? 0 : 2,
+  }).format(n);
+
 /** Búsqueda sin tildes ni mayúsculas */
 export const norm = (s?: string | null) =>
   (s || '')

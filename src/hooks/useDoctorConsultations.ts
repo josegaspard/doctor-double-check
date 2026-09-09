@@ -103,7 +103,10 @@ export function useDoctorConsultations(): ConsultationsData {
           .eq('status', 'active'),
       ]);
 
-      if (apptRes.error && consRes.error) throw apptRes.error;
+      // Antes solo se avisaba si fallaban LAS DOS: si caía solo `appointments`
+      // (RLS, red…) la pantalla decía «no hay consultas» y el médico podía creer
+      // que no tiene citas. Ahora cualquier fallo se ve.
+      if (apptRes.error || consRes.error) throw (apptRes.error || consRes.error);
 
       const appts = (apptRes.data as any[]) || [];
       const cons = (consRes.data as any[]) || [];
@@ -126,7 +129,7 @@ export function useDoctorConsultations(): ConsultationsData {
           ? supabase.from('profiles').select('id, name, avatar_url').in('id', patientIds)
           : Promise.resolve({ data: [] as any[] } as any),
         patientIds.length
-          ? supabase.from('prescriptions').select('patient_id, consultation_id').eq('doctor_id', user.id).in('patient_id', patientIds)
+          ? supabase.from('prescriptions').select('patient_id, consultation_id, created_at').eq('doctor_id', user.id).in('patient_id', patientIds)
           : Promise.resolve({ data: [] as any[] } as any),
         supabase.from('vault_access').select('file_id, consultation_id').eq('doctor_id', user.id),
         consultationIds.length
@@ -137,21 +140,42 @@ export function useDoctorConsultations(): ConsultationsData {
       const profMap = new Map<string, any>();
       ((profRes.data as any[]) || []).forEach(p => profMap.set(p.id, p));
 
-      const prescriptionsByPatient = new Set<string>();
+      // Las recetas se guardan la fecha: una receta ANTERIOR a la cita no
+      // significa que esa cita ya tenga receta. Se guarda la más reciente por
+      // paciente y se compara con la fecha de cada consulta.
+      const lastPrescriptionByPatient = new Map<string, number>();
       const prescriptionsByConsultation = new Set<string>();
       ((presRes.data as any[]) || []).forEach(p => {
-        if (p.patient_id) prescriptionsByPatient.add(p.patient_id);
+        if (p.patient_id) {
+          const ts = p.created_at ? new Date(p.created_at).getTime() : 0;
+          lastPrescriptionByPatient.set(p.patient_id, Math.max(lastPrescriptionByPatient.get(p.patient_id) || 0, ts));
+        }
         if (p.consultation_id) prescriptionsByConsultation.add(p.consultation_id);
       });
+      const prescribedAfter = (patientId: string, sinceIso: string) => {
+        const last = lastPrescriptionByPatient.get(patientId);
+        if (!last) return false;
+        return last >= new Date(sinceIso).getTime();
+      };
 
-      // Documentos que el paciente ha compartido con este médico. `vault_access`
-      // guarda el fichero, no el paciente: se cuenta por consulta cuando la
-      // tiene, y el total sirve de referencia para las citas.
+      // Documentos que CADA paciente ha compartido con este médico.
+      // `vault_access` guarda el fichero, no el paciente: hay que resolver el
+      // dueño en `vault_files`. Antes se enseñaba el TOTAL del médico en todas
+      // las citas, que era un número falso para ese paciente.
       const docsByConsultation = new Map<string, number>();
-      let docsTotal = 0;
-      ((vaultRes.data as any[]) || []).forEach(v => {
-        docsTotal += 1;
+      const docsByPatient = new Map<string, number>();
+      const accessRows = ((vaultRes.data as any[]) || []);
+      const fileIds = [...new Set(accessRows.map(v => v.file_id).filter(Boolean))];
+      let ownerOfFile = new Map<string, string>();
+      if (fileIds.length) {
+        const { data: files } = await supabase.from('vault_files').select('id, patient_id').in('id', fileIds);
+        ((files as any[]) || []).forEach(f => { if (f.patient_id) ownerOfFile.set(f.id, f.patient_id); });
+      }
+      accessRows.forEach(v => {
         if (v.consultation_id) docsByConsultation.set(v.consultation_id, (docsByConsultation.get(v.consultation_id) || 0) + 1);
+        const owner = ownerOfFile.get(v.file_id);
+        // Sin dueño resuelto no se cuenta: mejor 0 que un número inflado.
+        if (owner) docsByPatient.set(owner, (docsByPatient.get(owner) || 0) + 1);
       });
 
       const ratingByConsultation = new Map<string, number>();
@@ -191,8 +215,8 @@ export function useDoctorConsultations(): ConsultationsData {
           cancellationReason: a.cancellation_reason || null,
           chatSessionId: openChatBy.get(a.patient_id) || null,
           hasOpenChat,
-          hasPrescription: prescriptionsByPatient.has(a.patient_id),
-          documentsCount: docsTotal > 0 && hasOpenChat ? docsTotal : 0,
+          hasPrescription: prescribedAfter(a.patient_id, a.scheduled_at),
+          documentsCount: docsByPatient.get(a.patient_id) || 0,
           rating: null,
           summary: null,
           diagnosis: null,
@@ -227,8 +251,8 @@ export function useDoctorConsultations(): ConsultationsData {
           cancellationReason: null,
           chatSessionId: c.chat_session_id || openChatBy.get(c.patient_id) || null,
           hasOpenChat,
-          hasPrescription: prescriptionsByConsultation.has(c.id) || prescriptionsByPatient.has(c.patient_id),
-          documentsCount: docsByConsultation.get(c.id) || 0,
+          hasPrescription: prescriptionsByConsultation.has(c.id) || prescribedAfter(c.patient_id, c.started_at),
+          documentsCount: docsByConsultation.get(c.id) || docsByPatient.get(c.patient_id) || 0,
           rating: ratingByConsultation.get(c.id) ?? null,
           summary: c.doctor_summary || null,
           diagnosis: c.diagnosis || null,

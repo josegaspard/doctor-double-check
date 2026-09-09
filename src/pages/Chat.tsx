@@ -119,7 +119,10 @@ export default function Chat() {
   useEffect(() => {
     const sessionParam = searchParams.get('session');
     if (!sessionParam || !user?.id) return;
-    setSearchParams({}, { replace: true });
+    // 🚨 El parámetro NO se borra aquí. Si se borra antes de abrir la
+    // conversación y el componente se vuelve a montar (la puerta de toggles lo
+    // hace en carga en frío), el segundo montaje ya no lo ve y no se abre nada.
+    // Se consume al final, cuando la conversación ya está abierta.
 
     (async () => {
       // Refresh primero para que aparezca en sessions list si recién se creó
@@ -134,6 +137,7 @@ export default function Chat() {
 
       if (!session) {
         toast.error(t('fix20.chat.sessionNotFound'));
+        setSearchParams({}, { replace: true });
         return;
       }
 
@@ -148,6 +152,8 @@ export default function Chat() {
       setSelectedSession(sessionParam);
       // Pre-cargar mensajes para que aparezcan al instante (en vez de empty)
       try { await loadMessages(sessionParam); } catch { /* ignore */ }
+      // Ya está abierta: ahora sí se limpia la URL.
+      setSearchParams({}, { replace: true });
     })();
   }, [searchParams, user?.id]);
 
@@ -290,9 +296,11 @@ export default function Chat() {
     }
   }, [selectedSession, loadMessages, markAsRead]);
 
-  // Al cambiar de sección del carril se suelta la conversación abierta (antes
-  // lo hacía el cambio de pestaña Activas/Historial).
-  useEffect(() => { setSelectedSession(null); }, [view]);
+  // 🚨 La conversación abierta se suelta en el CLIC del carril, no en un efecto
+  // sobre `view`. Con el efecto, el deep-link ?session= se pisaba a sí mismo:
+  // colocaba el carril en la sección de esa conversación y, en el mismo tick,
+  // el efecto la cerraba — el médico llegaba desde la campana o desde Consultas
+  // y no se abría nada.
   useEffect(() => { setActiveTab(view === 'closed' ? 'history' : 'active'); }, [view]);
 
   const handleSend = (replyToId?: string) => {
@@ -507,7 +515,7 @@ export default function Chat() {
         type="button"
         className={`pro-lane-item ${view === v ? 'is-active' : ''}`}
         aria-pressed={view === v}
-        onClick={() => setView(v)}
+        onClick={() => { setView(v); setSelectedSession(null); }}
       >
         {v === 'badge' && hasBadgeRoom
           ? <img src={myBadge === 'gold' ? '/badge-gold.png' : '/badge-verified.png'} alt="" aria-hidden="true" className="w-[18px] h-[18px] object-contain flex-shrink-0" />
