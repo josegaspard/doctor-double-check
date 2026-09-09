@@ -20,6 +20,7 @@ import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { EmptyState } from '@/components/chat/EmptyState';
+import { ChatFileUpload } from '@/components/chat/ChatFileUpload';
 import { CallWaitingBanner } from '@/components/videocall/CallWaitingBanner';
 import { ConsultationRefundBanner } from '@/components/chat/ConsultationRefundBanner';
 import { ConsultationSummaryCard } from '@/components/chat/ConsultationSummaryCard';
@@ -475,6 +476,13 @@ export function ChatMessagesPanel({
                 )}
 
                 <div className="flex gap-2 items-center">
+                  {/* El clip de adjuntar: el componente existía desde siempre pero
+                      NADIE lo montaba, así que no había forma de enviar un archivo
+                      desde el chat. La maqueta del cliente lo pide y la tubería
+                      (`onFileUploaded`) ya estaba puesta. */}
+                  {!isChatGated && session && (
+                    <ChatFileUpload sessionId={session.id} onFileUploaded={onFileUploaded} />
+                  )}
                   <Input
                     ref={inputRef}
                     placeholder={

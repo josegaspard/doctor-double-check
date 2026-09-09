@@ -161,6 +161,18 @@ export function ChatHeader({
                 2nd
               </Badge>
             )}
+            {/* Estado de la conversación, como en la maqueta. Misma regla que la
+                lista de la izquierda, para que no digan cosas distintas. */}
+            {(() => {
+              const st = isClosed
+                ? { label: t('pro.chatPro.statusClosed'), cls: 'pro-pill-muted' }
+                : session.unreadCount > 0
+                  ? { label: t('pro.chatPro.statusPending'), cls: 'pro-pill-warn' }
+                  : session.isDoubleCheck
+                    ? { label: t('pro.chatPro.statusOngoing'), cls: 'pro-pill-info' }
+                    : { label: t('pro.chatPro.statusFollowUp'), cls: 'pro-pill-ok' };
+              return <span className={`pro-pill ${st.cls} flex-shrink-0`} style={{ height: 22, fontSize: 11 }}>{st.label}</span>;
+            })()}
             {displayInfo.type === 'resident' && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
                 {t('roles.resident')}

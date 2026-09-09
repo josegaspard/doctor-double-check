@@ -32,6 +32,10 @@ interface Hold {
   id: string; amount: number; reason: string; status: string;
   held_at: string; release_at: string | null; released_at: string | null;
 }
+interface Invoice {
+  id: string; invoice_number: string; period_start: string; period_end: string;
+  file_url: string | null; status: string | null;
+}
 interface BankAccount {
   bank_name: string | null; clabe_last4: string | null; account_holder_name: string | null;
   is_verified: boolean | null; payment_method: string | null; payouts_enabled: boolean | null;
@@ -74,6 +78,7 @@ export default function DoctorEarnings() {
   const [holds, setHolds] = useState<Hold[]>([]);
   const [bank, setBank] = useState<BankAccount | null>(null);
   const [invoicesCount, setInvoicesCount] = useState(0);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [commissionRate, setCommissionRate] = useState(20);
   const [payoutFrequency, setPayoutFrequency] = useState<string | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
@@ -103,7 +108,7 @@ export default function DoctorEarnings() {
         supabase.from('doctor_payouts').select('*').eq('doctor_id', user.id).order('created_at', { ascending: false }),
         supabase.from('fund_holds').select('*').eq('doctor_id', user.id).order('created_at', { ascending: false }),
         supabase.from('doctor_bank_accounts').select('bank_name, clabe_last4, account_holder_name, is_verified, payment_method, payouts_enabled').eq('doctor_id', user.id).maybeSingle(),
-        supabase.from('doctor_invoices').select('id', { count: 'exact', head: true }).eq('doctor_id', user.id),
+        supabase.from('doctor_invoices').select('id, invoice_number, period_start, period_end, file_url, status').eq('doctor_id', user.id).order('period_start', { ascending: false }),
         supabase.from('payout_settings_public').select('commission_percentage, payout_frequency').limit(1).maybeSingle(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle(),
         supabase.from('doctor_profiles').select('pending_earnings, total_earnings').eq('user_id', user.id).maybeSingle(),
@@ -113,7 +118,9 @@ export default function DoctorEarnings() {
       setPayouts((payoutRes.data as any[]) || []);
       setHolds((holdRes.data as any[]) || []);
       setBank((bankRes.data as any) || null);
-      setInvoicesCount(invRes.count || 0);
+      const invRows = ((invRes.data as any[]) || []) as Invoice[];
+      setInvoices(invRows);
+      setInvoicesCount(invRows.length);
       if ((settingsRes.data as any)?.commission_percentage != null) setCommissionRate(Number((settingsRes.data as any).commission_percentage));
       setPayoutFrequency((settingsRes.data as any)?.payout_frequency || null);
       setWalletBalance(Number((walletRes.data as any)?.balance) || 0);
@@ -161,6 +168,8 @@ export default function DoctorEarnings() {
   }[r]);
 
   const { from, to } = rangeBounds(range);
+  /** «1 sep 2026 – 30 sep 2026», como la maqueta, en vez del nombre del preset */
+  const rangeDates = `${fmtDate(from, language)} – ${fmtDate(new Date(to.getTime() - 86_400_000), language)}`;
 
   const inRange = (iso: string, a: Date, b: Date) => {
     const d = new Date(iso).getTime();
@@ -191,12 +200,31 @@ export default function DoctorEarnings() {
   const commissionOf = (tx: Transaction) => grossOf(tx) * rate;
   const netOf = (tx: Transaction) => grossOf(tx) - commissionOf(tx);
 
+  /** Del PERIODO completo: el KPI de comisiones y el desglose no dependen de la
+   *  pestaña de fuente que esté abierta (antes cambiaban al pulsar «Consultas»). */
   const totals = useMemo(() => {
-    const gross = filteredTx.reduce((s, tx) => s + grossOf(tx), 0);
+    const gross = periodTx.reduce((s, tx) => s + grossOf(tx), 0);
     const commission = gross * rate;
     return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodTx, commissionRate]);
+
+  /** De lo que se ve en la tabla (sí depende de la pestaña) */
+  const tableTotals = useMemo(() => {
+    const gross = filteredTx.reduce((s, tx) => s + grossOf(tx), 0);
+    return { gross, commission: gross * rate, net: gross - gross * rate };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredTx, commissionRate]);
+
+  /** La factura cuyo periodo cubre la fecha del movimiento */
+  const invoiceFor = (iso: string) => {
+    const t0 = new Date(iso).getTime();
+    return invoices.find(inv => {
+      const a = new Date(inv.period_start).getTime();
+      const b = new Date(inv.period_end).getTime() + 86_399_000;
+      return t0 >= a && t0 <= b;
+    }) || null;
+  };
 
   const bySource = useMemo(() => {
     const acc: Record<SourceKey, number> = { consultations: 0, subscriptions: 0, content: 0, lives: 0, other: 0 };
@@ -348,7 +376,10 @@ export default function DoctorEarnings() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none">
-                  <CalendarDays /> {rangeLabel(range)} <ChevronDown />
+                  <CalendarDays />
+                  <span className="hidden sm:inline">{rangeDates}</span>
+                  <span className="sm:hidden">{rangeLabel(range)}</span>
+                  <ChevronDown />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -420,7 +451,15 @@ export default function DoctorEarnings() {
                   </div>
 
                   <h2 className="pro-card-title mb-0.5">{t('pro.earnings.bySource')}</h2>
-                  <div className="pro-kpi-value mb-3">{money2(periodNet, language)}</div>
+                  <div className="flex items-baseline gap-2 mb-3 flex-wrap">
+                    <span className="pro-kpi-value">{money2(periodNet, language)}</span>
+                    {range === 'thisMonth' && monthDelta.pct != null && (
+                      <span className={`pro-delta ${monthDelta.pct >= 0 ? 'pro-delta-up' : 'pro-delta-down'}`}>
+                        {monthDelta.pct >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                        {monthDelta.pct >= 0 ? '+' : ''}{monthDelta.pct}% {t('pro.earnings.vsPrevMonth')}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_210px] gap-4 items-start">
                     {chartData.length > 0 ? (
@@ -494,6 +533,7 @@ export default function DoctorEarnings() {
                                 <th className="text-right">{fill(t('pro.earnings.thCommission'), { p: commissionRate })}</th>
                                 <th className="text-right">{t('pro.earnings.thNet')}</th>
                                 <th>{t('pro.earnings.thStatus')}</th>
+                                <th>{t('pro.earnings.thInvoice')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -512,6 +552,17 @@ export default function DoctorEarnings() {
                                     <td className="num">{money2(commissionOf(tx), language)}</td>
                                     <td className="num strong">{money2(netOf(tx), language)}</td>
                                     <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
+                                    <td>
+                                      {/* La factura del periodo que cubre este movimiento
+                                          (`doctor_invoices` guarda periodo y número). */}
+                                      {(() => {
+                                        const inv = invoiceFor(tx.created_at);
+                                        if (!inv) return <span className="pro-muted">—</span>;
+                                        return inv.file_url
+                                          ? <a href={inv.file_url} target="_blank" rel="noreferrer" className="pro-link">{inv.invoice_number}</a>
+                                          : <Link to="/doctor/invoices" className="pro-link">{inv.invoice_number}</Link>;
+                                      })()}
+                                    </td>
                                   </tr>
                                 );
                               })}
@@ -520,6 +571,7 @@ export default function DoctorEarnings() {
                         </div>
                         <p className="text-[11.5px] pro-muted mt-2">
                           {fill(t('pro.earnings.showing'), { a: pageRows.length, b: filteredTx.length })}
+                          {sourceTab !== 'total' && ` · ${sourceLabel(sourceTab)}: ${money2(tableTotals.net, language)} ${t('pro.earnings.net').toLowerCase()}`}
                         </p>
                         {/* Descargo: el importe abonado es el neto; bruto y comisión son cálculo */}
                         <div className="pro-note mt-2">
@@ -528,11 +580,25 @@ export default function DoctorEarnings() {
                         </div>
                         {pages > 1 && (
                           <div className="pro-pager">
+                            {/* La ventana SIGUE a la página actual: antes se quedaba
+                                fija en 1-5 y a la página 6 no se podía llegar. */}
                             <button type="button" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><ChevronLeft className="w-4 h-4 mx-auto" /></button>
-                            {Array.from({ length: Math.min(pages, 5) }, (_, i) => i + 1).map(n => (
-                              <button key={n} type="button" className={page === n ? 'is-active' : ''} onClick={() => setPage(n)}>{n}</button>
-                            ))}
-                            {pages > 5 && <span className="pro-muted px-1">…</span>}
+                            {(() => {
+                              const win = 5;
+                              let ini = Math.max(1, page - Math.floor(win / 2));
+                              const fin = Math.min(pages, ini + win - 1);
+                              ini = Math.max(1, fin - win + 1);
+                              const nums = Array.from({ length: fin - ini + 1 }, (_, i) => ini + i);
+                              return (
+                                <>
+                                  {ini > 1 && <><button type="button" onClick={() => setPage(1)}>1</button>{ini > 2 && <span className="pro-muted px-1">…</span>}</>}
+                                  {nums.map(n => (
+                                    <button key={n} type="button" className={page === n ? 'is-active' : ''} onClick={() => setPage(n)}>{n}</button>
+                                  ))}
+                                  {fin < pages && <>{fin < pages - 1 && <span className="pro-muted px-1">…</span>}<button type="button" onClick={() => setPage(pages)}>{pages}</button></>}
+                                </>
+                              );
+                            })()}
                             <button type="button" disabled={page === pages} onClick={() => setPage(p => Math.min(pages, p + 1))}><ChevronRight className="w-4 h-4 mx-auto" /></button>
                           </div>
                         )}

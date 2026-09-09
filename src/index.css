@@ -2718,7 +2718,9 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
    porque la visibilidad de cada columna se controla con sus clases. */
 .pro-work-chat { grid-template-columns: 1fr; gap: 0; }
 @media (min-width: 768px) { .pro-work-chat { grid-template-columns: 300px minmax(0, 1fr); } }
-@media (min-width: 1280px) { .pro-work-chat { grid-template-columns: 200px 320px minmax(0, 1fr); } }
+/* A 1280 px ya caben las CUATRO columnas de la maqueta apretando un poco:
+   antes el contexto clínico se escondía tras un botón en cualquier portátil. */
+@media (min-width: 1280px) { .pro-work-chat { grid-template-columns: 180px 268px minmax(0, 1fr) 250px; } }
 @media (min-width: 1536px) { .pro-work-chat { grid-template-columns: 200px 320px minmax(0, 1fr) 288px; } }
 @media (min-width: 768px) { .pro-work-chat > * + * { border-left: 1px solid var(--pro-line); } }
 /* Consultas: lista · detalle */

@@ -18,11 +18,11 @@ import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import {
   FileText, Image as ImageIcon, Video, Search, Plus, Trash2, Eye, Users, Stethoscope,
   Globe, Lock, Loader2, Settings2, LayoutGrid, FolderOpen, FilePlus2, Clock,
-  BarChart3, ShoppingBag, ChevronDown, PlayCircle, BookOpen, Presentation, Check, X,
+  BarChart3, ShoppingBag, ChevronDown, PlayCircle, BookOpen, Presentation, Check, X, MoreVertical,
   Info, ArrowRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fill, money, money2, fmtDate, norm } from '@/lib/proFormat';
+import { fill, money, money2, fmtDate, norm, initialsOf } from '@/lib/proFormat';
 
 interface DoctorContent {
   id: string;
@@ -74,6 +74,7 @@ export default function DoctorContentLibrary() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [stateFilter, setStateFilter] = useState<'all' | State>('all');
   const [sort, setSort] = useState<Sort>('recent');
   const [section, setSection] = useState<Section>('overview');
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -147,6 +148,7 @@ export default function DoctorContentLibrary() {
     const q = norm(searchQuery.trim());
     let arr = contents.filter(c => {
       if (typeFilter !== 'all' && c.type !== typeFilter) return false;
+      if (stateFilter !== 'all' && stateOf(c) !== stateFilter) return false;
       if (q && !norm(c.title).includes(q) && !norm(c.description).includes(q) && !norm(c.category).includes(q)) return false;
       const s = stateOf(c);
       if (section === 'published') return s === 'published';
@@ -162,7 +164,7 @@ export default function DoctorContentLibrary() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return arr;
-  }, [contents, searchQuery, typeFilter, section, sort]);
+  }, [contents, searchQuery, typeFilter, stateFilter, section, sort]);
 
   const featured = useMemo(
     () => contents.find(c => stateOf(c) === 'published') || contents[0] || null,
@@ -187,7 +189,7 @@ export default function DoctorContentLibrary() {
 
   // Al cambiar de sección o de filtros la selección se suelta: si no, se podía
   // pulsar «Eliminar (20)» en una sección donde no hay ni una tarjeta pintada.
-  useEffect(() => { setSelectedIds(new Set()); }, [section, searchQuery, typeFilter]);
+  useEffect(() => { setSelectedIds(new Set()); }, [section, searchQuery, typeFilter, stateFilter]);
 
   // ---------------------------------------------------------------- acciones
   const extractStoragePath = (url: string): string => {
@@ -335,9 +337,25 @@ export default function DoctorContentLibrary() {
                   {c.is_public ? t('pro.contentPanel.unpublish') : t('pro.contentPanel.publish')}
                 </button>
               )}
-              <button type="button" className="pro-kebab ml-auto" onClick={() => setDeleteId(c.id)} aria-label={t('pro.contentPanel.delete')}>
-                <Trash2 />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" className="pro-kebab ml-auto" aria-label={t('pro.contentPanel.manage')}>
+                    <MoreVertical />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setPreviewContent(c)}>{t('pro.contentPanel.preview')}</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/content')}>{t('pro.contentPanel.view')}</DropdownMenuItem>
+                  {c.moderation_status !== 'pending' && (
+                    <DropdownMenuItem onClick={() => togglePublic(c)}>
+                      {c.is_public ? t('pro.contentPanel.unpublish') : t('pro.contentPanel.publish')}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(c.id)}>
+                    {t('pro.contentPanel.delete')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
@@ -460,6 +478,20 @@ export default function DoctorContentLibrary() {
                   </DropdownMenu>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
+                      <button type="button" className="pro-btn pro-btn-outline pro-btn-sm">
+                        {stateFilter === 'all' ? t('pro.contentPanel.filterStatus') : stateBadge(stateFilter).label} <ChevronDown />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setStateFilter('all')}>{t('pro.contentPanel.allStatus')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setStateFilter('published')}>{t('pro.contentPanel.badgePublished')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setStateFilter('draft')}>{t('pro.contentPanel.badgeDraft')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setStateFilter('review')}>{t('pro.contentPanel.badgeReview')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setStateFilter('rejected')}>{t('pro.contentPanel.badgeRejected')}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <button type="button" className="pro-btn pro-btn-outline pro-btn-sm">{sortLabel} <ChevronDown /></button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -503,10 +535,24 @@ export default function DoctorContentLibrary() {
                 {featured && (
                   <section className="pro-feature">
                     <div className="pro-feature-body">
-                      {featured.category && <span className="pro-feature-cat">{featured.category}</span>}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {featured.category && <span className="pro-feature-cat">{featured.category}</span>}
+                        {/* Sin esto el destacado podía ser un borrador y no avisaba */}
+                        <span className={`pro-tile-badge ${stateBadge(stateOf(featured)).cls}`} style={{ position: 'static' }}>
+                          {stateBadge(stateOf(featured)).label}
+                        </span>
+                      </div>
                       <h2 className="pro-feature-title">{featured.title}</h2>
                       {featured.description && <p className="pro-feature-desc">{featured.description}</p>}
                       <div className="pro-feature-meta">
+                        {/* El autor es el propio médico: nombre y especialidad reales */}
+                        <span className="inline-flex items-center gap-2">
+                          <span className="pro-initials" style={{ width: 26, height: 26, fontSize: 10, background: 'rgba(255,255,255,.18)', color: '#fff' }}>
+                            {initialsOf(user?.name)}
+                          </span>
+                          <b style={{ color: '#fff' }}>{user?.name || ''}</b>
+                        </span>
+                        <span>·</span>
                         <span>{fmtDate(new Date(featured.created_at), language)}</span>
                         <span>·</span>
                         <span>{(featured.price || 0) > 0 ? money2(Number(featured.price), language) : t('pro.contentPanel.free')}</span>

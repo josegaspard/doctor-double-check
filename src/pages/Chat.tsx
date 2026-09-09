@@ -534,6 +534,14 @@ export default function Chat() {
       <span className="pro-lane-sep" />
       {railButton('closed')}
       {railButton('archived')}
+      {/* La maqueta repite el botón al pie del carril: es donde acaba la vista */}
+      <button
+        type="button"
+        className="pro-btn pro-btn-live pro-btn-sm mt-2 hidden xl:inline-flex"
+        onClick={() => navigate(role === 'doctor' ? '/doctor/patients' : '/doctors')}
+      >
+        <Plus /> {t('pro.chatPro.newConversation')}
+      </button>
     </>
   );
 
@@ -624,7 +632,7 @@ export default function Chat() {
             ) : (
               <div className={`pro-col pro-thread-col min-w-0 ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
                 {selectedSessionData && (
-                  <div className="flex items-center justify-end gap-2 px-3 pt-2 2xl:hidden">
+                  <div className="flex items-center justify-end gap-2 px-3 pt-2 xl:hidden">
                     <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={() => setContextOpen(true)}>
                       <PanelRightOpen /> {t('pro.chatPro.showContext')}
                     </button>
@@ -659,7 +667,7 @@ export default function Chat() {
 
             {/* Columna 4 — contexto clínico */}
             {view !== 'badge' && (
-              <aside className="hidden 2xl:flex pro-col p-3" aria-label={t('pro.chatPro.context')}>
+              <aside className="hidden xl:flex pro-col p-3" aria-label={t('pro.chatPro.context')}>
                 <h2 className="pro-card-title text-[15px] mb-2"><ClipboardList /> {t('pro.chatPro.context')}</h2>
                 {selectedSessionData && otherInfo ? (
                   <ChatClinicalContext

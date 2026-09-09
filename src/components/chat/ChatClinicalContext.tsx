@@ -68,11 +68,29 @@ export function ChatClinicalContext({ session, other, officeHours, isAvailable }
             .in('status', ['requested', 'confirmed'])
             .order('scheduled_at', { ascending: true })
             .limit(1),
+          // `vault_access` guarda el fichero, no el paciente: hay que resolver el
+          // dueño en `vault_files`. Contar sus filas a secas daba el total del
+          // médico y pintaba «Acceso confirmado» en pacientes que no compartieron
+          // nada — el mismo número en todas sus conversaciones.
           role === 'doctor'
             ? supabase.from('vault_access').select('file_id').eq('doctor_id', doctorId)
             : Promise.resolve({ data: [] as any[] } as any),
         ]);
         if (cancelled) return;
+
+        // Cuántos de esos ficheros son de ESTE paciente
+        let sharedCount = 0;
+        const fileIds = [...new Set((((vaultRes.data as any[]) || []).map(v => v.file_id)).filter(Boolean))];
+        if (role === 'doctor' && fileIds.length) {
+          const { data: files } = await supabase
+            .from('vault_files')
+            .select('id, patient_id')
+            .in('id', fileIds)
+            .eq('patient_id', patientId);
+          sharedCount = ((files as any[]) || []).length;
+        }
+        if (cancelled) return;
+
         const cons = (consRes.data as any[]) || [];
         const next = ((apptRes.data as any[]) || [])[0] || null;
         setCtx({
@@ -82,7 +100,7 @@ export function ChatClinicalContext({ session, other, officeHours, isAvailable }
           nextAppointmentId: next?.id || null,
           nextAppointmentRoom: next?.daily_room_url || null,
           nextAppointmentStatus: next?.status || null,
-          sharedDocuments: ((vaultRes.data as any[]) || []).length,
+          sharedDocuments: sharedCount,
         });
       } catch (e) {
         console.error('ChatClinicalContext:', e);
