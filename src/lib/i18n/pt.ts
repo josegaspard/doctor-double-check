@@ -5679,6 +5679,8 @@ export const pt = {
       doctorsLabel: "Médicos:",
       totalGrossLabel: "Total bruto:",
       totalNetLabel: "Total líquido a pagar:",
+      commissionNoteFlat: 'O valor bruto é o que o cliente pagou (dado real). A comissão e o valor líquido são calculados com a comissão publicada ({p} %), hoje igual para todos os tipos de venda.',
+      commissionNotePerType: 'O valor bruto é o que o cliente pagou (dado real). A comissão e o valor líquido são calculados com a comissão publicada para cada tipo de venda ({p} % quando não há uma própria).',
       commissionNote: "A comissão da plataforma já foi descontada na conclusão de cada venda. Este é o valor líquido que o médico recebe.",
       paymentMethod: "Forma de pagamento",
       manualTransfer: "Transferência bancária manual",

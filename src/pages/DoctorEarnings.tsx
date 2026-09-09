@@ -81,6 +81,11 @@ export default function DoctorEarnings() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [commissionRate, setCommissionRate] = useState(20);
   const [payoutFrequency, setPayoutFrequency] = useState<string | null>(null);
+  /** Comisión de cada fuente en %, o null si la plataforma no fija una propia
+   *  para ese tipo (entonces manda la global, igual que `fn_commission_rate`). */
+  const [ratesBySource, setRatesBySource] = useState<Record<SourceKey, number | null>>({
+    consultations: null, subscriptions: null, content: null, lives: null, other: null,
+  });
   const [walletBalance, setWalletBalance] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
@@ -109,7 +114,15 @@ export default function DoctorEarnings() {
         supabase.from('fund_holds').select('*').eq('doctor_id', user.id).order('created_at', { ascending: false }),
         supabase.from('doctor_bank_accounts').select('bank_name, clabe_last4, account_holder_name, is_verified, payment_method, payouts_enabled').eq('doctor_id', user.id).maybeSingle(),
         supabase.from('doctor_invoices').select('id, invoice_number, period_start, period_end, file_url, status').eq('doctor_id', user.id).order('period_start', { ascending: false }),
-        supabase.from('payout_settings_public').select('commission_percentage, payout_frequency').limit(1).maybeSingle(),
+        // Se piden también las comisiones POR TIPO. Si la vista todavía no las
+        // publica (migración 20260908 sin aplicar) la consulta falla y se
+        // reintenta con las dos columnas de siempre: la pantalla funciona igual.
+        supabase.from('payout_settings_public')
+          .select('commission_percentage, payout_frequency, commission_consultation, commission_recording, commission_live, commission_chat, commission_content')
+          .limit(1).maybeSingle()
+          .then(r => (r.error
+            ? supabase.from('payout_settings_public').select('commission_percentage, payout_frequency').limit(1).maybeSingle()
+            : r)),
         supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle(),
         supabase.from('doctor_profiles').select('pending_earnings, total_earnings').eq('user_id', user.id).maybeSingle(),
       ]);
@@ -123,6 +136,14 @@ export default function DoctorEarnings() {
       setInvoicesCount(invRows.length);
       if ((settingsRes.data as any)?.commission_percentage != null) setCommissionRate(Number((settingsRes.data as any).commission_percentage));
       setPayoutFrequency((settingsRes.data as any)?.payout_frequency || null);
+      const st = (settingsRes.data as any) || {};
+      setRatesBySource({
+        consultations: st.commission_consultation ?? st.commission_chat ?? null,
+        subscriptions: st.commission_content ?? null,
+        content: st.commission_recording ?? st.commission_content ?? null,
+        lives: st.commission_live ?? null,
+        other: null,
+      });
       setWalletBalance(Number((walletRes.data as any)?.balance) || 0);
       setPendingEarnings(Number((profileRes.data as any)?.pending_earnings) || 0);
       setTotalPaid(Number((profileRes.data as any)?.total_earnings) || 0);
@@ -197,24 +218,32 @@ export default function DoctorEarnings() {
    *  supabase/functions/purchase-content-wallet y purchase-recording-wallet.
    *  Por eso el BRUTO es el dato y la comisión y el neto son CÁLCULO. */
   const grossOf = (tx: Transaction) => Number(tx.amount) || 0;
-  const commissionOf = (tx: Transaction) => grossOf(tx) * rate;
+  /** La comisión de ESE tipo de venta si la plataforma la publica; si no, la global. */
+  const rateOf = (tx: Transaction) => {
+    const own = ratesBySource[sourceOf((tx.metadata as any)?.source)];
+    return own != null ? Number(own) / 100 : rate;
+  };
+  const commissionOf = (tx: Transaction) => grossOf(tx) * rateOf(tx);
   const netOf = (tx: Transaction) => grossOf(tx) - commissionOf(tx);
+  /** ¿Hay alguna comisión por tipo publicada? Si no, el cálculo global es EXACTO. */
+  const hasPerTypeRates = Object.values(ratesBySource).some(v => v != null);
 
   /** Del PERIODO completo: el KPI de comisiones y el desglose no dependen de la
    *  pestaña de fuente que esté abierta (antes cambiaban al pulsar «Consultas»). */
   const totals = useMemo(() => {
     const gross = periodTx.reduce((s, tx) => s + grossOf(tx), 0);
-    const commission = gross * rate;
+    const commission = periodTx.reduce((s, tx) => s + commissionOf(tx), 0);
     return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodTx, commissionRate]);
+  }, [periodTx, commissionRate, ratesBySource]);
 
   /** De lo que se ve en la tabla (sí depende de la pestaña) */
   const tableTotals = useMemo(() => {
     const gross = filteredTx.reduce((s, tx) => s + grossOf(tx), 0);
-    return { gross, commission: gross * rate, net: gross - gross * rate };
+    const commission = filteredTx.reduce((s, tx) => s + commissionOf(tx), 0);
+    return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredTx, commissionRate]);
+  }, [filteredTx, commissionRate, ratesBySource]);
 
   /** La factura cuyo periodo cubre la fecha del movimiento */
   const invoiceFor = (iso: string) => {
@@ -576,7 +605,9 @@ export default function DoctorEarnings() {
                         {/* Descargo: el importe abonado es el neto; bruto y comisión son cálculo */}
                         <div className="pro-note mt-2">
                           <Info />
-                          <span>{fill(t('pro.earnings.commissionNote'), { p: commissionRate })}</span>
+                          <span>{hasPerTypeRates
+                            ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
+                            : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate })}</span>
                         </div>
                         {pages > 1 && (
                           <div className="pro-pager">
@@ -725,7 +756,9 @@ export default function DoctorEarnings() {
                       <Download /> {t('pro.earnings.downloadReport')}
                     </button>
                   </div>
-                  <p className="text-[11.5px] pro-muted mt-2">{fill(t('pro.earnings.commissionNote'), { p: commissionRate })}</p>
+                  <p className="text-[11.5px] pro-muted mt-2">{hasPerTypeRates
+                    ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
+                    : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate })}</p>
                   <p className="text-[11.5px] pro-muted mt-1">{t('pro.earnings.withdrawInfo')}</p>
                   <Link to="/wallet" className="pro-link mt-1"><ArrowRight /> {t('nav.wallet') || 'Wallet'}</Link>
                 </section>

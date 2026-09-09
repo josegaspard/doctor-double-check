@@ -5679,6 +5679,8 @@ export const de = {
       doctorsLabel: "Ärzte:",
       totalGrossLabel: "Brutto gesamt:",
       totalNetLabel: "Netto-Auszahlung gesamt:",
+      commissionNoteFlat: 'Der Bruttobetrag ist der vom Kunden gezahlte Betrag (Ist-Wert). Provision und Nettobetrag werden mit der veröffentlichten Provision ({p} %) berechnet, die heute für alle Verkaufsarten gleich ist.',
+      commissionNotePerType: 'Der Bruttobetrag ist der vom Kunden gezahlte Betrag (Ist-Wert). Provision und Nettobetrag werden mit der Provision berechnet, die die Plattform für jede Verkaufsart veröffentlicht ({p} %, wenn keine eigene festgelegt ist).',
       commissionNote: "Die Plattformprovision wurde bereits beim Abschluss jedes Verkaufs abgezogen. Dies ist der Nettobetrag, den der Arzt erhält.",
       paymentMethod: "Zahlungsmethode",
       manualTransfer: "Manuelle Banküberweisung",

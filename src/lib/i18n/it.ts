@@ -5679,6 +5679,8 @@ export const it = {
       doctorsLabel: "Medici:",
       totalGrossLabel: "Totale lordo:",
       totalNetLabel: "Totale netto da pagare:",
+      commissionNoteFlat: 'L\'importo lordo è quanto ha pagato il cliente (dato reale). Commissione e importo netto si calcolano con la commissione pubblicata ({p} %), oggi uguale per tutti i tipi di vendita.',
+      commissionNotePerType: 'L\'importo lordo è quanto ha pagato il cliente (dato reale). Commissione e importo netto si calcolano con la commissione pubblicata per ogni tipo di vendita ({p} % in mancanza di una propria).',
       commissionNote: "La commissione della piattaforma è già stata detratta al completamento di ogni vendita. Questo è il valore netto che riceve il medico.",
       paymentMethod: "Metodo di pagamento",
       manualTransfer: "Bonifico bancario manuale",

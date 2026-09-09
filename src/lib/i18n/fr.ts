@@ -5679,6 +5679,8 @@ export const fr = {
       doctorsLabel: "Médecins :",
       totalGrossLabel: "Total brut :",
       totalNetLabel: "Total net à payer :",
+      commissionNoteFlat: 'Le montant brut est ce que le client a payé (donnée réelle). La commission et le montant net sont calculés avec la commission publiée ({p} %), aujourd\'hui identique pour tous les types de vente.',
+      commissionNotePerType: 'Le montant brut est ce que le client a payé (donnée réelle). La commission et le montant net sont calculés avec la commission publiée pour chaque type de vente ({p} % à défaut).',
       commissionNote: "La commission de la plateforme a déjà été déduite à la conclusion de chaque vente. Voici le montant net que le médecin reçoit.",
       paymentMethod: "Mode de paiement",
       manualTransfer: "Virement bancaire manuel",
