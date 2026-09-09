@@ -114,15 +114,11 @@ export default function DoctorEarnings() {
         supabase.from('fund_holds').select('*').eq('doctor_id', user.id).order('created_at', { ascending: false }),
         supabase.from('doctor_bank_accounts').select('bank_name, clabe_last4, account_holder_name, is_verified, payment_method, payouts_enabled').eq('doctor_id', user.id).maybeSingle(),
         supabase.from('doctor_invoices').select('id, invoice_number, period_start, period_end, file_url, status').eq('doctor_id', user.id).order('period_start', { ascending: false }),
-        // Se piden también las comisiones POR TIPO. Si la vista todavía no las
-        // publica (migración 20260908 sin aplicar) la consulta falla y se
-        // reintenta con las dos columnas de siempre: la pantalla funciona igual.
-        supabase.from('payout_settings_public')
-          .select('commission_percentage, payout_frequency, commission_consultation, commission_recording, commission_live, commission_chat, commission_content')
-          .limit(1).maybeSingle()
-          .then(r => (r.error
-            ? supabase.from('payout_settings_public').select('commission_percentage, payout_frequency').limit(1).maybeSingle()
-            : r)),
+        // `*` a propósito: la vista es pública y de dos filas escasas, y así
+        // devuelve las columnas que HAYA. Pedir por nombre las comisiones por
+        // tipo daría un 400 en la consola hasta que se aplique la migración
+        // 20260908; con `*` funciona igual antes y después, sin ruido.
+        supabase.from('payout_settings_public').select('*').limit(1).maybeSingle(),
         supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle(),
         supabase.from('doctor_profiles').select('pending_earnings, total_earnings').eq('user_id', user.id).maybeSingle(),
       ]);
