@@ -2981,3 +2981,173 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
    columna: si no, queda flotando arriba y el resto de la columna sale vacío. */
 .pro-thread-col { flex-direction: column; min-height: 0; }
 .pro-thread-col > * { flex: 1 1 auto; min-height: 0; max-height: 100%; box-shadow: none !important; border-radius: 0 !important; }
+
+/* ==========================================================================
+   PRO 2026 · 3.ª tanda — Configuración y cuenta · Suscripciones ·
+   Mi perfil profesional (maquetas del cliente, 10-sep-2026).
+   Mismo lenguaje que los dos bloques anteriores. Antes de crear una clase
+   `pro-*` nueva se comprobó que el nombre no estuviera cogido: los carriles
+   de sección reutilizan `.pro-lane`, las cifras `.pro-stat` y las listas de
+   comprobación `.pro-check`, que ya existen.
+   OJO: ninguna de estas clases declara `display` si Tailwind lo controla.
+   ========================================================================== */
+
+/* ---------- Rejillas de las tres pantallas ---------- */
+/* Configuración: carril de secciones · contenido · resumen */
+.pro-work-set { grid-template-columns: 1fr; }
+@media (min-width: 900px) { .pro-work-set { grid-template-columns: 224px minmax(0, 1fr); } }
+@media (min-width: 1280px) { .pro-work-set { grid-template-columns: 224px minmax(0, 1fr) 320px; } }
+/* Perfil profesional: contenido · vista previa */
+.pro-work-prof { grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .pro-work-prof { grid-template-columns: minmax(0, 1fr) 340px; } }
+
+/* ---------- Fila de dato editable (cuenta, perfil) ---------- */
+.pro-field { padding: 0.75rem 0; border-top: 1px solid var(--pro-line); min-width: 0; }
+.pro-field:first-child { border-top: 0; padding-top: 0; }
+.pro-field > .k {
+  display: block; font-size: 12.5px; font-weight: 600; color: var(--pro-ink-2); margin-bottom: 6px;
+}
+.pro-field > .row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0;
+}
+.pro-field .box {
+  flex: 1 1 220px; min-width: 0; display: flex; align-items: center; gap: 8px;
+  min-height: 42px; padding: 8px 12px; border-radius: 12px;
+  border: 1px solid var(--pro-line); background: #f7fbfc;
+  font-size: 13.5px; color: var(--pro-ink); word-break: break-word;
+}
+.pro-field .box.is-locked { background: #eef2f5; color: var(--pro-muted); }
+.pro-field .box svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--pro-muted) !important; }
+.pro-field .hint { font-size: 11.5px; color: var(--pro-muted); margin-top: 5px; }
+.pro-field-full .row { flex-direction: column; align-items: stretch; }
+
+/* Interruptor con texto (notificaciones, preferencias) */
+.pro-setrow {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0.7rem 0; border-top: 1px solid var(--pro-line); min-width: 0;
+}
+.pro-setrow:first-child { border-top: 0; }
+.pro-setrow .lbl { min-width: 0; }
+.pro-setrow .lbl b { display: block; font-size: 13.5px; font-weight: 600; color: var(--pro-ink); line-height: 1.3; }
+.pro-setrow .lbl span { display: block; font-size: 12px; color: var(--pro-muted); margin-top: 2px; }
+.pro-setrow > .pro-icon-box { width: 36px; height: 36px; border-radius: 11px; }
+.pro-setrow > .pro-icon-box svg { width: 17px; height: 17px; }
+
+/* ---------- Resumen de configuración (columna derecha) ---------- */
+.pro-sum {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0.6rem 0; border-top: 1px solid var(--pro-line); min-width: 0;
+}
+.pro-sum:first-child { border-top: 0; padding-top: 0; }
+.pro-sum > svg { width: 20px; height: 20px; flex-shrink: 0; }
+.pro-sum.is-ok > svg { color: var(--pro-ok) !important; }
+.pro-sum.is-off > svg { color: #c3ced6 !important; }
+.pro-sum .lbl { flex: 1; min-width: 0; font-size: 13px; color: var(--pro-ink); overflow: hidden; text-overflow: ellipsis; }
+.pro-sum .pro-pill { flex-shrink: 0; }
+
+/* Enlaces de ayuda y soporte */
+.pro-helprow {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 11px 12px; border-radius: 13px; border: 1px solid var(--pro-line);
+  background: #f7fbfc; font-size: 13px; font-weight: 600; color: var(--pro-ink) !important;
+  min-width: 0;
+}
+.pro-helprow:hover { background: #eef5f7; }
+.pro-helprow svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--pro-teal) !important; }
+.pro-helprow .chev { margin-left: auto; color: var(--pro-muted) !important; }
+
+/* ---------- Suscripciones: tarjeta de plan ---------- */
+.pro-plan {
+  display: grid; gap: 12px; align-items: start; min-width: 0;
+  grid-template-columns: 1fr;
+  padding: 14px; border-radius: 16px; border: 1px solid var(--pro-line); background: #fff;
+}
+@media (min-width: 720px) { .pro-plan { grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.7fr) minmax(0, 1.5fr) auto; gap: 16px; } }
+.pro-plan:hover { box-shadow: 0 10px 26px -18px rgba(3, 32, 42, .6); }
+.pro-plan-id { display: flex; align-items: flex-start; gap: 11px; min-width: 0; }
+.pro-plan-id b { display: block; font-size: 15px; font-weight: 800; color: var(--pro-ink); line-height: 1.25; }
+.pro-plan-id span { display: block; font-size: 12.5px; color: var(--pro-muted); margin-top: 2px; }
+.pro-plan-price b { display: block; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--pro-ink); line-height: 1.15; }
+.pro-plan-price span { display: block; font-size: 11.5px; color: var(--pro-muted); margin-top: 2px; }
+.pro-plan-feats { display: flex; flex-direction: column; gap: 5px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.pro-plan-feats li { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; color: var(--pro-ink-2); min-width: 0; }
+.pro-plan-feats svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--pro-ok) !important; }
+.pro-plan-side { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; flex-shrink: 0; }
+@media (min-width: 720px) { .pro-plan-side { align-items: flex-end; text-align: right; } }
+.pro-plan-side b { font-size: 1.25rem; font-weight: 800; color: var(--pro-ink); line-height: 1.15; }
+.pro-plan-side > span { font-size: 11.5px; color: var(--pro-muted); }
+
+/* Fila de tabla seleccionable (suscriptores) */
+.pro-table tbody tr { cursor: pointer; }
+.pro-table tbody tr.is-active td { background: #eaf5f7; }
+.pro-table tbody tr.is-active td:first-child { box-shadow: inset 3px 0 0 var(--pro-teal); }
+
+/* ---------- Perfil profesional ---------- */
+.pro-prof-head { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.pro-prof-avatar { position: relative; flex-shrink: 0; }
+.pro-prof-avatar .pro-initials { width: 76px; height: 76px; font-size: 22px; border: 3px solid #fff; box-shadow: 0 4px 14px -6px rgba(3, 32, 42, .5); }
+.pro-prof-avatar .cam {
+  position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--pro-teal); color: #fff !important; border: 2px solid #fff;
+}
+.pro-prof-avatar .cam svg { width: 14px; height: 14px; color: #fff !important; }
+.pro-prof-name { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+.pro-prof-name h2 { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--pro-ink); margin: 0; line-height: 1.2; }
+.pro-prof-name .verified { color: var(--pro-info) !important; width: 18px; height: 18px; flex-shrink: 0; }
+.pro-prof-spec { font-size: 13.5px; color: var(--pro-teal); font-weight: 600; margin-top: 2px; }
+
+.pro-progress { min-width: 180px; flex: 1 1 200px; }
+.pro-progress .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--pro-muted); }
+.pro-progress .top b { font-size: 15px; font-weight: 800; color: var(--pro-ink); }
+.pro-progress .bar { height: 7px; border-radius: 9999px; background: #e8eff2; overflow: hidden; margin-top: 6px; }
+.pro-progress .bar i { display: block; height: 100%; border-radius: 9999px; background: linear-gradient(90deg, var(--pro-teal-2), var(--pro-teal)); }
+
+/* Chips de especialidad / etiquetas del perfil */
+.pro-taglist { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.pro-taglist .pro-tag { height: 28px; padding: 0 11px; font-size: 12px; }
+
+/* Vista previa del perfil público */
+.pro-preview { border-radius: 16px; border: 1px solid var(--pro-line); background: #f7fbfc; padding: 14px; min-width: 0; }
+.pro-preview .who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pro-preview .who .pro-initials { width: 46px; height: 46px; font-size: 15px; }
+.pro-preview .line { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--pro-ink-2); padding: 5px 0; min-width: 0; }
+.pro-preview .line svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--pro-muted) !important; }
+.pro-preview .line .v { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pro-preview .stars { display: inline-flex; align-items: center; gap: 3px; color: #f5b301; }
+.pro-preview .stars svg { width: 14px; height: 14px; color: #f5b301 !important; }
+
+/* Cifras de trayectoria (certificaciones · experiencia · educación) */
+.pro-statgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 519px) { .pro-statgrid { grid-template-columns: 1fr; } }
+a.pro-stat, button.pro-stat { text-align: left; width: 100%; }
+a.pro-stat:hover, button.pro-stat:hover { background: #eef5f7; }
+.pro-stat .chev { margin-left: auto; color: var(--pro-muted) !important; flex-shrink: 0; }
+
+/* ---------- Configuración: carril de secciones propio ----------
+   NO se reutiliza `.pro-lane-row` ni se deja la dirección a Tailwind: una clase
+   propia que declara `flex-direction` gana al `md:flex-col` de Tailwind por ir
+   después en la hoja (ya pasó el 7 y el 8-sep). Aquí la dirección la fija esta
+   misma regla en sus dos tamaños y no hay pelea. */
+.pro-setnav {
+  display: flex; flex-direction: row; gap: 6px; padding: 0.6rem;
+  overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none;
+  min-width: 0; align-self: start;
+}
+.pro-setnav::-webkit-scrollbar { display: none; }
+.pro-setnav .pro-lane-item {
+  width: auto; flex: 0 0 auto; height: 38px; border-radius: 9999px; border: 1px solid #e3ecf0;
+}
+.pro-setnav .pro-lane-item.is-active { border-color: var(--pro-teal-soft); }
+@media (min-width: 900px) {
+  .pro-setnav { flex-direction: column; gap: 2px; overflow-x: visible; position: sticky; top: 84px; }
+  .pro-setnav .pro-lane-item { width: 100%; flex: 0 0 auto; height: 44px; border-radius: 12px; border: 0; }
+}
+
+/* Interruptor que ocupa toda la fila (el aviso del navegador) */
+.pro-setrow-block { display: block; }
+
+/* Zona de riesgo (borrar la cuenta) */
+.pro-danger { border-left: 5px solid var(--pro-live); }
+.pro-danger-title { color: var(--pro-live) !important; }
+.pro-danger-title svg { color: var(--pro-live) !important; }

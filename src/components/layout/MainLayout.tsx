@@ -38,7 +38,6 @@ import {
   Upload,
   Calendar,
   CalendarDays,
-  Clock,
   FileText,
   Bell,
   Radio,
@@ -104,7 +103,10 @@ const doctorMoreNav: NavItem[] = [
   { labelKey: 'pro.nav.myRecordings', href: '/doctor/recordings', icon: PlayCircle, roles: ['doctor'] },
   { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
   { labelKey: 'pro.nav.books', href: '/doctor/books', icon: BookOpen, roles: ['doctor'] },
-  { labelKey: 'nav.availability', href: '/doctor/availability', icon: Clock, roles: ['doctor'] },
+  // «Disponibilidad» sale del menú «Más» a petición de la clienta (10-sep-2026): la
+  // Agenda ya da acceso a lo mismo (Configurar, Gestionar, Programar y el clic en un
+  // hueco). La RUTA /doctor/availability sigue viva y enlazada desde Agenda, Panel y
+  // Mis pacientes — solo se quita la entrada duplicada del menú.
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['doctor'] },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['doctor'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['doctor'], toggleKey: 'show_news_section' },

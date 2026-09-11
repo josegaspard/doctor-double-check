@@ -5,8 +5,8 @@
     <!-- maximum-scale=1.0 + user-scalable=no previene el "stuck zoom" en iOS Safari cuando el usuario toca controles. La accesibilidad de pinch-zoom queda preservada por iOS Accessibility Settings. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
     <title>Medical Masters | Plataforma de Médicos Especialistas Certificados</title>
-    <meta name="description" content="Plataforma Médica más grande de México con médicos certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales, expediente clínico seguro." />
-    <meta name="keywords" content="telemedicina México, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
+    <meta name="description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+    <meta name="keywords" content="telemedicina, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
     <meta name="author" content="Medical Masters" />
     <!-- Public landing only. All non-home routes are noindex'd via X-Robots-Tag header
          in vercel.json + robots.txt Disallow. The home meta below tells crawlers it is indexable. -->
@@ -22,14 +22,19 @@
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
 
     <link rel="canonical" href="https://medical-masters.com/" />
-    <link rel="alternate" hreflang="es-mx" href="https://medical-masters.com/" />
     <link rel="alternate" hreflang="es" href="https://medical-masters.com/" />
     <link rel="alternate" hreflang="x-default" href="https://medical-masters.com/" />
 
     <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
-    <meta property="og:description" content="Plataforma Médica más grande de México con médicos certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales, expediente clínico seguro." />
+    <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_MX" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale:alternate" content="es_MX" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="pt_PT" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="it_IT" />
+    <meta property="og:locale:alternate" content="de_DE" />
     <meta property="og:url" content="https://medical-masters.com/" />
     <meta property="og:site_name" content="Medical Masters" />
     <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
@@ -41,7 +46,7 @@
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@MedicalMasters" />
     <meta name="twitter:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
-    <meta name="twitter:description" content="Plataforma Médica más grande de México con médicos certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales, expediente clínico seguro." />
+    <meta name="twitter:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=18" />
 
     <!-- Preconnect a Supabase + Daily + B2 — abre la TLS handshake antes de que el bundle dispare las peticiones, ~150-300ms ahorrados en cold load -->
@@ -76,15 +81,12 @@
       "@context": "https://schema.org",
       "@type": "MedicalOrganization",
       "name": "Medical Masters",
-      "alternateName": "Medical Masters MX",
+      "alternateName": "Medical Masters",
       "url": "https://medical-masters.com/",
       "logo": "https://medical-masters.com/icon-512.png?v=18",
       "image": "https://medical-masters.com/icon-512.png?v=18",
       "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
-      "areaServed": {
-        "@type": "Country",
-        "name": "México"
-      },
+      "areaServed": "Worldwide",
       "medicalSpecialty": [
         "GeneralPractice",
         "Cardiovascular",
@@ -107,7 +109,7 @@
       "@type": "WebSite",
       "name": "Medical Masters",
       "url": "https://medical-masters.com/",
-      "inLanguage": "es-MX",
+      "inLanguage": ["es", "en", "pt", "fr", "it", "de", "ca", "zh"],
       "potentialAction": {
         "@type": "SearchAction",
         "target": {

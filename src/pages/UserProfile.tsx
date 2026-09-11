@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -56,6 +56,13 @@ import {
   Phone,
   Lock,
   Send,
+  Eye,
+  BadgeCheck,
+  ChevronRight,
+  CalendarDays,
+  Briefcase,
+  ClipboardList,
+  Circle,
 } from 'lucide-react';
 
 const COUNTRY_CODES = [
@@ -76,6 +83,9 @@ import DoctorCredentials from '@/components/doctor/DoctorCredentials';
 import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
 import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
 import { generatePlaceholderCedula, getSpecialistCredentialLabelKey } from '@/lib/cedulaVerification';
+import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
+import { SignatureUpload } from '@/components/doctor/SignatureUpload';
+import { money } from '@/lib/proFormat';
 
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
@@ -90,7 +100,22 @@ interface DoctorProfile {
   cedula_profesional?: string | null;
   license?: string | null;
   numero_consejo?: string | null;
+  // Campos que YA existían en doctor_profiles y que el perfil no leía: los usa
+  // el diseño de la maqueta (10-sep-2026). Ninguno es columna nueva.
+  secondary_specialties?: string[] | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  practice_hospital?: string | null;
+  university?: string | null;
+  total_consultations?: number | null;
+  office_days?: string[] | null;
+  office_hours_start?: string | null;
+  office_hours_end?: string | null;
 }
+
+/** Pestañas de «Mi perfil profesional» (maqueta del cliente, 10-sep-2026). */
+type ProfTab = 'info' | 'career' | 'services' | 'availability' | 'media' | 'account';
 
 interface ResidentProfile {
   specialty: string;
@@ -193,6 +218,12 @@ export default function UserProfile() {
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
   const [phoneRateLimited, setPhoneRateLimited] = useState(false);
 
+  // Perfil profesional PRO (maqueta 10-sep-2026): pestaña activa y las cifras
+  // de trayectoria y reseñas, que salen de tablas que ya existen.
+  const [profTab, setProfTab] = useState<ProfTab>('info');
+  const [careerCounts, setCareerCounts] = useState({ certifications: 0, education: 0, experience: 0 });
+  const [reviewsCount, setReviewsCount] = useState(0);
+
   // Email editing
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [editedEmail, setEditedEmail] = useState('');
@@ -244,7 +275,7 @@ export default function UserProfile() {
         if (role === 'doctor') {
           const { data } = await supabase
             .from('doctor_profiles')
-            .select('specialty, bio, location, rating, followers_count, status, consultation_fee, cedula_profesional, license, numero_consejo')
+            .select('specialty, bio, location, rating, followers_count, status, consultation_fee, cedula_profesional, license, numero_consejo, secondary_specialties, city, state, country, practice_hospital, university, total_consultations, office_days, office_hours_start, office_hours_end')
             .eq('user_id', user.id)
             .maybeSingle();
 
@@ -279,6 +310,31 @@ export default function UserProfile() {
       setEditedName(user.name);
     }
   }, [user?.name]);
+
+  // Cifras de trayectoria y reseñas del propio médico. Se cuentan con `head` +
+  // `count` (no traen filas) y solo se piden si el rol es médico.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!user?.id || role !== 'doctor') return;
+      const q = (table: string) =>
+        supabase.from(table as any).select('id', { count: 'exact', head: true }).eq('doctor_id', user.id);
+      const [cert, edu, exp, rev] = await Promise.all([
+        q('doctor_certifications'),
+        q('doctor_education'),
+        q('doctor_experience'),
+        supabase.from('consultation_ratings').select('id', { count: 'exact', head: true }).eq('doctor_id', user.id),
+      ]);
+      if (!alive) return;
+      setCareerCounts({
+        certifications: cert.count || 0,
+        education: edu.count || 0,
+        experience: exp.count || 0,
+      });
+      setReviewsCount(rev.count || 0);
+    })();
+    return () => { alive = false; };
+  }, [user?.id, role]);
 
   if (!user) {
     navigate('/login');
@@ -624,6 +680,618 @@ export default function UserProfile() {
     }
   };
 
+  // ==========================================================================
+  // MI PERFIL PROFESIONAL — maqueta del cliente (10-sep-2026), diseño PRO.
+  // Solo diseño: cada campo que se pinta ya existía y se guarda donde se
+  // guardaba (mismos handlers, misma base). Lo que la maqueta enseña y la base
+  // NO tiene se ha dejado fuera a propósito: «Idiomas» que habla el médico y
+  // «Modalidades de atención» no son columnas de doctor_profiles, y el número
+  // de reseñas sale de consultation_ratings, que sí existe.
+  // La pestaña Disponibilidad monta `OfficeHoursConfig`, un componente que
+  // llevaba escrito desde siempre y que NO IMPORTABA NADIE: el horario de
+  // atención se enseña en el perfil público y en el chat, pero el médico no
+  // tenía forma de fijarlo. Aquí queda conectado.
+  // ==========================================================================
+  if (role === 'doctor' && doctorProfile) {
+    const specialties = [doctorProfile.specialty, ...(doctorProfile.secondary_specialties || [])].filter(Boolean);
+    const cedulaValue = doctorProfile.cedula_profesional || doctorProfile.license || '';
+    const place = [doctorProfile.location, doctorProfile.city, doctorProfile.state, doctorProfile.country]
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .join(', ');
+
+    const checklist = [
+      { done: !!user.avatarUrl, label: t('pro.profile.chkPhoto'), tab: 'media' as ProfTab },
+      { done: !!doctorProfile.bio, label: t('pro.profile.chkBio'), tab: 'info' as ProfTab },
+      { done: !!doctorProfile.location, label: t('pro.profile.chkLocation'), tab: 'info' as ProfTab },
+      { done: !!cedulaValue, label: t('pro.profile.chkCedula'), tab: 'info' as ProfTab },
+      { done: !!doctorProfile.numero_consejo, label: t(getSpecialistCredentialLabelKey(user.countryCode)), tab: 'info' as ProfTab },
+      { done: Number(doctorProfile.consultation_fee) > 0, label: t('pro.profile.chkFee'), tab: 'services' as ProfTab },
+      { done: careerCounts.certifications > 0, label: t('pro.profile.chkCertifications'), tab: 'career' as ProfTab },
+      { done: careerCounts.education > 0, label: t('pro.profile.chkEducation'), tab: 'career' as ProfTab },
+      { done: careerCounts.experience > 0, label: t('pro.profile.chkExperience'), tab: 'career' as ProfTab },
+      { done: (doctorProfile.office_days?.length || 0) > 0, label: t('pro.profile.chkHours'), tab: 'availability' as ProfTab },
+    ];
+    const completion = Math.round((checklist.filter(c => c.done).length / checklist.length) * 100);
+
+    const profTabs: { key: ProfTab; label: string }[] = [
+      { key: 'info', label: t('pro.profile.tabInfo') },
+      { key: 'career', label: t('pro.profile.tabCareer') },
+      { key: 'services', label: t('pro.profile.tabServices') },
+      { key: 'availability', label: t('pro.profile.tabAvailability') },
+      { key: 'media', label: t('pro.profile.tabMedia') },
+      { key: 'account', label: t('pro.profile.tabAccount') },
+    ];
+
+    const statusPill = () => {
+      if (doctorProfile.status === 'approved') return <span className="pro-pill pro-pill-ok">{t('pro.profile.visible')}</span>;
+      if (doctorProfile.status === 'pending') return <span className="pro-pill pro-pill-warn">{t('profile.statusPending')}</span>;
+      return <span className="pro-pill pro-pill-live">{t('profile.statusRejected')}</span>;
+    };
+
+    return (
+      <MainLayout>
+        <div className="pro-container pro-page">
+          <div className="pro-page-head">
+            <div className="min-w-0">
+              <h1 className="pro-page-title"><Stethoscope className="w-7 h-7" /> <span className="truncate">{t('pro.profile.title')}</span></h1>
+              <p className="pro-page-sub">{t('pro.profile.subtitle')}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <Link to={`/doctor/${user.id}`} className="pro-btn pro-btn-ghost flex-1 sm:flex-none">
+                <Eye /> {t('pro.profile.publicPreview')}
+              </Link>
+              <Link to="/settings" className="pro-btn pro-btn-white flex-1 sm:flex-none">
+                <Settings /> {t('nav.settings')}
+              </Link>
+            </div>
+          </div>
+
+          {/* -------------------------------------------------- identidad */}
+          <section className="pro-card pro-card-pad mb-3 sm:mb-4">
+            <div className="pro-prof-head">
+              <div className="pro-prof-avatar">
+                <span className="pro-initials">
+                  {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : getInitials(user.name)}
+                </span>
+                <button type="button" className="cam" onClick={() => fileInputRef.current?.click()} aria-label={t('profile.changePhoto')}>
+                  <Camera />
+                </button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Input
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      className="max-w-[240px] bg-white"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                    />
+                    <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSaveName} disabled={isSavingName}>
+                      {isSavingName ? <Loader2 className="animate-spin" /> : <Check />}
+                    </button>
+                    <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => { setIsEditingName(false); setEditedName(user.name); }}>
+                      <X />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pro-prof-name">
+                    <h2>{user.name}</h2>
+                    {doctorProfile.status === 'approved' && <BadgeCheck className="verified" />}
+                    <button type="button" className="pro-kebab" onClick={() => setIsEditingName(true)} aria-label={t('common.edit')}>
+                      <Pencil />
+                    </button>
+                  </div>
+                )}
+                <p className="pro-prof-spec">{doctorProfile.specialty}</p>
+              </div>
+
+              <div className="pro-progress">
+                <div className="top">
+                  <span>{t('pro.profile.completed')}</span>
+                  <b>{completion}%</b>
+                </div>
+                <div className="bar"><i style={{ width: `${completion}%` }} /></div>
+              </div>
+
+              <div className="flex flex-col items-start sm:items-end gap-1 flex-shrink-0">
+                {statusPill()}
+                <span className="pro-row-sub">{t('pro.profile.visibleHint')}</span>
+              </div>
+            </div>
+
+            <div className="pro-seg mt-4">
+              {profTabs.map(pt => (
+                <button
+                  key={pt.key}
+                  type="button"
+                  className={profTab === pt.key ? 'is-active' : ''}
+                  aria-pressed={profTab === pt.key}
+                  onClick={() => setProfTab(pt.key)}
+                >
+                  {pt.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="pro-work pro-work-prof">
+            <div className="min-w-0 space-y-3 sm:space-y-4">
+              {/* ------------------------------------------- Información */}
+              {profTab === 'info' && (
+                <>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><User /> {t('pro.profile.presentation')}</h3>
+                      {!isEditingBio && (
+                        <button type="button" className="pro-kebab" onClick={() => setIsEditingBio(true)} aria-label={t('common.edit')}>
+                          <Pencil />
+                        </button>
+                      )}
+                    </div>
+                    {isEditingBio ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editedBio}
+                          onChange={(e) => setEditedBio(e.target.value)}
+                          placeholder={t('profile.biographyPlaceholder')}
+                          rows={5}
+                          maxLength={500}
+                          className="bg-white"
+                        />
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="pro-row-sub">{editedBio.length}/500</span>
+                          <div className="flex gap-2">
+                            <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => { setIsEditingBio(false); setEditedBio(doctorProfile.bio || ''); }}>
+                              {t('common.cancel')}
+                            </button>
+                            <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSaveBio} disabled={isSavingBio}>
+                              {isSavingBio ? <Loader2 className="animate-spin" /> : <Check />} {t('common.save')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm pro-ink-2 whitespace-pre-line">
+                          {doctorProfile.bio || <span className="pro-muted italic">{t('profile.biographyEmpty')}</span>}
+                        </p>
+                        {doctorProfile.bio && <p className="pro-row-sub mt-2">{doctorProfile.bio.length}/500</p>}
+                      </>
+                    )}
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Award /> {t('pro.profile.specialties')}</h3>
+                    </div>
+                    <div className="pro-taglist">
+                      {specialties.map(s => <span key={s} className="pro-tag pro-tag-teal">{s}</span>)}
+                    </div>
+                    <p className="pro-row-sub mt-2">{t('pro.profile.specialtiesHint')}</p>
+
+                    {(doctorProfile.practice_hospital || doctorProfile.university) && (
+                      <div className="mt-3">
+                        {doctorProfile.practice_hospital && (
+                          <div className="pro-ctx-line"><span className="k">{t('pro.profile.hospital')}</span><span className="v">{doctorProfile.practice_hospital}</span></div>
+                        )}
+                        {doctorProfile.university && (
+                          <div className="pro-ctx-line"><span className="k">{t('pro.profile.university')}</span><span className="v">{doctorProfile.university}</span></div>
+                        )}
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><MapPin /> {t('profile.location')}</h3>
+                      {!isEditingLocation && (
+                        <button type="button" className="pro-kebab" onClick={() => setIsEditingLocation(true)} aria-label={t('common.edit')}>
+                          <Pencil />
+                        </button>
+                      )}
+                    </div>
+                    {isEditingLocation ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Input
+                          value={editedLocation}
+                          onChange={(e) => setEditedLocation(e.target.value)}
+                          placeholder={t('profile.locationPlaceholder')}
+                          className="flex-1 min-w-[180px] bg-white"
+                        />
+                        <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSaveLocation} disabled={isSavingLocation}>
+                          {isSavingLocation ? <Loader2 className="animate-spin" /> : <Check />}
+                        </button>
+                        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => { setIsEditingLocation(false); setEditedLocation(doctorProfile.location || ''); }}>
+                          <X />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-sm pro-ink-2">
+                        {place || <span className="pro-muted italic">{t('profile.locationNotSet')}</span>}
+                      </p>
+                    )}
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><FileCheck /> {t('pro.profile.credentials')}</h3>
+                    </div>
+
+                    <div className="pro-field">
+                      <span className="k">{t('profile.cedula')}</span>
+                      {isEditingCedula ? (
+                        <div className="row">
+                          <Input value={editedCedula} onChange={(e) => setEditedCedula(e.target.value)} placeholder={t('profile.cedulaPlaceholder')} className="flex-1 font-mono bg-white" />
+                          <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSaveCedula} disabled={isSavingCedula}>
+                            {isSavingCedula ? <Loader2 className="animate-spin" /> : <Check />}
+                          </button>
+                          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" disabled={isSavingCedula} onClick={() => setIsEditingCedula(false)}>
+                            <X />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="row">
+                          <span className="box font-mono">{cedulaValue || generatePlaceholderCedula(user.id)}</span>
+                          <button
+                            type="button"
+                            className="pro-btn pro-btn-outline pro-btn-sm"
+                            aria-label={t('common.edit')}
+                            onClick={() => { setEditedCedula(cedulaValue); setIsEditingCedula(true); }}
+                          >
+                            <Pencil />
+                          </button>
+                        </div>
+                      )}
+                      <div className="mt-2"><CedulaVerifyLink country={user.countryCode} /></div>
+                    </div>
+
+                    <div className="pro-field">
+                      <span className="k">{t(getSpecialistCredentialLabelKey(user.countryCode))}</span>
+                      {isEditingConsejo ? (
+                        <div className="row">
+                          <Input value={editedConsejo} onChange={(e) => setEditedConsejo(e.target.value)} placeholder={t('profile.specialistPlaceholder')} className="flex-1 font-mono bg-white" />
+                          <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSaveConsejo} disabled={isSavingConsejo}>
+                            {isSavingConsejo ? <Loader2 className="animate-spin" /> : <Check />}
+                          </button>
+                          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" disabled={isSavingConsejo} onClick={() => setIsEditingConsejo(false)}>
+                            <X />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="row">
+                          <span className="box font-mono">{doctorProfile.numero_consejo || t('profile.cedulaEmpty')}</span>
+                          <button
+                            type="button"
+                            className="pro-btn pro-btn-outline pro-btn-sm"
+                            aria-label={t('common.edit')}
+                            onClick={() => { setEditedConsejo(doctorProfile.numero_consejo || ''); setIsEditingConsejo(true); }}
+                          >
+                            <Pencil />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Mail /> {t('pro.profile.contact')}</h3>
+                      <Link to="/settings?s=account" className="pro-link">{t('nav.settings')} <ChevronRight /></Link>
+                    </div>
+                    <div className="pro-field">
+                      <span className="k">{t('profile.email')}</span>
+                      <div className="row">
+                        <span className="box"><Mail /><span className="min-w-0 break-all">{user.email}</span></span>
+                        <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
+                      </div>
+                      <p className="hint">{t('pro.profile.contactHint')}</p>
+                    </div>
+                    <div className="pro-field">
+                      <span className="k">{t('userProfilePage.phone')}</span>
+                      <div className="row">
+                        <span className="box">
+                          <Phone />
+                          {!isLoadingPhone && (userPhone ? userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3') : t('userProfilePage.notVerified'))}
+                        </span>
+                        {userPhone
+                          ? <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
+                          : <span className="pro-pill pro-pill-muted">{t('userProfilePage.notVerified')}</span>}
+                      </div>
+                      <p className="hint">{t('pro.profile.phoneHint')}</p>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* -------------------------------------------- Trayectoria */}
+              {profTab === 'career' && (
+                <>
+                  <DoctorCredentialsCard userId={user.id} />
+                  <DoctorCredentials doctorId={user.id} isOwner />
+                </>
+              )}
+
+              {/* --------------------------------------- Servicios y precios */}
+              {profTab === 'services' && (
+                <>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Wallet /> {t('pro.profile.consultPrice')}</h3>
+                    </div>
+                    <ConsultationFeeEditor
+                      initialFee={doctorProfile.consultation_fee}
+                      onFeeChanged={(newFee) => setDoctorProfile(prev => prev ? { ...prev, consultation_fee: newFee } : null)}
+                      variant="inline"
+                    />
+                    <p className="pro-row-sub mt-2">{t('pro.profile.consultPriceHint')}</p>
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Star /> {t('pro.profile.numbers')}</h3>
+                    </div>
+                    <div className="pro-statbar">
+                      <div className="pro-stat">
+                        <span className="pro-icon-box"><Star /></span>
+                        <span className="min-w-0">
+                          <span className="k block">{t('profile.rating')}</span>
+                          <span className="v block">{Number(doctorProfile.rating || 0).toFixed(1)}</span>
+                        </span>
+                      </div>
+                      <div className="pro-stat">
+                        <span className="pro-icon-box"><Users /></span>
+                        <span className="min-w-0">
+                          <span className="k block">{t('profile.followers')}</span>
+                          <span className="v block">{doctorProfile.followers_count}</span>
+                        </span>
+                      </div>
+                      <div className="pro-stat">
+                        <span className="pro-icon-box"><Stethoscope /></span>
+                        <span className="min-w-0">
+                          <span className="k block">{t('pro.profile.consultationsDone')}</span>
+                          <span className="v block">{doctorProfile.total_consultations ?? 0}</span>
+                        </span>
+                      </div>
+                      <div className="pro-stat">
+                        <span className="pro-icon-box"><Award /></span>
+                        <span className="min-w-0">
+                          <span className="k block">{t('pro.profile.reviews')}</span>
+                          <span className="v block">{reviewsCount}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Users /> {t('pro.profile.subscriptions')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('pro.profile.subscriptionsHint')}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Link to="/doctor/subscribers" className="pro-btn pro-btn-teal flex-1"><Users /> {t('pro.subs.title')}</Link>
+                      <Link to="/doctor/earnings" className="pro-btn pro-btn-outline flex-1"><Wallet /> {t('pro.subs.goEarnings')}</Link>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* ------------------------------------------ Disponibilidad */}
+              {profTab === 'availability' && (
+                <>
+                  <OfficeHoursConfig />
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><CalendarDays /> {t('pro.profile.agendaTitle')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('pro.profile.agendaHint')}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Link to="/doctor/agenda" className="pro-btn pro-btn-teal flex-1"><CalendarDays /> {t('pro.nav.agenda')}</Link>
+                      <Link to="/doctor/availability" className="pro-btn pro-btn-outline flex-1"><Clock /> {t('nav.availability')}</Link>
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* ----------------------------------------------- Multimedia */}
+              {profTab === 'media' && (
+                <>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Camera /> {t('pro.profile.photoTitle')}</h3>
+                    </div>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <span className="pro-initials w-20 h-20 text-[22px]">
+                        {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : getInitials(user.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={() => fileInputRef.current?.click()}>
+                          <Camera /> {t('profile.changePhoto')}
+                        </button>
+                        <p className="pro-row-sub mt-2">{t('pro.profile.photoHint')}</p>
+                      </div>
+                    </div>
+                  </section>
+                  <SignatureUpload />
+                </>
+              )}
+
+              {/* --------------------------------------------------- Cuenta */}
+              {profTab === 'account' && (
+                <>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Shield /> {t('profile.identityVerification')}</h3>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {isLoadingVerification ? (
+                        <span className="pro-pill pro-pill-muted">…</span>
+                      ) : verificationStatus === 'approved' ? (
+                        <span className="pro-pill pro-pill-ok">{t('profile.verified')}</span>
+                      ) : verificationStatus === 'pending' ? (
+                        <span className="pro-pill pro-pill-warn">{t('profile.pending')}</span>
+                      ) : (
+                        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/verify-identity')}>
+                          <FileCheck /> {t('profile.verify')}
+                        </button>
+                      )}
+                      <span className="pro-row-sub">{t('profile.memberSince')}: {user.createdAt ? formatDate(user.createdAt) : '-'}</span>
+                    </div>
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Globe /> {t('profile.language')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('profile.languageSubtitle')}</p>
+                    <Select value={language} onValueChange={handleLanguageChange} disabled={isSavingLanguage}>
+                      <SelectTrigger className="w-full md:w-64 bg-white"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="es"><span className="flex items-center gap-2">🇪🇸 Castellano</span></SelectItem>
+                        <SelectItem value="en"><span className="flex items-center gap-2">🇺🇸 English</span></SelectItem>
+                        <SelectItem value="pt"><span className="flex items-center gap-2">🇵🇹 Português</span></SelectItem>
+                        <SelectItem value="fr"><span className="flex items-center gap-2">🇫🇷 Français</span></SelectItem>
+                        <SelectItem value="it"><span className="flex items-center gap-2">🇮🇹 Italiano</span></SelectItem>
+                        <SelectItem value="de"><span className="flex items-center gap-2">🇩🇪 Deutsch</span></SelectItem>
+                        <SelectItem value="ca"><span className="flex items-center gap-2"><SenyeraIcon /> Català</span></SelectItem>
+                        <SelectItem value="zh"><span className="flex items-center gap-2">🇨🇳 中文</span></SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Settings /> {t('profile.quickLinks')}</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Link to="/doctor/dashboard" className="pro-helprow"><Stethoscope /> <span>{t('userProfilePage.dashboard')}</span> <ChevronRight className="chev" /></Link>
+                      <Link to="/doctor/recordings" className="pro-helprow"><Camera /> <span>{t('profile.recordings')}</span> <ChevronRight className="chev" /></Link>
+                      <Link to="/settings" className="pro-helprow"><Settings /> <span>{t('nav.settings')}</span> <ChevronRight className="chev" /></Link>
+                      <Link to="/wallet" className="pro-helprow"><Wallet /> <span>{t('profile.myWallet')}</span> <ChevronRight className="chev" /></Link>
+                    </div>
+                  </section>
+
+                  {/* Los médicos también siguen a otros médicos y tienen su propio
+                      historial clínico: las dos tarjetas de siempre, intactas. */}
+                  <MySubscribedDoctorsCard />
+                  <PatientClinicalHistoryCard />
+                </>
+              )}
+            </div>
+
+            {/* ------------------------------------ vista previa y estado */}
+            <aside className="min-w-0 space-y-3 sm:space-y-4">
+              <section className="pro-card pro-card-pad">
+                <div className="pro-card-head">
+                  <h3 className="pro-card-title"><Eye /> {t('pro.profile.previewTitle')}</h3>
+                </div>
+                <div className="pro-preview">
+                  <div className="who">
+                    <span className="pro-initials">
+                      {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : getInitials(user.name)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="pro-row-name truncate flex items-center gap-1.5">
+                        {user.name}
+                        {doctorProfile.status === 'approved' && <BadgeCheck className="w-4 h-4 text-[color:var(--pro-info)]" />}
+                      </p>
+                      <p className="pro-row-sub truncate">{doctorProfile.specialty}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    {place && <div className="line"><MapPin /><span className="v">{place}</span></div>}
+                    <div className="line">
+                      <span className="stars"><Star className="fill-current" /></span>
+                      <span className="v">
+                        {Number(doctorProfile.rating || 0).toFixed(1)}
+                        {reviewsCount > 0 && ` (${reviewsCount} ${t('pro.profile.reviews').toLowerCase()})`}
+                      </span>
+                    </div>
+                    <div className="line"><Users /><span className="v">{doctorProfile.followers_count} {t('profile.followers').toLowerCase()}</span></div>
+                    <div className="line"><Wallet /><span className="v">{t('pro.profile.from')} {money(Number(doctorProfile.consultation_fee || 0), language)}</span></div>
+                  </div>
+                  <Link to={`/doctor/${user.id}`} className="pro-btn pro-btn-outline pro-btn-sm w-full mt-3">
+                    <Eye /> {t('pro.profile.seeFullProfile')}
+                  </Link>
+                </div>
+              </section>
+
+              <section className="pro-card pro-card-pad">
+                <div className="pro-card-head">
+                  <h3 className="pro-card-title"><ClipboardList /> {t('pro.profile.statusTitle')}</h3>
+                </div>
+                {checklist.map(c => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    className={`pro-sum ${c.done ? 'is-ok' : 'is-off'} w-full text-left`}
+                    onClick={() => setProfTab(c.tab)}
+                  >
+                    {c.done ? <Check /> : <Circle />}
+                    <span className="lbl">{c.label}</span>
+                    <ChevronRight className="w-4 h-4 flex-shrink-0 text-[color:var(--pro-muted)]" />
+                  </button>
+                ))}
+                <p className="pro-row-sub mt-3">{t('pro.profile.statusHint')}</p>
+              </section>
+            </aside>
+          </div>
+
+          {/* ---------------------------------- cifras de la trayectoria */}
+          <div className="pro-statgrid mt-3 sm:mt-4">
+            {[
+              { Icon: FileCheck, label: t('pro.profile.chkCertifications'), value: careerCounts.certifications },
+              { Icon: Briefcase, label: t('pro.profile.chkExperience'), value: careerCounts.experience },
+              { Icon: GraduationCap, label: t('pro.profile.chkEducation'), value: careerCounts.education },
+            ].map(s => (
+              <button key={s.label} type="button" className="pro-card pro-stat" onClick={() => setProfTab('career')}>
+                <span className="pro-icon-box"><s.Icon /></span>
+                <span className="min-w-0">
+                  <span className="k block">{s.label}</span>
+                  <span className="v block">{s.value}</span>
+                </span>
+                <ChevronRight className="chev" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Diálogo de la foto — el mismo de siempre */}
+        <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('profile.changePhoto')}</DialogTitle>
+              <DialogDescription>{t('profile.photoPreview')}</DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center py-6">
+              <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
+                <AvatarImage src={previewUrl || undefined} alt={t('userProfilePage.previewAlt')} />
+                <AvatarFallback className="text-3xl bg-primary text-primary-foreground">{getInitials(user.name)}</AvatarFallback>
+              </Avatar>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => { setAvatarDialogOpen(false); setSelectedFile(null); setPreviewUrl(null); }}
+                disabled={isUploadingAvatar}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleUploadAvatar} disabled={isUploadingAvatar}>
+                {isUploadingAvatar
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('profile.uploading')}</>
+                  : <><Check className="w-4 h-4 mr-2" />{t('common.save')}</>}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <motion.div 
@@ -911,337 +1579,20 @@ export default function UserProfile() {
           </Card>
         </motion.div>
 
-        {/* Doctores que sigues / suscripciones — los 3 roles pueden seguir doctores */}
-        {(role === 'patient' || role === 'doctor' || role === 'resident') && <MySubscribedDoctorsCard />}
+        {/* Doctores que sigues / suscripciones. El MÉDICO las ve en la pestaña
+            «Cuenta» de su perfil PRO (más arriba, en su propio return), así que
+            aquí quedan paciente y residente: nada se ha quitado, cambió de sitio. */}
+        {(role === 'patient' || role === 'resident') && <MySubscribedDoctorsCard />}
 
-        {/* Clinical History Card - también visible para doctores/residentes (cada uno tiene su propio historial personal) */}
-        {(role === 'patient' || role === 'doctor' || role === 'resident') && <PatientClinicalHistoryCard />}
+        {/* Clinical History Card - también visible para residentes (cada uno tiene su propio historial personal) */}
+        {(role === 'patient' || role === 'resident') && <PatientClinicalHistoryCard />}
 
         {/* Esquema de vacunación movido al Expediente (cliente 2026-06-15): ahora vive en MedicalRecord, no en el perfil. */}
 
-        {/* Professional Profile Card - Doctor */}
-        {role === 'doctor' && doctorProfile && (
-          <motion.div variants={cardVariants}>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Stethoscope className="w-5 h-5 text-primary" />
-                  {t('profile.professionalProfile')}
-                </CardTitle>
-                <CardDescription>
-                  {t('profile.professionalSubtitle')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Specialty */}
-                <div className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
-                    <Award className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{t('profile.specialty')}</span>
-                  </div>
-                  <span className="font-medium">{doctorProfile.specialty}</span>
-                </div>
-                <Separator />
-
-                {/* Cédula profesional — debajo de Especialidad; SIEMPRE visible y editable
-                    (cliente 2026-06-24). Si el doctor aún no registró la suya, mostramos una
-                    de relleno determinista para que el campo nunca quede vacío + enlace de
-                    verificación al registro oficial de su país. */}
-                <div className="py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <FileCheck className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{t('profile.cedula')}</span>
-                    </div>
-                    {!isEditingCedula && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium font-mono">
-                          {doctorProfile.cedula_profesional || doctorProfile.license || generatePlaceholderCedula(user.id)}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setEditedCedula(doctorProfile.cedula_profesional || doctorProfile.license || '');
-                            setIsEditingCedula(true);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  {isEditingCedula && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Input
-                        value={editedCedula}
-                        onChange={(e) => setEditedCedula(e.target.value)}
-                        placeholder={t('profile.cedulaPlaceholder')}
-                        className="flex-1 font-mono"
-                      />
-                      <Button size="sm" onClick={handleSaveCedula} disabled={isSavingCedula}>
-                        {isSavingCedula ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" disabled={isSavingCedula} onClick={() => setIsEditingCedula(false)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                  <div className="mt-2 ml-7">
-                    <CedulaVerifyLink country={user.countryCode} />
-                  </div>
-                </div>
-                <Separator />
-
-                {/* Cédula de especialista / colegiado — la etiqueta se adapta al país del
-                    doctor (cliente 2026-06-25): MX = "Cédula de especialista", países con
-                    colegio = "N.º de colegiado", resto = ambas. Se guarda en la columna
-                    existente doctor_profiles.numero_consejo (consejo/board de especialidad). */}
-                <div className="py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <FileCheck className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{t(getSpecialistCredentialLabelKey(user.countryCode))}</span>
-                    </div>
-                    {!isEditingConsejo && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium font-mono">
-                          {doctorProfile.numero_consejo || t('profile.cedulaEmpty')}
-                        </span>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setEditedConsejo(doctorProfile.numero_consejo || '');
-                            setIsEditingConsejo(true);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  {isEditingConsejo && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <Input
-                        value={editedConsejo}
-                        onChange={(e) => setEditedConsejo(e.target.value)}
-                        placeholder={t('profile.specialistPlaceholder')}
-                        className="flex-1 font-mono"
-                      />
-                      <Button size="sm" onClick={handleSaveConsejo} disabled={isSavingConsejo}>
-                        {isSavingConsejo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" disabled={isSavingConsejo} onClick={() => setIsEditingConsejo(false)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <Separator />
-
-                {/* Location */}
-                <div className="py-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{t('profile.location')}</span>
-                    </div>
-                    {!isEditingLocation && (
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8"
-                        onClick={() => setIsEditingLocation(true)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <AnimatePresence mode="wait">
-                    {isEditingLocation ? (
-                      <motion.div 
-                        key="editing"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-2 flex items-center gap-2"
-                      >
-                        <Input
-                          value={editedLocation}
-                          onChange={(e) => setEditedLocation(e.target.value)}
-                          placeholder={t('profile.locationPlaceholder')}
-                          className="flex-1"
-                        />
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="flex-shrink-0 gap-1"
-                          disabled={isSavingLocation}
-                          onClick={() => {
-                            if (!('geolocation' in navigator)) {
-                              toast.error(t('userProfilePage.geolocationUnsupported'));
-                              return;
-                            }
-                            navigator.geolocation.getCurrentPosition(
-                              (pos) => {
-                                // Simple reverse geocode using known cities
-                                const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
-                                  'ciudad de mexico': { lat: 19.4326, lng: -99.1332 },
-                                  'guadalajara': { lat: 20.6597, lng: -103.3496 },
-                                  'monterrey': { lat: 25.6866, lng: -100.3161 },
-                                  'puebla': { lat: 19.0414, lng: -98.2063 },
-                                  'tijuana': { lat: 32.5149, lng: -117.0382 },
-                                  'merida': { lat: 20.9674, lng: -89.5926 },
-                                  'cancun': { lat: 21.1619, lng: -86.8515 },
-                                  'queretaro': { lat: 20.5888, lng: -100.3899 },
-                                  'oaxaca': { lat: 17.0732, lng: -96.7266 },
-                                  'veracruz': { lat: 19.1738, lng: -96.1342 },
-                                  'toluca': { lat: 19.2826, lng: -99.6557 },
-                                };
-                                const R = 6371;
-                                let nearest = t('userProfilePage.defaultCity');
-                                let minDist = Infinity;
-                                for (const [city, coords] of Object.entries(CITY_COORDS)) {
-                                  const dLat = (coords.lat - pos.coords.latitude) * Math.PI / 180;
-                                  const dLng = (coords.lng - pos.coords.longitude) * Math.PI / 180;
-                                  const a = Math.sin(dLat / 2) ** 2 + Math.cos(pos.coords.latitude * Math.PI / 180) * Math.cos(coords.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-                                  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                                  if (dist < minDist) { minDist = dist; nearest = city.replace(/\b\w/g, c => c.toUpperCase()); }
-                                }
-                                setEditedLocation(nearest);
-                                toast.success(`${t('userProfilePage.locationDetected')}: ${nearest}`);
-                              },
-                              () => toast.error(t('userProfilePage.locationError'))
-                            );
-                          }}
-                        >
-                          <MapPin className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline text-xs">{t('profile.useMyLocation')}</span>
-                        </Button>
-                        <Button size="sm" onClick={handleSaveLocation} disabled={isSavingLocation}>
-                          {isSavingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setIsEditingLocation(false);
-                          setEditedLocation(doctorProfile.location || '');
-                        }}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </motion.div>
-                    ) : (
-                      <motion.p 
-                        key="display"
-                        className="mt-1 text-sm font-medium ml-7"
-                      >
-                        {doctorProfile.location || <span className="text-muted-foreground italic">{t('profile.locationNotSet')}</span>}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <Separator />
-
-                {/* Bio */}
-                <div className="py-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">{t('profile.biography')}</span>
-                    </div>
-                    {!isEditingBio && (
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8"
-                        onClick={() => setIsEditingBio(true)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <AnimatePresence mode="wait">
-                    {isEditingBio ? (
-                      <motion.div 
-                        key="editing"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-2 space-y-2"
-                      >
-                        <Textarea
-                          value={editedBio}
-                          onChange={(e) => setEditedBio(e.target.value)}
-                          placeholder={t('profile.biographyPlaceholder')}
-                          rows={3}
-                          maxLength={500}
-                        />
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{editedBio.length}/500</span>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => {
-                              setIsEditingBio(false);
-                              setEditedBio(doctorProfile.bio || '');
-                            }}>
-                              {t('common.cancel')}
-                            </Button>
-                            <Button size="sm" onClick={handleSaveBio} disabled={isSavingBio}>
-                              {isSavingBio ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                              {t('common.save')}
-                            </Button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.p 
-                        key="display"
-                        className="mt-1 text-sm ml-7"
-                      >
-                        {doctorProfile.bio || <span className="text-muted-foreground italic">{t('profile.biographyEmpty')}</span>}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <Separator />
-
-                {/* Consultation Fee - Editable */}
-                <ConsultationFeeEditor 
-                  initialFee={doctorProfile.consultation_fee} 
-                  onFeeChanged={(newFee) => setDoctorProfile(prev => prev ? { ...prev, consultation_fee: newFee } : null)}
-                  variant="inline"
-                />
-                <Separator />
-
-                {/* Stats */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
-                  <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-1 text-warning mb-1">
-                      <Star className="w-4 h-4 fill-current" />
-                      <span className="font-semibold">{doctorProfile.rating.toFixed(1)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t('profile.rating')}</p>
-                  </div>
-                  <div className="text-center p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Users className="w-4 h-4 text-primary" />
-                      <span className="font-semibold">{doctorProfile.followers_count}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t('profile.followers')}</p>
-                  </div>
-                  <ConsultationFeeEditor 
-                    initialFee={doctorProfile.consultation_fee} 
-                    onFeeChanged={(newFee) => setDoctorProfile(prev => prev ? { ...prev, consultation_fee: newFee } : null)}
-                    variant="card"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            {user?.id && <DoctorCredentialsCard userId={user.id} />}
-            {/* Educación, certificaciones y subida de DOCUMENTOS (cédula, board, diplomas) — cliente 2026-06-17. */}
-            {user?.id && <DoctorCredentials doctorId={user.id} isOwner />}
-          </motion.div>
-        )}
+        {/* El MÉDICO ya no llega aquí: tiene su propio diseño PRO («Mi perfil
+            profesional», más arriba en este mismo fichero), donde vive TODO lo
+            que había en esta tarjeta: especialidad, cédulas, ubicación, bio,
+            precio, cifras, credenciales y documentos. */}
 
         {/* Professional Profile Card - Resident */}
         {role === 'resident' && residentProfile && (
@@ -1585,18 +1936,6 @@ export default function UserProfile() {
                       <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/medical-history')}>
                         <User className="w-4 h-4" />
                         {t('profile.medicalHistory')}
-                      </Button>
-                    </>
-                  )}
-                  {role === 'doctor' && (
-                    <>
-                      <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/doctor/dashboard')}>
-                        <Stethoscope className="w-4 h-4" />
-                        {t('userProfilePage.dashboard')}
-                      </Button>
-                      <Button variant="outline" className="justify-start gap-2" onClick={() => navigate('/doctor/recordings')}>
-                        <Camera className="w-4 h-4" />
-                        {t('profile.recordings')}
                       </Button>
                     </>
                   )}
