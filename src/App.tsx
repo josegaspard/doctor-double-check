@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { SeoRouteSync } from "@/components/seo/SeoRouteSync";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useBackgroundUploadResumer } from "@/hooks/useBackgroundUploadResumer";
@@ -110,6 +111,7 @@ const AdminContentModeration = React.lazy(() => import("./pages/AdminContentMode
 const BookAppointment = React.lazy(() => import("./pages/BookAppointment"));
 const MyAppointments = React.lazy(() => import("./pages/MyAppointments"));
 const AdminSiteSettings = React.lazy(() => import("./pages/AdminSiteSettings"));
+const AdminSeo = React.lazy(() => import("./pages/AdminSeo"));
 const AdminRefunds = React.lazy(() => import("./pages/AdminRefunds"));
 const AdminPayoutSettings = React.lazy(() => import("./pages/AdminPayoutSettings"));
 const AdminPayouts = React.lazy(() => import("./pages/AdminPayouts"));
@@ -235,6 +237,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
+                <SeoRouteSync />
                 <AuthenticatedProviders>
                   <ChunkErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
@@ -308,6 +311,7 @@ const App = () => {
                       {/* /vendor/products duplicaba al portal sin la UX de aprobación → redirect. */}
                       {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<Navigate to="/vendor/dashboard" replace />} />}
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
+                      <Route path="/admin/seo" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSeo /></AccessGuard>} />
                       <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
                       <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
                       <Route path="/admin/payouts" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayouts /></AccessGuard>} />

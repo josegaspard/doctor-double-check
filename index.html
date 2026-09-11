@@ -4,13 +4,79 @@
     <meta charset="UTF-8" />
     <!-- maximum-scale=1.0 + user-scalable=no previene el "stuck zoom" en iOS Safari cuando el usuario toca controles. La accesibilidad de pinch-zoom queda preservada por iOS Accessibility Settings. -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- SEO: lo que va entre seo:start y seo:end lo reescribe middleware.ts en cada
+         petición con lo que el súper admin fija en /admin/seo (función seo-meta):
+         título, descripción, robots, canonical, Open Graph, favicon, verificaciones y
+         datos estructurados de cada URL. Lo de aquí dentro es solo el respaldo que usan
+         la app nativa (Capacitor) y el desarrollo local. No metas nada que no sea SEO
+         entre las dos marcas: se sustituye entero. -->
+    <!-- seo:start -->
     <title>Medical Masters | Plataforma de Médicos Especialistas Certificados</title>
     <meta name="description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta name="keywords" content="telemedicina, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
-    <meta name="author" content="Medical Masters" />
-    <!-- Public landing only. All non-home routes are noindex'd via X-Robots-Tag header
-         in vercel.json + robots.txt Disallow. The home meta below tells crawlers it is indexable. -->
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <link rel="canonical" href="https://medical-masters.com/" />
+    <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:url" content="https://medical-masters.com/" />
+    <meta property="og:site_name" content="Medical Masters" />
+    <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@MedicalMasters" />
+    <meta name="twitter:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta name="twitter:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+    <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=18" />
+    <link rel="icon" href="/favicon.ico?v=18" sizes="any" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=18" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=18" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=18" />
+    <link rel="shortcut icon" href="/favicon.ico?v=18" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=18" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MedicalOrganization",
+      "name": "Medical Masters",
+      "url": "https://medical-masters.com/",
+      "logo": "https://medical-masters.com/icon-512.png?v=18",
+      "image": "https://medical-masters.com/icon-512.png?v=18",
+      "alternateName": "Medical Masters",
+      "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
+      "areaServed": "Worldwide",
+      "medicalSpecialty": ["GeneralPractice", "Cardiovascular", "Pediatric", "Dermatologic", "Psychiatric", "Gynecologic"],
+      "sameAs": [
+        "https://www.facebook.com/MedicalMasters",
+        "https://www.instagram.com/medicalmasters",
+        "https://twitter.com/MedicalMasters"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Medical Masters",
+      "url": "https://medical-masters.com/",
+      "inLanguage": ["es", "en", "pt", "fr", "it", "de", "ca", "zh"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://medical-masters.com/doctors?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <!-- seo:end -->
+
+    <meta name="author" content="Medical Masters" />
     <meta name="theme-color" content="#163a83" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -20,34 +86,6 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(self), microphone=(self), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-
-    <link rel="canonical" href="https://medical-masters.com/" />
-    <link rel="alternate" hreflang="es" href="https://medical-masters.com/" />
-    <link rel="alternate" hreflang="x-default" href="https://medical-masters.com/" />
-
-    <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
-    <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_ES" />
-    <meta property="og:locale:alternate" content="es_MX" />
-    <meta property="og:locale:alternate" content="en_US" />
-    <meta property="og:locale:alternate" content="pt_PT" />
-    <meta property="og:locale:alternate" content="fr_FR" />
-    <meta property="og:locale:alternate" content="it_IT" />
-    <meta property="og:locale:alternate" content="de_DE" />
-    <meta property="og:url" content="https://medical-masters.com/" />
-    <meta property="og:site_name" content="Medical Masters" />
-    <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
-    <meta property="og:image:width" content="512" />
-    <meta property="og:image:height" content="512" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:alt" content="Medical Masters logo" />
-
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:site" content="@MedicalMasters" />
-    <meta name="twitter:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
-    <meta name="twitter:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
-    <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=18" />
 
     <!-- Preconnect a Supabase + Daily + B2 — abre la TLS handshake antes de que el bundle dispare las peticiones, ~150-300ms ahorrados en cold load -->
     <link rel="preconnect" href="https://ouawwfqexfwuptlgoksr.supabase.co" crossorigin />
@@ -67,62 +105,7 @@
          dependency — eliminates the SRI gap flagged in the OWASP review for
          Google Fonts. CSS imported in src/main.tsx -->
 
-    <!-- Favicons (Google SERP requires .ico + multi-resolution sizes) -->
-    <link rel="icon" href="/favicon.ico?v=18" sizes="any" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=18" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=18" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=18" />
-    <link rel="shortcut icon" href="/favicon.ico?v=18" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=18" />
     <link rel="manifest" href="/manifest.json?v=18" />
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "MedicalOrganization",
-      "name": "Medical Masters",
-      "alternateName": "Medical Masters",
-      "url": "https://medical-masters.com/",
-      "logo": "https://medical-masters.com/icon-512.png?v=18",
-      "image": "https://medical-masters.com/icon-512.png?v=18",
-      "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
-      "areaServed": "Worldwide",
-      "medicalSpecialty": [
-        "GeneralPractice",
-        "Cardiovascular",
-        "Pediatric",
-        "Dermatologic",
-        "Psychiatric",
-        "Gynecologic"
-      ],
-      "sameAs": [
-        "https://www.facebook.com/MedicalMasters",
-        "https://www.instagram.com/medicalmasters",
-        "https://twitter.com/MedicalMasters"
-      ]
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Medical Masters",
-      "url": "https://medical-masters.com/",
-      "inLanguage": ["es", "en", "pt", "fr", "it", "de", "ca", "zh"],
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://medical-masters.com/doctors?search={search_term_string}"
-        },
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-
-    <!-- Google Search Console verification — replace with the owner's own token
-         (the previous one belonged to the old Lovable account). -->
 
     <!-- Google tag (gtag.js) — init movido a /gtag-init.js para permitir CSP sin 'unsafe-inline' en script-src -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NB9CJEJYPV"></script>

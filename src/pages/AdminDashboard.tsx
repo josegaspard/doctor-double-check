@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck, Presentation, QrCode, Ticket,
+  ClipboardCheck, Presentation, QrCode, Ticket, Search,
 } from 'lucide-react';
 
 interface AdminModule {
@@ -101,6 +101,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         { id: 'ranks', icon: ShieldCheck, href: '/admin/ranks', color: 'text-warning', borderColor: 'border-l-warning', title: t('autoI18n.clAdminDash28'), desc: t('autoI18n.clAdminDash29') },
         { id: 'ads', icon: MessageSquare, href: '/admin/ads', color: 'text-accent', borderColor: 'border-l-accent', title: t('autoI18n.clAdminDash30'), desc: t('autoI18n.clAdminDash31') },
         { id: 'site-settings', icon: Settings, href: '/admin/site-settings', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash32'), desc: t('autoI18n.clAdminDash33') },
+        // SEO (cliente 2026-09-11): título, descripción, favicon, redes e indexación de todo, incluido lo que publican los usuarios.
+        { id: 'seo', icon: Search, href: '/admin/seo', color: 'text-primary', borderColor: 'border-l-primary', title: 'SEO', desc: 'Título, descripción, favicon, imagen para redes e indexación de cada página y de lo que publican los médicos' },
       ],
     },
     {

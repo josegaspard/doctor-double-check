@@ -95,3 +95,5 @@ project_id = "ouawwfqexfwuptlgoksr"
     verify_jwt = false
   [functions.qr-scan]
     verify_jwt = false
+  [functions.seo-meta]
+    verify_jwt = false
