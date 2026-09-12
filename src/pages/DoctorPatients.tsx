@@ -6,6 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useVault } from '@/contexts/VaultContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useDoctorPatients, DoctorPatient } from '@/hooks/useDoctorPatients';
+import { usePatientInvites, inviteLinkFor, PatientInvite } from '@/hooks/usePatientInvites';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,21 +18,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
+import { ImportPatientsDialog } from '@/components/doctor/patients/ImportPatientsDialog';
+import { InvitePatientForm } from '@/components/doctor/patients/InvitePatientForm';
+import { InviteCard } from '@/components/doctor/patients/InviteCard';
+import { failureKey } from '@/components/doctor/patients/inviteMessages';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
   Users, Plus, Search, ChevronDown, Calendar, CalendarDays, ClipboardList, FileText,
-  ArrowRight, MoreHorizontal, UserPlus, Link2, FolderOpen, MessageSquare, X, Copy,
+  ArrowRight, MoreHorizontal, UserPlus, Link2, MessageSquare, X, Copy, Download, Mail,
+  AlertTriangle, Info,
 } from 'lucide-react';
 import { fill, initialsOf, norm, fmtDate, fmtDayShort, fmtTime } from '@/lib/proFormat';
 import '@/styles/diseno-pacientes.css';
+import '@/styles/funciones-importar.css';
 
-type Tab = 'all' | 'next' | 'followUp' | 'pending' | 'docs';
+type Tab = 'all' | 'next' | 'followUp' | 'pending' | 'docs' | 'invites';
 type Sort = 'recent' | 'name' | 'next';
+
+/** Tarjetas «Invitado» que se ven en «Todos» antes del botón «Ver todas». */
+const INVITES_IN_ALL = 6;
+const INVITES_PAGE = 24;
 
 // 11-sep-2026: «Ver ficha» y los accesos Agenda/Consultas/Documentos de cada tarjeta
 // abren la ficha de ESE paciente (/doctor/patients/:id). El panel lateral y el
 // enlace a «Expedientes de pacientes» (/doctor/vault) se retiran: los documentos
 // viven ahora en Paciente > Documentos.
+// 13-sep-2026: «Importar datos» e invitaciones (maqueta de Marta). Un médico no crea
+// cuentas: sube su lista y se crean invitaciones; las pendientes se ven como
+// tarjetas «Invitado» y en la pestaña «Invitaciones».
 export default function DoctorPatients() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
@@ -39,15 +53,27 @@ export default function DoctorPatients() {
   const { toggles } = useSiteToggles();
   const { getAccessibleFiles } = useVault();
   const { patients, loading, error, refresh } = useDoctorPatients();
+  const {
+    invites,
+    loading: invitesLoading,
+    pendingActivation: invitesPending,
+    importRows,
+    revoke: revokeInviteRow,
+    sendEmail: sendInviteEmail,
+  } = usePatientInvites();
   const { confirm, dialog } = useConfirmAction();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<Tab>('all');
   const [sort, setSort] = useState<Sort>('recent');
   const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [scheduleFor, setScheduleFor] = useState<string | null>(null);
   const [openingChat, setOpeningChat] = useState<string | null>(null);
+  const [inviteBusy, setInviteBusy] = useState<string | null>(null);
+  const [invitesLimit, setInvitesLimit] = useState(INVITES_PAGE);
 
   const chatEnabled = !!toggles.enable_patient_chat;
+  const patientsAccessOpen = toggles.enable_patient_access === true;
   const docPatientIds = useMemo(
     () => new Set(getAccessibleFiles(user?.id || '').map(f => f.patientId)),
     [getAccessibleFiles, user?.id],
@@ -72,6 +98,7 @@ export default function DoctorPatients() {
   const list = useMemo(() => {
     const q = norm(query.trim());
     let arr = patients.filter(p => {
+      if (tab === 'invites') return false;
       if (tab === 'next' && !p.nextAppointmentAt) return false;
       if (tab === 'followUp' && p.status !== 'followUp') return false;
       if (tab === 'pending' && !p.hasPendingRequest) return false;
@@ -87,6 +114,19 @@ export default function DoctorPatients() {
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patients, query, tab, sort, language, docPatientIds]);
+
+  // Invitaciones pendientes: en «Todos» (las primeras) y en «Invitaciones» (todas).
+  const inviteList = useMemo(() => {
+    if (tab !== 'all' && tab !== 'invites') return [];
+    const q = norm(query.trim());
+    let arr = invites.filter(i =>
+      !q || norm(`${i.fullName} ${i.email || ''} ${i.phone || ''} ${t('mm2.importar.card.statusInvited')}`).includes(q),
+    );
+    if (sort === 'name') arr = [...arr].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invites, query, tab, sort, language]);
+  const invitesShown = tab === 'all' ? inviteList.slice(0, INVITES_IN_ALL) : inviteList.slice(0, invitesLimit);
 
   const shareLink = `${window.location.origin}/app`;
   const copyLink = async () => {
@@ -155,11 +195,139 @@ export default function DoctorPatients() {
 
   const recordHref = (p: DoctorPatient, tabId?: string) => `/doctor/patients/${p.id}${tabId ? `?tab=${tabId}` : ''}`;
 
+  // ---- Acciones de la tarjeta «Invitado» ----
+  const copyInviteLink = async (inv: PatientInvite) => {
+    try {
+      await navigator.clipboard.writeText(inviteLinkFor(inv.token));
+      toast.success(fill(t('mm2.importar.card.copied'), { name: inv.fullName }));
+    } catch {
+      toast.error(t('pro.patients.linkCopyError'));
+    }
+  };
+
+  const sendInvite = async (inv: PatientInvite) => {
+    if (!inv.email) {
+      toast.error(t('mm2.importar.errors.noEmail'));
+      return;
+    }
+    const ok = await confirm({
+      title: fill(t('mm2.importar.send.title'), { name: inv.fullName }),
+      description: t('mm2.importar.send.desc'),
+      details: [
+        { label: t('mm2.importar.send.to'), value: inv.fullName },
+        { label: t('mm2.importar.col.email'), value: inv.email },
+        { label: t('mm2.importar.send.contains'), value: t('mm2.importar.send.containsValue') },
+        ...(inv.sentAt ? [{ label: t('mm2.importar.send.lastSent'), value: dateOr(inv.sentAt, true) }] : []),
+      ],
+      confirmLabel: t('mm2.importar.send.confirm'),
+    });
+    if (!ok) return;
+    setInviteBusy(inv.id);
+    try {
+      const res = await sendInviteEmail(inv.id);
+      if (res.ok === true) toast.success(fill(t('mm2.importar.send.done'), { email: inv.email }));
+      else toast.error(t(failureKey(res.reason)));
+    } finally {
+      setInviteBusy(null);
+    }
+  };
+
+  const revokeInvite = async (inv: PatientInvite) => {
+    const ok = await confirm({
+      title: fill(t('mm2.importar.revoke.title'), { name: inv.fullName }),
+      description: t('mm2.importar.revoke.desc'),
+      details: [
+        { label: t('mm2.importar.col.name'), value: inv.fullName },
+        { label: t('mm2.importar.revoke.contact'), value: inv.email || inv.phone || '—' },
+      ],
+      confirmLabel: t('mm2.importar.revoke.confirm'),
+    });
+    if (!ok) return;
+    setInviteBusy(inv.id);
+    try {
+      const res = await revokeInviteRow(inv.id);
+      if (res.ok === true) toast.success(t('mm2.importar.revoke.done'));
+      else toast.error(t(failureKey(res.reason)));
+    } finally {
+      setInviteBusy(null);
+    }
+  };
+
+  const renderInvite = (inv: PatientInvite) => (
+    <InviteCard
+      key={`inv-${inv.id}`}
+      invite={inv}
+      busy={inviteBusy === inv.id}
+      onCopy={copyInviteLink}
+      onSend={sendInvite}
+      onRevoke={revokeInvite}
+    />
+  );
+
   // Guard de rol al final: los hooks ya se ejecutaron.
   if (role && role !== 'doctor') return <Navigate to="/lives" replace />;
 
-  const countText = patients.length === 1 ? t('pro.patients.countOne') : fill(t('pro.patients.count'), { n: patients.length });
+  const patientsCountText = patients.length === 1 ? t('pro.patients.countOne') : fill(t('pro.patients.count'), { n: patients.length });
+  const invitesCountText = invites.length === 0
+    ? ''
+    : invites.length === 1 ? t('mm2.importar.list.countOne') : fill(t('mm2.importar.list.count'), { n: invites.length });
+  const countText = invitesCountText ? `${patientsCountText} · ${invitesCountText}` : patientsCountText;
   const sortLabel = sort === 'recent' ? t('pro.patients.sortRecent') : sort === 'name' ? t('pro.patients.sortName') : t('pro.patients.sortNext');
+  const nothingYet = patients.length === 0 && invites.length === 0;
+
+  const tabs: [Tab, string][] = [
+    ['all', t('pro.patients.all')],
+    ['next', t('pro.patients.nextConsultation')],
+    ['followUp', t('pro.patients.followUp')],
+    ['pending', t('pro.patients.pending')],
+    ['docs', t('mm2.patients.list.withDocs')],
+    ['invites', t('mm2.importar.tab')],
+  ];
+
+  const skeleton = (
+    <div className="dp-grid">
+      {[0, 1, 2].map(i => <div key={i} className="h-44 rounded-2xl bg-[#eef3f6] animate-pulse" />)}
+    </div>
+  );
+
+  const invitesSection = (
+    <>
+      {invitesPending && (
+        <div className="fi-notice is-warn mb-3" role="status">
+          <AlertTriangle />
+          <span>{t('mm2.importar.pendingActivation')}</span>
+        </div>
+      )}
+      {!invitesPending && !patientsAccessOpen && (
+        <div className="fi-notice mb-3" role="note">
+          <Info />
+          <span>{t('mm2.importar.patientsClosed')}</span>
+        </div>
+      )}
+      {invitesLoading && invites.length === 0 && !invitesPending ? skeleton : inviteList.length === 0 ? (
+        <div className="text-center py-10">
+          <Mail className="w-12 h-12 mx-auto pro-muted opacity-40 mb-3" />
+          <h3 className="font-bold pro-ink">{query.trim() ? t('pro.patients.noMatch') : t('mm2.importar.list.emptyTitle')}</h3>
+          {!query.trim() && <p className="pro-muted text-sm mt-1 max-w-md mx-auto">{t('mm2.importar.list.emptyDesc')}</p>}
+          <div className="flex flex-wrap justify-center gap-2 mt-4">
+            <button type="button" className="pro-btn pro-btn-teal" onClick={() => setImportOpen(true)}><Download /> {t('mm2.importar.quick')}</button>
+            <button type="button" className="pro-btn pro-btn-outline" onClick={() => setAddOpen(true)}><UserPlus /> {t('mm2.importar.list.inviteOne')}</button>
+          </div>
+        </div>
+      ) : (
+        <div className="dp-grid">
+          {invitesShown.map(renderInvite)}
+          {inviteList.length > invitesShown.length && (
+            <div className="fi-more">
+              <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setInvitesLimit(l => l + INVITES_PAGE)}>
+                {fill(t('mm2.importar.list.showMore'), { n: inviteList.length - invitesShown.length })}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
 
   return (
     <MainLayout>
@@ -183,13 +351,22 @@ export default function DoctorPatients() {
               {query && <button type="button" className="pro-kebab w-7 h-7" onClick={() => setQuery('')} aria-label={t('pro.common.close')}><X /></button>}
             </div>
             <div className="pro-seg">
-              {([['all', t('pro.patients.all')], ['next', t('pro.patients.nextConsultation')], ['followUp', t('pro.patients.followUp')], ['pending', t('pro.patients.pending')], ['docs', t('mm2.patients.list.withDocs')]] as [Tab, string][]).map(([k, l]) => (
-                <button key={k} type="button" className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>{l}</button>
+              {tabs.map(([k, l]) => (
+                <button key={k} type="button" aria-pressed={tab === k} className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>
+                  {l}
+                  {k === 'invites' && invites.length > 0 && <span className="fi-count">{invites.length}</span>}
+                </button>
               ))}
             </div>
+          </div>
+
+          {/* 13-sep-2026: con la pestaña «Invitaciones» el buscador se quedaba sin sitio a 1440
+              y cortaba el texto; el orden baja a la fila del contador, alineado a la derecha. */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <p className="text-sm pro-ink-2">{loading && patients.length === 0 ? t('pro.common.loading') : countText}</p>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="pro-btn pro-btn-outline pro-btn-sm lg:ml-auto">{sortLabel} <ChevronDown /></button>
+                <button type="button" className="pro-btn pro-btn-outline pro-btn-sm ml-auto">{sortLabel} <ChevronDown /></button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setSort('recent')}>{t('pro.patients.sortRecent')}</DropdownMenuItem>
@@ -199,28 +376,25 @@ export default function DoctorPatients() {
             </DropdownMenu>
           </div>
 
-          <p className="text-sm pro-ink-2 mb-3">{loading && patients.length === 0 ? t('pro.common.loading') : countText}</p>
-
           {error && (
             <div className="mb-3 p-3 rounded-xl bg-[#fdecec] text-sm" style={{ color: 'var(--pro-live)' }}>
               {t('pro.common.error')} <button type="button" className="underline font-semibold ml-1" onClick={refresh}>{t('pro.common.retry')}</button>
             </div>
           )}
 
-          {loading && patients.length === 0 ? (
-            <div className="dp-grid">
-              {[0, 1, 2].map(i => <div key={i} className="h-44 rounded-2xl bg-[#eef3f6] animate-pulse" />)}
-            </div>
-          ) : patients.length === 0 ? (
+          {tab === 'invites' ? invitesSection : loading && patients.length === 0 ? skeleton : nothingYet ? (
             <div className="text-center py-10">
               <Users className="w-12 h-12 mx-auto pro-muted opacity-40 mb-3" />
               <h3 className="font-bold pro-ink">{t('pro.patients.empty')}</h3>
               <p className="pro-muted text-sm mt-1 max-w-md mx-auto">{t('pro.patients.emptyDesc')}</p>
-              <button type="button" className="pro-btn pro-btn-teal mt-4" onClick={() => setAddOpen(true)}><Plus /> {t('pro.patients.add')}</button>
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                <button type="button" className="pro-btn pro-btn-teal" onClick={() => setAddOpen(true)}><Plus /> {t('pro.patients.add')}</button>
+                <button type="button" className="pro-btn pro-btn-outline" onClick={() => setImportOpen(true)}><Download /> {t('mm2.importar.quick')}</button>
+              </div>
             </div>
           ) : (
             <div className="dp-grid">
-              {list.length === 0 && <p className="pro-muted text-sm dp-span">{t('pro.patients.noMatch')}</p>}
+              {list.length === 0 && invitesShown.length === 0 && <p className="pro-muted text-sm dp-span">{t('pro.patients.noMatch')}</p>}
               {list.map(p => (
                 <article key={p.id} className="pro-patient dp-card">
                   <div className="top">
@@ -254,6 +428,14 @@ export default function DoctorPatients() {
                   </div>
                 </article>
               ))}
+              {invitesShown.map(renderInvite)}
+              {tab === 'all' && inviteList.length > INVITES_IN_ALL && (
+                <div className="fi-more">
+                  <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setTab('invites')}>
+                    <Mail /> {fill(t('mm2.importar.list.viewAll'), { n: inviteList.length })}
+                  </button>
+                </div>
+              )}
               <button type="button" className="pro-add-card" onClick={() => setAddOpen(true)}>
                 <span className="plus"><Plus /></span>
                 <b>{t('pro.patients.add')}</b>
@@ -274,13 +456,13 @@ export default function DoctorPatients() {
             <div className="dp-quick-acts">
               <button type="button" onClick={() => setAddOpen(true)}><UserPlus /> {t('pro.patients.add')}</button>
               <button type="button" onClick={copyLink}><Link2 /> {t('pro.patients.shareLink')}</button>
-              <button type="button" onClick={() => setTab('docs')}><FolderOpen /> {t('mm2.patients.list.sharedDocs')}</button>
+              <button type="button" onClick={() => setImportOpen(true)}><Download /> {t('mm2.importar.quick')}</button>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Añadir paciente */}
+      {/* Añadir paciente: buscar a alguien ya registrado, invitar a una persona o compartir el enlace general */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -288,6 +470,12 @@ export default function DoctorPatients() {
             <DialogDescription>{t('pro.patients.addDialogDesc')}</DialogDescription>
           </DialogHeader>
           <DoctorPatientSearch />
+          <InvitePatientForm
+            pendingActivation={invitesPending}
+            onImport={importRows}
+            onCreated={() => { setAddOpen(false); setTab('invites'); }}
+            onOpenImport={() => { setAddOpen(false); setImportOpen(true); }}
+          />
           <div className="rounded-xl border border-border p-3 flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold">{t('pro.patients.shareLink')}</p>
@@ -297,6 +485,16 @@ export default function DoctorPatients() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Importar datos: lista de pacientes → invitaciones */}
+      <ImportPatientsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        pendingActivation={invitesPending}
+        patientsAccessOpen={patientsAccessOpen}
+        onImport={importRows}
+        onShowInvites={() => setTab('invites')}
+      />
 
       {/* Nueva consulta con el paciente ya elegido (nunca Disponibilidad) */}
       <NewConsultationDialog

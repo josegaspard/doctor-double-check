@@ -56,6 +56,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
+// Solicitudes de retiro de los médicos (F3 retiros, 13-sep-2026).
+import { PayoutRequestsAdmin } from '@/components/doctor/finance/PayoutRequestsAdmin';
+import { notifyPayoutRequestsChanged } from '@/hooks/usePayoutRequests';
 
 interface DoctorPayoutInfo {
   user_id: string;
@@ -530,11 +533,28 @@ export default function AdminPayouts() {
       setPayoutDialog({ open: false, doctor: null, bulk: false });
       setSelectedDoctors(new Set());
       await loadData();
+      // El trigger de la base ya marcó como pagadas las solicitudes cubiertas
+      // por este pago: la sección «Solicitudes de retiro» recarga para verlo.
+      notifyPayoutRequestsChanged();
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  /** «Ir a pagar» desde una solicitud aprobada: abre el MISMO diálogo de pago
+   *  de siempre (paga el saldo completo del médico). No hay otro camino de pago. */
+  const handlePayFromRequest = (doctorId: string, doctorName: string) => {
+    setActiveTab('pending');
+    const doctor = doctors.find(d => d.user_id === doctorId);
+    if (doctor && doctor.pending_earnings > 0) {
+      setSearchTerm('');
+      openPayoutDialog(doctor, false);
+      return;
+    }
+    setSearchTerm(doctorName || '');
+    toast.info(tt('mm2.retiros.admin.noBalanceToPay'));
   };
 
   const handleDeleteSelected = async () => {
@@ -797,6 +817,10 @@ export default function AdminPayouts() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Solicitudes de retiro de los médicos: aprobar/rechazar y enlace al
+                pago de siempre. Sin Tabs nuevas (chips con aria-pressed). */}
+            <PayoutRequestsAdmin onPay={handlePayFromRequest} formatCurrency={formatCurrency} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4">

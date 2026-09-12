@@ -8,9 +8,10 @@
 // cuatro KPI iguales, agenda de hoy (2/3) + pacientes recientes (1/3) y tres
 // tarjetas abajo (Próximo Live · Pendientes · Resumen del mes). Solo cambia el
 // diseño: los datos y los handlers son los de la reorganización del 11-sep.
-// «Actividad reciente» sale porque el mockup no lo dibuja; lo que hacía la
-// tarjeta «Lo siguiente» (entrar a la sala, ir al Live, ver detalles) sigue
-// disponible en las filas de la agenda, en «Próximo Live» y en la cabecera.
+// «Actividad reciente» no la dibuja el mockup pero la exige el análisis de Marta
+// (requisito 9 del Inicio): va al pie, a todo el ancho. Lo que hacía la tarjeta
+// «Lo siguiente» (entrar a la sala, ir al Live, ver detalles) sigue en las filas
+// de la agenda, en «Próximo Live» y en la cabecera.
 //
 // Sale de aquí el inventario «Herramientas del panel» (14 módulos: correos,
 // libros, archivos, configuración, analítica sin datos, buscador de pacientes,
@@ -30,6 +31,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useDoctorPatients } from '@/hooks/useDoctorPatients';
 import { useDoctorAgenda, AgendaEvent } from '@/hooks/useDoctorAgenda';
+import { DashboardRecentActivity } from '@/components/doctor/DashboardRecentActivity';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import {
@@ -242,6 +244,8 @@ export default function DoctorDashboard() {
     [events, now],
   );
   const recentPatients = useMemo(() => patients.slice(0, 4), [patients]);
+  // Nombre ya conocido del paciente para «Actividad reciente» (evita releer perfiles).
+  const patientNameById = useCallback((id: string) => patients.find(p => p.id === id)?.name || null, [patients]);
   const consultCountByPatient = useMemo(() => {
     const m = new Map<string, number>();
     patients.forEach(p => m.set(p.id, p.consultationsCount));
@@ -693,6 +697,11 @@ export default function DoctorDashboard() {
             </button>
           </div>
         )}
+
+        {/* Fila 4 · Actividad reciente (análisis de Marta, requisito 9) */}
+        <div className="mt-3 sm:mt-4">
+          <DashboardRecentActivity nameById={patientNameById} />
+        </div>
 
         <NewConsultationDialog
           open={newConsultOpen}

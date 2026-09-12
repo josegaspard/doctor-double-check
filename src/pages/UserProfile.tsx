@@ -75,8 +75,10 @@ const COUNTRY_CODES = [
   { code: '+34', flag: '🇪🇸', label: 'ES' },
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
+import { ServicesEditor } from '@/components/doctor/services/ServicesEditor';
 import { PatientClinicalHistoryCard } from '@/components/profile/PatientClinicalHistoryCard';
 import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
+import { PlansEditor } from '@/components/doctor/subscriptions/PlansEditor';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
@@ -1150,6 +1152,10 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                     <p className="pro-row-sub mt-2">{t('pro.profile.consultPriceHint')}</p>
                   </section>
 
+                  {/* Servicios y precios (maqueta de Marta): catálogo con duración y precio.
+                      Sin servicios, el perfil público sigue con la tarifa de arriba. */}
+                  <ServicesEditor consultationFee={Number(doctorProfile.consultation_fee) || 0} />
+
                   {/* La disponibilidad se EDITA solo desde Agenda (petición del
                       cliente 11-sep-2026): aquí queda un resumen y el enlace. */}
                   <section className="pro-card pro-card-pad">
@@ -1232,6 +1238,10 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                       <Link to={doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' })} className="pro-btn pro-btn-outline flex-1"><Wallet /> {t('pro.subs.goEarnings')}</Link>
                     </div>
                   </section>
+
+                  {/* Planes de suscripción con nombre propio (maqueta de Marta: «Seguimiento
+                      cardiovascular $499/mes»). Sin planes propios, rige el precio global. */}
+                  <PlansEditor />
 
                   {/* Los médicos también siguen a otros médicos: se queda aquí,
                       no en Cuenta (que ya no repite lo profesional). */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, Shield, Zap, Award, Crown, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { DoctorRank } from '@/hooks/useDoctorRanks';
 
 interface DoctorBadgeProps {
@@ -29,6 +30,17 @@ const colorMap: Record<string, { bg: string; text: string; border: string; fill?
 };
 
 export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeProps) {
+  const { t } = useLanguage();
+  // Los rangos viven en doctor_ranks con su nombre en castellano («Nuevo», «Élite»…):
+  // se traducen por su clave interna (name) para que una sesión en inglés no enseñe
+  // «Nuevo» (análisis de Marta: un único idioma por sesión, estados incluidos).
+  // Un rango creado por el admin sin traducción cae a su display_name.
+  const rankLabel = (name: string | null | undefined, fallback: string) => {
+    const key = `mm2.common.rank.${String(name || '').toLowerCase()}`;
+    const label = name ? t(key) : '';
+    return label && label !== key ? label : fallback;
+  };
+
   // whitespace-nowrap + shrink-0 evita que el badge se rompa o desaparezca cuando
   // la card del doctor está apretada en tablet/móvil.
   const sizeClasses = {
@@ -60,7 +72,7 @@ export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeP
         )}
       >
         <Icon className={cn(iconSizes[size], colors.fill)} />
-        {rank.display_name}
+        {rankLabel(rank.name, rank.display_name)}
       </span>
     );
   }
@@ -77,7 +89,7 @@ export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeP
         )}
       >
         <Star className={cn(iconSizes[size], 'fill-premium')} />
-        Doctor Pro
+        {rankLabel('pro', 'Doctor Pro')}
       </span>
     );
   }
@@ -92,7 +104,7 @@ export function DoctorBadge({ rank, type, size = 'md', className }: DoctorBadgeP
       )}
     >
       <Shield className={iconSizes[size]} />
-      Nuevo
+      {rankLabel('nuevo', 'Nuevo')}
     </span>
   );
 }

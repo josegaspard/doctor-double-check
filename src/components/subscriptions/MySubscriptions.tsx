@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSubscriptions, Subscription } from '@/hooks/useSubscriptions';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,12 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { 
-  Users, 
-  Crown, 
-  Star, 
-  Bell, 
-  BellOff, 
+import {
+  Users,
+  Crown,
+  Star,
+  Bell,
+  BellOff,
   Loader2,
   XCircle,
   Calendar,
@@ -39,9 +40,37 @@ export function MySubscriptions() {
   const [confirmCancelSub, setConfirmCancelSub] = useState<Subscription | null>(null);
   const [updatingPrefs, setUpdatingPrefs] = useState<string | null>(null);
 
+  // Nombre propio del plan del médico (F2 «planes», 13-sep-2026): una sola
+  // lectura de los planes activos de los médicos a los que se paga. Sin la
+  // migración, o si el médico no personalizó ese nivel, se queda solo la
+  // insignia Básico/Premium de siempre.
+  const [planNames, setPlanNames] = useState<Record<string, string>>({});
+  const paidKey = subscriptions
+    .filter(s => s.tier === 'basic' || s.tier === 'premium')
+    .map(s => `${s.creatorId}:${s.tier}`)
+    .sort()
+    .join(',');
+  useEffect(() => {
+    if (!paidKey) { setPlanNames({}); return; }
+    let active = true;
+    const creatorIds = [...new Set(paidKey.split(',').map(k => k.split(':')[0]))];
+    (async () => {
+      const { data, error } = await (supabase as any)
+        .from('doctor_subscription_plans')
+        .select('doctor_id, tier, name')
+        .in('doctor_id', creatorIds)
+        .eq('is_active', true);
+      if (!active || error) return;
+      setPlanNames(
+        Object.fromEntries(((data || []) as any[]).map(p => [`${p.doctor_id}:${p.tier}`, String(p.name || '').trim()])),
+      );
+    })();
+    return () => { active = false; };
+  }, [paidKey]);
+
   const handleCancelSubscription = async () => {
     if (!confirmCancelSub) return;
-    
+
     setCancelingId(confirmCancelSub.id);
     const result = await unsubscribe(confirmCancelSub.creatorId);
     setCancelingId(null);
@@ -142,8 +171,8 @@ export function MySubscriptions() {
         </CardHeader>
         <CardContent className="space-y-4">
           {subscriptions.map((sub) => (
-            <div 
-              key={sub.id} 
+            <div
+              key={sub.id}
               className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-start gap-4">
@@ -153,13 +182,18 @@ export function MySubscriptions() {
                     <Stethoscope className="w-6 h-6 text-primary" />
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-semibold truncate">{sub.creatorName || t('mySubscriptions.defaultDoctorName')}</h4>
                     {getTierBadge(sub.tier)}
+                    {sub.tier !== 'free' && planNames[`${sub.creatorId}:${sub.tier}`] && (
+                      <span className="text-sm text-muted-foreground min-w-0 break-words">
+                        {planNames[`${sub.creatorId}:${sub.tier}`]}
+                      </span>
+                    )}
                   </div>
-                  
+
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />

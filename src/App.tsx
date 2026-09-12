@@ -61,6 +61,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AccessGuard from "./components/AccessGuard";
 import { DoctorLegacyRedirect } from "./components/routing/DoctorLegacyRedirect";
+import { PendingPatientInvite } from '@/hooks/usePendingPatientInvite';
 
 // Lazy loaded pages
 const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
@@ -238,6 +239,9 @@ const App = () => {
               <BrowserRouter>
                 <ScrollToTop />
                 <SeoRouteSync />
+                {/* Invitación de un médico (/app?invitacion=…): tras iniciar sesión como paciente
+                    pide confirmación y crea el vínculo. Sin token o sin la migración no hace nada. */}
+                <PendingPatientInvite />
                 <AuthenticatedProviders>
                   <ChunkErrorBoundary>
                   <Suspense fallback={<PageLoader />}>

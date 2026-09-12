@@ -475,12 +475,28 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
   const creatorId = session.metadata!.creator_id;
   const tier = session.metadata!.tier as "basic" | "premium";
   
-  logStep("Processing creator subscription", { userId, creatorId, tier });
+  // F2 (planes propios, 13-sep-2026): create-subscription-checkout pone plan_id
+  // en la metadata SOLO cuando cobró el precio del plan del médico en vez del global.
+  const planId = session.metadata?.plan_id || null;
+  logStep("Processing creator subscription", { userId, creatorId, tier, planId });
 
   // Admin-editable price (same site_settings.subscription_pricing as checkout),
   // converted cents→pesos; falls back to $99/$199 if the setting is missing.
   const pricing = await getSubscriptionPricing(db);
-  const tierPrice = (tier === "premium" ? pricing.premium_cents : pricing.basic_cents) / 100;
+  let tierPrice = (tier === "premium" ? pricing.premium_cents : pricing.basic_cents) / 100;
+  // Con plan propio, price_paid y el abono al médico usan lo que Stripe cobró de
+  // verdad: subtotal de la sesión (unit_amount × 1, antes de impuestos y
+  // descuentos, igual que el precio de lista global de siempre). price_paid es
+  // además lo que acredita cada renovación (handleInvoicePaymentSucceeded), así
+  // que tiene que ser el precio del plan. Sin plan_id: exactamente lo de antes.
+  if (planId) {
+    const chargedCents = Number(session.amount_subtotal);
+    if (Number.isFinite(chargedCents) && chargedCents > 0) {
+      tierPrice = chargedCents / 100;
+    } else {
+      logStep("plan_id without usable amount_subtotal — using global price", { planId, amountSubtotal: session.amount_subtotal });
+    }
+  }
   const expiresAt = new Date();
   expiresAt.setMonth(expiresAt.getMonth() + 1);
 

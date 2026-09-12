@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import {
   Star, MessageSquare, Video, MapPin, Users, Radio, Loader2, Wallet, CreditCard, Clock, Shield,
-  BadgeCheck, Home, ChevronRight, User, Tag, Calendar as CalendarIcon,
+  BadgeCheck, Home, ChevronRight, User, Tag, Calendar as CalendarIcon, Monitor,
 } from 'lucide-react';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton';
@@ -49,6 +49,7 @@ import { money2, fill, initialsOf } from '@/lib/proFormat';
 import { doctorHref } from '@/lib/doctorSections';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { usePublicDoctorServices, minServicePrice, summarizeModalities } from '@/hooks/useDoctorServices';
 import { toast } from 'sonner';
 import '@/styles/diseno-perfil.css';
 
@@ -115,6 +116,9 @@ export default function DoctorProfile() {
   // solo se remonta el OTRO; remontar el que se pulsó lo dejaba parpadeando en pleno uso.
   const [heroKey, setHeroKey] = useState(0);
   const [subsKey, setSubsKey] = useState(0);
+  // «Servicios y precios» (F1 servicios): activos del médico. Sin servicios o sin la
+  // migración la lista llega vacía y la página enseña la tarifa única de siempre.
+  const { services, loading: servicesLoading } = usePublicDoctorServices(id, { owner: !!user?.id && user.id === id });
 
   // Check if there's an active chat session with this specific doctor
   useEffect(() => {
@@ -498,9 +502,11 @@ export default function DoctorProfile() {
   };
 
   // «Solicitar consulta» / «Reservar»: Orientación en el calendario del doctor (cliente 2026-07-07).
-  const goBook = () => {
+  // Con catálogo, «Reservar» de cada servicio lleva `?servicio=<id>` y la reserva lo preselecciona.
+  const goBook = (serviceId?: string) => {
     if (!doctor) return;
-    if (role === 'patient' || role === 'resident') { navigate(`/book/${doctor.id}`); return; }
+    const bookHref = `/book/${doctor.id}${serviceId ? `?servicio=${encodeURIComponent(serviceId)}` : ''}`;
+    if (role === 'patient' || role === 'resident') { navigate(bookHref); return; }
     if (!isAuthenticated) { navigate('/login'); return; }
     toast.info(t('doctorProfile.onlyPatients'));
   };
@@ -549,6 +555,17 @@ export default function DoctorProfile() {
   // Mismo destino que tenía el botón «Ver Lives» de siempre.
   const livesHref = `/recordings?doctor=${doctor.id}`;
   const livesCount = (recordingsCount || 0) + upcomingLives;
+  // «Consultas desde»: el servicio activo más barato; sin servicios, la tarifa de consulta de siempre.
+  const fromPrice = minServicePrice(services) ?? doctor.consultationFee;
+  // Modalidad real según sus servicios (null sin catálogo: el hero queda como hoy).
+  const modalitySummary = summarizeModalities(services);
+  const modalityLabel = modalitySummary === 'both'
+    ? t('mm2.servicios.public.metaBoth')
+    : modalitySummary === 'presencial'
+      ? t('mm2.servicios.public.metaPresencial')
+      : modalitySummary === 'online'
+        ? t('mm2.servicios.public.metaOnline')
+        : null;
 
   // Horario de atención: línea discreta bajo el bloque de CTA.
   // «Disponible ahora» es un cálculo del navegador sobre el horario publicado,
@@ -725,6 +742,7 @@ export default function DoctorProfile() {
               </div>
               <div className="pp-meta">
                 {doctor.location && <span><MapPin /> {doctor.location}</span>}
+                {modalityLabel && <span><Monitor /> {modalityLabel}</span>}
                 <span>
                   <Users />
                   <AnimatePresence mode="popLayout">
@@ -758,10 +776,14 @@ export default function DoctorProfile() {
           <aside className="pp-cta">
             <div className="pp-cta-from">
               <span>{t('mm2.publicProfile.feeFrom')}</span>
-              <b>{isFreeConsultation ? t('doctorProfile.free') : <PriceDisplay amount={doctor.consultationFee} size="lg" />}</b>
+              <b>
+                {servicesLoading
+                  ? <span className="fs-skel" aria-hidden="true" />
+                  : fromPrice === 0 ? t('doctorProfile.free') : <PriceDisplay amount={fromPrice} size="lg" />}
+              </b>
             </div>
             {!isSelf && (
-              <button type="button" className="pro-btn pro-btn-teal pp-cta-primary" onClick={goBook}>
+              <button type="button" className="pro-btn pro-btn-teal pp-cta-primary" onClick={() => goBook()}>
                 <CalendarIcon /> {t('mm2.publicProfile.requestConsultation')}
               </button>
             )}
@@ -815,6 +837,8 @@ export default function DoctorProfile() {
               <ServicesCard
                 consultationFee={doctor.consultationFee}
                 durationMinutes={ORIENTATION_SLOT_MIN}
+                services={services}
+                loading={servicesLoading}
                 canBook={!isSelf}
                 onBook={goBook}
               />

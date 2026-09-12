@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
+import { useDoctorSubscriptionPlans, resolveTierPlan } from '@/hooks/useDoctorSubscriptionPlans';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'sonner';
@@ -71,6 +72,9 @@ export default function SubscribersList({ embedded = false }: SubscribersListPro
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { pricing } = useSubscriptionPricing();
+  // Planes con nombre propio del médico (maqueta de Marta): si los tiene, las tarjetas por
+  // nivel enseñan SU nombre, precio y ventajas; si no, lo global de siempre.
+  const { plans: myPlans } = useDoctorSubscriptionPlans(user?.id);
   const { toggles } = useSiteToggles();
   const { confirm, dialog } = useConfirmAction();
 
@@ -121,18 +125,28 @@ export default function SubscribersList({ embedded = false }: SubscribersListPro
   }, [user?.id]);
 
   // ------------------------------------------------------------- etiquetas
-  const tierName = (tier: Tier) =>
-    tier === 'premium' ? t('subscriptions.premiumTierName')
-      : tier === 'basic' ? t('subscriptions.basicTierName')
-        : t('pro.subs.tierFree');
+  const customTier = (tier: Tier) => {
+    if (tier === 'free') return null;
+    const r = resolveTierPlan(tier as 'basic' | 'premium', myPlans, pricing, t);
+    return r.isCustom ? r : null;
+  };
 
-  const tierDesc = (tier: Tier) =>
-    tier === 'premium' ? t('subscriptions.premiumTierDescription')
+  const tierName = (tier: Tier) =>
+    customTier(tier)?.name
+      || (tier === 'premium' ? t('subscriptions.premiumTierName')
+        : tier === 'basic' ? t('subscriptions.basicTierName')
+          : t('pro.subs.tierFree'));
+
+  const tierDesc = (tier: Tier) => {
+    const custom = customTier(tier);
+    if (custom) return custom.description;
+    return tier === 'premium' ? t('subscriptions.premiumTierDescription')
       : tier === 'basic' ? t('subscriptions.basicTierDescription')
         : t('pro.subs.freeDescription');
+  };
 
   const tierBenefits = (tier: Tier): string[] =>
-    tier === 'premium'
+    customTier(tier)?.perks ?? (tier === 'premium'
       ? [
         t('subscriptions.allBasicFeatures'),
         t('subscriptions.recordingDiscount'),
@@ -149,12 +163,15 @@ export default function SubscribersList({ embedded = false }: SubscribersListPro
           t('subscriptions.notifyLive'),
           t('subscriptions.notifyContent'),
           t('subscriptions.notifyAvailability'),
-        ];
+        ]);
 
-  const tierPrice = (tier: Tier) =>
-    tier === 'premium' ? pricing.premium_cents / 100
+  const tierPrice = (tier: Tier) => {
+    const custom = customTier(tier);
+    if (custom) return custom.priceCents / 100;
+    return tier === 'premium' ? pricing.premium_cents / 100
       : tier === 'basic' ? pricing.basic_cents / 100
         : 0;
+  };
 
   const TierIcon = (tier: Tier) => (tier === 'premium' ? Crown : tier === 'basic' ? Star : Heart);
 
@@ -200,7 +217,7 @@ export default function SubscribersList({ embedded = false }: SubscribersListPro
       if (!q) return true;
       return norm(s.name).includes(q) || norm(s.email).includes(q) || norm(tierName(s.tier)).includes(q);
     });
-  }, [tab, subs, stats.renewals, stats.cancelled, query, planFilter, stateFilter, language]);
+  }, [tab, subs, stats.renewals, stats.cancelled, query, planFilter, stateFilter, language, myPlans]);
 
   const selected = useMemo(
     () => visible.find(s => s.subscriber_id === selectedId) || null,

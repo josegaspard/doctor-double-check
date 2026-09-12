@@ -5,7 +5,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { toast } from 'sonner';
-import { Eye, User, Stethoscope, GraduationCap, Lock } from 'lucide-react';
+import { Eye, User, Stethoscope, GraduationCap, Lock, Mail, X } from 'lucide-react';
+import {
+  clearStoredInviteToken,
+  fetchInvitePreview,
+  isInviteUsable,
+  readInviteTokenFromSearch,
+  readStoredInviteToken,
+  storeInviteToken,
+  type InvitePreview,
+} from '@/hooks/usePendingPatientInvite';
+import { fill } from '@/lib/proFormat';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { BrandLaunchAnimation } from '@/components/BrandLaunchAnimation';
 import { hasAppBooted } from '@/lib/appBootFlag';
@@ -56,6 +66,43 @@ export default function RoleSelector() {
         .limit(6);
       setLiveThumbs(((data || []) as any[]).map((l) => l.thumbnail_url).filter(Boolean));
     })();
+  }, []);
+
+  // Invitación de un médico (13-sep-2026): /app?invitacion=<token>. Se guarda el
+  // token en este dispositivo y se enseña «Te invitó …»; la aceptación la hace
+  // usePendingPatientInvite tras iniciar sesión. Sin la migración 20260913d el
+  // RPC no existe y el token se ignora sin avisos.
+  const [invite, setInvite] = useState<InvitePreview | null>(null);
+  const [inviteHidden, setInviteHidden] = useState(false);
+  useEffect(() => {
+    const fromUrl = readInviteTokenFromSearch(window.location.search);
+    const token = fromUrl || readStoredInviteToken();
+    if (!token) return;
+    let active = true;
+    (async () => {
+      const { preview, missing, failed } = await fetchInvitePreview(token);
+      if (!active) return;
+      if (fromUrl) navigate('/app', { replace: true }); // el token no se queda en la barra de direcciones
+      if (missing) {
+        clearStoredInviteToken();
+        return;
+      }
+      if (failed || !preview) {
+        if (fromUrl) storeInviteToken(fromUrl); // red: se conserva para reintentar
+        return;
+      }
+      if (isInviteUsable(preview)) {
+        storeInviteToken(token);
+        setInvite(preview);
+        return;
+      }
+      clearStoredInviteToken();
+      if (fromUrl) setInvite(preview); // aceptada / revocada: se explica solo si llegó por el enlace
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const roleOptions: RoleOption[] = [
@@ -198,6 +245,91 @@ export default function RoleSelector() {
           {t('roleSelector.subtitle')}
         </h1>
       </div>
+
+      {/* Invitación de un médico (13-sep-2026): tarjeta «Te invitó …». En móvil va en el
+          flujo antes de las tarjetas de rol; en escritorio flota abajo, centrada. */}
+      {invite && !inviteHidden && (() => {
+        const usable = isInviteUsable(invite);
+        const doctorName = invite.doctorName || t('mm2.importar.accept.doctorFallback');
+        const showLogin = patientsOpen && !isRealUser && (usable || invite.status === 'accepted');
+        return (
+          <section
+            aria-label={t('mm2.importar.landing.label')}
+            className="relative z-40 px-4 pb-4 lg:absolute lg:inset-x-0 lg:bottom-14 lg:px-0 lg:pb-0 lg:pointer-events-none"
+          >
+            <div className="mx-auto w-full max-w-xl rounded-2xl bg-white p-4 text-left shadow-2xl ring-1 ring-black/5 sm:p-5 lg:pointer-events-auto">
+              <div className="flex items-start gap-3">
+                <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e6f3f5] text-[#227787]">
+                  {usable && invite.doctorAvatarUrl
+                    ? <img src={invite.doctorAvatarUrl} alt="" className="h-full w-full object-cover" />
+                    : <Mail className="h-5 w-5" />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#227787]">{t('mm2.importar.landing.eyebrow')}</p>
+                  {usable ? (
+                    <>
+                      <h2 className="font-heading text-lg font-bold leading-tight text-[#0a1f47]">
+                        {fill(t('mm2.importar.landing.title'), { doctor: doctorName })}
+                      </h2>
+                      {invite.doctorSpecialty && <p className="text-sm text-slate-600">{invite.doctorSpecialty}</p>}
+                      <p className="mt-2 text-sm leading-snug text-slate-700">
+                        {!patientsOpen
+                          ? t('mm2.importar.landing.closed')
+                          : isRealUser
+                            ? t('mm2.importar.landing.bodyLogged')
+                            : t('mm2.importar.landing.body')}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-sm leading-snug text-slate-700">
+                      {invite.status === 'accepted' ? t('mm2.importar.landing.accepted') : t('mm2.importar.landing.gone')}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInviteHidden(true)}
+                  aria-label={t('mm2.importar.landing.close')}
+                  className="-mr-1 -mt-1 rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              {((usable && patientsOpen && isRealUser) || showLogin) && (
+                <div className="mt-3 flex flex-wrap gap-2 sm:pl-[60px]">
+                  {usable && isRealUser && (
+                    <button
+                      type="button"
+                      onClick={() => navigate(role === 'admin' ? '/admin' : role === 'doctor' ? '/doctor/dashboard' : '/lives')}
+                      className="h-10 rounded-lg bg-[#227787] px-4 text-sm font-semibold text-white hover:bg-[#1c6674]"
+                    >
+                      {t('mm2.importar.landing.continue')}
+                    </button>
+                  )}
+                  {usable && showLogin && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/login', { state: { preferredRole: 'patient', mode: 'signup' } })}
+                      className="h-10 rounded-lg bg-[#227787] px-4 text-sm font-semibold text-white hover:bg-[#1c6674]"
+                    >
+                      {t('mm2.importar.landing.signup')}
+                    </button>
+                  )}
+                  {showLogin && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/login', { state: { preferredRole: 'patient' } })}
+                      className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                    >
+                      {t('mm2.importar.landing.login')}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Mobile: 1 col stack. Tablet (sm): 2x2. Desktop (lg): 4 col full-height */}
       <main className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 land:grid-cols-4 lg:min-h-screen land:min-h-0">

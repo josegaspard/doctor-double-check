@@ -20,6 +20,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
+import {
+  useDoctorSubscriptionPlans,
+  resolveTierPlan,
+  type DoctorSubscriptionPlan,
+  type PlanTier,
+} from '@/hooks/useDoctorSubscriptionPlans';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +41,13 @@ interface SubscribeButtonProps {
   showUpgrade?: boolean;
   className?: string;
   onSubscriptionChange?: () => void;
+  /**
+   * Modo «un plan» (tarjeta Suscripciones del perfil público, F2 13-sep-2026):
+   * pinta solo el «Suscribirme» de ese nivel y abre directamente su resumen de
+   * pago. Quien ya paga ese nivel ve «Tu plan actual»; quien paga el otro nivel,
+   * cómo cambiarse (nunca un segundo cobro).
+   */
+  planTier?: PlanTier;
 }
 
 export function SubscribeButton({
@@ -45,13 +58,17 @@ export function SubscribeButton({
   showUpgrade = true,
   className,
   onSubscriptionChange,
+  planTier,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
-  const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs } =
+  const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs, isLoading: subsLoading } =
     useSubscriptions();
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const { pricing } = useSubscriptionPricing();
+  // Planes con nombre propio del médico (F2). Sin plan activo en un nivel, o sin
+  // la migración, se usan el nombre y el precio globales de siempre.
+  const { plans: doctorPlans, fetchFresh } = useDoctorSubscriptionPlans(doctorId);
   // El primer clic nunca suscribe ni manda a la pasarela: pasa por el resumen.
   const { confirm, dialog } = useConfirmAction();
   const [isLoading, setIsLoading] = useState(false);
@@ -62,9 +79,13 @@ export function SubscribeButton({
   const isSubscribed = isSubscribedTo(doctorId);
   const subscription = getSubscription(doctorId);
   const doctorLabel = doctorName || t('subscribeButton.thisDoctorFallback');
-  // El precio que se enseña es el que cobra la función create-subscription-checkout.
-  const tierPrice = (tier: 'basic' | 'premium') =>
-    money2((tier === 'basic' ? pricing.basic_cents : pricing.premium_cents) / 100, language);
+  // El nombre y el precio que se enseñan son los que cobra la función
+  // create-subscription-checkout: el plan activo del médico para ese nivel o,
+  // si no tiene, el precio global.
+  const tierPlan = (tier: PlanTier, source: DoctorSubscriptionPlan[] = doctorPlans) =>
+    resolveTierPlan(tier, source, pricing, t);
+  const tierPrice = (tier: PlanTier, source?: DoctorSubscriptionPlan[]) =>
+    money2(tierPlan(tier, source).priceCents / 100, language);
 
   // Don't show for own profile
   if (user?.id === doctorId) return null;
@@ -93,7 +114,7 @@ export function SubscribeButton({
 
     setIsLoading(true);
     const result = await subscribe(doctorId, 'free', 0);
-    
+
     if (result.success) {
       await new Promise(resolve => setTimeout(resolve, 1200));
       onSubscriptionChange?.();
@@ -139,7 +160,30 @@ export function SubscribeButton({
     await updateNotificationPrefs(subscription.id, { [key]: value });
   };
 
-  const handleUpgrade = async (tier: 'basic' | 'premium') => {
+  const handleUpgrade = async (tier: PlanTier) => {
+    if (!isAuthenticated) {
+      toast({
+        title: t('common.error'),
+        description: t('paywall.loginRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Plan recién leído de la base: el resumen tiene que enseñar el nombre y el
+    // precio que la Edge Function va a cobrar. Si no se puede confirmar, no se
+    // enseña un precio dudoso.
+    const fresh = await fetchFresh();
+    if (!fresh.ok) {
+      toast({
+        title: t('common.error'),
+        description: t('mm2.planes.card.priceLoadError'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    const plan = tierPlan(tier, fresh.plans);
+
     // Tono «payment»: la tarjeta ya no cobra, solo selecciona el plan.
     const ok = await confirm({
       title: t('mm2.confirm.subscribeUpgrade.title'),
@@ -149,7 +193,7 @@ export function SubscribeButton({
         { label: t('mm2.confirm.subscribeUpgrade.doctorLabel'), value: doctorLabel },
         {
           label: t('mm2.confirm.subscribeUpgrade.planLabel'),
-          value: tier === 'basic' ? t('subscriptions.basicTierName') : t('subscriptions.premiumTierName'),
+          value: plan.name,
         },
         {
           label: t('mm2.confirm.subscribeUpgrade.billingLabel'),
@@ -157,7 +201,7 @@ export function SubscribeButton({
         },
         {
           label: t('mm2.confirm.subscribeUpgrade.priceLabel'),
-          value: fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice(tier) }),
+          value: fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: money2(plan.priceCents / 100, language) }),
           emphasis: true,
         },
       ],
@@ -186,6 +230,44 @@ export function SubscribeButton({
       setIsUpgrading(false);
     }
   };
+
+  // Nombre, descripción, precio y ventajas de cada nivel: los del médico si los
+  // personalizó; si no, los globales de siempre (mismos textos que antes).
+  const basicPlan = tierPlan('basic');
+  const premiumPlan = tierPlan('premium');
+
+  // ---------------------------------------------------------- modo «un plan»
+  if (planTier) {
+    const paidTier = subscription?.tier === 'basic' || subscription?.tier === 'premium' ? subscription.tier : null;
+    if (paidTier === planTier) {
+      return (
+        <span className={`pp-plan-current ${className || ''}`}>
+          <Check /> {t('mm2.planes.card.currentPlan')}
+        </span>
+      );
+    }
+    if (paidTier) {
+      return <span className={`pp-plan-switch ${className || ''}`}>{t('mm2.planes.card.switchHint')}</span>;
+    }
+    // Con sesión iniciada, el botón espera a saber si ya paga un plan con este
+    // médico: así nunca se abre un segundo cobro por error.
+    const waiting = isAuthenticated && subsLoading;
+    return (
+      <>
+        <button
+          type="button"
+          className={`pro-btn pro-btn-teal ${className || ''}`}
+          onClick={() => handleUpgrade(planTier)}
+          disabled={waiting || isUpgrading}
+          aria-label={fill(t('mm2.planes.card.subscribeAria'), { plan: tierPlan(planTier).name })}
+        >
+          {isUpgrading && <Loader2 className="animate-spin" />}
+          {t('mm2.planes.card.subscribe')}
+        </button>
+        {dialog}
+      </>
+    );
+  }
 
   if (!isSubscribed) {
     return (
@@ -370,19 +452,29 @@ export function SubscribeButton({
             {/* Basic Tier */}
             <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => handleUpgrade('basic')}>
               <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-semibold">{t('subscriptions.basicTierName')}</h4>
-                    <p className="text-sm text-muted-foreground">{t('subscriptions.basicTierDescription')}</p>
+                <div className="flex justify-between items-start gap-3 mb-2">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold">{basicPlan.name}</h4>
+                    {basicPlan.isCustom ? (
+                      basicPlan.description && <p className="text-sm text-muted-foreground">{basicPlan.description}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t('subscriptions.basicTierDescription')}</p>
+                    )}
                   </div>
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="shrink-0">
                     {fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice('basic') })}
                   </Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ {t('subscriptions.exclusiveContent')}</li>
-                  <li>✓ {t('subscriptions.priorityNotifications')}</li>
-                  <li>✓ {t('subscriptions.subscriberBadge')}</li>
+                  {basicPlan.isCustom ? (
+                    basicPlan.perks.map((perk, i) => <li key={`${i}-${perk}`}>✓ {perk}</li>)
+                  ) : (
+                    <>
+                      <li>✓ {t('subscriptions.exclusiveContent')}</li>
+                      <li>✓ {t('subscriptions.priorityNotifications')}</li>
+                      <li>✓ {t('subscriptions.subscriberBadge')}</li>
+                    </>
+                  )}
                 </ul>
               </CardContent>
             </Card>
@@ -390,23 +482,33 @@ export function SubscribeButton({
             {/* Premium Tier */}
             <Card className="cursor-pointer border-warning/50 hover:border-warning transition-colors" onClick={() => handleUpgrade('premium')}>
               <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-semibold flex items-center gap-2">
-                      {t('subscriptions.premiumTierName')}
+                <div className="flex justify-between items-start gap-3 mb-2">
+                  <div className="min-w-0">
+                    <h4 className="font-semibold flex items-center gap-2 flex-wrap">
+                      {premiumPlan.name}
                       <Badge variant="secondary" className="bg-warning/10 text-warning">{t('subscriptions.popular')}</Badge>
                     </h4>
-                    <p className="text-sm text-muted-foreground">{t('subscriptions.premiumTierDescription')}</p>
+                    {premiumPlan.isCustom ? (
+                      premiumPlan.description && <p className="text-sm text-muted-foreground">{premiumPlan.description}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">{t('subscriptions.premiumTierDescription')}</p>
+                    )}
                   </div>
-                  <Badge variant="default">
+                  <Badge variant="default" className="shrink-0">
                     {fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice('premium') })}
                   </Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
-                  <li>✓ {t('subscriptions.allBasicFeatures')}</li>
-                  <li>✓ {t('subscriptions.recordingDiscount')}</li>
-                  <li>✓ {t('subscriptions.priorityChat')}</li>
-                  <li>✓ {t('subscriptions.earlyAccess')}</li>
+                  {premiumPlan.isCustom ? (
+                    premiumPlan.perks.map((perk, i) => <li key={`${i}-${perk}`}>✓ {perk}</li>)
+                  ) : (
+                    <>
+                      <li>✓ {t('subscriptions.allBasicFeatures')}</li>
+                      <li>✓ {t('subscriptions.recordingDiscount')}</li>
+                      <li>✓ {t('subscriptions.priorityChat')}</li>
+                      <li>✓ {t('subscriptions.earlyAccess')}</li>
+                    </>
+                  )}
                 </ul>
               </CardContent>
             </Card>

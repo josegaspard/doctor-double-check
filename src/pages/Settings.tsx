@@ -34,6 +34,7 @@ import UserProfilePage from '@/pages/UserProfile';
 import WalletPage from '@/pages/Wallet';
 import WalletLedgerPage from '@/pages/WalletLedger';
 import DoctorEarningsPage, { EarningsRangeMenu, type EarningsRange } from '@/pages/DoctorEarnings';
+import { WithdrawButton } from '@/components/doctor/finance/WithdrawDialog';
 import '@/styles/diseno-finanzas.css';
 import DoctorInvoicesPage from '@/pages/DoctorInvoices';
 import DoctorBankAccountPage from '@/pages/DoctorBankAccount';
@@ -129,6 +130,10 @@ export default function Settings() {
   // «Ingresos y pagos» con el rango de fechas y «Retirar saldo». El rango vive
   // aquí porque lo pinta el hero; DoctorEarnings lo recibe como prop.
   const isFinanzas = isDoctorCuenta && section === 'finanzas';
+  // Perfil profesional del médico: ya trae su columna lateral («Así ven tu perfil», «Estado de
+  // tu perfil»). Con el resumen de Cuenta al lado, su columna central quedaba en ~250 px y los
+  // botones y tarjetas salían cortados; como en Finanzas, el contenido ocupa todo el ancho.
+  const isPerfilDoctor = isDoctorCuenta && section === 'perfil';
   const isFinanzasCobrar = isFinanzas && FINANCE_COLLECT_TABS.includes(financeTab);
   const isEarningsTab = isFinanzas && FINANCE_EARNINGS_TABS.includes(financeTab);
   const [earningsRange, setEarningsRange] = useState<EarningsRange>('thisMonth');
@@ -847,8 +852,9 @@ export default function Settings() {
       <div className="pro-container pro-page">
         {isFinanzasCobrar ? (
           /* Hero «Ingresos y pagos» (grupo Cobrar): rango de fechas + Retirar saldo.
-             «Retirar saldo» lleva a la cuenta bancaria, igual que en DoctorEarnings;
-             no existe ningún flujo de retiro y no se inventa. */
+             «Retirar saldo» abre la solicitud de retiro (F3 retiros, 13-sep-2026):
+             el médico pide el pago y el admin lo revisa; la solicitud no toca
+             el saldo. Sin cuenta verificada, el diálogo lleva a Cuenta bancaria. */
           <div className="pro-page-head">
             <div className="min-w-0">
               <h1 className="pro-page-title">{t('pro.earnings.title')}</h1>
@@ -856,11 +862,7 @@ export default function Settings() {
             </div>
             <div className="fin-hero-actions">
               {isEarningsTab && <EarningsRangeMenu value={earningsRange} onChange={setEarningsRange} />}
-              {financeTab !== 'banco' && (
-                <button type="button" className="pro-btn pro-btn-live" onClick={() => setFinanceTab('banco')}>
-                  <Banknote /> {t('pro.earnings.withdraw')}
-                </button>
-              )}
+              <WithdrawButton className="pro-btn pro-btn-live" />
             </div>
           </div>
         ) : (
@@ -880,7 +882,7 @@ export default function Settings() {
           </div>
         )}
 
-        <div className={`pro-work pro-work-set ${isFinanzas ? 'fin-work' : ''}`}>
+        <div className={`pro-work pro-work-set ${isFinanzas || isPerfilDoctor ? 'fin-work' : ''}`}>
           {/* ------------------------------------------- carril de secciones */}
           <nav className="pro-card pro-setnav" aria-label={t('pro.settings.title')}>
             {sections.map(s => (
@@ -924,7 +926,7 @@ export default function Settings() {
 
           {/* ----------------------------------------------------- resumen
               En Finanzas no se pinta: el contenido ocupa todo el ancho (diseño de Marta). */}
-          {!isFinanzas && (
+          {!isFinanzas && !isPerfilDoctor && (
           <aside className="min-w-0 space-y-3 sm:space-y-4 hidden xl:block">
             <section className="pro-card pro-card-pad">
               <div className="pro-card-head">

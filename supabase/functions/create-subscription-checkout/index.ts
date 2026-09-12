@@ -28,6 +28,61 @@ const SUBSCRIPTION_TIERS = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Plan propio del médico (F2 «planes», 13-sep-2026 · migración 20260913b).
+// Cada médico puede personalizar SUS dos niveles (basic/premium) en la tabla
+// doctor_subscription_plans. Si hay un plan ACTIVO para (creatorId, tier) se
+// cobra su price_cents y su nombre va en el producto de Stripe. En cualquier
+// otro caso —sin plan, plan desactivado, tabla todavía inexistente, error de
+// lectura o datos fuera de rango— devuelve null y se cobra EXACTAMENTE lo de
+// antes (precio global de site_settings.subscription_pricing).
+// Se lee con el mismo cliente anon de la función: la policy dsp_public_read
+// deja leer los planes activos a cualquiera.
+// ---------------------------------------------------------------------------
+interface DoctorPlan {
+  id: string;
+  name: string;
+  description: string;
+  price_cents: number;
+}
+
+// Mismos límites que los CHECK de la migración.
+const PLAN_MIN_CENTS = 1000;
+const PLAN_MAX_CENTS = 500000;
+
+async function getDoctorPlan(db: any, creatorId: string, tier: string): Promise<DoctorPlan | null> {
+  try {
+    const { data, error } = await db
+      .from("doctor_subscription_plans")
+      .select("id, name, description, price_cents")
+      .eq("doctor_id", creatorId)
+      .eq("tier", tier)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error) {
+      logStep("Doctor plan not available, using global price", { code: (error as any)?.code ?? null });
+      return null;
+    }
+    if (!data) return null;
+    const cents = Number(data.price_cents);
+    const name = typeof data.name === "string" ? data.name.trim() : "";
+    if (!Number.isInteger(cents) || cents < PLAN_MIN_CENTS || cents > PLAN_MAX_CENTS || !name) {
+      logStep("Doctor plan ignored (invalid data), using global price", { planId: data.id ?? null });
+      return null;
+    }
+    const description = typeof data.description === "string" ? data.description.trim() : "";
+    return {
+      id: String(data.id),
+      name: name.slice(0, 60),
+      description: description.slice(0, 280),
+      price_cents: cents,
+    };
+  } catch (e) {
+    logStep("Doctor plan lookup failed, using global price", { message: e instanceof Error ? e.message : String(e) });
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -65,8 +120,13 @@ Deno.serve(async (req) => {
     // fallback to the historical $99/$199 if the setting is missing/invalid.
     const pricing = await getSubscriptionPricing(supabaseClient);
     const appCfg = await getAppConfig(supabaseClient);
-    const unitAmount = tier === 'premium' ? pricing.premium_cents : pricing.basic_cents;
-    logStep("Subscription request", { creatorId, tier, price: unitAmount });
+    // Plan propio del médico para ese nivel (F2, migración 20260913b). Si no hay
+    // plan activo, la tabla no existe o la lectura falla → null → precio global de hoy.
+    const doctorPlan = await getDoctorPlan(supabaseClient, creatorId, tier);
+    const unitAmount = doctorPlan
+      ? doctorPlan.price_cents
+      : (tier === 'premium' ? pricing.premium_cents : pricing.basic_cents);
+    logStep("Subscription request", { creatorId, tier, price: unitAmount, planId: doctorPlan?.id ?? null });
 
     // Get creator info
     const { data: creatorProfile } = await supabaseClient
@@ -87,6 +147,11 @@ Deno.serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
+    // plan_id solo viaja cuando se cobró el precio del plan del médico: el
+    // webhook lo usa para registrar/acreditar ese precio en vez del global.
+    // Sin plan, la metadata es idéntica a la de antes.
+    const planMetadata: Record<string, string> = doctorPlan ? { plan_id: doctorPlan.id } : {};
+
     // Create checkout session using dynamic price_data (no hardcoded price IDs needed)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -96,8 +161,9 @@ Deno.serve(async (req) => {
           price_data: {
             currency: appCfg.currency,
             product_data: {
-              name: `${tierConfig.name} - ${creatorName}`,
-              description: tierConfig.description,
+              name: `${doctorPlan ? doctorPlan.name : tierConfig.name} - ${creatorName}`,
+              // Stripe no acepta una descripción vacía: sin descripción propia, la de siempre.
+              description: doctorPlan?.description || tierConfig.description,
             },
             unit_amount: unitAmount,
             recurring: {
@@ -115,12 +181,14 @@ Deno.serve(async (req) => {
         creator_id: creatorId,
         tier: tier,
         type: "creator_subscription",
+        ...planMetadata,
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
           creator_id: creatorId,
           tier: tier,
+          ...planMetadata,
         },
       },
     });

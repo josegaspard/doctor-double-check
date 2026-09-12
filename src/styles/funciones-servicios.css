@@ -1,0 +1,232 @@
+/* ==========================================================================
+   F1 «servicios» · Servicios y precios (12-sep-2026)
+   Lo usan: components/doctor/public-profile/ServicesCard.tsx,
+   components/doctor/services/ServicesEditor.tsx, pages/BookAppointment.tsx
+   y el «Consultas desde» de pages/DoctorProfile.tsx.
+   Prefijo `fs-`. Lenguaje `pro-*` de index.css. Todo lo incrustado responde
+   por @container: el editor vive en una columna de ~270 px a 1440 px en
+   Cuenta › Perfil y a todo el ancho en móvil.
+   ========================================================================== */
+
+/* ---------- Esqueleto de carga ---------- */
+.fs-skel {
+  display: inline-block; width: 7ch; height: 1em; border-radius: 6px; vertical-align: middle;
+  background: linear-gradient(90deg, #e4eef2 0%, #f3f8fa 50%, #e4eef2 100%);
+  background-size: 200% 100%;
+  animation: fs-shimmer 1.2s ease-in-out infinite;
+}
+.fs-skel-line { display: block; width: 100%; height: 14px; }
+.fs-skel-line + .fs-skel-line { margin-top: 8px; width: 60%; }
+@keyframes fs-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .fs-skel { animation: none; } }
+
+/* ==========================================================================
+   Perfil público · «Servicios y precios»
+   Columnas alineadas entre filas (subgrid): icono · nombre · ⏱ · precio · Reservar
+   ========================================================================== */
+.fs-svc-wrap { container-type: inline-size; container-name: fssvc; min-width: 0; }
+.fs-svc-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) max-content max-content max-content;
+  column-gap: 16px;
+}
+.fs-svc {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid; align-items: center; row-gap: 8px;
+  padding: 12px 0; border-top: 1px solid var(--pro-line); min-width: 0;
+}
+.fs-svc:first-child { border-top: 0; padding-top: 4px; }
+.fs-svc > .pro-icon-box { width: 44px; height: 44px; }
+.fs-svc-id { min-width: 0; }
+.fs-svc-name {
+  margin: 0; font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700; font-size: 15px; line-height: 1.3; color: var(--pro-ink); overflow-wrap: anywhere;
+}
+.fs-svc-desc { margin: 2px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--pro-muted); overflow-wrap: anywhere; }
+.fs-svc-mod { display: inline-flex; align-items: center; gap: 5px; margin: 4px 0 0; font-size: 12px; color: var(--pro-ink-2); }
+.fs-svc-mod svg { width: 13px; height: 13px; color: var(--pro-teal) !important; flex-shrink: 0; }
+.fs-svc-foot { display: contents; }
+.fs-svc-dur { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--pro-ink-2); white-space: nowrap; }
+.fs-svc-dur svg { width: 16px; height: 16px; color: var(--pro-teal) !important; flex-shrink: 0; }
+.fs-svc-price {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 1.1rem; color: var(--pro-ink); white-space: nowrap;
+}
+.fs-svc-price .inline-flex { font-size: inherit; font-weight: inherit; }
+.fs-free { color: var(--pro-ok); }
+.fs-svc-book { justify-self: end; min-width: 104px; }
+
+/* Navegadores sin subgrid: columnas por fila (sin alinear entre filas, pero sin romper). */
+@supports not (grid-template-columns: subgrid) {
+  .fs-svc-list { display: block; }
+  .fs-svc { grid-template-columns: 44px minmax(0, 1fr) auto auto auto; column-gap: 16px; }
+}
+
+@container fssvc (max-width: 540px) {
+  .fs-svc-list { display: block; }
+  .fs-svc { grid-template-columns: 44px minmax(0, 1fr); column-gap: 12px; }
+  .fs-svc-foot {
+    grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+    padding-left: 56px;
+  }
+  .fs-svc-book { margin-left: auto; }
+}
+@container fssvc (max-width: 360px) {
+  .fs-svc-foot { padding-left: 0; }
+  .fs-svc-book { width: 100%; margin-left: 0; }
+}
+
+/* ==========================================================================
+   Cuenta › Perfil › Servicios y disponibilidad · editor
+   ========================================================================== */
+.fs-ed { container-type: inline-size; container-name: fsed; min-width: 0; }
+.fs-ed .pro-card-head { flex-wrap: wrap; }
+.fs-ed .pro-card-title { flex: 1 1 auto; }
+.fs-ed-intro { margin: 0 0 12px; font-size: 12.5px; line-height: 1.45; color: var(--pro-muted); }
+
+.fs-ed-list { list-style: none; margin: 0; padding: 0; }
+.fs-ed-row {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 8px 12px; align-items: start;
+  padding: 12px 0; border-top: 1px solid var(--pro-line); min-width: 0;
+}
+.fs-ed-row:first-child { border-top: 0; padding-top: 2px; }
+.fs-ed-row > .pro-icon-box { width: 40px; height: 40px; }
+.fs-ed-row > .pro-icon-box svg { width: 18px; height: 18px; }
+.fs-ed-row.is-off > .pro-icon-box { background: #eef2f5; }
+.fs-ed-row.is-off > .pro-icon-box svg { color: var(--pro-muted) !important; }
+.fs-ed-main { min-width: 0; }
+.fs-ed-name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--pro-ink); overflow-wrap: anywhere; }
+.fs-ed-name .pro-pill { height: 22px; font-size: 11px; padding: 0 8px; }
+.fs-ed-desc { margin: 2px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--pro-muted); overflow-wrap: anywhere; }
+.fs-ed-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 6px; font-size: 12.5px; color: var(--pro-ink-2); }
+.fs-ed-meta > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.fs-ed-meta svg { width: 14px; height: 14px; color: var(--pro-teal) !important; flex-shrink: 0; }
+.fs-ed-meta b { font-weight: 800; color: var(--pro-ink); white-space: nowrap; }
+.fs-ed-actions { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.fs-ed-switch { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; font-size: 12.5px; color: var(--pro-ink-2); cursor: pointer; }
+.fs-ed-formslot { grid-column: 1 / -1; }
+
+.fs-iconbtn {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #d6e1e7; background: #ffffff; color: var(--pro-ink-2) !important;
+}
+.fs-iconbtn:hover { background: #f1f6f8; }
+.fs-iconbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.fs-iconbtn svg { width: 16px; height: 16px; color: currentColor !important; }
+.fs-iconbtn.is-danger { color: #c0342b !important; }
+.fs-iconbtn.is-danger:hover { background: #fdecec; }
+.fs-ed-offpill { display: none; }
+
+/* Columna de Cuenta › Perfil a 1440 (≈228 px útiles): interruptor sin texto, botones de 32 px
+   y el estado «Oculto» pasa a una píldora junto al nombre. */
+@container fsed (max-width: 300px) {
+  .fs-ed-actions { gap: 4px; }
+  .fs-ed-switch { gap: 0; }
+  .fs-ed-switch > span { display: none; }
+  .fs-iconbtn { width: 32px; height: 32px; border-radius: 9px; }
+  .fs-ed-offpill { display: inline-flex; }
+}
+
+.fs-empty { text-align: center; padding: 14px 6px 6px; }
+.fs-empty > .pro-icon-box { margin: 0 auto 8px; }
+.fs-empty-title { margin: 0; font-weight: 700; font-size: 14px; color: var(--pro-ink); }
+.fs-empty-desc { margin: 4px auto 12px; max-width: 44ch; font-size: 12.5px; line-height: 1.45; color: var(--pro-muted); }
+
+.fs-ed-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pro-line); }
+.fs-ed-foot .fs-hint { flex: 1 1 180px; }
+.fs-ed .pro-note { margin-bottom: 4px; }
+.fs-ed .pro-note b { display: block; font-weight: 700; margin-bottom: 2px; }
+.fs-ed .pro-note .pro-btn { margin-top: 8px; }
+
+/* ---------- Formulario (nuevo / editar) ---------- */
+.fs-form {
+  display: grid; gap: 12px; min-width: 0;
+  margin: 0 0 12px; padding: 14px; border-radius: 16px;
+  border: 1px solid #d6e1e7; background: #f7fbfc;
+}
+.fs-ed-formslot .fs-form { margin: 4px 0 0; }
+.fs-form-title { margin: 0; font-weight: 700; font-size: 14px; color: var(--pro-ink); }
+.fs-fld { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fs-lbl, .fs-fld > label, .fs-lblrow > label { font-size: 12.5px; font-weight: 600; line-height: 1.35; color: var(--pro-ink-2); }
+.fs-switchrow .fs-lbl { display: block; }
+/* Los campos llevan además la clase bg-white: es la salida que prevé index.css (§11) para que
+   la regla global de «inputs sobre fondo teal» no los pinte de blanco sobre blanco. */
+.fs-lblrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.fs-count { font-size: 11px; color: var(--pro-muted); white-space: nowrap; }
+.fs-input {
+  width: 100%; min-width: 0; height: 42px; padding: 0 12px;
+  border-radius: 12px; border: 1px solid #cfdbe2; background: #ffffff;
+  font-size: 14px; color: var(--pro-ink); outline: none;
+}
+.fs-input::placeholder { color: #93a4ae; }
+.fs-input:focus { border-color: var(--pro-teal); box-shadow: 0 0 0 3px rgba(35, 125, 140, 0.18); }
+textarea.fs-input { height: auto; min-height: 64px; padding: 10px 12px; line-height: 1.4; resize: vertical; }
+.fs-input[aria-invalid="true"] { border-color: #d9443a; }
+.fs-affix { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fs-affix > span { font-size: 13px; color: var(--pro-muted); flex-shrink: 0; }
+.fs-err { font-size: 12px; line-height: 1.35; color: #c0342b; }
+.fs-hint { font-size: 11.5px; line-height: 1.4; color: var(--pro-muted); }
+.fs-grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+
+.fs-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.fs-opt {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+  border-radius: 9999px; border: 1px solid #d6e1e7; background: #ffffff;
+  font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--pro-ink-2) !important;
+}
+.fs-opt:hover { background: #f1f6f8; }
+.fs-opt svg { width: 16px; height: 16px; color: currentColor !important; flex-shrink: 0; }
+.fs-opt[aria-pressed="true"] { background: var(--pro-teal) !important; border-color: var(--pro-teal); color: #ffffff !important; }
+.fs-opt[aria-pressed="true"] * { color: #ffffff !important; }
+.fs-opt-icon { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 12px; }
+.fs-opt-icon svg { width: 18px; height: 18px; }
+
+.fs-switchrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.fs-switchrow .fs-hint { display: block; margin-top: 2px; }
+.fs-form-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.fs-form-foot .pro-btn { flex: 1 1 120px; }
+
+@container fsed (min-width: 520px) {
+  .fs-ed-row { grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; }
+  .fs-ed-actions { grid-column: auto; flex-wrap: nowrap; }
+  .fs-ed-switch { margin-right: 4px; }
+  .fs-grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fs-form-foot .pro-btn { flex: 0 0 auto; }
+}
+
+/* ==========================================================================
+   Reserva · elegir servicio (BookAppointment, estilo de sus tarjetas de turno)
+   ========================================================================== */
+.fs-book-pick { container-type: inline-size; container-name: fsbook; min-width: 0; }
+.fs-book-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.fs-book-opt {
+  position: relative; width: 100%; text-align: left;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start;
+}
+.fs-book-ico {
+  width: 40px; height: 40px; border-radius: 9999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: hsl(var(--primary) / 0.1); color: hsl(var(--primary));
+}
+.fs-book-ico svg { width: 18px; height: 18px; }
+.fs-book-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-right: 24px; }
+.fs-book-name { font-weight: 600; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+.fs-book-desc { font-size: 12px; line-height: 1.35; color: hsl(var(--muted-foreground)); overflow-wrap: anywhere; }
+.fs-book-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 4px; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.fs-book-meta > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fs-book-meta svg { width: 13px; height: 13px; color: hsl(var(--primary)); flex-shrink: 0; }
+.fs-book-meta b { flex-basis: 100%; font-weight: 700; font-size: 13px; color: hsl(var(--foreground)); white-space: nowrap; }
+.fs-book-meta b .inline-flex { font-size: inherit; }
+.fs-book-check { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; color: hsl(var(--primary)); }
+.fs-book-sum { margin: 0; border-radius: 10px; border: 1px solid hsl(var(--border)); background: hsl(var(--muted) / 0.4); font-size: 13px; }
+.fs-book-sum > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 12px; }
+.fs-book-sum > div + div { border-top: 1px solid hsl(var(--border)); }
+.fs-book-sum dt { color: hsl(var(--muted-foreground)); }
+.fs-book-sum dd { margin: 0; font-weight: 600; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+.fs-book-sum dd .inline-flex { font-size: inherit; }
+
+@container fsbook (min-width: 560px) {
+  .fs-book-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

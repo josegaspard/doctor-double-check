@@ -1,0 +1,104 @@
+/* ==========================================================================
+   F2 «planes» · suscripciones con nombre propio por médico (13-sep-2026)
+   · Tarjeta «Suscripciones» del perfil público (SubscriptionsCard): botón
+     «Suscribirme» por plan, como en la maqueta perfil-publico-directorio.jpg.
+   · Editor «Planes de suscripción» (PlansEditor) en Cuenta › Perfil ›
+     Contenido y monetización.
+   Reutiliza el lenguaje `pro-*` de src/index.css y `.pp-tier*` de
+   src/styles/diseno-perfil.css. Responsive por @container: ambos bloques
+   viven incrustados en columnas de ancho variable.
+   ========================================================================== */
+
+/* ---------- Perfil público · tarjeta Suscripciones ---------- */
+.pp-subs { container-type: inline-size; container-name: ppsubs; }
+
+/* Estrecho (columna lateral de 320-360 px y móvil): el botón baja a todo el ancho. */
+.pp-tier.pp-plan {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: start;
+}
+.pp-plan-body { min-width: 0; }
+.pp-plan .pp-tier-name { line-height: 1.25; overflow-wrap: anywhere; }
+.pp-plan li { align-items: flex-start; }
+.pp-plan li svg { margin-top: 2px; }
+.pp-plan li span { min-width: 0; overflow-wrap: anywhere; }
+.pp-plan-cta { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+.pp-plan-cta .pro-btn { width: 100%; }
+.pp-plan-current {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 6px 14px; border-radius: 12px;
+  background: var(--pro-ok-bg); color: var(--pro-ok); font-weight: 700; font-size: 13.5px; text-align: center;
+}
+.pp-plan-current svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--pro-ok) !important; }
+.pp-plan-switch { display: block; font-size: 12px; line-height: 1.35; color: var(--pro-muted); text-align: center; }
+.pp-plan-owner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  margin: 12px 0 0; font-size: 12.5px; color: var(--pro-muted);
+}
+.pp-plan-owner a { display: inline-flex; align-items: center; gap: 5px; color: var(--pro-teal) !important; font-weight: 600; }
+.pp-plan-owner a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pp-plan-owner svg { width: 14px; height: 14px; }
+
+/* Ancho (pestaña «Suscripciones» en la columna principal): botón a la derecha, como la maqueta. */
+@container ppsubs (min-width: 460px) {
+  .pp-tier.pp-plan { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .pp-plan-cta { grid-column: auto; align-self: center; min-width: 136px; max-width: 210px; }
+}
+
+/* ---------- Cuenta › Perfil · editor de planes ---------- */
+.fp-plans { container-type: inline-size; container-name: fpplans; }
+.fp-loading { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--pro-muted); margin: 0; }
+.fp-loading svg { width: 16px; height: 16px; }
+
+.fp-plans-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@container fpplans (min-width: 760px) {
+  .fp-plans-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.fp-plan {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  padding: 14px; border: 1px solid #d6e1e7; border-radius: 16px; background: #ffffff;
+}
+.fp-plan-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.fp-plan-tier { display: inline-flex; align-items: center; gap: 9px; margin: 0; min-width: 0; font-size: 15px; font-weight: 800; color: var(--pro-ink); }
+.fp-plan-tier .pro-icon-box { width: 34px; height: 34px; }
+.fp-plan-tier .pro-icon-box svg { width: 17px; height: 17px; }
+.fp-now { margin: 0; padding: 8px 10px; border-radius: 10px; background: #eef7f9; font-size: 12.5px; line-height: 1.4; color: var(--pro-ink-2); overflow-wrap: anywhere; }
+
+.fp-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.fp-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.fp-label { font-size: 12.5px; font-weight: 600; color: var(--pro-ink-2); }
+.fp-count { flex-shrink: 0; font-size: 11.5px; color: var(--pro-muted); font-variant-numeric: tabular-nums; }
+.fp-hint { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--pro-muted); }
+.fp-error { margin: 0; font-size: 12px; font-weight: 600; line-height: 1.35; color: #c2352d; }
+.fp-field input[aria-invalid="true"], .fp-field textarea[aria-invalid="true"] { border-color: #e08a84; }
+
+.fp-price { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.fp-price > span { flex-shrink: 0; font-size: 13px; color: var(--pro-muted); }
+.fp-price input { flex: 1; min-width: 0; }
+
+.fp-perks { display: flex; flex-direction: column; gap: 6px; }
+.fp-perk { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fp-perk > svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--pro-ok) !important; }
+.fp-perk input { flex: 1; min-width: 0; }
+.fp-perk .pro-btn { flex-shrink: 0; }
+.fp-add { align-self: flex-start; }
+
+.fp-switch { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; line-height: 1.35; color: var(--pro-ink); }
+.fp-switch > button { flex-shrink: 0; margin-top: 1px; }
+
+.fp-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@container fpplans (max-width: 420px) {
+  .fp-actions .pro-btn { flex: 1 1 100%; }
+}
+
+/* Migración sin aplicar: los dos planes estándar que hoy se ven y se cobran. */
+.fp-std { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.fp-std-row {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px;
+  padding: 10px 12px; border-radius: 12px; background: #eef7f9; font-size: 13px; color: var(--pro-ink-2);
+}
+.fp-std-row b { color: var(--pro-ink); }

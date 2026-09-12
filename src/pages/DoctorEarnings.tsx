@@ -17,6 +17,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { fill, money, money2, fmtDate, fmtDayShort } from '@/lib/proFormat';
 import { doctorHref } from '@/lib/doctorSections';
 import '@/styles/diseno-finanzas.css';
+// «Retirar saldo» de verdad (F3 retiros, 13-sep-2026): diálogo de solicitud,
+// historial en «Pagos pendientes» y aviso compacto en «Próximo pago».
+import { usePayoutRequests } from '@/hooks/usePayoutRequests';
+import { WithdrawButton } from '@/components/doctor/finance/WithdrawDialog';
+import { PayoutRequestsList, PayoutRequestNotice } from '@/components/doctor/finance/PayoutRequestsList';
 
 interface Transaction {
   id: string;
@@ -165,6 +170,9 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
   const [sourceTab, setSourceTab] = useState<SourceKey | 'total'>('total');
   const [tab, setTab] = useState<'movements' | 'payouts' | 'holds'>(initialTab || 'movements');
   const [page, setPage] = useState(1);
+  /** Solicitudes de retiro (F3 retiros). No tocan saldo: el descuento lo hace
+   *  el pago real del admin. Sin migración, `pendingActivation`. */
+  const payoutReq = usePayoutRequests({ enabled: role === 'doctor' });
 
   useEffect(() => {
     if (role && role !== 'doctor') { if (!embedded) navigate('/'); return; }
@@ -465,9 +473,8 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
             </div>
             <div className="fin-hero-actions">
               <EarningsRangeMenu value={range} onChange={setRange} />
-              <Link to={bankHref} className="pro-btn pro-btn-live">
-                <Banknote /> {t('pro.earnings.withdraw')}
-              </Link>
+              {/* Abre la solicitud de retiro (antes solo enlazaba a Cuenta bancaria). */}
+              <WithdrawButton className="pro-btn pro-btn-live" />
             </div>
           </div>
         )}
@@ -599,8 +606,10 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
                     <div className="pro-seg">
                       <button type="button" className={tab === 'movements' ? 'is-active' : ''} aria-pressed={tab === 'movements'} onClick={() => setTab('movements')}>{t('pro.earnings.transactions')}</button>
                       <button type="button" className={tab === 'payouts' ? 'is-active' : ''} aria-pressed={tab === 'payouts'} onClick={() => setTab('payouts')}>{t('pro.earnings.payouts')}</button>
-                      {holds.length > 0 && (
-                        <button type="button" className={tab === 'holds' ? 'is-active' : ''} aria-pressed={tab === 'holds'} onClick={() => setTab('holds')}>{t('pro.earnings.holds')}</button>
+                      {/* «Pagos pendientes»: solicitudes de retiro (F3) + cobros retenidos.
+                          Se ve si hay alguna de las dos o si la página abrió aquí. */}
+                      {(holds.length > 0 || payoutReq.requests.length > 0 || initialTab === 'holds') && (
+                        <button type="button" className={tab === 'holds' ? 'is-active' : ''} aria-pressed={tab === 'holds'} onClick={() => setTab('holds')}>{t('mm2.retiros.pendingTab')}</button>
                       )}
                     </div>
                     <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={handleExportCSV}>
@@ -757,6 +766,11 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
 
                 {tab === 'holds' && (
                   <div>
+                    {/* Solicitudes de retiro (F3) arriba; los cobros retenidos debajo. */}
+                    <PayoutRequestsList data={payoutReq} />
+                    {holds.length > 0 && (
+                      <h3 className="wd-holds-title"><Lock /> {t('pro.earnings.holds')}</h3>
+                    )}
                     {holds.map(h => (
                       <div key={h.id} className="pro-row">
                         <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Lock /></span>
@@ -830,6 +844,19 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
                     <div className="pro-note mt-3">
                       <Info /><span>{fill(t('pro.earnings.nextPayoutNote'), { n: activeHolds.length })}</span>
                     </div>
+                  )}
+                  {/* Aviso compacto de la solicitud de retiro en curso (F3). En
+                      «Pagos pendientes» sobra: ahí está la lista completa. */}
+                  {payoutReq.openRequest && tab !== 'holds' && (
+                    <PayoutRequestNotice
+                      request={payoutReq.openRequest}
+                      onView={() => {
+                        setTab('holds');
+                        requestAnimationFrame(() => {
+                          document.querySelector('.fin-tablecard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        });
+                      }}
+                    />
                   )}
                   {/* El histórico ya cobrado: el panel anterior lo enseñaba y se
                       había perdido (`total_earnings` se pedía y se tiraba). */}

@@ -1,0 +1,161 @@
+/* ==========================================================================
+   F3 retiros · «Retirar saldo» de verdad (13-sep-2026)
+   - WithdrawDialog: modal blanco (vive en un portal fuera del fondo teal).
+   - PayoutRequestsList: dentro de la tarjeta de movimientos de «Ingresos y
+     pagos» (Cuenta › Finanzas); responde a SU ancho con @container.
+   - PayoutRequestsAdmin: sección de /admin/payouts (chips con aria-pressed).
+   Reutiliza el lenguaje `pro-*` de src/index.css (variables en :root).
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- diálogo */
+.wd-dialog { color: var(--pro-ink); }
+.wd-title-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 9999px; flex-shrink: 0;
+  background: #fdecec; color: var(--pro-live);
+}
+.wd-title-icon svg { width: 18px; height: 18px; color: var(--pro-live) !important; }
+
+.wd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.wd-stat {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 10px 12px; border-radius: 12px; background: #f5fafb; border: 1px solid var(--pro-line);
+}
+.wd-stat .k { font-size: 12px; color: var(--pro-muted); }
+.wd-stat .v {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-size: 1.25rem; font-weight: 800; line-height: 1.2; color: var(--pro-ink);
+  overflow-wrap: anywhere;
+}
+
+.wd-kicker { display: block; font-size: 11.5px; font-weight: 600; color: var(--pro-muted); }
+.wd-bank .pro-row-name { white-space: normal; overflow-wrap: anywhere; }
+
+.wd-alert { display: flex; gap: 10px; padding: 11px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; }
+.wd-alert > svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; }
+.wd-alert p { margin: 0; }
+.wd-alert p + p { margin-top: 3px; }
+.wd-alert-title { font-weight: 700; }
+.wd-alert-warn { background: var(--pro-warn-bg); color: #7a5212; }
+.wd-alert-warn > svg { color: var(--pro-warn) !important; }
+.wd-alert-info { background: var(--pro-info-bg); color: #24457c; }
+.wd-alert-info > svg { color: var(--pro-info) !important; }
+.wd-alert-ok { background: var(--pro-ok-bg); color: #146c3e; }
+.wd-alert-ok > svg { color: var(--pro-ok) !important; }
+.wd-alert-err { background: #fdecec; color: #9b1c18; }
+.wd-alert-err > svg { color: var(--pro-live) !important; }
+
+.wd-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wd-label { font-size: 13px; font-weight: 700; color: var(--pro-ink); }
+.wd-optional { font-weight: 500; color: var(--pro-muted); }
+.wd-amount { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.wd-amount-box {
+  flex: 1 1 190px; min-width: 0; display: flex; align-items: center; height: 46px;
+  padding: 0 12px; border-radius: 12px; border: 1px solid #cfdbe2; background: #ffffff;
+}
+.wd-amount-box:focus-within { border-color: var(--pro-teal); box-shadow: 0 0 0 3px rgba(34, 119, 135, 0.18); }
+.wd-amount-box.is-invalid { border-color: var(--pro-live); }
+.wd-amount-box .cur { font-weight: 800; color: var(--pro-muted); margin-right: 6px; }
+.wd-amount-box input {
+  flex: 1 1 auto; min-width: 0; width: 100%; border: 0; outline: 0; background: transparent;
+  font-size: 17px; font-weight: 800; color: var(--pro-ink); -webkit-text-fill-color: var(--pro-ink);
+}
+.wd-amount-box input::placeholder { color: #a9b6c1; -webkit-text-fill-color: #a9b6c1; font-weight: 600; }
+.wd-amount-box .code { font-size: 12px; font-weight: 700; color: var(--pro-muted); margin-left: 6px; }
+.wd-amount .pro-btn { height: 46px; flex: 0 0 auto; }
+.wd-help { font-size: 12.5px; color: var(--pro-muted); margin: 0; }
+.wd-help.is-error { color: #b42318; font-weight: 600; }
+.wd-count { align-self: flex-end; font-size: 12px; color: #94a3b8; }
+
+.wd-rule { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--pro-ink-2); margin: 0; line-height: 1.45; }
+.wd-rule > svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--pro-teal) !important; }
+
+.wd-open { border: 1px solid var(--pro-line); border-radius: 13px; padding: 12px; background: #ffffff; }
+.wd-open-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.wd-open-amount {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-size: 1.45rem; font-weight: 800; color: var(--pro-ink); margin: 4px 0 0; line-height: 1.2;
+}
+.wd-open-sub { font-size: 12.5px; color: var(--pro-muted); margin: 2px 0 0; }
+.wd-open-note { font-size: 12.5px; color: var(--pro-ink-2); margin: 8px 0 0; overflow-wrap: anywhere; }
+.wd-open-hint { font-size: 12.5px; color: var(--pro-ink-2); margin: 8px 0 0; }
+
+.wd-actions { display: flex; flex-direction: column-reverse; gap: 8px; }
+.wd-actions > * { width: 100%; }
+@media (min-width: 640px) {
+  .wd-actions { flex-direction: row; justify-content: flex-end; flex-wrap: wrap; }
+  .wd-actions > * { width: auto; }
+}
+.wd-btn-danger { background: #ffffff !important; color: #b42318 !important; border-color: #f3c7c3 !important; }
+.wd-btn-danger:hover { background: #fdecec !important; color: #9b1c18 !important; }
+.wd-btn-danger * { color: currentColor !important; }
+
+/* ------------------------------------------------ lista (Pagos pendientes) */
+.wd-list { container-type: inline-size; container-name: wdlist; min-width: 0; }
+.wd-list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 4px; }
+.wd-list-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14.5px; font-weight: 800; color: var(--pro-ink); }
+.wd-list-title svg { width: 17px; height: 17px; color: var(--pro-teal) !important; }
+.wd-list .pro-note { margin-top: 6px; }
+.wd-rows { list-style: none; margin: 0; padding: 0; }
+.wd-row {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px 12px; align-items: start;
+  padding: 12px 0; border-top: 1px solid var(--pro-line);
+}
+.wd-row:first-child { border-top: 0; }
+.wd-row > .pro-icon-box { width: 34px; height: 34px; border-radius: 10px; }
+.wd-row > .pro-icon-box svg { width: 17px; height: 17px; }
+.wd-row-main { min-width: 0; }
+.wd-row-top { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
+.wd-row-top .pro-row-name { white-space: nowrap; }
+.wd-row-main .pro-row-sub { margin: 2px 0 0; }
+.wd-row-note, .wd-row-admin { margin: 6px 0 0; font-size: 12.5px; color: var(--pro-ink-2); overflow-wrap: anywhere; line-height: 1.45; }
+.wd-row-admin { padding: 6px 9px; border-radius: 9px; background: #f5fafb; border: 1px solid var(--pro-line); }
+.wd-row-note .lbl, .wd-row-admin .lbl { font-weight: 700; color: var(--pro-ink); }
+.wd-row-act { align-self: center; }
+@container wdlist (max-width: 440px) {
+  .wd-row { grid-template-columns: 34px minmax(0, 1fr); }
+  .wd-row-act { grid-column: 2; justify-self: start; }
+}
+.wd-empty { margin: 0; padding: 16px 0 6px; font-size: 13px; color: var(--pro-muted); text-align: center; }
+.wd-loading { display: flex; justify-content: center; padding: 18px 0; }
+.wd-loading svg { width: 20px; height: 20px; color: var(--pro-muted) !important; }
+
+/* Con «Pendientes» la tarjeta de movimientos tiene 3 segmentos: en columna
+   estrecha pasan a dos filas en vez de esconderse tras un scroll lateral
+   (mismo criterio que los chips de fuente de la gráfica). */
+@container finmain (max-width: 559px) {
+  .fin-tablecard .fin-tabtools { width: 100%; }
+  .fin-tablecard .fin-tabtools .pro-seg { flex: 1 1 auto; flex-wrap: wrap; overflow: visible; }
+  .fin-tablecard .fin-tabtools .pro-seg > button { flex: 1 1 auto; }
+}
+
+/* Separación con los cobros retenidos que van debajo */
+.wd-holds-title { margin: 20px 0 2px; font-size: 14.5px; font-weight: 800; color: var(--pro-ink); display: flex; align-items: center; gap: 8px; }
+.wd-holds-title svg { width: 17px; height: 17px; color: var(--pro-teal) !important; }
+
+/* Aviso compacto en «Próximo pago» */
+.wd-notice { margin-top: 12px; align-items: flex-start; }
+.wd-notice .txt { min-width: 0; }
+.wd-linkbtn {
+  display: inline; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--pro-info) !important; text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ admin */
+.wr-admin { min-width: 0; }
+.wr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wr-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+  border-radius: 9999px; border: 1px solid hsl(var(--border)); background: hsl(var(--background));
+  color: hsl(var(--foreground)); font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.wr-chip:hover { background: hsl(var(--muted)); }
+.wr-chip svg { width: 15px; height: 15px; }
+.wr-chip.is-active { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.wr-chip-count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 9999px; font-size: 11.5px; font-weight: 700; background: hsl(var(--muted)); color: hsl(var(--muted-foreground));
+}
+.wr-chip.is-active .wr-chip-count { background: rgba(255, 255, 255, 0.22); color: hsl(var(--primary-foreground)); }
+.wr-row { border: 1px solid hsl(var(--border)); border-radius: 12px; padding: 14px; min-width: 0; }
+.wr-row-note { overflow-wrap: anywhere; }

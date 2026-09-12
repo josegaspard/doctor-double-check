@@ -79,15 +79,26 @@ interface NavItem {
 // El Chat es un icono global de la cabecera. Lo que colgaba de «Más» vive dentro de
 // su sección (lib/doctorSections) y sus rutas antiguas redirigen allí.
 // ============================================================================
-type DoctorNavItem = NavItem & { sectionId: string };
-const doctorNav: DoctorNavItem[] = DOCTOR_SECTIONS.map(s => ({
-  labelKey: s.labelKey,
-  href: s.path,
-  icon: s.icon,
-  roles: ['doctor'],
-  sectionId: s.id,
-}));
-// Móvil: cuatro fijas; Aprendizaje, Contenido y Cuenta van en el cajón.
+type DoctorNavItem = NavItem & { sectionId: string; navId: string };
+const doctorNavOf = (id: string, over: Partial<DoctorNavItem> = {}): DoctorNavItem => {
+  const s = DOCTOR_SECTIONS.find(x => x.id === id)!;
+  return { labelKey: s.labelKey, href: s.path, icon: s.icon, roles: ['doctor'], sectionId: s.id, navId: s.id, ...over };
+};
+// Menú del médico como en las maquetas de Marta (12-sep-2026):
+//   Inicio · Agenda · Mis pacientes · Consultas · Lives y contenidos · Comunidad · Más ▾ (Aprendizaje, Cuenta)
+// sin romper la arquitectura de su análisis: «Consultas» es Agenda › Consultas, «Lives y
+// contenidos» es la sección Contenido y «Más» queda reducido a dos destinos.
+const doctorPrimaryNav: DoctorNavItem[] = [
+  doctorNavOf('inicio'),
+  doctorNavOf('agenda'),
+  doctorNavOf('pacientes'),
+  doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
+  doctorNavOf('contenido', { labelKey: 'mm2.common.nav.livesContenidos' }),
+  doctorNavOf('comunidad'),
+];
+const doctorMoreNav: DoctorNavItem[] = [doctorNavOf('aprendizaje'), doctorNavOf('cuenta')];
+const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
+// Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
 const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 
 // ============================================================================
@@ -121,8 +132,8 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
 
   if (role === 'doctor') {
     return doctorNav
-      .filter(s => DOCTOR_BOTTOM_TABS.includes(s.sectionId))
-      .map(s => ({ label: t(s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId }));
+      .filter(s => DOCTOR_BOTTOM_TABS.includes(s.navId))
+      .map(s => ({ label: t(s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId, navId: s.navId }));
   }
 
   if (role === 'patient') {
@@ -260,7 +271,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Píldora superior: primarios + "Más".
   const { primaryNav, moreNav } = useMemo(() => {
     if (role === 'doctor') {
-      return { primaryNav: doctorNav.filter(i => keepItem(i, 'doctor')) as NavItem[], moreNav: [] as NavItem[] };
+      return {
+        primaryNav: doctorPrimaryNav.filter(i => keepItem(i, 'doctor')) as NavItem[],
+        moreNav: doctorMoreNav.filter(i => keepItem(i, 'doctor')) as NavItem[],
+      };
     }
     // Paciente: todos directos (cliente 2026-07-09); resto: 5 + Más.
     if (role === 'patient') return { primaryNav: filteredNavItems, moreNav: [] as NavItem[] };
@@ -275,10 +289,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const moreNavItems = useMemo(() => {
     const bottomTabPaths = bottomTabs.map(tab => pathOf(tab.href));
-    const all = role === 'doctor' ? primaryNav : filteredNavItems;
-    // Médico: Cuenta ya sale en el bloque de cuenta del cajón.
-    return all.filter(item =>
-      !bottomTabPaths.includes(pathOf(item.href)) && !(role === 'doctor' && (item as DoctorNavItem).sectionId === 'cuenta'));
+    if (role === 'doctor') {
+      // Médico: por identificador (Agenda y Consultas comparten ruta); Cuenta ya sale en el bloque de cuenta del cajón.
+      return ([...primaryNav, ...moreNav] as DoctorNavItem[]).filter(item =>
+        !DOCTOR_BOTTOM_TABS.includes(item.navId) && item.navId !== 'cuenta');
+    }
+    return filteredNavItems.filter(item => !bottomTabPaths.includes(pathOf(item.href)));
   }, [filteredNavItems, bottomTabs, primaryNav, moreNav, role]);
 
   const isActiveHref = (href: string) => {
@@ -290,8 +306,16 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   // Médico: la sección se ilumina por la ruta (una ficha de paciente es Pacientes, /lives es Contenido…).
   const activeSection = role === 'doctor' ? doctorSectionForPath(location.pathname) : null;
-  const isActiveItem = (item: { href: string; sectionId?: string }) =>
-    item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
+  // «Consultas» es Agenda › Consultas: se ilumina ella y no Agenda (y viceversa).
+  const onConsultas = activeSection === 'agenda' && (
+    new URLSearchParams(location.search).get('tab') === 'consultas'
+    || location.pathname.startsWith('/doctor/consultations')
+    || location.pathname.startsWith('/my-appointments'));
+  const isActiveItem = (item: { href: string; sectionId?: string; navId?: string }) => {
+    if (item.navId === 'consultas') return onConsultas;
+    if (item.navId === 'agenda') return activeSection === 'agenda' && !onConsultas;
+    return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
+  };
 
   const handleLogout = () => {
     logout();
@@ -329,7 +353,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         <button
           type="button"
           aria-label={t('nav.more')}
-          className={moreNav.some(i => isActiveHref(i.href)) ? 'is-active' : ''}
+          className={moreNav.some(i => isActiveItem(i as DoctorNavItem)) ? 'is-active' : ''}
         >
           <span>{t('nav.more')}</span>
           <ChevronDown className="w-3.5 h-3.5" />
@@ -434,6 +458,17 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
               {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" aria-label={t('nav.wallet')} className="hidden sm:inline-flex app-header-control px-2.5">
+                  <Wallet className="w-4 h-4" />
+                </Link>
+              )}
+              {/* Médico: la cartera de las maquetas lleva a Cuenta › Finanzas (el análisis quita «Saldo» como ruta suelta). */}
+              {role === 'doctor' && (
+                <Link
+                  to={doctorHref('cuenta', { tab: 'finanzas' })}
+                  aria-label={t('mm2.common.nav.wallet')}
+                  title={t('mm2.common.nav.wallet')}
+                  className={`hidden sm:inline-flex app-header-control px-2.5 ${activeSection === 'cuenta' && location.search.includes('finanzas') ? 'app-header-nav-active' : ''}`}
+                >
                   <Wallet className="w-4 h-4" />
                 </Link>
               )}
