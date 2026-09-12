@@ -163,7 +163,7 @@ export default function DoctorAgenda() {
   }, [range.end]);
 
   const { events, loading, error, refresh, createBlock, removeBlock } = useDoctorAgenda(fetchStart, fetchEnd);
-  const { ranges: scheduleRanges, reload: reloadSchedule } = useDoctorScheduleRanges();
+  const { ranges: scheduleRanges, reload: reloadSchedule, loading: scheduleLoading } = useDoctorScheduleRanges();
 
   const passesFilter = (e: AgendaEvent) => {
     if (filter === 'all') return true;
@@ -645,6 +645,19 @@ export default function DoctorAgenda() {
                 </div>
               ) : (
                 timeGrid([cursor])
+              )}
+
+              {/* Sin horario guardado la agenda NO inventa horas: se dice y se ofrece configurarlo
+                  (antes salía «Disponible 08:00–20:00» sacado del horario de fábrica). */}
+              {!scheduleLoading && !scheduleRanges.some(r => r.is_active) && (
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-3 rounded-xl px-3 py-2" style={{ background: '#eef4fd' }}>
+                  <span className="text-sm" style={{ color: 'var(--pro-ink-2)' }}>
+                    <Clock className="inline w-4 h-4 -mt-0.5 mr-1" />{t('mm2.agenda.noSchedule')}
+                  </span>
+                  <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => changeTab('disponibilidad')}>
+                    {t('mm2.agenda.noScheduleCta')}
+                  </button>
+                </div>
               )}
 
               {/* Leyenda + zona horaria */}

@@ -87,8 +87,11 @@ export function validateRanges(ranges: ScheduleRange[]): string | null {
 
 function legacyToRanges(profile: any): ScheduleRange[] {
   const days: string[] = Array.isArray(profile?.office_days) ? profile.office_days : [];
-  const start = hhmm(profile?.office_hours_start || '08:00');
-  const end = hhmm(profile?.office_hours_end || '20:00');
+  // Sin horas guardadas NO hay horario. Antes se rellenaba con 08:00–20:00 y la Agenda
+  // pintaba «Disponible» en días que el médico nunca configuró.
+  if (!profile?.office_hours_start || !profile?.office_hours_end) return [];
+  const start = hhmm(profile.office_hours_start);
+  const end = hhmm(profile.office_hours_end);
   if (end <= start) return [];
   return days
     .map((d) => WEEKDAY_KEYS.indexOf(String(d).toLowerCase() as (typeof WEEKDAY_KEYS)[number]))

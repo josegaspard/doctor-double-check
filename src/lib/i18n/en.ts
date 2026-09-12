@@ -9613,6 +9613,8 @@ export const en = {
       meetingsHint: 'Meetings and sessions with colleagues.',
       meetingsTitle: 'Meetings',
       newConsultation: 'New consultation',
+      noSchedule: 'You haven\'t set your office hours yet, so the calendar shows no available time.',
+      noScheduleCta: 'Set office hours',
       subtitle: 'Your calendar, consultations, office hours and meetings in one place.',
       tabsLabel: 'Schedule sections',
       title: 'Schedule',

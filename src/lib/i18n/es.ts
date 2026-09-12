@@ -9671,6 +9671,8 @@ export const es = {
       meetingsHint: 'Reuniones y sesiones con colegas.',
       meetingsTitle: 'Reuniones',
       newConsultation: 'Nueva consulta',
+      noSchedule: 'Aún no configuraste tu horario de atención: la agenda no muestra horas disponibles.',
+      noScheduleCta: 'Configurar horario',
       subtitle: 'Tu calendario, tus consultas, tu horario de atención y tus reuniones en un solo lugar.',
       tabsLabel: 'Secciones de la agenda',
       title: 'Agenda',
