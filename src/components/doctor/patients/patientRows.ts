@@ -56,23 +56,44 @@ export interface ParseResult {
   tooMany: boolean;
 }
 
+// Cabeceras reconocidas en los 8 idiomas de la app (es, en, pt, fr, it, de, ca, zh), ya
+// normalizadas con normHeader (sin acentos, espacios ni signos). En fr, ca, de e it el apellido
+// suele ir en su propia columna («Nom», «Cognom», «Nachname», «Cognome»): va en lastName, y como el
+// nombre completo se compone `nombre + apellidos`, una sola columna «Nom» también funciona.
 const HEADER_SYNONYMS: Record<'name' | 'lastName' | 'email' | 'phone' | 'note', string[]> = {
   name: [
     'nombre', 'nombres', 'nombrecompleto', 'nombreyapellido', 'nombreyapellidos', 'nombredelpaciente',
     'paciente', 'name', 'fullname', 'firstname', 'patient', 'patientname',
+    'nome', 'nomecompleto', 'nomedopaciente', 'prenom', 'nomcomplet', 'nomedelpaziente', 'pazient', 'paziente',
+    'vorname', 'vollstandigername', 'patientenname', 'nomcomplert', 'pacient',
+    '姓名', '名字', '全名', '患者', '患者姓名', '病人', '名',
   ],
   lastName: [
     'apellido', 'apellidos', 'apellidopaterno', 'apellidomaterno', 'primerapellido', 'segundoapellido',
     'lastname', 'surname', 'familyname',
+    'sobrenome', 'nom', 'nomdefamille', 'cognome', 'nachname', 'familienname', 'cognom', 'cognoms',
+    '姓', '姓氏',
   ],
-  email: ['correo', 'correoelectronico', 'email', 'mail', 'emailaddress', 'correoe', 'ecorreo'],
+  email: [
+    'correo', 'correoelectronico', 'email', 'mail', 'emailaddress', 'correoe', 'ecorreo',
+    'correioeletronico', 'enderecodeemail', 'courriel', 'adresseemail', 'adressemail',
+    'posta', 'postaelettronica', 'indirizzoemail', 'emailadresse', 'correu', 'correuelectronic',
+    '邮箱', '电子邮件', '电子邮箱', '邮件', '邮箱地址',
+  ],
   phone: [
     'telefono', 'tel', 'celular', 'cel', 'movil', 'whatsapp', 'phone', 'mobile', 'telefonocelular',
     'numerodetelefono', 'telefonomovil', 'phonenumber', 'cellphone', 'numero',
+    'telefone', 'telemovel', 'numerodetelefone', 'telephone', 'portable', 'numerodetelephone',
+    'cellulare', 'numeroditelefono', 'telefon', 'handy', 'mobiltelefon', 'telefonnummer', 'mobil',
+    '电话', '手机', '手机号', '手机号码', '电话号码', '联系电话',
   ],
   note: [
     'nota', 'notas', 'observacion', 'observaciones', 'comentario', 'comentarios', 'note', 'notes',
     'comment', 'comments', 'motivo', 'detalle',
+    'observacao', 'observacoes', 'remarque', 'remarques', 'commentaire', 'commentaires',
+    'osservazioni', 'osservazione', 'commento', 'notiz', 'notizen', 'bemerkung', 'bemerkungen',
+    'anmerkung', 'kommentar', 'observacions', 'comentaris',
+    '备注', '说明', '注释', '附注',
   ],
 };
 
@@ -81,7 +102,8 @@ const normHeader = (s: string) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+    // Letras latinas sin acento, cifras e ideogramas chinos (cabeceras en zh como «姓名»).
+    .replace(/[^a-z0-9\u4e00-\u9fff]/g, '');
 
 const CONTROL_RE = /[\u0000-\u001f\u007f]/g;
 

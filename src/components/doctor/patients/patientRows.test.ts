@@ -88,4 +88,36 @@ describe('patientRows · lectura de la lista del médico', () => {
     expect(cleanPhone('+52 (55) 1234-5678')).toBe('+525512345678');
     expect(validatePatientRow({ full_name: 'Ana', email: 'a@x.com', phone: null, note: 'x'.repeat(501) })).toBe('note_too_long');
   });
+
+  it('reconoce la fila de títulos en los 8 idiomas de la app (la misma que enseña el ejemplo de pegado)', () => {
+    const cabeceras: Record<string, string> = {
+      es: 'Nombre\tCorreo\tTeléfono\tNota',
+      en: 'Name\tEmail\tPhone\tNote',
+      pt: 'Nome\tE-mail\tTelefone\tNota',
+      fr: 'Nom\tE-mail\tTéléphone\tNote',
+      it: 'Nome\tE-mail\tTelefono\tNota',
+      de: 'Name\tE-Mail\tTelefon\tNotiz',
+      ca: 'Nom\tCorreu\tTelèfon\tNota',
+      zh: '姓名\t邮箱\t电话\t备注',
+    };
+    for (const [lang, header] of Object.entries(cabeceras)) {
+      const r = parsePatientText(`${header}\nAna Ruiz\tana@x.com\t5512345678\tControl\n`);
+      expect(r.hasHeader, lang).toBe(true);
+      expect(r.rows, lang).toHaveLength(1);
+      expect(r.rows[0], lang).toMatchObject({
+        full_name: 'Ana Ruiz',
+        email: 'ana@x.com',
+        phone: '5512345678',
+        note: 'Control',
+        issue: null,
+      });
+    }
+  });
+
+  it('nombre y apellido en columnas separadas (Prénom / Nom, Vorname / Nachname)', () => {
+    const fr = parsePatientText('Prénom;Nom;Courriel;Portable\nMarie;Dupont;marie@x.fr;0612345678\n');
+    expect(fr.rows[0]).toMatchObject({ full_name: 'Marie Dupont', email: 'marie@x.fr', phone: '0612345678', issue: null });
+    const de = parsePatientText('Vorname,Nachname,E-Mail,Telefon\nJonas,Müller,jonas@x.de,01511234567\n');
+    expect(de.rows[0]).toMatchObject({ full_name: 'Jonas Müller', email: 'jonas@x.de', phone: '01511234567', issue: null });
+  });
 });
