@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins, Pin, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -40,7 +42,9 @@ interface LiveChatProps {
 
 export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatProps) {
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  // Pagar un mensaje destacado pasa por el resumen (importe y saldo resultante).
+  const { confirm, dialog } = useConfirmAction();
   const { balance, refreshWallet } = useWallet();
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -288,6 +292,28 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   };
 
   const handlePayAndSend = async (method: 'wallet' | 'stripe') => {
+    // El método elegido NO cobra: antes va el resumen con importe y saldo.
+    const ok = await confirm({
+      title: t('mm2.confirm.payLiveChat.title'),
+      description: t('mm2.confirm.payLiveChat.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.payCommon.conceptLabel'), value: t('mm2.confirm.payLiveChat.conceptValue') },
+        {
+          label: t('mm2.confirm.payCommon.methodLabel'),
+          value: method === 'wallet' ? t('mm2.confirm.payCommon.methodWallet') : t('mm2.confirm.payCommon.methodCard'),
+        },
+        ...(method === 'wallet'
+          ? [
+              { label: t('mm2.confirm.payCommon.balanceNowLabel'), value: money2(balance, language) },
+              { label: t('mm2.confirm.payCommon.balanceAfterLabel'), value: money2(Math.max(0, balance - chatPrice), language) },
+            ]
+          : []),
+        { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(chatPrice, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
+    });
+    if (!ok) return;
     setShowPaymentPicker(false);
     setIsProcessingPayment(true);
 
@@ -696,6 +722,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
           </div>
         )}
       </div>
+
+      {dialog}
     </div>
   );
 }

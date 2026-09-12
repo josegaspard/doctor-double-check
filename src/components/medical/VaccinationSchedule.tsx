@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Syringe, Bell, BellOff, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -52,6 +53,9 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
   const [patientDob, setPatientDob] = useState<string | null>(null);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
+  // El nombre de la vacuna ya no se pide con prompt() (salía en el idioma del navegador).
+  const [customVaccineOpen, setCustomVaccineOpen] = useState(false);
+  const [customVaccineName, setCustomVaccineName] = useState('');
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -141,6 +145,29 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
     else toast.success(val ? t('vaccinationSchedule.remindersOn') : t('vaccinationSchedule.remindersOff'));
   };
 
+  const addCustomVaccine = async () => {
+    const name = customVaccineName.trim();
+    if (!name || !user?.id) return;
+    const slug = `custom:${Date.now().toString(36)}:${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 32)}`;
+    const { data, error } = await supabase
+      .from('patient_vaccinations')
+      .insert({
+        patient_id: user.id,
+        child_id: activeChildId === 'self' ? null : activeChildId,
+        vaccine_key: slug,
+        dose_number: 1,
+        applied: false,
+        application_date: null,
+        lot: null,
+        notes: name,
+      })
+      .select()
+      .single();
+    if (error) { toast.error(t('vaccinationSchedule.addError')); return; }
+    setRows(prev => [...prev, data as PatientVaccinationRow]);
+    setCustomVaccineOpen(false);
+  };
+
   if (loading) {
     return (
       <Card className="mb-6">
@@ -204,28 +231,7 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={async () => {
-                  const name = prompt(t('vaccinationSchedule.promptVaccineName'));
-                  if (!name) return;
-                  const slug = `custom:${Date.now().toString(36)}:${name.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 32)}`;
-                  if (!user?.id) return;
-                  const { data, error } = await supabase
-                    .from('patient_vaccinations')
-                    .insert({
-                      patient_id: user.id,
-                      child_id: activeChildId === 'self' ? null : activeChildId,
-                      vaccine_key: slug,
-                      dose_number: 1,
-                      applied: false,
-                      application_date: null,
-                      lot: null,
-                      notes: name,
-                    })
-                    .select()
-                    .single();
-                  if (error) { toast.error(t('vaccinationSchedule.addError')); return; }
-                  setRows(prev => [...prev, data as PatientVaccinationRow]);
-                }}
+                onClick={() => { setCustomVaccineName(''); setCustomVaccineOpen(true); }}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" /> {t('vaccinationSchedule.add')}
               </Button>
@@ -360,6 +366,28 @@ export function VaccinationSchedule({ childId, childDob }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={customVaccineOpen} onOpenChange={setCustomVaccineOpen}>
+        <DialogContent className="bg-white sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-secondary">{t('vaccinationSchedule.otherVaccine')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="custom-vaccine-name">{t('vaccinationSchedule.promptVaccineName')}</Label>
+            <Input
+              id="custom-vaccine-name"
+              value={customVaccineName}
+              onChange={e => setCustomVaccineName(e.target.value)}
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') addCustomVaccine(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCustomVaccineOpen(false)}>{t('mm2.confirm.cancel')}</Button>
+            <Button onClick={addCustomVaccine} disabled={!customVaccineName.trim()}>{t('common.save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

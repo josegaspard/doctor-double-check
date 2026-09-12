@@ -4,13 +4,34 @@ import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { useAppDateFormat } from "@/lib/dateFormat";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  locale,
+  weekStartsOn,
+  formatters,
+  ...props
+}: CalendarProps) {
+  // El calendario nace en el idioma de la sesión. Antes no recibía locale y
+  // react-day-picker pintaba meses y días en INGLÉS en los 8 idiomas (también
+  // en castellano). Quien pase locale o weekStartsOn a mano sigue mandando.
+  const fmt = useAppDateFormat();
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      locale={locale ?? fmt.locale}
+      weekStartsOn={weekStartsOn ?? fmt.weekStartsOn}
+      formatters={{
+        // "Septiembre de 2026" con mayúscula inicial, igual que el resto de la app.
+        formatCaption: (month: Date) => fmt.formatMonthYear(month),
+        ...formatters,
+      }}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",

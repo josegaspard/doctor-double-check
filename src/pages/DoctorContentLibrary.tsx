@@ -10,10 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { ContentPreviewModal } from '@/components/content/ContentPreviewModal';
 import {
   FileText, Image as ImageIcon, Video, Search, Plus, Trash2, Eye, Users, Stethoscope,
@@ -23,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fill, money, money2, fmtDate, norm, initialsOf } from '@/lib/proFormat';
+import { doctorHref } from '@/lib/doctorSections';
 
 interface DoctorContent {
   id: string;
@@ -64,10 +62,14 @@ const getTypeIcon = (type: string) => {
   }
 };
 
-export default function DoctorContentLibrary() {
+export default function DoctorContentLibrary({ embedded = false }: { embedded?: boolean } = {}) {
+  // embedded=true: se pinta dentro de Contenido › Publicaciones (ContentHub),
+  // sin su propio MainLayout ni el título de página (11-sep-2026).
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
 
   const [contents, setContents] = useState<DoctorContent[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -77,7 +79,6 @@ export default function DoctorContentLibrary() {
   const [stateFilter, setStateFilter] = useState<'all' | State>('all');
   const [sort, setSort] = useState<Sort>('recent');
   const [section, setSection] = useState<Section>('overview');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [previewContent, setPreviewContent] = useState<DoctorContent | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -85,7 +86,6 @@ export default function DoctorContentLibrary() {
   // Gestión múltiple (se conserva de la versión anterior)
   const [isManaging, setIsManaging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const fetchContents = useCallback(async () => {
@@ -224,24 +224,42 @@ export default function DoctorContentLibrary() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  // Borrar es irreversible (registro + archivos en el bucket): pasa por el
+  // modal de revisión común, nunca al primer clic (regla del encargo,
+  // 11-sep-2026). Antes iba por un AlertDialog propio con un solo texto fijo;
+  // ahora nombra la pieza y usa el mismo componente que el resto del hub.
+  const handleDeleteOne = async (c: DoctorContent) => {
+    const ok = await confirm({
+      title: t('doctorLibrary.deleteTitle'),
+      description: t('doctorLibrary.deleteDescription'),
+      details: [{ label: t('mm2.content.hub.publications.fieldTitle'), value: c.title }],
+      confirmLabel: t('common.delete'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     setIsDeleting(true);
     try {
-      await deleteContent(deleteId);
-      setContents(prev => prev.filter(c => c.id !== deleteId));
+      await deleteContent(c.id);
+      setContents(prev => prev.filter(x => x.id !== c.id));
       toast.success(t('doctorLibrary.deleted'));
     } catch (error: any) {
       console.error('Error deleting content:', error);
       toast.error(`${t('doctorLibrary.errorDeleting')}: ${error.message || ''}`);
     } finally {
       setIsDeleting(false);
-      setDeleteId(null);
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
+    const ok = await confirm({
+      title: t('manage.confirmDeleteTitle'),
+      description: t('manage.confirmDeleteDescription'),
+      details: [{ label: t('manage.deleteSelected'), value: selectedIds.size }],
+      confirmLabel: t('common.delete'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     setIsBulkDeleting(true);
     try {
       for (const id of Array.from(selectedIds)) await deleteContent(id);
@@ -254,7 +272,6 @@ export default function DoctorContentLibrary() {
       toast.error(`${t('doctorLibrary.errorDeleting')}: ${error.message || ''}`);
     } finally {
       setIsBulkDeleting(false);
-      setShowBulkDeleteDialog(false);
     }
   };
 
@@ -271,14 +288,28 @@ export default function DoctorContentLibrary() {
   };
 
   /** Publicar / retirar: es un solo campo de la base, el que decide si la pieza
-      se ve en el canal. Sin esto la sección «Borradores» no tendría salida. */
+      se ve en el canal. Sin esto la sección «Borradores» no tendría salida.
+      Ambas direcciones pasan por el modal de revisión común (regla del
+      encargo, 11-sep-2026): publicar la hace visible y vendible; retirar la
+      quita del canal aunque ya tuviera compradores. */
   const togglePublic = async (c: DoctorContent) => {
+    const next = !c.is_public;
+    const ok = await confirm({
+      title: next ? t('pro.contentPanel.publish') : t('pro.contentPanel.unpublish'),
+      description: next ? t('mm2.content.hub.publications.publishDesc') : t('mm2.content.hub.publications.unpublishDesc'),
+      details: [
+        { label: t('mm2.content.hub.publications.fieldTitle'), value: c.title },
+        ...(c.price > 0 ? [{ label: t('mm2.content.hub.publications.priceLabel'), value: money2(Number(c.price), language) }] : []),
+      ],
+      confirmLabel: next ? t('pro.contentPanel.publish') : t('pro.contentPanel.unpublish'),
+    });
+    if (!ok) return;
     setTogglingId(c.id);
-    const { error } = await supabase.from('doctor_content').update({ is_public: !c.is_public } as any).eq('id', c.id);
+    const { error } = await supabase.from('doctor_content').update({ is_public: next } as any).eq('id', c.id);
     setTogglingId(null);
     if (error) { toast.error(error.message); return; }
-    setContents(prev => prev.map(x => (x.id === c.id ? { ...x, is_public: !c.is_public } : x)));
-    toast.success(!c.is_public ? t('pro.contentPanel.publishedOk') : t('pro.contentPanel.unpublishedOk'));
+    setContents(prev => prev.map(x => (x.id === c.id ? { ...x, is_public: next } : x)));
+    toast.success(next ? t('pro.contentPanel.publishedOk') : t('pro.contentPanel.unpublishedOk'));
   };
 
   // ------------------------------------------------------------------- vista
@@ -351,7 +382,7 @@ export default function DoctorContentLibrary() {
                       {c.is_public ? t('pro.contentPanel.unpublish') : t('pro.contentPanel.publish')}
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(c.id)}>
+                  <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteOne(c)}>
                     {t('pro.contentPanel.delete')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -396,6 +427,7 @@ export default function DoctorContentLibrary() {
   // primer render (rol aún sin cargar) ejecuta menos hooks que el siguiente y
   // React revienta con «Rendered more hooks than during the previous render».
   if (role !== 'doctor' && role !== 'resident' && role !== 'admin') {
+    if (embedded) return null; // ContentHub ya filtró el rol antes de llegar aquí
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-12">
@@ -411,17 +443,25 @@ export default function DoctorContentLibrary() {
   }
 
   return (
-    <MainLayout>
-      <div className="pro-container pro-page">
-        <div className="pro-page-head">
-          <div className="min-w-0">
-            <h1 className="pro-page-title"><LayoutGrid className="w-7 h-7" /> <span className="truncate">{t('pro.contentPanel.title')}</span></h1>
-            <p className="pro-page-sub">{t('pro.contentPanel.subtitle')}</p>
+    <Wrapper>
+      <div className={embedded ? '' : 'pro-container pro-page'}>
+        {!embedded ? (
+          <div className="pro-page-head">
+            <div className="min-w-0">
+              <h1 className="pro-page-title"><LayoutGrid className="w-7 h-7" /> <span className="truncate">{t('pro.contentPanel.title')}</span></h1>
+              <p className="pro-page-sub">{t('pro.contentPanel.subtitle')}</p>
+            </div>
+            <Link to="/doctor/upload" className="pro-btn pro-btn-live w-full sm:w-auto">
+              <Plus /> {t('pro.contentPanel.create')}
+            </Link>
           </div>
-          <Link to="/doctor/upload" className="pro-btn pro-btn-live w-full sm:w-auto">
-            <Plus /> {t('pro.contentPanel.create')}
-          </Link>
-        </div>
+        ) : (
+          <div className="flex justify-end mb-3">
+            <Link to={doctorHref('contenido', { tab: 'crear', crear: 'subir' })} className="pro-btn pro-btn-live">
+              <Plus /> {t('pro.contentPanel.create')}
+            </Link>
+          </div>
+        )}
 
         <div className="pro-work pro-work-side">
           {/* Carril de secciones */}
@@ -520,7 +560,7 @@ export default function DoctorContentLibrary() {
                     <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={toggleSelectAll}>
                       {selectedIds.size === visible.length && visible.length > 0 ? t('manage.deselectAll') : t('manage.selectAll')}
                     </button>
-                    <button type="button" className="pro-btn pro-btn-live pro-btn-xs" disabled={selectedIds.size === 0} onClick={() => setShowBulkDeleteDialog(true)}>
+                    <button type="button" className="pro-btn pro-btn-live pro-btn-xs" disabled={selectedIds.size === 0 || isBulkDeleting} onClick={handleBulkDelete}>
                       <Trash2 /> {t('manage.deleteSelected')} ({selectedIds.size})
                     </button>
                   </div>
@@ -674,43 +714,15 @@ export default function DoctorContentLibrary() {
         </div>
       </div>
 
-      {/* Borrado individual */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('doctorLibrary.deleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('doctorLibrary.deleteDescription')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('doctorLibrary.deleting')}</> : t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Borrado múltiple */}
-      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('manage.confirmDeleteTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('manage.confirmDeleteDescription')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} disabled={isBulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isBulkDeleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('manage.deleting')}</> : <><Trash2 className="w-4 h-4 mr-2" />{t('common.delete')} ({selectedIds.size})</>}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Borrar (individual o en lote) y publicar/retirar ya pasan por el
+          modal de revisión común (useConfirmAction) — sin AlertDialog propio. */}
+      {dialog}
 
       <ContentPreviewModal
         isOpen={!!previewContent}
         onClose={() => setPreviewContent(null)}
         content={previewContent}
       />
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,19 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { doctorHref } from '@/lib/doctorSections';
 import {
   Upload, Video, FileText, Image, ArrowLeft, CheckCircle, AlertTriangle,
-  Loader2, X, Clock, Users, Trash2, Settings2, CheckSquare, Stethoscope, Globe,
+  Loader2, X, Users, Stethoscope, Globe, ArrowRight, FolderOpen,
 } from 'lucide-react';
 import { ContentAudience } from '@/components/content/AudienceSelector';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,25 +37,12 @@ const CONTENT_CATEGORIES = [
   'Otro',
 ];
 
-interface UploadedContent {
-  id: string;
-  type: 'video' | 'pdf' | 'image' | 'presentation';
-  title: string;
-  description: string;
-  category: string;
-  isPublic: boolean;
-  audienceType: ContentAudience;
-  uploadedAt: Date;
-  fileUrl?: string;
-  thumbnailUrl?: string;
-  isMasterclass?: boolean;
-}
-
 export default function DoctorUpload({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -71,43 +54,7 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
   const [contentTarget, setContentTarget] = useState<'medical' | 'patients' | 'both' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedContent, setUploadedContent] = useState<UploadedContent[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // Manage mode state
-  const [manageMode, setManageMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null); // null = bulk
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  // Load existing content
-  React.useEffect(() => {
-    const loadContent = async () => {
-      if (!user?.id) return;
-      const { data } = await supabase
-        .from('doctor_content')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setUploadedContent(data.map(c => ({
-          id: c.id,
-          type: c.type as 'video' | 'pdf' | 'image',
-          title: c.title,
-          description: c.description || '',
-          category: c.category || '',
-          isPublic: c.is_public,
-          audienceType: c.audience_type as ContentAudience,
-          uploadedAt: new Date(c.created_at),
-          fileUrl: c.file_url,
-          thumbnailUrl: c.thumbnail_url || undefined,
-        })));
-      }
-    };
-    loadContent();
-  }, [user?.id]);
 
   // Redirect non-creators (doctores y residentes pueden subir contenido; no cuando va
   // embebido dentro de otra página, p.ej. Educación).
@@ -142,82 +89,38 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
     if (file) setSelectedFile(file);
   };
 
-  const extractStoragePath = (url: string): string | null => {
-    if (!url) return null;
-    // If it's already a relative path (not a URL)
-    if (!url.startsWith('http')) return url;
-    const decoded = decodeURIComponent(url);
-    const match = decoded.match(/\/object\/(?:public|sign)\/([^?]+)/);
-    return match ? match[1] : null;
-  };
-
-  const deleteContentItems = async (ids: string[]) => {
-    setIsDeleting(true);
-    try {
-      const itemsToDelete = uploadedContent.filter(c => ids.includes(c.id));
-
-      // Delete from DB first
-      const { error } = await supabase.from('doctor_content').delete().in('id', ids);
-      if (error) throw error;
-
-      // Delete storage files
-      for (const item of itemsToDelete) {
-        if (item.fileUrl) {
-          const path = extractStoragePath(item.fileUrl);
-          if (path) {
-            // path might be "bucket/folder/file" or just "folder/file"
-            const storagePath = path.startsWith('doctor-content/') ? path.replace('doctor-content/', '') : path;
-            await supabase.storage.from('doctor-content').remove([storagePath]);
-          }
-        }
-        if (item.thumbnailUrl) {
-          const thumbPath = extractStoragePath(item.thumbnailUrl);
-          if (thumbPath) {
-            const storagePath = thumbPath.startsWith('thumbnails/') ? thumbPath.replace('thumbnails/', '') : thumbPath;
-            await supabase.storage.from('thumbnails').remove([storagePath]);
-          }
-        }
-      }
-
-      setUploadedContent(prev => prev.filter(c => !ids.includes(c.id)));
-      setSelectedIds(new Set());
-      setManageMode(false);
-      toast({ title: ids.length > 1 ? t('doctorUploadPage.toastDeletedPlural').replace('{count}', String(ids.length)) : t('doctorUploadPage.toastDeletedSingular') });
-    } catch (err: any) {
-      console.error('Delete error:', err);
-      toast({ title: t('doctorUploadPage.toastDeleteError'), description: err.message, variant: 'destructive' });
-    } finally {
-      setIsDeleting(false);
-      setDeleteDialogOpen(false);
-      setDeleteTarget(null);
-    }
-  };
-
-  const handleDeleteConfirm = () => {
-    if (deleteTarget) {
-      deleteContentItems([deleteTarget]);
-    } else {
-      deleteContentItems(Array.from(selectedIds));
-    }
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === uploadedContent.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(uploadedContent.map(c => c.id)));
-    }
+  // Publicar (o guardar en privado) es una acción con consecuencias: pasa por
+  // el modal de revisión común antes de subir el archivo e insertar en
+  // doctor_content — nunca al primer clic (regla del encargo, 11-sep-2026).
+  // El "Mi contenido" con borrar/gestionar se quitó de aquí: ya vive completo
+  // en Contenido › Publicaciones (DoctorContentLibrary), que es donde se
+  // administra lo ya subido.
+  const audienceLabel = () => {
+    if (audienceType === 'professionals') return t('doctorUploadPage.medicalContentLabel');
+    if (audienceType === 'patients') return t('doctorUploadPage.patientsContentLabel');
+    return t('doctorUploadPage.bothContentLabel');
   };
 
   const handleUpload = async () => {
+    if (!selectedFile || !title || !category || !user?.id) return;
+    const ok = await confirm({
+      title: t('mm2.content.hub.crear.upload.confirmTitle'),
+      description: isPublic
+        ? t('mm2.content.hub.crear.upload.confirmDescPublic')
+        : t('mm2.content.hub.crear.upload.confirmDescPrivate'),
+      details: [
+        { label: t('doctorUploadPage.titleLabel'), value: title },
+        { label: t('doctorUploadPage.categoryLabel'), value: t(`medical.category.${category}`) },
+        { label: t('doctorUploadPage.audienceQuestion'), value: audienceLabel() },
+        { label: t('doctorUploadPage.publicContentLabel'), value: isPublic ? t('mm2.content.hub.crear.upload.visPublic') : t('mm2.content.hub.crear.upload.visPrivate') },
+      ],
+      confirmLabel: t('doctorUploadPage.uploadButton'),
+    });
+    if (!ok) return;
+    await doUpload();
+  };
+
+  const doUpload = async () => {
     if (!selectedFile || !title || !category || !user?.id) return;
     setIsUploading(true);
     setUploadProgress(0);
@@ -234,13 +137,12 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
 
       const insertPayload: any = { creator_id: user.id, type: getFileType(selectedFile), title: title.trim(), description: description.trim() || null, category, is_public: isPublic, audience_type: audienceType, file_url: fileName };
 
-      const { data: contentData, error: dbError } = await supabase
+      const { error: dbError } = await supabase
         .from('doctor_content')
         .insert(insertPayload)
         .select().single();
       if (dbError) throw dbError;
 
-      setUploadedContent(prev => [{ id: contentData.id, type: getFileType(selectedFile), title, description, category, isPublic, audienceType, uploadedAt: new Date(), fileUrl: fileName }, ...prev]);
       setShowSuccess(true);
 
       // Public content goes through admin moderation BEFORE notifying subscribers.
@@ -268,8 +170,6 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
-
-  const deleteCount = deleteTarget ? 1 : selectedIds.size;
 
   const Wrapper = embedded ? React.Fragment : MainLayout;
   return (
@@ -423,112 +323,21 @@ export default function DoctorUpload({ embedded = false }: { embedded?: boolean 
           </CardContent>
         </Card>
 
-        {/* Uploaded Content with manage mode */}
-        {uploadedContent.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{t('doctorUploadPage.myContentTitle').replace('{count}', String(uploadedContent.length))}</CardTitle>
-                <div className="flex items-center gap-2">
-                  {manageMode && (
-                    <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="text-xs gap-1.5">
-                      <CheckSquare className="w-3.5 h-3.5" />
-                      {selectedIds.size === uploadedContent.length ? t('doctorUploadPage.deselectAll') : t('doctorUploadPage.selectAll')}
-                    </Button>
-                  )}
-                  <Button
-                    variant={manageMode ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => { setManageMode(!manageMode); setSelectedIds(new Set()); }}
-                    className="text-xs gap-1.5"
-                  >
-                    <Settings2 className="w-3.5 h-3.5" />
-                    {manageMode ? t('doctorUploadPage.cancelButton') : t('doctorUploadPage.manageButton')}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {uploadedContent.map(content => (
-                  <div key={content.id} className={`p-3 rounded-lg transition-colors ${manageMode && selectedIds.has(content.id) ? 'bg-primary/5 ring-1 ring-primary/20' : 'bg-muted/50'}`}>
-                    {/* Mobile: stacked layout / Desktop: row layout */}
-                    <div className="flex items-start sm:items-center gap-3">
-                      {manageMode && (
-                        <Checkbox
-                          checked={selectedIds.has(content.id)}
-                          onCheckedChange={() => toggleSelect(content.id)}
-                          className="mt-1 sm:mt-0"
-                        />
-                      )}
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-background flex items-center justify-center shrink-0">
-                        {getFileIcon(content.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{content.title}</p>
-                        {/* Badges row - wraps on mobile */}
-                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5">{content.category}</Badge>
-                          {content.audienceType === 'professionals' && <Badge variant="warning" className="text-[10px] sm:text-xs gap-1 px-1.5"><Users className="w-3 h-3" /><span className="hidden sm:inline">{t('doctorUploadPage.audienceOnly')} </span>{t('doctorUploadPage.audienceProfShort')}</Badge>}
-                          {content.audienceType === 'patients' && <Badge variant="info" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.audiencePatients')}</Badge>}
-                          {content.isPublic ? <Badge variant="success" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.badgePublic')}</Badge> : <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5">{t('doctorUploadPage.badgePrivate')}</Badge>}
-                        </div>
-                        {/* Date on its own line on mobile */}
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1"><Clock className="w-3 h-3" />{content.uploadedAt.toLocaleDateString('es-MX')}</span>
-                      </div>
-                      {/* Delete button - always visible */}
-                      {!manageMode && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 sm:h-8 sm:w-8 text-destructive/60 hover:text-destructive hover:bg-destructive/10 shrink-0"
-                          onClick={() => { setDeleteTarget(content.id); setDeleteDialogOpen(true); }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Bulk action floating bar */}
-        {manageMode && selectedIds.size > 0 && (
-          <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-xl border border-border rounded-2xl shadow-xl px-5 py-3 flex items-center gap-4">
-            <span className="text-sm font-medium">{selectedIds.size > 1 ? t('doctorUploadPage.selectedCountPlural').replace('{count}', String(selectedIds.size)) : t('doctorUploadPage.selectedCountSingular').replace('{count}', String(selectedIds.size))}</span>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => { setDeleteTarget(null); setDeleteDialogOpen(true); }}
-              className="gap-1.5"
-            >
-              <Trash2 className="w-4 h-4" />{t('doctorUploadPage.deleteButton')}
-            </Button>
+        {/* Lo ya subido (publicar/retirar, borrar, ver estado) se administra en
+            Contenido › Publicaciones — aquí ya no se duplica esa lista
+            (11-sep-2026): esto es solo el paso de "Crear". */}
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3 sm:p-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <FolderOpen className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-muted-foreground truncate">{t('mm2.content.hub.crear.upload.manageHint')}</span>
           </div>
-        )}
-
-        {/* Delete confirmation dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{deleteCount > 1 ? t('doctorUploadPage.deleteConfirmTitlePlural').replace('{count}', String(deleteCount)) : t('doctorUploadPage.deleteConfirmTitleSingular')}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t('doctorUploadPage.deleteConfirmDescription')}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>{t('doctorUploadPage.cancelButton')}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                {t('doctorUploadPage.deleteButton')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          <Link to={doctorHref('contenido', { tab: 'publicaciones' })} className="text-sm font-medium text-primary flex items-center gap-1 flex-shrink-0">
+            {t('mm2.content.hub.crear.upload.manageGo')} <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
+
+      {dialog}
     </Wrapper>
   );
 }

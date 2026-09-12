@@ -42,6 +42,12 @@ function getInitials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
+/** No duplica «Dr./Dra.» si el nombre guardado ya lo trae (bug detectado 11-sep: «Dr. Dra. …»). */
+function displayDoctorName(name: string | null, fallback: string) {
+  if (!name) return fallback;
+  return /^dr[a]?\.?\s/i.test(name.trim()) ? name : `Dr. ${name}`;
+}
+
 /**
  * Lista completa de doctores relacionados a un hospital.
  * Une por especialidad; si no hay match, trae top-rated aprobados como fallback.
@@ -228,7 +234,7 @@ export default function HospitalDoctorsList({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground min-w-0">
                       <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
-                        <span className="truncate">{d.name ? `Dr. ${d.name}` : t('autoI18n.clHospDoctors8')}</span>
+                        <span className="truncate">{displayDoctorName(d.name, t('autoI18n.clHospDoctors8'))}</span>
                         <DoctorBadgeIcon userId={d.user_id} size="sm" className="flex-shrink-0" />
                       </span>
                     </p>

@@ -3,6 +3,7 @@ import { useVault, VaultFile } from '@/contexts/VaultContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +72,8 @@ export default function Vault() {
   const [isDragging, setIsDragging] = useState(false);
   const { role, supabaseUser } = useAuth();
   const { t, language } = useLanguage();
+  // Borrar un archivo del vault pasa por el resumen: no se puede deshacer.
+  const { confirm, dialog } = useConfirmAction();
   const { balance, canAfford, getEffectivePrice } = useWallet();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -367,9 +370,17 @@ export default function Vault() {
     }
   };
 
-  const handleRevokeAccess = async (doctorId: string) => {
+  const handleRevokeAccess = async (doctorId: string, doctorName?: string) => {
     if (!permissionFile) return;
-    
+    const ok = await confirm({
+      title: t('mm2.confirm.vaultRevokeAccess.title'),
+      description: t('mm2.confirm.vaultRevokeAccess.description'),
+      tone: 'destructive',
+      details: [{ label: t('mm2.confirm.vaultRevokeAccess.doctorLabel'), value: doctorName || 'Doctor' }],
+      confirmLabel: t('mm2.confirm.vaultRevokeAccess.confirmLabel'),
+    });
+    if (!ok) return;
+
     setRevokingAccess(doctorId);
     try {
       const result = await revokeAccess(permissionFile.id, doctorId);
@@ -588,6 +599,14 @@ export default function Vault() {
                         {t('ads.permissions')}
                       </Button>
                       <Button variant="ghost" size="sm" onClick={async () => {
+                        const ok = await confirm({
+                          title: t('mm2.confirm.vaultFileDelete.title'),
+                          description: t('mm2.confirm.vaultFileDelete.description'),
+                          tone: 'destructive',
+                          details: [{ label: t('mm2.confirm.vaultFileDelete.fileLabel'), value: file.name }],
+                          confirmLabel: t('mm2.confirm.vaultFileDelete.confirmLabel'),
+                        });
+                        if (!ok) return;
                         const result = await deleteFile(file.id);
                         if (result.success) {
                           toast.success(t('ads.fileDeleted'));
@@ -663,7 +682,7 @@ export default function Vault() {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={() => handleRevokeAccess(perm.doctorId)} 
+                          onClick={() => handleRevokeAccess(perm.doctorId, perm.doctorName)}
                           disabled={revokingAccess === perm.doctorId}
                           className="text-destructive hover:text-destructive gap-1"
                         >
@@ -911,6 +930,7 @@ export default function Vault() {
             )}
           </DialogContent>
         </Dialog>
+        {dialog}
       </div>
     </MainLayout>
   );

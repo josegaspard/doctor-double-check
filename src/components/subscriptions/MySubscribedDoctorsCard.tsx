@@ -66,7 +66,7 @@ export function MySubscribedDoctorsCard() {
             </button>
           ))}
         </div>
-        <Button variant="ghost" className="w-full mt-2 text-sm gap-1" onClick={() => navigate('/settings')}>
+        <Button variant="ghost" className="w-full mt-2 text-sm gap-1" onClick={() => navigate('/settings?s=finanzas&f=suscripciones')}>
           {t('mySubscribedDoctors.manage') || 'Administrar suscripciones'}
           <ChevronRight className="w-3.5 h-3.5" />
         </Button>

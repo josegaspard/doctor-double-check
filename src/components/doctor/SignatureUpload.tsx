@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Upload, Trash2, Loader2, PenLine, Image as ImageIcon } from 'lucide-react';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 export function SignatureUpload() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  // Borrar la firma se usa en recetas ya emitidas: pasa por revisión, no al primer clic.
+  const { confirm, dialog } = useConfirmAction();
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -104,6 +107,13 @@ export function SignatureUpload() {
 
   const handleRemove = async () => {
     if (!user?.id) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.deleteSignature.title'),
+      description: t('mm2.confirm.deleteSignature.description'),
+      tone: 'destructive',
+      confirmLabel: t('mm2.confirm.deleteSignature.confirmLabel'),
+    });
+    if (!ok) return;
     setIsUploading(true);
     try {
       // Borra todos los archivos físicos posibles del usuario
@@ -194,6 +204,7 @@ export function SignatureUpload() {
           onChange={handleUpload}
         />
       </CardContent>
+      {dialog}
     </Card>
   );
 }

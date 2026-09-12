@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Check, X, Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 
 interface ConsultationFeeEditorProps {
   initialFee?: number;
@@ -17,7 +19,9 @@ interface ConsultationFeeEditorProps {
 
 export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inline' }: ConsultationFeeEditorProps) {
   const { user, refreshUser } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  // Cambiar la tarifa afecta el perfil público y los chats nuevos: pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const [fee, setFee] = useState<number>(initialFee ?? 0);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFee, setEditedFee] = useState('');
@@ -51,6 +55,19 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
       toast.error(t('doctorLibrary.errorUpdatingPrice'));
       return;
     }
+
+    const ok = await confirm({
+      title: t('mm2.confirm.consultationFee.title'),
+      description: newFee === 0
+        ? t('mm2.confirm.consultationFee.descriptionFree')
+        : t('mm2.confirm.consultationFee.description'),
+      details: [
+        { label: t('mm2.confirm.consultationFee.previousLabel'), value: isFree ? t('doctorLibrary.free') : money2(fee, language) },
+        { label: t('mm2.confirm.consultationFee.newLabel'), value: newFee === 0 ? t('doctorLibrary.free') : money2(newFee, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.confirm'),
+    });
+    if (!ok) return;
 
     setIsSaving(true);
     try {
@@ -115,6 +132,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
             </motion.div>
           )}
         </AnimatePresence>
+        {dialog}
       </div>
     );
   }
@@ -161,6 +179,7 @@ export function ConsultationFeeEditor({ initialFee, onFeeChanged, variant = 'inl
           </motion.p>
         )}
       </AnimatePresence>
+      {dialog}
     </div>
   );
 }

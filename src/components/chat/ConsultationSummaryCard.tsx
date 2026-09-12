@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { FileText, Stethoscope, ClipboardList, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -22,16 +26,33 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
   const { t } = useLanguage();
   const [summary, setSummary] = useState<ConsultationSummary | null>(null);
   const [sending, setSending] = useState(false);
+  // El destinatario ya no se pide con prompt(): un diálogo propio con el correo
+  // y, después, el resumen común antes de enviar datos clínicos fuera de la plataforma.
+  const { confirm, dialog } = useConfirmAction();
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
 
-  const sendByEmail = async () => {
+  const openEmailDialog = () => {
     if (!summary) return;
-    const to = prompt(t('fix20.chat.emailPrompt'));
-    if (!to) return;
-    const trimmed = to.trim();
+    setEmailInput('');
+    setEmailDialogOpen(true);
+  };
+
+  const confirmSendByEmail = async () => {
+    if (!summary) return;
+    const trimmed = emailInput.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       toast.error(t('fix20.chat.emailInvalid'));
       return;
     }
+    setEmailDialogOpen(false);
+    const ok = await confirm({
+      title: t('mm2.confirm.sendClinicalEmail.title'),
+      description: t('mm2.confirm.sendClinicalEmail.description'),
+      details: [{ label: t('mm2.confirm.sendClinicalEmail.toLabel'), value: trimmed }],
+      confirmLabel: t('mm2.confirm.sendClinicalEmail.confirmLabel'),
+    });
+    if (!ok) return;
     const lines: string[] = [];
     if (summary.doctor_summary) lines.push(`Resumen:\n${summary.doctor_summary}`);
     if (summary.diagnosis) lines.push(`Diagnóstico:\n${summary.diagnosis}`);
@@ -107,12 +128,36 @@ export function ConsultationSummaryCard({ consultationId }: Props) {
           </div>
         )}
         <div className="pt-2 flex justify-end">
-          <Button size="sm" variant="outline" onClick={sendByEmail} disabled={sending} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={openEmailDialog} disabled={sending} className="gap-1.5">
             {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
             {t('fix20.chat.sendByEmail')}
           </Button>
         </div>
       </CardContent>
+
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="bg-white sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-secondary">{t('fix20.chat.emailPrompt')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="summary-email-to">{t('mm2.confirm.sendClinicalEmail.toLabel')}</Label>
+            <Input
+              id="summary-email-to"
+              type="email"
+              value={emailInput}
+              onChange={e => setEmailInput(e.target.value)}
+              placeholder="paciente@correo.com"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>{t('mm2.confirm.cancel')}</Button>
+            <Button onClick={confirmSendByEmail} disabled={!emailInput.trim()}>{t('mm2.confirm.continue')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {dialog}
     </Card>
   );
 }

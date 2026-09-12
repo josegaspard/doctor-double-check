@@ -182,7 +182,13 @@ function SideLiveItem({ live, t }: { live: any; t: (k: string) => string }) {
   );
 }
 
-export default function LivesGrid() {
+export default function LivesGrid({ embedded = false }: { embedded?: boolean } = {}) {
+  // embedded=true: se pinta DENTRO de Contenido › Lives (ContentHub), sin su
+  // propio MainLayout ni el interstitial de anuncios de ruta completa —
+  // este ya se disparó al entrar al hub. El resto (cabecera, buscador,
+  // parrilla/portada, próximos) se conserva: es la misma función, no un
+  // recorte (11-sep-2026).
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { lives, isLoading, refreshLives, credentialsLoadError, credentialsRetrying, retryCredentials } = useLives();
   const { data: interests = [] } = useUserInterests();
   const { role } = useAuth();
@@ -382,11 +388,11 @@ export default function LivesGrid() {
   const credentialsBanner = (credentialsLoadError || credentialsRetrying) && filteredLives.length > 0 && (
     <div className="mb-3 p-2 rounded-xl bg-white/90 border border-destructive/30 flex items-center justify-between gap-2 text-xs">
       {credentialsRetrying ? (
-        <span className="flex items-center gap-2 text-muted-foreground"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Recargando credenciales…</span>
+        <span className="flex items-center gap-2 text-muted-foreground"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {t('mm2.common.reloadingCredentials')}</span>
       ) : (
         <>
-          <span className="text-destructive flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> No se pudieron cargar todas las credenciales</span>
-          <button type="button" onClick={retryCredentials} disabled={credentialsRetrying} className="pro-btn pro-btn-outline pro-btn-xs"><RefreshCw className="w-3 h-3" /> Reintentar</button>
+          <span className="text-destructive flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /> {t('mm2.common.credentialsLoadError')}</span>
+          <button type="button" onClick={retryCredentials} disabled={credentialsRetrying} className="pro-btn pro-btn-outline pro-btn-xs"><RefreshCw className="w-3 h-3" /> {t('mm2.common.retry')}</button>
         </>
       )}
     </div>
@@ -549,10 +555,10 @@ export default function LivesGrid() {
   );
 
   return (
-    <MainLayout>
-      <AdInterstitial />
-      <div className="pro-container pro-page">
-        <AdBanner placementName="lives_top_banner" className="mb-4" />
+    <Wrapper>
+      {!embedded && <AdInterstitial />}
+      <div className={embedded ? '' : 'pro-container pro-page'}>
+        {!embedded && <AdBanner placementName="lives_top_banner" className="mb-4" />}
         {header}
 
         {view === 'featured' ? (
@@ -685,7 +691,7 @@ export default function LivesGrid() {
       </div>
 
       {upcomingDialog}
-      <LivesDebugPanel />
-    </MainLayout>
+      {!embedded && <LivesDebugPanel />}
+    </Wrapper>
   );
 }

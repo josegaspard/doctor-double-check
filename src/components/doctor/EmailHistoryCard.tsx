@@ -15,6 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { format, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 interface EmailHistoryItem {
   id: string;
@@ -42,6 +43,8 @@ export function EmailHistoryCard() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  // El primer clic ya no borra: pasa por revisión (cuántos correos, sin deshacer).
+  const { confirm, dialog } = useConfirmAction();
 
   // Filter states
   const [typeFilter, setTypeFilter] = useState<EmailTypeFilter>('all');
@@ -181,6 +184,16 @@ export function EmailHistoryCard() {
 
   const deleteSelected = async () => {
     if (selectedIds.size === 0) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.deleteEmailHistory.title'),
+      description: t('mm2.confirm.deleteEmailHistory.description'),
+      tone: 'destructive',
+      details: [
+        { label: t('mm2.confirm.deleteEmailHistory.countLabel'), value: selectedIds.size },
+      ],
+      confirmLabel: t('mm2.confirm.deleteEmailHistory.confirmLabel'),
+    });
+    if (!ok) return;
     setIsDeleting(true);
     try {
       const ids = Array.from(selectedIds);
@@ -556,6 +569,7 @@ export function EmailHistoryCard() {
           </>
         )}
       </CardContent>
+      {dialog}
     </Card>
   );
 }

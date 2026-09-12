@@ -283,7 +283,11 @@ function ContentCardBody({
 
 // --- Main page ---
 
-export default function ContentGallery() {
+export default function ContentGallery({ embedded = false }: { embedded?: boolean } = {}) {
+  // embedded=true: se pinta dentro de Contenido › Explorar (ContentHub, debajo
+  // de las grabaciones), sin su propio MainLayout ni la cabecera grande —
+  // solo el buscador/filtros y la rejilla, que es la función real (11-sep-2026).
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { user } = useAuth();
   const { specialtyValues } = useSpecialties();
   const { language, t } = useLanguage();
@@ -309,10 +313,15 @@ export default function ContentGallery() {
     try {
       setIsLoading(true);
 
+      // La RLS deja ver también lo propio pendiente o rechazado (moderación):
+      // filtrar moderation_status='approved' para que Explorar (y el médico
+      // viendo su propio contenido) no mezcle borradores con lo publicado
+      // de verdad (11-sep-2026).
       const { data, error } = await supabase
         .from('doctor_content')
         .select('*')
         .eq('is_public', true)
+        .eq('moderation_status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -451,29 +460,36 @@ export default function ContentGallery() {
   };
 
   return (
-    <MainLayout>
-      <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-                <Library className="w-6 h-6 text-primary" />
-                {t('content.library')}
-              </h1>
-              <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+    <Wrapper>
+      <div className={embedded ? '' : 'min-h-screen bg-gradient-to-b from-primary/5 via-background to-background'}>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl'}>
+        {/* Header — se oculta incrustado: la pestaña "Explorar" del hub ya lo dice */}
+        {!embedded ? (
+          <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Library className="w-6 h-6 text-primary" />
+                  {t('content.library')}
+                </h1>
+                <p className="text-muted-foreground mt-1">{t('content.explore')}</p>
+              </div>
+              {user && (user.role === 'doctor' || user.role === 'resident') && (
+                <Link to="/doctor/upload">
+                  <Button variant="live" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    {t('autoI18n.contentGallery1')}
+                  </Button>
+                </Link>
+              )}
             </div>
-            {user && (user.role === 'doctor' || user.role === 'resident') && (
-              <Link to="/doctor/upload">
-                <Button variant="live" className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {t('autoI18n.contentGallery1')}
-                </Button>
-              </Link>
-            )}
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2 mb-3">
+            <Library className="w-5 h-5 text-primary" />
+            <h2 className="font-heading text-base font-bold text-foreground">{t('mm2.content.hub.explore.publishedTitle')}</h2>
+          </div>
+        )}
 
         <div className="md:grid md:grid-cols-[14rem_1fr] md:gap-6 md:items-start overflow-visible">
           {/* ===== Desktop Sidebar ===== */}
@@ -611,6 +627,6 @@ export default function ContentGallery() {
         onClose={() => setPreviewContent(null)}
         content={previewContent}
       />
-    </MainLayout>
+    </Wrapper>
   );
 }

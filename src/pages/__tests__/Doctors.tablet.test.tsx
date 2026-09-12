@@ -60,6 +60,9 @@ const mockNavigate = vi.fn();
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: "/doctors", search: "", hash: "" }),
+  // Doctors lee y escribe filtros en la URL desde que vive en Comunidad › Descubrir.
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  Navigate: () => null,
   Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>,
   NavLink: ({ children, to, ...props }: any) => <a href={to} {...props}>{typeof children === 'function' ? children({ isActive: false }) : children}</a>,
 }));

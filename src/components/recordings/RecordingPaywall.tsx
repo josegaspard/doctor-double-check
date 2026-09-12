@@ -18,6 +18,8 @@ import {
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 import { toast } from 'sonner';
 
 export type PaywallTxStatus = 'idle' | 'initiated' | 'paid' | 'failed';
@@ -52,7 +54,9 @@ export function RecordingPaywall({
   onBack,
 }: RecordingPaywallProps) {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  // Nada se cobra al primer clic: resumen con importe y saldo resultante.
+  const { confirm, dialog } = useConfirmAction();
   const { balance, canAfford } = useWallet();
   const { purchaseWithWallet, refresh } = usePurchases();
   const [txStatus, setTxStatus] = useState<PaywallTxStatus>('idle');
@@ -78,6 +82,20 @@ export function RecordingPaywall({
   };
 
   const handleWallet = async () => {
+    const ok = await confirm({
+      title: t('mm2.confirm.payRecording.title'),
+      description: t('mm2.confirm.payRecording.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.payCommon.conceptLabel'), value: title },
+        { label: t('mm2.confirm.payCommon.methodLabel'), value: t('mm2.confirm.payCommon.methodWallet') },
+        { label: t('mm2.confirm.payCommon.balanceNowLabel'), value: money2(balance, language) },
+        { label: t('mm2.confirm.payCommon.balanceAfterLabel'), value: money2(Math.max(0, balance - price), language) },
+        { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(price, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
+    });
+    if (!ok) return;
     setTxStatus('initiated');
     setTxError(null);
     try {
@@ -243,6 +261,8 @@ export function RecordingPaywall({
           </p>
         </CardContent>
       </Card>
+
+      {dialog}
     </div>
   );
 }

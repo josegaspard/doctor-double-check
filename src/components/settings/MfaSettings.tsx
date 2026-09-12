@@ -8,6 +8,7 @@ import { Shield, Loader2, Trash2, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 interface Factor {
   id: string;
@@ -18,6 +19,7 @@ interface Factor {
 
 export function MfaSettings() {
   const { t } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -91,7 +93,12 @@ export function MfaSettings() {
   };
 
   const removeFactor = async (factorId: string) => {
-    if (!confirm(t('mfaSettings.confirmDisable'))) return;
+    const ok = await confirm({
+      title: t('mfaSettings.confirmDisable'),
+      tone: 'destructive',
+      confirmLabel: t('mfaSettings.title'),
+    });
+    if (!ok) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) {
       toast.error(error.message);
@@ -183,6 +190,7 @@ export function MfaSettings() {
           </>
         )}
       </CardContent>
+      {dialog}
     </Card>
   );
 }

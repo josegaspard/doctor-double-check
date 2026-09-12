@@ -11,6 +11,8 @@ import { usePurchases } from '@/hooks/usePurchases';
 import { downloadBookPdf } from '@/components/doctor/DoctorBooks';
 import { ArrowLeft, BookOpen, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAppDateFormat } from '@/lib/dateFormat';
+import { money2 } from '@/lib/proFormat';
 
 // Biblioteca de libros/cursos PDF comprados por el usuario (cliente 2026-07-08).
 // Es el "lugar de descarga" post-compra: Stripe redirige aquí con
@@ -28,10 +30,16 @@ interface PurchasedBook {
   amount: number;
 }
 
-export default function MyBooks() {
+export interface MyBooksProps {
+  /** Dentro de Cuenta > Finanzas > Comprar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+}
+
+export default function MyBooks({ embedded = false }: MyBooksProps = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { formatDate: fmt } = useAppDateFormat();
   const { purchases, isLoading: purchasesLoading, refresh } = usePurchases();
   const [searchParams] = useSearchParams();
   const [books, setBooks] = useState<PurchasedBook[]>([]);
@@ -95,18 +103,24 @@ export default function MyBooks() {
     }
   };
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
-        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
-        </Button>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl'}>
+        {!embedded && (
+          <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
+            <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
+          </Button>
+        )}
 
         <div className="mb-6">
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-            {t('doctorBooks.myBooksTitle')}
-          </h1>
+          {!embedded && (
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              {t('doctorBooks.myBooksTitle')}
+            </h1>
+          )}
           <p className="text-muted-foreground text-sm mt-1">{t('doctorBooks.myBooksSubtitle')}</p>
         </div>
 
@@ -153,8 +167,8 @@ export default function MyBooks() {
                       </button>
                     )}
                     <p className="text-[11px] text-muted-foreground mt-1">
-                      {t('doctorBooks.purchasedOn')} {book.purchasedAt.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      {book.amount > 0 && ` · $${Number(book.amount).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`}
+                      {t('doctorBooks.purchasedOn')} {fmt(book.purchasedAt, 'PPP')}
+                      {book.amount > 0 && ` · ${money2(Number(book.amount), language)}`}
                     </p>
                     <Button
                       className="mt-3 gap-2 font-bold w-full sm:w-auto"
@@ -171,6 +185,6 @@ export default function MyBooks() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

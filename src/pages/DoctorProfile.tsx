@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import MainLayout from '@/components/layout/MainLayout';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
+import DoctorCredentialsCard from '@/components/doctor/DoctorCredentialsCard';
 import DoctorReviews from '@/components/doctor/DoctorReviews';
 import DoctorUpcomingEvents from '@/components/doctor/DoctorUpcomingEvents';
 import DoctorCongresses from '@/components/doctor/DoctorCongresses';
@@ -31,6 +32,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2, fill } from '@/lib/proFormat';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { toast } from 'sonner';
@@ -67,8 +70,10 @@ export default function DoctorProfile() {
   const { user, role, isAuthenticated } = useAuth();
   const { createSession } = useChat();
   const { balance, purchase, canAfford } = useWallet();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toggles } = useSiteToggles();
+  // Pagar, abrir chat y pedir conexión pasan por la revisión: el primer clic no ejecuta.
+  const { confirm, dialog } = useConfirmAction();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [activeLive, setActiveLive] = useState<LiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -224,6 +229,16 @@ export default function DoctorProfile() {
 
   const startChatSession = async () => {
     if (!user?.id || !doctor) return;
+    const ok = await confirm({
+      title: fill(t('mm2.confirm.startChat.title'), { name: doctor.name }),
+      description: t('mm2.confirm.startChat.desc'),
+      details: [
+        { label: t('mm2.confirm.startChat.doctorLabel'), value: doctor.name },
+        { label: t('mm2.patients.chatConfirm.type'), value: t('mm2.patients.chatConfirm.typeValue') },
+      ],
+      confirmLabel: t('mm2.confirm.startChat.cta'),
+    });
+    if (!ok) return;
 
     setIsStartingChat(true);
     try {
@@ -257,6 +272,16 @@ export default function DoctorProfile() {
 
   const handleRequestConnection = async () => {
     if (!user?.id || !doctor) return;
+    const ok = await confirm({
+      title: t('mm2.community.confirmConnectTitle'),
+      description: t('mm2.community.confirmConnectDesc'),
+      details: [
+        { label: t('mm2.community.confirmDoctor'), value: doctor.name || '—' },
+        { label: t('mm2.community.confirmSpecialty'), value: doctor.specialty || '—' },
+      ],
+      confirmLabel: t('mm2.community.confirmConnectCta'),
+    });
+    if (!ok) return;
     setIsRequestingConnection(true);
     try {
       const { error } = await supabase.from('doctor_resident_connections').insert({
@@ -338,6 +363,21 @@ export default function DoctorProfile() {
       toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
       return;
     }
+
+    const ok = await confirm({
+      title: t('mm2.confirm.payConsultation.title'),
+      description: t('mm2.confirm.payConsultation.desc'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.payCommon.conceptLabel'), value: doctor.name },
+        { label: t('mm2.confirm.payCommon.methodLabel'), value: t('mm2.confirm.payCommon.methodWallet') },
+        { label: t('mm2.confirm.payCommon.balanceNowLabel'), value: money2(balance, language) },
+        { label: t('mm2.confirm.payCommon.balanceAfterLabel'), value: money2(Math.max(0, balance - doctor.consultationFee), language) },
+        { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(doctor.consultationFee, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
+    });
+    if (!ok) return;
 
     setIsProcessingPayment(true);
     try {
@@ -666,6 +706,10 @@ export default function DoctorProfile() {
                       ))}
                     </div>
                   )}
+                  {/* «Disponible ahora» es un cálculo del navegador sobre el horario
+                      publicado, no una confirmación en tiempo real del médico: lleva
+                      descargo (regla del encargo para datos calculados). */}
+                  <p className="text-[10px] text-muted-foreground/70">{t('mm2.publicProfile.hoursDisclaimer')}</p>
                 </div>
               );
             })()}
@@ -779,11 +823,15 @@ export default function DoctorProfile() {
           </div>
         </div>
 
-        {/* Academic & Professional Profile */}
-        <DoctorCredentials 
-          doctorId={doctor.id} 
-          isOwner={user?.id === doctor.id} 
-        />
+        {/* Trayectoria académica y profesional. El propio médico ve su panel de
+            edición completo (pendientes, rechazados, interruptor de publicar);
+            cualquier otro visitante ve SOLO lo aprobado y publicado, leído de
+            get_doctor_public_credentials (11-sep-2026). */}
+        {isSelf ? (
+          <DoctorCredentials doctorId={doctor.id} isOwner />
+        ) : (
+          <DoctorCredentialsCard doctorId={doctor.id} />
+        )}
 
         {/* Libros/cursos PDF de pago del doctor (cliente 2026-07-08) */}
         <DoctorBooks doctorId={doctor.id} isOwner={user?.id === doctor.id} />
@@ -909,6 +957,7 @@ export default function DoctorProfile() {
           </DialogContent>
         </Dialog>
       </div>
+      {dialog}
     </MainLayout>
   );
 }

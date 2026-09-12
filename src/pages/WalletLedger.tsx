@@ -12,6 +12,8 @@ import { ArrowDownCircle, ArrowUpCircle, ArrowLeft, Receipt, Wallet as WalletIco
 import { ReceiptModal, type ReceiptTransaction } from '@/components/wallet/ReceiptModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAppDateFormat } from '@/lib/dateFormat';
+import { money } from '@/lib/proFormat';
 import { logger } from '@/lib/logger';
 
 type StatusFilter = 'all' | 'initiated' | 'paid' | 'failed';
@@ -36,12 +38,21 @@ const statusBadge: Record<string, string> = {
   failed: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
-export default function WalletLedger() {
+export interface WalletLedgerProps {
+  /** Dentro de Cuenta > Finanzas: sin MainLayout ni cabecera propia. */
+  embedded?: boolean;
+  /** 'spend' = lado Comprar: fuera las ganancias, que no son saldo del monedero. */
+  scope?: 'all' | 'spend';
+  /** Filtro de tipo con el que abre la vista (Recargas entra por aquí). */
+  defaultType?: TypeFilter;
+}
+
+export default function WalletLedger({ embedded = false, scope = 'all', defaultType = 'all' }: WalletLedgerProps = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(defaultType);
   const [selectedTx, setSelectedTx] = useState<ReceiptTransaction | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [rows, setRows] = useState<LedgerRow[]>([]);
@@ -91,11 +102,12 @@ export default function WalletLedger() {
 
   const filtered = useMemo(() => {
     return rows
+      .filter((t) => scope !== 'spend' || t.type !== 'earning')
       .filter((t) => statusFilter === 'all' || t.status === statusFilter)
       .filter((t) => typeFilter === 'all' || t.type === typeFilter);
-  }, [rows, statusFilter, typeFilter]);
+  }, [rows, statusFilter, typeFilter, scope]);
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return embedded ? null : <Navigate to="/login" replace />;
 
   const openReceipt = (tx: LedgerRow) => {
     setSelectedTx({
@@ -116,18 +128,22 @@ export default function WalletLedger() {
     fetchPage(next);
   };
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
-        <div className="flex items-center gap-2 mb-4 sm:mb-6">
-          <Button variant="back" size="sm" onClick={() => navigate('/wallet')} className="gap-1">
-            <ArrowLeft className="w-4 h-4" /> Wallet
-          </Button>
-          <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-primary" />
-            {t('walletLedger.title')}
-          </h1>
-        </div>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl'}>
+        {!embedded && (
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <Button variant="back" size="sm" onClick={() => navigate('/wallet')} className="gap-1">
+              <ArrowLeft className="w-4 h-4" /> {t('wallet.title')}
+            </Button>
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Receipt className="w-5 h-5 text-primary" />
+              {t('walletLedger.title')}
+            </h1>
+          </div>
+        )}
 
         <Card className="mb-4">
           <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -151,7 +167,7 @@ export default function WalletLedger() {
                   <SelectItem value="all">{t('walletLedger.filterAll')}</SelectItem>
                   <SelectItem value="topup">{t('walletLedger.filterTopup')}</SelectItem>
                   <SelectItem value="purchase">{t('walletLedger.filterPurchase')}</SelectItem>
-                  <SelectItem value="earning">{t('walletLedger.filterEarning')}</SelectItem>
+                  {scope !== 'spend' && <SelectItem value="earning">{t('walletLedger.filterEarning')}</SelectItem>}
                   <SelectItem value="refund">{t('walletLedger.filterRefund')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -234,6 +250,6 @@ export default function WalletLedger() {
           transaction={selectedTx}
         />
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

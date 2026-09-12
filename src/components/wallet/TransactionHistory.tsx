@@ -68,7 +68,13 @@ function translateDescription(desc: string, lang: string): string {
 
 type FilterType = 'all' | 'topup' | 'purchase' | 'earning' | 'refund';
 
-export function TransactionHistory() {
+export interface TransactionHistoryProps {
+  /** Lado COMPRAR: las ganancias del médico no son saldo del monedero y no se
+   *  mezclan aquí (viven en Cuenta > Finanzas > Cobrar). */
+  excludeEarnings?: boolean;
+}
+
+export function TransactionHistory({ excludeEarnings = false }: TransactionHistoryProps = {}) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const dateLocale = language === 'es' ? es : enUS;
@@ -100,7 +106,7 @@ export function TransactionHistory() {
   }, [user?.id]);
 
   const filteredTransactions = useMemo(() => {
-    let filtered = [...transactions];
+    let filtered = excludeEarnings ? transactions.filter(tx => tx.type !== 'earning') : [...transactions];
     if (filterType !== 'all') {
       filtered = filtered.filter(tx => tx.type === filterType);
     }
@@ -112,7 +118,7 @@ export function TransactionHistory() {
       );
     }
     return filtered;
-  }, [transactions, filterType, searchTerm]);
+  }, [transactions, filterType, searchTerm, excludeEarnings]);
 
   const stats = useMemo(() => {
     const deposits = transactions.filter(t => t.type === 'topup').reduce((sum, t) => sum + t.amount, 0);
@@ -214,7 +220,7 @@ export function TransactionHistory() {
                   <SelectItem value="all">{t('common.all')}</SelectItem>
                   <SelectItem value="topup">{t('transactions.topups')}</SelectItem>
                   <SelectItem value="purchase">{t('transactions.purchases')}</SelectItem>
-                  <SelectItem value="earning">{t('transactions.earnings')}</SelectItem>
+                  {!excludeEarnings && <SelectItem value="earning">{t('transactions.earnings')}</SelectItem>}
                   <SelectItem value="refund">{t('transactions.refunds')}</SelectItem>
                 </SelectContent>
               </Select>
@@ -224,7 +230,7 @@ export function TransactionHistory() {
 
         <CardContent>
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+          <div className={`grid ${excludeEarnings ? 'grid-cols-2' : 'grid-cols-3'} gap-2 sm:gap-4 mb-6`}>
             <div className="p-2 sm:p-3 bg-success/10 rounded-lg text-center">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success mx-auto mb-0.5 sm:mb-1" />
               <p className="text-[11px] sm:text-lg font-bold text-success">+${stats.deposits.toLocaleString()}</p>
@@ -235,11 +241,13 @@ export function TransactionHistory() {
               <p className="text-[11px] sm:text-lg font-bold">-${stats.purchases.toLocaleString()}</p>
               <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
             </div>
-            <div className="p-2 sm:p-3 bg-info/10 rounded-lg text-center">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info mx-auto mb-0.5 sm:mb-1" />
-              <p className="text-[11px] sm:text-lg font-bold text-info">+${stats.earnings.toLocaleString()}</p>
-              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
-            </div>
+            {!excludeEarnings && (
+              <div className="p-2 sm:p-3 bg-info/10 rounded-lg text-center">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info mx-auto mb-0.5 sm:mb-1" />
+                <p className="text-[11px] sm:text-lg font-bold text-info">+${stats.earnings.toLocaleString()}</p>
+                <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
+              </div>
+            )}
           </div>
 
           {isLoading ? (
@@ -341,18 +349,8 @@ export function TransactionHistory() {
                   <span className="text-muted-foreground">{t('transactions.transactionId')}</span>
                   <code className="text-xs bg-muted px-2 py-1 rounded">{selectedTx.id.slice(0, 8)}...</code>
                 </div>
-                {selectedTx.metadata && Object.keys(selectedTx.metadata).length > 0 && (
-                  <>
-                    <div className="border-t my-2" />
-                    <p className="text-xs text-muted-foreground font-medium">Metadata</p>
-                    {Object.entries(selectedTx.metadata).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="font-mono">{String(value).slice(0, 20)}</span>
-                      </div>
-                    ))}
-                  </>
-                )}
+                {/* El volcado en crudo de `metadata` enseñaba ids internos (paciente,
+                    sesión de Stripe…) al usuario: fuera. El concepto ya está arriba. */}
               </div>
 
               {/* Refund Request Button */}

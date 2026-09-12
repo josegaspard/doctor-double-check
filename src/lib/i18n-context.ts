@@ -1,12 +1,13 @@
-import { t as translate, SupportedLanguage } from '@/lib/i18n';
+import { t as translate, normalizeLanguage, SupportedLanguage } from '@/lib/i18n';
 
 /**
- * Get current language from localStorage (for use outside React context).
- * Falls back to 'es' if not set.
+ * Idioma actual desde localStorage (para código fuera del contexto de React).
+ * Antes solo reconocía 'en' y daba castellano a pt/fr/it/de/ca/zh: los errores
+ * de Chat/Lives/Vault/Wallet salían en castellano en esas seis sesiones.
  */
 function getCurrentLanguage(): SupportedLanguage {
   const cached = typeof window !== 'undefined' ? localStorage.getItem('preferred_language') : null;
-  return (cached === 'en' ? 'en' : 'es');
+  return normalizeLanguage(cached);
 }
 
 /**

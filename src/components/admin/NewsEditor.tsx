@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { toast } from 'sonner';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -59,6 +60,8 @@ function generateSlug(title: string): string {
 
 export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
   const { t } = useLanguage();
+  // Publicar (no el borrador) pasa por el resumen: vista previa antes de salir al público.
+  const { confirm, dialog } = useConfirmAction();
   const [title, setTitle] = useState(initialData?.title || '');
   const [summary, setSummary] = useState(initialData?.summary || '');
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || '');
@@ -231,6 +234,19 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
   const handleSave = async (publish: boolean) => {
     if (!title.trim()) { toast.error(t('newsEditor.toast.titleRequired')); return; }
     if (!editor) return;
+
+    if (publish) {
+      const ok = await confirm({
+        title: t('mm2.confirm.newsPublish.titlePublish'),
+        description: t('mm2.confirm.newsPublish.descriptionPublish'),
+        details: [
+          { label: t('mm2.confirm.newsPublish.titleLabel'), value: title.trim() },
+          ...(summary.trim() ? [{ label: t('mm2.confirm.newsPublish.summaryLabel'), value: summary.trim() }] : []),
+        ],
+        confirmLabel: t('newsEditor.publish'),
+      });
+      if (!ok) return;
+    }
 
     setIsSaving(true);
     try {
@@ -574,6 +590,7 @@ export function NewsEditor({ initialData, onSaved }: NewsEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {dialog}
     </div>
   );
 }

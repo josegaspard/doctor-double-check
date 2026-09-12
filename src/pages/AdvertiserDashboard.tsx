@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 import { useAdConfig, useAdPlacements } from '@/hooks/useAds';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToCSV, exportToPDF, campaignsToTableHTML } from '@/lib/exportAdData';
@@ -233,6 +235,8 @@ export default function AdvertiserDashboard() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { language, t } = useLanguage();
+  // Pagar y activar una campaña pasa por el resumen antes de ir a la pasarela.
+  const { confirm, dialog } = useConfirmAction();
   const { config } = useAdConfig();
   const { placements } = useAdPlacements();
 
@@ -375,7 +379,18 @@ export default function AdvertiserDashboard() {
     toast.success(t('advertiserDashboardPage.urlUpdated'));
   };
 
-  const payCampaign = async (campaignId: string, amount: number) => {
+  const payCampaign = async (campaignId: string, amount: number, campaignName?: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.adCampaignPay.title'),
+      description: t('mm2.confirm.adCampaignPay.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.adCampaignPay.nameLabel'), value: campaignName || '—' },
+        { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(amount, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.adCampaignPay.confirmLabel'),
+    });
+    if (!ok) return;
     setIsPaying(true);
     const { data, error } = await supabase.functions.invoke('create-ad-checkout', { body: { campaign_id: campaignId, amount } });
     setIsPaying(false);
@@ -468,7 +483,7 @@ export default function AdvertiserDashboard() {
               </Button>
               {campaign.status === 'draft' && (
                 <Button size="sm" className="gap-1.5" disabled={isPaying || creatives.length === 0}
-                  onClick={() => payCampaign(campaign.id, campaign.budget)}>
+                  onClick={() => payCampaign(campaign.id, campaign.budget, campaign.name)}>
                   {isPaying ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                   {t('ads.payActivate')}
                 </Button>
@@ -627,6 +642,7 @@ export default function AdvertiserDashboard() {
               </CardContent>
             </Card>
           )}
+          {dialog}
         </div>
       </MainLayout>
     );

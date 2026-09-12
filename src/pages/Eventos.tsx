@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { format } from 'date-fns';
 import { es as esLocale, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -99,6 +100,8 @@ export default function Eventos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, supabaseUser, role } = useAuth();
   const { t, language } = useLanguage();
+  // Publicar (avisa a suscriptores) y borrar un evento pasan por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const locale = language === 'es' ? esLocale : enUS;
 
   const [events, setEvents] = useState<ForoEvent[]>([]);
@@ -190,6 +193,23 @@ export default function Eventos() {
       toast.error(t('eventos.form.requiredFields'));
       return;
     }
+    const typeLabelPreview = t(EVENT_TYPE_KEY[form.event_type]) || form.event_type;
+    const ok = await confirm({
+      title: editingId ? t('mm2.confirm.eventPublish.titleEdit') : t('mm2.confirm.eventPublish.titleNew'),
+      description: editingId
+        ? t('mm2.confirm.eventPublish.descriptionEdit')
+        : t('mm2.confirm.eventPublish.descriptionNew'),
+      details: [
+        { label: t('mm2.confirm.eventPublish.nameLabel'), value: form.title.trim() },
+        { label: t('mm2.confirm.eventPublish.typeLabel'), value: typeLabelPreview },
+        {
+          label: t('mm2.confirm.eventPublish.whenLabel'),
+          value: form.event_date ? format(new Date(form.event_date), 'PPPp', { locale }) : '—',
+        },
+      ],
+      confirmLabel: editingId ? t('mm2.confirm.eventPublish.confirmEdit') : t('mm2.confirm.eventPublish.confirmNew'),
+    });
+    if (!ok) return;
     setSaving(true);
     const payload: any = {
       title: form.title.trim(),
@@ -238,8 +258,15 @@ export default function Eventos() {
     fetchEvents();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('eventos.confirmDelete'))) return;
+  const handleDelete = async (id: string, title: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.eventDelete.title'),
+      description: t('mm2.confirm.eventDelete.description'),
+      tone: 'destructive',
+      details: [{ label: t('mm2.confirm.eventPublish.nameLabel'), value: title }],
+      confirmLabel: t('mm2.confirm.eventDelete.confirmLabel'),
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from('foro_events').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success(t('eventos.deleted'));
@@ -389,7 +416,7 @@ export default function Eventos() {
                               <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5" onClick={() => openEdit(e)}>
                                 <Pencil className="w-3 h-3" /> {t('eventos.edit')}
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id)}>
+                              <Button size="sm" variant="ghost" className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive" onClick={() => handleDelete(e.id, e.title)}>
                                 <Trash2 className="w-3 h-3" /> {t('eventos.delete')}
                               </Button>
                             </>
@@ -497,6 +524,7 @@ export default function Eventos() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {dialog}
       </div>
     </MainLayout>
   );

@@ -734,13 +734,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Los mensajes de error de aquí salían fijos en español (idioma del navegador
+  // no importaba): ahora usan tContext() con el idioma real de la sesión.
   const deleteSession = async (sessionId: string): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'No autenticado' };
+    if (!user?.id) return { success: false, error: tContext('mm2.confirm.deleteChat.notAuthenticated') };
 
     try {
       const session = sessions.find(s => s.id === sessionId);
-      if (!session) return { success: false, error: 'Sesión no encontrada' };
-      if (session.status !== 'closed') return { success: false, error: 'Solo se pueden eliminar chats cerrados' };
+      if (!session) return { success: false, error: tContext('mm2.confirm.deleteChat.sessionNotFound') };
+      if (session.status !== 'closed') return { success: false, error: tContext('mm2.confirm.deleteChat.onlyClosedCanDelete') };
 
       // Delete session (messages cascade via FK)
       const { error } = await supabase
@@ -760,18 +762,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al eliminar chat' };
+      return { success: false, error: error.message || tContext('mm2.confirm.deleteChat.genericError') };
     }
   };
 
   const deleteSessions = async (sessionIds: string[]): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.id) return { success: false, error: 'No autenticado' };
+    if (!user?.id) return { success: false, error: tContext('mm2.confirm.deleteChat.notAuthenticated') };
     if (sessionIds.length === 0) return { success: true };
 
     try {
       // Verify all are closed
       const toDelete = sessions.filter(s => sessionIds.includes(s.id) && s.status === 'closed');
-      if (toDelete.length === 0) return { success: false, error: 'No hay chats cerrados para eliminar' };
+      if (toDelete.length === 0) return { success: false, error: tContext('mm2.confirm.deleteChat.noClosedToDelete') };
 
       const { error } = await supabase
         .from('chat_sessions')
@@ -790,7 +792,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Error al eliminar chats' };
+      return { success: false, error: error.message || tContext('mm2.confirm.deleteChat.genericErrorBulk') };
     }
   };
 

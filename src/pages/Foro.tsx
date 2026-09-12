@@ -12,6 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from '@/components/ui/dialog';
+import { SectionTabs, useSectionParam } from '@/components/common/SectionTabs';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import Doctors from '@/pages/Doctors';
+import HospitalLocator from '@/pages/HospitalLocator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +26,7 @@ import {
   MessagesSquare, Plus, Loader2, Stethoscope, AlertTriangle, Lightbulb, Gem, Trophy,
   MessageCircle, Send, Trash2, EyeOff, GraduationCap, ImagePlus, X, ChevronDown,
   CalendarDays, Paperclip, FileText, Film, Eye, ShieldCheck, Settings2, CornerDownRight,
+  Rss, Compass, Hospital,
 } from 'lucide-react';
 
 // COMUNIDAD — módulo diario (cliente 22-ago-2026, brief del doctor vía Marta), construido
@@ -33,17 +38,28 @@ import {
 //     rutas sin id de autor y URLs firmadas (no se filtra quién subió qué);
 //   · «Revelar autor» SOLO súper admin (RPC forum_admin_reveal, con bitácora);
 //   · enlace profundo ?post=<id> (avisos de comentarios/publicaciones).
+//
+// 11-sep-2026 (encargo de la clienta): la Comunidad pasa a tener dos pestañas,
+// Feed y Descubrir (Médicos | Hospitales), con el estado en la URL
+// (/foro?tab=descubrir&ver=hospitales). Descubrir INCRUSTA el directorio y el
+// localizador: /doctors y /hospital-locator siguen siendo páginas públicas para
+// pacientes, visitantes y buscadores.
 // Las tablas forum_* no están en los tipos generados → (supabase as any).
 const sb = supabase as any;
 
 type ForumCategory = 'caso_clinico' | 'complicacion' | 'innovacion' | 'perla_quirurgica' | 'caso_exito';
 
+// Las 5 son «daily»: la migración 20260912 amplía forum_publish_daily con
+// 'caso_exito' (+ banco sembrado), así que ya genera propuesta diaria como
+// las otras 4 (BD.md). Antes de aplicarla, forum_daily_prompts simplemente no
+// trae ninguna fila de esa categoría y la tarjeta cae sola al estado
+// "sin propuesta hoy — publica la tuya", sin romper nada.
 const CATEGORIES: { id: ForumCategory; labelKey: string; icon: React.ElementType; anonymous?: boolean; daily?: boolean }[] = [
   { id: 'caso_clinico', labelKey: 'forum.catCasoClinico', icon: Stethoscope, daily: true },
   { id: 'complicacion', labelKey: 'forum.catComplicacion', icon: AlertTriangle, anonymous: true, daily: true },
   { id: 'perla_quirurgica', labelKey: 'forum.catPerla', icon: Gem, daily: true },
   { id: 'innovacion', labelKey: 'forum.catInnovacion', icon: Lightbulb, daily: true },
-  { id: 'caso_exito', labelKey: 'forum.catExito', icon: Trophy },
+  { id: 'caso_exito', labelKey: 'forum.catExito', icon: Trophy, daily: true },
 ];
 
 // Validación de imágenes de COMENTARIOS (bucket público forum-images, como antes).
@@ -55,6 +71,11 @@ const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_FILES = 8;
 const FORUM_FILES_BUCKET = 'forum-files';
 const CDMX_TZ = 'America/Mexico_City';
+
+const TABS = ['feed', 'descubrir'] as const;
+const DISCOVER_VIEWS = ['medicos', 'hospitales'] as const;
+type CommunityTab = typeof TABS[number];
+type DiscoverView = typeof DISCOVER_VIEWS[number];
 
 type AttachmentKind = 'image' | 'video' | 'pdf';
 interface Attachment { path: string; type: AttachmentKind; name: string; size: number; mime?: string }
@@ -125,6 +146,11 @@ export default function Foro() {
   const { user, role } = useAuth();
   const [searchParams] = useSearchParams();
   const focusPostId = searchParams.get('post');
+  const { confirm, dialog } = useConfirmAction();
+
+  // Pestañas en la URL: /foro?tab=descubrir&ver=hospitales
+  const [tab, setTab] = useSectionParam<CommunityTab>('tab', TABS, 'feed');
+  const [view, setView] = useSectionParam<DiscoverView>('ver', DISCOVER_VIEWS, 'medicos');
 
   const [posts, setPosts] = useState<ForumPost[]>([]);
   // commentsByPost guarda el ÁRBOL (comentarios raíz con .replies anidadas, 1 nivel).
@@ -335,14 +361,15 @@ export default function Foro() {
     })();
   }, [user?.id]);
 
-  // Enlace profundo desde los avisos: /foro?post=<id> → expandir y llevar a la publicación.
+  // Enlace profundo desde los avisos: /foro?post=<id> → Feed, expandir y llevar a la publicación.
   useEffect(() => {
     if (!focusPostId || isLoading || focusedOnce.current) return;
     if (!posts.some((p) => p.id === focusPostId)) return;
     focusedOnce.current = true;
+    if (tab !== 'feed') setTab('feed');
     setExpandedPost(focusPostId);
     setTimeout(() => document.getElementById(`post-${focusPostId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-  }, [focusPostId, isLoading, posts]);
+  }, [focusPostId, isLoading, posts, tab, setTab]);
 
   const isAnonymousCategory = CATEGORIES.find((c) => c.id === newCategory)?.anonymous === true;
 
@@ -433,6 +460,7 @@ export default function Foro() {
   };
 
   const openComposer = (category?: ForumCategory, prompt?: DailyPrompt | null) => {
+    if (tab !== 'feed') setTab('feed');
     if (category) setNewCategory(category);
     setNewPrompt(prompt || null);
     if (!newSpecialty && mySpecialty) setNewSpecialty(mySpecialty);
@@ -446,6 +474,25 @@ export default function Foro() {
       toast.error(t('forum.validation'));
       return;
     }
+    // Paso de revisión: publicar avisa a toda la comunidad, así que el primer
+    // clic nunca escribe.
+    const ok = await confirm({
+      title: t('mm2.community.confirmPublishTitle'),
+      description: t('mm2.community.confirmPublishDesc'),
+      details: [
+        { label: t('mm2.community.confirmCategory'), value: t(CATEGORIES.find((c) => c.id === newCategory)!.labelKey) },
+        { label: t('mm2.community.confirmTitleField'), value: newTitle.trim() },
+        { label: t('mm2.community.confirmSpecialty'), value: newSpecialty.trim() || t('mm2.community.confirmNone') },
+        { label: t('mm2.community.confirmAttachments'), value: String(newFiles.length) },
+        {
+          label: t('mm2.community.confirmVisibility'),
+          value: isAnonymousCategory ? t('mm2.community.confirmAnonymous') : t('mm2.community.confirmSigned'),
+        },
+      ],
+      confirmLabel: t('forum.publish'),
+    });
+    if (!ok) return;
+
     setIsPublishing(true);
     try {
       const attachments = await uploadAttachments();
@@ -530,9 +577,22 @@ export default function Foro() {
     });
   };
 
-  const handleDeletePost = async (postId: string) => {
+  const handleDeletePost = async (post: ForumPost) => {
+    const comments = countComments(commentsByPost[post.id] || []);
+    const ok = await confirm({
+      title: t('mm2.community.confirmDeletePostTitle'),
+      description: t('mm2.community.confirmDeletePostDesc'),
+      details: [
+        { label: t('mm2.community.confirmTitleField'), value: post.title },
+        { label: t('mm2.community.confirmComments'), value: String(comments) },
+        { label: t('mm2.community.confirmAttachments'), value: String((post.attachments || []).length) },
+      ],
+      tone: 'destructive',
+      confirmLabel: t('forum.delete'),
+    });
+    if (!ok) return;
     try {
-      const { error } = await sb.from('forum_posts').delete().eq('id', postId);
+      const { error } = await sb.from('forum_posts').delete().eq('id', post.id);
       if (error) throw error;
       toast.success(t('forum.deleted'));
       fetchPosts();
@@ -541,9 +601,21 @@ export default function Foro() {
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (comment: ForumComment) => {
+    const replies = comment.replies?.length || 0;
+    const ok = await confirm({
+      title: t('mm2.community.confirmDeleteCommentTitle'),
+      description: t('mm2.community.confirmDeleteCommentDesc'),
+      details: [
+        { label: t('mm2.community.confirmAuthor'), value: comment.authorName || 'Dr.' },
+        { label: t('mm2.community.confirmReplies'), value: String(replies) },
+      ],
+      tone: 'destructive',
+      confirmLabel: t('forum.delete'),
+    });
+    if (!ok) return;
     try {
-      const { error } = await sb.from('forum_comments').delete().eq('id', commentId);
+      const { error } = await sb.from('forum_comments').delete().eq('id', comment.id);
       if (error) throw error;
       fetchPosts();
     } catch (e: any) {
@@ -632,7 +704,7 @@ export default function Foro() {
                   type="button"
                   className="text-[11px] text-muted-foreground"
                   aria-label={t('forum.delete')}
-                  onClick={() => handleDeleteComment(comment.id)}
+                  onClick={() => handleDeleteComment(comment)}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -712,19 +784,294 @@ export default function Foro() {
   const dailyCats = CATEGORIES.filter((c) => c.daily);
   const promptFor = (cat: ForumCategory) => todayPrompts.find((p) => p.category === cat);
 
+  // ---- Pestaña FEED -----------------------------------------------------------
+  const feed = (
+    <>
+      {/* HOY — las propuestas del día (una por categoría) + Casos de éxito */}
+      <Card className="mb-4 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <CalendarDays className="w-5 h-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <div className="font-semibold text-foreground leading-tight">{t('forum.today')} · {cap(dayFmt.format(new Date()))}</div>
+                <div className="text-xs text-muted-foreground">{t('forum.todayIntro')}</div>
+              </div>
+            </div>
+          </div>
+          {promptsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+              {CATEGORIES.map((c) => <Skeleton key={c.id} className="h-28 w-full rounded-lg" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
+              {dailyCats.map((c) => {
+                const Icon = c.icon;
+                const p = promptFor(c.id);
+                // «Casos de éxito» ya es daily (migración 20260912 amplía
+                // forum_publish_daily + siembra el banco), pero antes de aplicarla
+                // — o si el banco se agota ese día— no hay propuesta: en ese caso
+                // se usa la invitación propia de esta categoría, no el texto genérico.
+                const isExito = c.id === 'caso_exito';
+                return (
+                  <div key={c.id} className={`rounded-lg border p-3 flex flex-col gap-2 ${c.anonymous ? 'border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10' : 'border-border bg-muted/20'}`}>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="truncate">{t(c.labelKey)}</span>
+                    </div>
+                    <p className="text-[13px] leading-snug text-foreground flex-1 break-words">
+                      {p ? p.title : (
+                        <span className="text-muted-foreground">
+                          {isExito ? t('mm2.community.successCardText') : t('forum.noPromptToday')}
+                        </span>
+                      )}
+                    </p>
+                    {p?.body && <p className="text-[12px] text-muted-foreground leading-snug line-clamp-3">{p.body}</p>}
+                    {p?.image_url && <img src={p.image_url} alt="" className="rounded-md max-h-32 w-full object-cover border border-border" />}
+                    <Button size="sm" className="h-8 text-xs gap-1 self-start" onClick={() => openComposer(c.id, p || null)}>
+                      <Send className="w-3.5 h-3.5" />
+                      {p ? t('forum.respond') : isExito ? t('mm2.community.successCardCta') : t('forum.publishFree')}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Category chips — seleccionables (sólido/outline) sin hover que parpadee */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
+        <button type="button" className={chipClass(selectedCategory === 'all')} onClick={() => setSelectedCategory('all')}>
+          {t('forum.allCategories')}
+        </button>
+        {CATEGORIES.map((c) => {
+          const Icon = c.icon;
+          return (
+            <button key={c.id} type="button" className={chipClass(selectedCategory === c.id)} onClick={() => setSelectedCategory(c.id)}>
+              <Icon className="w-3.5 h-3.5" />
+              {t(c.labelKey)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Posts */}
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+      ) : visiblePosts.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <MessagesSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
+            <p className="text-sm">{t('forum.empty')}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {visiblePosts.map((post, idx) => {
+            const meta = categoryMeta(post.category);
+            const Icon = meta.icon;
+            const comments = commentsByPost[post.id] || [];
+            const commentCount = countComments(comments);
+            const isExpanded = expandedPost === post.id;
+            const canDelete = post.is_mine || role === 'admin';
+            const postDay = fmtYmd(new Date(post.created_at));
+            const prevDay = idx > 0 ? fmtYmd(new Date(visiblePosts[idx - 1].created_at)) : null;
+            const prompt = post.prompt_id ? promptById[post.prompt_id] : undefined;
+            const highlighted = focusPostId === post.id;
+            return (
+              <React.Fragment key={post.id}>
+                {postDay !== prevDay && (
+                  <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span>{dayLabel(postDay)}</span>
+                    <div className="h-px bg-border flex-1" />
+                  </div>
+                )}
+                <Card id={`post-${post.id}`} className={highlighted ? 'ring-2 ring-primary/40' : undefined}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                        <Badge variant="secondary" className="gap-1 text-[11px]">
+                          <Icon className="w-3 h-3" />
+                          {t(meta.labelKey)}
+                        </Badge>
+                        {post.specialty && (
+                          <Badge variant="outline" className="text-[11px] font-normal">{post.specialty}</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {role === 'admin' && post.is_anonymous && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            title={t('forum.reveal')}
+                            aria-label={t('forum.reveal')}
+                            onClick={() => openReveal(post)}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive"
+                            aria-label={t('forum.delete')}
+                            onClick={() => handleDeletePost(post)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {prompt && (
+                      <p className="text-[11px] text-primary flex items-start gap-1 mb-1">
+                        <CornerDownRight className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span className="min-w-0"><span className="text-muted-foreground">{t('forum.respondsTo')}: </span>{prompt.title}</span>
+                      </p>
+                    )}
+                    <h3 className="font-semibold text-foreground leading-snug break-words">{post.title}</h3>
+                    <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap break-words">{post.body}</p>
+                    {post.image_url && (
+                      <img src={post.image_url} alt="" className="rounded-lg max-h-72 sm:max-h-96 w-auto max-w-full mt-2 border border-border" />
+                    )}
+                    {renderAttachments(post.attachments)}
+                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        {post.is_anonymous ? (
+                          <><EyeOff className="w-3.5 h-3.5" />{t('forum.anonymous')}</>
+                        ) : (
+                          <>
+                            <span className="truncate">{post.authorName || 'Dr.'}</span>
+                            {/* Distintivo de categoría del autor (cliente 2026-08-28) */}
+                            <ProfileCategoryMark userId={post.author_id} size="sm" className="flex-shrink-0" />
+                          </>
+                        )}
+                        <span aria-hidden>·</span>
+                        <span className="whitespace-nowrap">{dateFmt.format(new Date(post.created_at))}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 flex-shrink-0"
+                        onClick={() => {
+                          setExpandedPost(isExpanded ? null : post.id);
+                          resetComposer();
+                        }}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        {commentCount} {t('forum.comments')}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        {comments.length > 0 && (
+                          <div className="divide-y divide-border/40 mb-2">
+                            {comments.map((c) => renderComment(c))}
+                          </div>
+                        )}
+                        {/* Composer: avatar + input + imagen + enviar (cabe en 375px) */}
+                        {replyTo && (
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-muted-foreground truncate">
+                              {t('forum.replyingTo')} <span className="font-medium text-foreground">@{replyTo.name}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground flex-shrink-0 ml-2 h-6 w-6 inline-flex items-center justify-center"
+                              aria-label={t('forum.removeImage')}
+                              onClick={() => { setReplyTo(null); setCommentDraft(''); }}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        {commentImagePreview && (
+                          <div className="relative inline-block mb-2">
+                            <img src={commentImagePreview} alt="" className="rounded-lg max-h-40 w-auto max-w-full border border-border" />
+                            <button
+                              type="button"
+                              onClick={clearCommentImage}
+                              aria-label={t('forum.removeImage')}
+                              className="absolute top-1 right-1 rounded-full bg-background/90 border border-border p-1"
+                            >
+                              <X className="w-3.5 h-3.5 text-destructive" />
+                            </button>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8 shrink-0">
+                            <AvatarImage src={user?.avatarUrl || ''} />
+                            <AvatarFallback className="text-xs">{user?.name?.charAt(0) || 'D'}</AvatarFallback>
+                          </Avatar>
+                          <Input
+                            ref={commentInputRef}
+                            className="flex-1 min-w-0"
+                            placeholder={t('forum.commentPlaceholder')}
+                            value={commentDraft}
+                            onChange={(e) => setCommentDraft(e.target.value)}
+                            maxLength={4000}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(post.id); }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-9 w-9 shrink-0"
+                            aria-label={t('forum.addImage')}
+                            onClick={() => commentImageInputRef.current?.click()}
+                          >
+                            <ImagePlus className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                            aria-label={t('forum.send')}
+                            disabled={isSendingComment || (!commentDraft.trim() && !commentImageFile)}
+                            onClick={() => handleComment(post.id)}
+                          >
+                            {isSendingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                        <input
+                          ref={commentImageInputRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          onChange={onCommentImageSelected}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-3xl">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="pro-container pro-page">
+        {/* Cabecera PRO de la sección */}
+        <div className="pro-page-head">
           <div className="min-w-0">
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <MessagesSquare className="w-6 h-6 text-primary" />
-              {t('forum.title')}
+            <h1 className="pro-page-title">
+              <MessagesSquare className="w-7 h-7" />
+              <span className="truncate">{t('mm2.community.title')}</span>
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{t('forum.subtitle')}</p>
+            <p className="pro-page-sub">{t('mm2.community.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             {role === 'admin' && (
               <Button asChild variant="outline" size="sm" className="gap-1.5 hidden sm:inline-flex">
                 <Link to="/admin/forum"><Settings2 className="w-4 h-4" />{t('forum.adminPanel')}</Link>
@@ -732,7 +1079,7 @@ export default function Foro() {
             )}
             <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { clearNewFiles(); setNewPrompt(null); } }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 flex-shrink-0" onClick={() => { if (!newSpecialty && mySpecialty) setNewSpecialty(mySpecialty); }}>
+                <Button className="gap-2 flex-shrink-0" onClick={() => { if (tab !== 'feed') setTab('feed'); if (!newSpecialty && mySpecialty) setNewSpecialty(mySpecialty); }}>
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('forum.newPost')}</span>
                 </Button>
@@ -848,11 +1195,13 @@ export default function Foro() {
                     className="hidden"
                     onChange={onFilesSelected}
                   />
+                  {/* El botón abre la revisión: nada se guarda en este paso. */}
+                  <p className="text-[11px] text-muted-foreground">{t('mm2.community.publishReviewHint')}</p>
                 </div>
                 <DialogFooter>
                   <Button onClick={handlePublish} disabled={isPublishing} className="gap-2 w-full sm:w-auto">
                     {isPublishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    {t('forum.publish')}
+                    {t('mm2.community.reviewAndPublish')}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -860,265 +1209,36 @@ export default function Foro() {
           </div>
         </div>
 
-        {/* HOY — las propuestas del día (una por categoría) */}
-        <Card className="mb-4 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <CalendarDays className="w-5 h-5 text-primary shrink-0" />
-                <div className="min-w-0">
-                  <div className="font-semibold text-foreground leading-tight">{t('forum.today')} · {cap(dayFmt.format(new Date()))}</div>
-                  <div className="text-xs text-muted-foreground">{t('forum.todayIntro')}</div>
-                </div>
-              </div>
-            </div>
-            {promptsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                {dailyCats.map((c) => <Skeleton key={c.id} className="h-28 w-full rounded-lg" />)}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                {dailyCats.map((c) => {
-                  const Icon = c.icon;
-                  const p = promptFor(c.id);
-                  return (
-                    <div key={c.id} className={`rounded-lg border p-3 flex flex-col gap-2 ${c.anonymous ? 'border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10' : 'border-border bg-muted/20'}`}>
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-                        <Icon className="w-3.5 h-3.5" />
-                        <span className="truncate">{t(c.labelKey)}</span>
-                      </div>
-                      <p className="text-[13px] leading-snug text-foreground flex-1 break-words">
-                        {p ? p.title : <span className="text-muted-foreground">{t('forum.noPromptToday')}</span>}
-                      </p>
-                      {p?.body && <p className="text-[12px] text-muted-foreground leading-snug line-clamp-3">{p.body}</p>}
-                      {p?.image_url && <img src={p.image_url} alt="" className="rounded-md max-h-32 w-full object-cover border border-border" />}
-                      <Button size="sm" className="h-8 text-xs gap-1 self-start" onClick={() => openComposer(c.id, p || null)}>
-                        <Send className="w-3.5 h-3.5" />
-                        {p ? t('forum.respond') : t('forum.publishFree')}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Category chips — seleccionables (sólido/outline) sin hover que parpadee */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
-          <button type="button" className={chipClass(selectedCategory === 'all')} onClick={() => setSelectedCategory('all')}>
-            {t('forum.allCategories')}
-          </button>
-          {CATEGORIES.map((c) => {
-            const Icon = c.icon;
-            return (
-              <button key={c.id} type="button" className={chipClass(selectedCategory === c.id)} onClick={() => setSelectedCategory(c.id)}>
-                <Icon className="w-3.5 h-3.5" />
-                {t(c.labelKey)}
-              </button>
-            );
-          })}
+        {/* Feed | Descubrir */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <SectionTabs<CommunityTab>
+            value={tab}
+            onChange={setTab}
+            ariaLabel={t('mm2.community.title')}
+            items={[
+              { id: 'feed', label: t('mm2.community.tabFeed'), icon: Rss },
+              { id: 'descubrir', label: t('mm2.community.tabDiscover'), icon: Compass },
+            ]}
+          />
+          {tab === 'descubrir' && (
+            <SectionTabs<DiscoverView>
+              value={view}
+              onChange={setView}
+              ariaLabel={t('mm2.community.tabDiscover')}
+              items={[
+                { id: 'medicos', label: t('mm2.community.tabDoctors'), icon: Stethoscope },
+                { id: 'hospitales', label: t('mm2.community.tabHospitals'), icon: Hospital },
+              ]}
+            />
+          )}
         </div>
 
-        {/* Posts */}
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-          </div>
-        ) : visiblePosts.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <MessagesSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">{t('forum.empty')}</p>
-            </CardContent>
-          </Card>
+        {tab === 'feed' ? (
+          <div className="max-w-3xl">{feed}</div>
+        ) : view === 'medicos' ? (
+          <Doctors embedded />
         ) : (
-          <div className="space-y-3">
-            {visiblePosts.map((post, idx) => {
-              const meta = categoryMeta(post.category);
-              const Icon = meta.icon;
-              const comments = commentsByPost[post.id] || [];
-              const commentCount = countComments(comments);
-              const isExpanded = expandedPost === post.id;
-              const canDelete = post.is_mine || role === 'admin';
-              const postDay = fmtYmd(new Date(post.created_at));
-              const prevDay = idx > 0 ? fmtYmd(new Date(visiblePosts[idx - 1].created_at)) : null;
-              const prompt = post.prompt_id ? promptById[post.prompt_id] : undefined;
-              const highlighted = focusPostId === post.id;
-              return (
-                <React.Fragment key={post.id}>
-                  {postDay !== prevDay && (
-                    <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      <span>{dayLabel(postDay)}</span>
-                      <div className="h-px bg-border flex-1" />
-                    </div>
-                  )}
-                  <Card id={`post-${post.id}`} className={highlighted ? 'ring-2 ring-primary/40' : undefined}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                          <Badge variant="secondary" className="gap-1 text-[11px]">
-                            <Icon className="w-3 h-3" />
-                            {t(meta.labelKey)}
-                          </Badge>
-                          {post.specialty && (
-                            <Badge variant="outline" className="text-[11px] font-normal">{post.specialty}</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {role === 'admin' && post.is_anonymous && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground"
-                              title={t('forum.reveal')}
-                              aria-label={t('forum.reveal')}
-                              onClick={() => openReveal(post)}
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                          {canDelete && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              aria-label={t('forum.delete')}
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {prompt && (
-                        <p className="text-[11px] text-primary flex items-start gap-1 mb-1">
-                          <CornerDownRight className="w-3 h-3 mt-0.5 shrink-0" />
-                          <span className="min-w-0"><span className="text-muted-foreground">{t('forum.respondsTo')}: </span>{prompt.title}</span>
-                        </p>
-                      )}
-                      <h3 className="font-semibold text-foreground leading-snug break-words">{post.title}</h3>
-                      <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap break-words">{post.body}</p>
-                      {post.image_url && (
-                        <img src={post.image_url} alt="" className="rounded-lg max-h-72 sm:max-h-96 w-auto max-w-full mt-2 border border-border" />
-                      )}
-                      {renderAttachments(post.attachments)}
-                      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          {post.is_anonymous ? (
-                            <><EyeOff className="w-3.5 h-3.5" />{t('forum.anonymous')}</>
-                          ) : (
-                            <>
-                              <span className="truncate">{post.authorName || 'Dr.'}</span>
-                              {/* Distintivo de categoría del autor (cliente 2026-08-28) */}
-                              <ProfileCategoryMark userId={post.author_id} size="sm" className="flex-shrink-0" />
-                            </>
-                          )}
-                          <span aria-hidden>·</span>
-                          <span className="whitespace-nowrap">{dateFmt.format(new Date(post.created_at))}</span>
-                        </span>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 flex-shrink-0"
-                          onClick={() => {
-                            setExpandedPost(isExpanded ? null : post.id);
-                            resetComposer();
-                          }}
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          {commentCount} {t('forum.comments')}
-                        </button>
-                      </div>
-                      {isExpanded && (
-                        <div className="mt-3 pt-3 border-t border-border">
-                          {comments.length > 0 && (
-                            <div className="divide-y divide-border/40 mb-2">
-                              {comments.map((c) => renderComment(c))}
-                            </div>
-                          )}
-                          {/* Composer: avatar + input + imagen + enviar (cabe en 375px) */}
-                          {replyTo && (
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-muted-foreground truncate">
-                                {t('forum.replyingTo')} <span className="font-medium text-foreground">@{replyTo.name}</span>
-                              </span>
-                              <button
-                                type="button"
-                                className="text-xs text-muted-foreground flex-shrink-0 ml-2 h-6 w-6 inline-flex items-center justify-center"
-                                aria-label={t('forum.removeImage')}
-                                onClick={() => { setReplyTo(null); setCommentDraft(''); }}
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-                          {commentImagePreview && (
-                            <div className="relative inline-block mb-2">
-                              <img src={commentImagePreview} alt="" className="rounded-lg max-h-40 w-auto max-w-full border border-border" />
-                              <button
-                                type="button"
-                                onClick={clearCommentImage}
-                                aria-label={t('forum.removeImage')}
-                                className="absolute top-1 right-1 rounded-full bg-background/90 border border-border p-1"
-                              >
-                                <X className="w-3.5 h-3.5 text-destructive" />
-                              </button>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-8 h-8 shrink-0">
-                              <AvatarImage src={user?.avatarUrl || ''} />
-                              <AvatarFallback className="text-xs">{user?.name?.charAt(0) || 'D'}</AvatarFallback>
-                            </Avatar>
-                            <Input
-                              ref={commentInputRef}
-                              className="flex-1 min-w-0"
-                              placeholder={t('forum.commentPlaceholder')}
-                              value={commentDraft}
-                              onChange={(e) => setCommentDraft(e.target.value)}
-                              maxLength={4000}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(post.id); }
-                              }}
-                            />
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-9 w-9 shrink-0"
-                              aria-label={t('forum.addImage')}
-                              onClick={() => commentImageInputRef.current?.click()}
-                            >
-                              <ImagePlus className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              className="h-9 w-9 shrink-0"
-                              aria-label={t('forum.send')}
-                              disabled={isSendingComment || (!commentDraft.trim() && !commentImageFile)}
-                              onClick={() => handleComment(post.id)}
-                            >
-                              {isSendingComment ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            </Button>
-                          </div>
-                          <input
-                            ref={commentImageInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            className="hidden"
-                            onChange={onCommentImageSelected}
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </React.Fragment>
-              );
-            })}
-          </div>
+          <HospitalLocator embedded />
         )}
 
         {/* Revelar autor — solo súper admin, queda en bitácora */}
@@ -1157,6 +1277,7 @@ export default function Foro() {
             )}
           </DialogContent>
         </Dialog>
+        {dialog}
       </div>
     </MainLayout>
   );

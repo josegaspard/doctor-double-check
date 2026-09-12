@@ -98,6 +98,46 @@ function generateOfficeHourSlots(
   return out;
 }
 
+// 11-sep-2026: turnos a partir del horario por tramos y días sueltos del médico
+// (get_doctor_schedule: una fila por tramo efectivo de cada día). Las horas se leen
+// en la hora local del navegador, igual que hacía el horario semanal antiguo.
+const scheduleDateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function generateScheduleSlots(
+  doctorId: string,
+  rows: { day: string; start_time: string; end_time: string }[],
+  bookedTimes: Set<string>,
+  now: Date,
+): Slot[] {
+  const out: Slot[] = [];
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const [y, mo, d] = String(r.day || '').split('-').map(Number);
+    const [sh, sm] = String(r.start_time || '').split(':').map(Number);
+    const [eh, em] = String(r.end_time || '').split(':').map(Number);
+    if (!y || !mo || !d || Number.isNaN(sh) || Number.isNaN(eh)) continue;
+    const startMins = sh * 60 + (sm || 0);
+    const endMins = eh * 60 + (em || 0);
+    for (let m = startMins; m + ORIENTATION_SLOT_MIN <= endMins; m += ORIENTATION_SLOT_MIN) {
+      const dt = new Date(y, mo - 1, d, Math.floor(m / 60), m % 60, 0, 0);
+      if (dt.getTime() <= now.getTime()) continue;
+      const iso = dt.toISOString();
+      if (bookedTimes.has(iso) || seen.has(iso)) continue;
+      seen.add(iso);
+      out.push({
+        id: `gen-${iso}`,
+        doctor_id: doctorId,
+        title: '',
+        description: null,
+        scheduled_at: iso,
+        duration_minutes: ORIENTATION_SLOT_MIN,
+        type: 'consultation',
+      });
+    }
+  }
+  return out;
+}
+
 export default function BookAppointment() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const navigate = useNavigate();
@@ -121,7 +161,7 @@ export default function BookAppointment() {
       // → esas queries .single() daban 406 y rompían TODO el booking. Usamos el RPC
       // público SECURITY DEFINER (mismo que usa /doctor/:id) que devuelve el perfil
       // público del doctor APROBADO con fee, horarios y datos de agenda.
-      const [{ data: docRows }, { data: avs }, { data: appts }, { data: blocks }] = await Promise.all([
+      const [{ data: docRows }, { data: avs }, { data: appts }, { data: blocks }, scheduleRes] = await Promise.all([
         supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId }),
         supabase
           .from('doctor_availability')
@@ -141,6 +181,11 @@ export default function BookAppointment() {
           .eq('type', 'blocked')
           .in('status', ['scheduled', 'confirmed'])
           .gte('scheduled_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
+        (supabase.rpc as any)('get_doctor_schedule', {
+          p_doctor_id: doctorId,
+          p_from: scheduleDateKey(new Date()),
+          p_to: scheduleDateKey(new Date(Date.now() + ORIENTATION_HORIZON_DAYS * 86_400_000)),
+        }),
       ]);
       const blockedRanges = ((blocks as any[]) || []).map((b) => {
         const s = new Date(b.scheduled_at).getTime();
@@ -170,14 +215,21 @@ export default function BookAppointment() {
       );
       const discreteSlots = (avs as any[] as Slot[]) || [];
       const discreteTimes = new Set(discreteSlots.map((s) => new Date(s.scheduled_at).toISOString()));
-      const officeSlots = generateOfficeHourSlots(
-        doctorId,
-        (dp as any)?.office_days ?? null,
-        (dp as any)?.office_hours_start ?? null,
-        (dp as any)?.office_hours_end ?? null,
-        bookedTimes,
-        new Date(),
-      ).filter((s) => !discreteTimes.has(new Date(s.scheduled_at).toISOString()));
+      // Si get_doctor_schedule aún no existe (migración sin aplicar) o falla, se vuelve
+      // al horario semanal antiguo del perfil.
+      const scheduleRows = !(scheduleRes as any)?.error && Array.isArray((scheduleRes as any)?.data)
+        ? ((scheduleRes as any).data as { day: string; start_time: string; end_time: string }[])
+        : null;
+      const officeSlots = (scheduleRows
+        ? generateScheduleSlots(doctorId, scheduleRows, bookedTimes, new Date())
+        : generateOfficeHourSlots(
+          doctorId,
+          (dp as any)?.office_days ?? null,
+          (dp as any)?.office_hours_start ?? null,
+          (dp as any)?.office_hours_end ?? null,
+          bookedTimes,
+          new Date(),
+        )).filter((s) => !discreteTimes.has(new Date(s.scheduled_at).toISOString()));
       const merged = [...discreteSlots, ...officeSlots].filter((s) => !isBlocked(s.scheduled_at)).sort(
         (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
       );

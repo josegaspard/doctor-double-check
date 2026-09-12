@@ -61,6 +61,8 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CalendarGrid } from '@/components/availability/CalendarGrid';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { useAppDateFormat } from '@/lib/dateFormat';
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -81,6 +83,9 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     notifyDateChange,
   } = useDoctorAvailability();
   const { subscriberCount } = useSubscriptions();
+  // Programar, confirmar, cancelar y avisar pasan por la revisión: el primer clic no ejecuta.
+  const { confirm, dialog } = useConfirmAction();
+  const fmt = useAppDateFormat();
 
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -97,15 +102,8 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
   });
   const [inviteeInput, setInviteeInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Orientación (cliente 2026-07-07): en vez de un turno puntual, el doctor define
-  // qué días y horas de la semana está disponible. Se guarda en doctor_profiles
-  // (office_days / office_hours_start / office_hours_end) y /book genera los turnos.
-  const ORIENTATION_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-  const [orientationDays, setOrientationDays] = useState<string[]>(['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
-  const [orientationStart, setOrientationStart] = useState('08:00:00');
-  const [orientationEnd, setOrientationEnd] = useState('20:00:00');
-  const [orientationLoaded, setOrientationLoaded] = useState(false);
-  const [isSavingOrientation, setIsSavingOrientation] = useState(false);
+  // 11-sep-2026: el horario semanal («Orientación») ya no se edita aquí. Vive en
+  // Agenda › Disponibilidad con tramos por día y días sueltos (ScheduleEditor).
   const [isManaging, setIsManaging] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -129,7 +127,8 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
   React.useEffect(() => {
     const nueva = searchParams.get('nueva');
     if (!nueva) return;
-    const typeMap: Record<string, AvailabilityType> = { consulta: 'consultation', live: 'live', disponible: 'office_hours' };
+    // «consulta» ya no abre este diálogo: la Agenda abre Nueva consulta.
+    const typeMap: Record<string, AvailabilityType> = { live: 'live', disponible: 'office_hours' };
     const type = typeMap[nueva];
     if (!type) return;
     const fecha = searchParams.get('fecha');
@@ -151,49 +150,6 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Cargar el horario de atención actual cuando se abre el modal en modo Orientación.
-  React.useEffect(() => {
-    if (!isDialogOpen || formData.type !== 'consultation' || orientationLoaded || !user?.id) return;
-    let active = true;
-    supabase
-      .from('doctor_profiles')
-      .select('office_hours_start, office_hours_end, office_days')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (!active || !data) { setOrientationLoaded(true); return; }
-        setOrientationStart((data as any).office_hours_start || '08:00:00');
-        setOrientationEnd((data as any).office_hours_end || '20:00:00');
-        setOrientationDays((data as any).office_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
-        setOrientationLoaded(true);
-      });
-    return () => { active = false; };
-  }, [isDialogOpen, formData.type, orientationLoaded, user?.id]);
-
-  const toggleOrientationDay = (day: string) => {
-    setOrientationDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
-  };
-
-  const handleSaveOrientation = async () => {
-    if (!user?.id) return;
-    if (orientationDays.length === 0) {
-      toast({ title: t('common.error'), description: t('availabilityPage.orientationNoDays'), variant: 'destructive' });
-      return;
-    }
-    setIsSavingOrientation(true);
-    const { error } = await supabase
-      .from('doctor_profiles')
-      .update({ office_hours_start: orientationStart, office_hours_end: orientationEnd, office_days: orientationDays } as any)
-      .eq('user_id', user.id);
-    setIsSavingOrientation(false);
-    if (error) {
-      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
-      return;
-    }
-    toast({ title: t('common.success'), description: t('availabilityPage.orientationSaved') });
-    setIsDialogOpen(false);
-  };
 
   const Wrapper = embedded ? React.Fragment : MainLayout;
 
@@ -317,10 +273,24 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
       toast({ title: t('common.error'), description: t('availabilityPage.titleRequired'), variant: 'destructive' });
       return;
     }
-    setIsSubmitting(true);
     const [hours, minutes] = formData.time.split(':').map(Number);
     const scheduledAt = new Date(formData.date);
     scheduledAt.setHours(hours, minutes, 0, 0);
+    const typeLabel = formData.type === 'live' ? 'Live' : t('availabilityPage.available');
+    const ok = await confirm({
+      title: t('mm2.confirm.availabilityCreate.title'),
+      description: formData.type === 'live' ? t('mm2.confirm.availabilityCreate.descLive') : t('mm2.confirm.availabilityCreate.descSlot'),
+      details: [
+        { label: t('mm2.confirm.availabilityCommon.titleLabel'), value: formData.title.trim() },
+        { label: t('mm2.confirm.availabilityCommon.typeLabel'), value: typeLabel },
+        { label: t('mm2.confirm.availabilityCommon.whenLabel'), value: `${fmt.formatDate(scheduledAt)} · ${fmt.formatTime(scheduledAt)}` },
+        { label: t('mm2.confirm.availabilityCommon.durationLabel'), value: `${formData.duration} min` },
+        { label: t('mm2.confirm.availabilityCommon.inviteesLabel'), value: formData.invitees.length ? String(formData.invitees.length) : t('mm2.confirm.meetingSave.inviteesNone') },
+      ],
+      confirmLabel: t('mm2.confirm.availabilityCreate.cta'),
+    });
+    if (!ok) return;
+    setIsSubmitting(true);
 
     const result = await createAvailability({
       title: formData.title.trim(),
@@ -342,7 +312,22 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     }
   };
 
+  const eventDetails = (id: string) => {
+    const ev = myAvailabilities.find(a => a.id === id);
+    return ev ? [
+      { label: t('mm2.confirm.availabilityCommon.titleLabel'), value: ev.title },
+      { label: t('mm2.confirm.availabilityCommon.whenLabel'), value: `${fmt.formatDate(ev.scheduledAt)} · ${fmt.formatTime(ev.scheduledAt)}` },
+    ] : [];
+  };
+
   const handleConfirm = async (id: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.availabilityConfirm.title'),
+      description: t('mm2.confirm.availabilityConfirm.desc'),
+      details: eventDetails(id),
+      confirmLabel: t('mm2.confirm.availabilityConfirm.cta'),
+    });
+    if (!ok) return;
     const result = await confirmAvailability(id);
     if (result.success) {
       toast({ description: t('availabilityPage.availabilityConfirmed') });
@@ -350,6 +335,14 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     }
   };
   const handleCancel = async (id: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.availabilityCancel.title'),
+      description: t('mm2.confirm.availabilityCancel.desc'),
+      details: eventDetails(id),
+      confirmLabel: t('mm2.confirm.availabilityCancel.cta'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     const result = await cancelAvailability(id);
     if (result.success) {
       toast({ description: t('availabilityPage.availabilityCancelled') });
@@ -357,6 +350,16 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
     }
   };
   const handleNotify = async (id: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.availabilityNotify.title'),
+      description: t('mm2.confirm.availabilityNotify.desc'),
+      details: [
+        ...eventDetails(id),
+        { label: t('mm2.confirm.availabilityNotify.recipientsLabel'), value: String(subscriberCount), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.availabilityNotify.cta'),
+    });
+    if (!ok) return;
     const result = await notifySubscribers(id);
     if (result.success) {
       toast({
@@ -632,7 +635,7 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
         </Dialog>
 
         {/* Create dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) setOrientationLoaded(false); }}>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto mx-0 sm:mx-auto rounded-none sm:rounded-lg h-full sm:h-auto">
             <DialogHeader className="pb-2">
               <DialogTitle className="text-base sm:text-lg">{t('availabilityPage.scheduleAvailability')}</DialogTitle>
@@ -644,10 +647,9 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
               {/* Type selector */}
               <div className="space-y-2">
                 <Label className="text-xs sm:text-sm">{t('availabilityPage.type')}</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { value: 'live' as AvailabilityType, icon: Video, label: 'Live', color: 'text-white border-[#163a83] bg-[#163a83]' },
-                    { value: 'consultation' as AvailabilityType, icon: MessageSquare, label: t('availabilityPage.consultation'), color: 'text-white border-[#227787] bg-[#227787]' },
                     { value: 'office_hours' as AvailabilityType, icon: Clock, label: t('availabilityPage.available'), color: 'text-white border-[#4f6dad] bg-[#4f6dad]' },
                   ].map(opt => (
                     <button
@@ -666,59 +668,7 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
                 </div>
               </div>
 
-              {/* Orientación → configuración de horario semanal (cliente 2026-07-07) */}
-              {formData.type === 'consultation' && (
-                <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground">{t('availabilityPage.orientationHint')}</p>
-                  <div className="space-y-2">
-                    <Label className="text-xs sm:text-sm">{t('availabilityPage.orientationDaysLabel')}</Label>
-                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
-                      {ORIENTATION_DAYS.map(day => (
-                        <button
-                          key={day}
-                          type="button"
-                          onClick={() => toggleOrientationDay(day)}
-                          className={cn(
-                            'h-9 rounded-md border text-xs font-medium transition-colors capitalize',
-                            orientationDays.includes(day)
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'border-border text-foreground hover:border-primary/40'
-                          )}
-                        >
-                          {t(`officeHoursConfig.days.${day}`).slice(0, 3)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="orientation-start" className="text-xs sm:text-sm">{t('availabilityPage.orientationStartLabel')}</Label>
-                      <Input
-                        id="orientation-start"
-                        type="time"
-                        value={orientationStart.slice(0, 5)}
-                        onChange={(e) => setOrientationStart(`${e.target.value}:00`)}
-                        className="h-9 sm:h-10 text-xs sm:text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="orientation-end" className="text-xs sm:text-sm">{t('availabilityPage.orientationEndLabel')}</Label>
-                      <Input
-                        id="orientation-end"
-                        type="time"
-                        value={orientationEnd.slice(0, 5)}
-                        onChange={(e) => setOrientationEnd(`${e.target.value}:00`)}
-                        className="h-9 sm:h-10 text-xs sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                    <p className="text-xs text-muted-foreground">{t('availabilityPage.orientationPreview')}</p>
-                  </div>
-                </div>
-              )}
-
-              {formData.type !== 'consultation' && (<>
+              <>
               <div className="space-y-2">
                 <Label htmlFor="title">{t('availabilityPage.titleLabel')}</Label>
                 <Input
@@ -853,30 +803,20 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
                   </div>
                 )}
               </div>
-              </>)}
+              </>
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
                 {t('common.cancel')}
               </Button>
-              {formData.type === 'consultation' ? (
-                <Button onClick={handleSaveOrientation} disabled={isSavingOrientation} className="w-full sm:w-auto">
-                  {isSavingOrientation ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
-                  ) : (
-                    <><Clock className="w-4 h-4 mr-2" />{t('availabilityPage.orientationSave')}</>
-                  )}
-                </Button>
-              ) : (
-                <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
-                  {isSubmitting ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
-                  ) : (
-                    <><Plus className="w-4 h-4 mr-2" />{t('availabilityPage.create')}</>
-                  )}
-                </Button>
-              )}
+              <Button onClick={handleCreate} disabled={isSubmitting} className="w-full sm:w-auto">
+                {isSubmitting ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t('availabilityPage.creating')}</>
+                ) : (
+                  <><Plus className="w-4 h-4 mr-2" />{t('availabilityPage.create')}</>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -996,6 +936,7 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      {dialog}
     </Wrapper>
   );
 }

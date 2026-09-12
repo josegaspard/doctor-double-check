@@ -5,9 +5,20 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { NotebookPen, Loader2, Trash2, Paperclip, X, FileText, ImageIcon, Mail } from 'lucide-react';
 import { compressImageIfNeeded, withTimeout } from '@/lib/imageUpload';
+import { useAppDateFormat } from '@/lib/dateFormat';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { z } from 'zod';
 
 interface Attachment {
@@ -31,6 +42,9 @@ const MAX_FILES_PER_NOTE = 5;
 export function MyNotesWidget() {
   const { t } = useLanguage();
   const { supabaseUser } = useAuth();
+  const { formatDateTime } = useAppDateFormat();
+  // El primer clic nunca borra ni manda el correo: pasa por revisión.
+  const { confirm, dialog } = useConfirmAction();
   const doctorId = supabaseUser?.id;
   const [notes, setNotes] = useState<DoctorNote[]>([]);
   const [draft, setDraft] = useState('');
@@ -38,6 +52,11 @@ export function MyNotesWidget() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Diálogo de envío por correo: reemplaza el prompt() nativo (salía en el
+  // idioma del navegador) por un campo validado + vista previa del texto.
+  const [emailTarget, setEmailTarget] = useState<DoctorNote | null>(null);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
 
   const noteSchema = z.object({
     content: z
@@ -163,17 +182,22 @@ export function MyNotesWidget() {
     }
   };
 
-  const emailNote = async (n: DoctorNote) => {
-    const to = prompt(t('myNotesWidget.emailPrompt'));
-    if (!to) return;
-    const trimmed = to.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      toast.error(t('myNotesWidget.invalidEmail'));
-      return;
-    }
+  // Abre el diálogo de envío (ya no pide el correo con prompt()).
+  const emailNote = (n: DoctorNote) => {
+    setEmailTarget(n);
+    setEmailTo('');
+  };
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo.trim());
+
+  const sendNoteEmail = async () => {
+    const n = emailTarget;
+    if (!n || !emailValid) return;
+    const trimmed = emailTo.trim();
+    setEmailSending(true);
     try {
       const subject = t('myNotesWidget.emailSubject');
-      const created = new Date(n.created_at).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+      const created = formatDateTime(n.created_at);
       const attachmentsList = (n.attachments && n.attachments.length > 0)
         ? `\n\n${t('myNotesWidget.attachmentsReferenced')}\n` + n.attachments.map(a => `• ${a.name}`).join('\n')
         : '';
@@ -183,17 +207,27 @@ export function MyNotesWidget() {
       });
       if (error) throw error;
       toast.success(t('myNotesWidget.emailSent'));
+      setEmailTarget(null);
     } catch (err: any) {
       // Fallback: open the user's mail client
       const subject = encodeURIComponent(t('myNotesWidget.emailSubject'));
       const body = encodeURIComponent(`${n.content}\n\n— Medical Masters`);
       window.location.href = `mailto:${trimmed}?subject=${subject}&body=${body}`;
       toast.message(t('myNotesWidget.openingMailClient'));
+      setEmailTarget(null);
+    } finally {
+      setEmailSending(false);
     }
   };
 
   const remove = async (n: DoctorNote) => {
-    if (!confirm(t('myNotesWidget.confirmDelete'))) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.deleteNote.title'),
+      description: t('myNotesWidget.confirmDelete'),
+      tone: 'destructive',
+      confirmLabel: t('mm2.confirm.deleteNote.confirmLabel'),
+    });
+    if (!ok) return;
     try {
       if (n.attachments && n.attachments.length > 0) {
         await supabase.storage.from('doctor-content').remove(n.attachments.map(a => a.path));
@@ -306,7 +340,7 @@ export function MyNotesWidget() {
                 )}
 
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  {new Date(n.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
+                  {formatDateTime(n.created_at)}
                 </p>
               </div>
               <div className="flex flex-col gap-1">
@@ -334,6 +368,63 @@ export function MyNotesWidget() {
           ))}
         </div>
       </CardContent>
+
+      {/* Enviar nota por correo: campo validado + vista previa (ya no prompt()) */}
+      <AlertDialog open={!!emailTarget} onOpenChange={(o) => { if (!o) setEmailTarget(null); }}>
+        <AlertDialogContent className="bg-white sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-secondary">{t('mm2.confirm.sendNote.title')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-[13.5px] text-slate-600">
+              {t('mm2.confirm.sendNote.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-1.5">
+            <label className="block text-[13px] text-slate-600" htmlFor="mm2-note-email-to">
+              {t('mm2.confirm.sendNote.toLabel')}
+            </label>
+            <Input
+              id="mm2-note-email-to"
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              placeholder={t('mm2.confirm.sendNote.toPlaceholder')}
+              autoComplete="off"
+            />
+          </div>
+
+          {emailTarget && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                {t('mm2.confirm.sendNote.previewLabel')}
+              </p>
+              <p className="text-[13px] text-slate-700 whitespace-pre-wrap break-words line-clamp-4">
+                {emailTarget.content}
+              </p>
+            </div>
+          )}
+
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <button
+              type="button"
+              className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => setEmailTarget(null)}
+            >
+              {t('mm2.confirm.cancel')}
+            </button>
+            <button
+              type="button"
+              disabled={!emailValid || emailSending}
+              className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => void sendNoteEmail()}
+            >
+              {emailSending ? <Loader2 className="inline w-4 h-4 animate-spin mr-1.5" /> : null}
+              {t('mm2.confirm.sendNote.send')}
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {dialog}
     </Card>
   );
 }

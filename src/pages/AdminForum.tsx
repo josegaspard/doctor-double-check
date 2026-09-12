@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getIntlLocale } from '@/lib/dateLocale';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
   CalendarDays, Stethoscope, AlertTriangle, Gem, Lightbulb, Trophy, Plus, Pencil, Trash2, Loader2,
   Sparkles, ArrowLeft, ShieldCheck, MessagesSquare,
@@ -49,6 +50,8 @@ interface AuditRow { id: string; post_id: string; admin_id: string; reason: stri
 export default function AdminForum() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  // Publicar ahora y borrar pasan por la revisión: el primer clic no ejecuta.
+  const { confirm, dialog } = useConfirmAction();
   const locale = getIntlLocale(language);
   const dayFmt = useMemo(() => new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', timeZone: CDMX_TZ }), [locale]);
   const dtFmt = useMemo(() => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }), [locale]);
@@ -148,6 +151,15 @@ export default function AdminForum() {
     } catch (e: any) { toast.error(e?.message || 'Error'); } finally { setPSaving(false); }
   };
   const deletePrompt = async (id: string) => {
+    const row = prompts.find((x) => x.id === id);
+    const ok = await confirm({
+      title: t('mm2.confirm.forumDeletePrompt.title'),
+      description: t('mm2.confirm.forumDeletePrompt.desc'),
+      tone: 'destructive',
+      details: row ? [{ label: t('mm2.community.confirmTitleField'), value: row.title }] : undefined,
+      confirmLabel: t('mm2.confirm.forumDeletePrompt.cta'),
+    });
+    if (!ok) return;
     try {
       const { error } = await sb.from('forum_daily_prompts').delete().eq('id', id);
       if (error) throw error;
@@ -156,6 +168,12 @@ export default function AdminForum() {
     } catch (e: any) { toast.error(e?.message || 'Error'); }
   };
   const publishNow = async () => {
+    const ok = await confirm({
+      title: t('mm2.confirm.forumPublishNow.title'),
+      description: t('mm2.confirm.forumPublishNow.desc'),
+      confirmLabel: t('mm2.confirm.forumPublishNow.cta'),
+    });
+    if (!ok) return;
     setPublishing(true);
     try {
       const { error } = await sb.rpc('forum_publish_daily', { p_notify: true });
@@ -192,6 +210,15 @@ export default function AdminForum() {
     } catch (e: any) { toast.error(e?.message || 'Error'); }
   };
   const deleteBank = async (id: string) => {
+    const row = bank.find((x) => x.id === id);
+    const ok = await confirm({
+      title: t('mm2.confirm.forumDeleteBank.title'),
+      description: t('mm2.confirm.forumDeleteBank.desc'),
+      tone: 'destructive',
+      details: row ? [{ label: t('mm2.community.confirmTitleField'), value: row.title }] : undefined,
+      confirmLabel: t('mm2.confirm.forumDeleteBank.cta'),
+    });
+    if (!ok) return;
     try {
       const { error } = await sb.from('forum_prompt_bank').delete().eq('id', id);
       if (error) throw error;
@@ -450,6 +477,7 @@ export default function AdminForum() {
           </DialogContent>
         </Dialog>
       </div>
+      {dialog}
     </MainLayout>
   );
 }

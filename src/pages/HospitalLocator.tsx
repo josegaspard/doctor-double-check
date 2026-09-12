@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { useAppDateFormat } from '@/lib/dateFormat';
 import {
   Building2, MapPin, Phone, Globe, Clock, Star, Navigation, Search, Loader2,
   ChevronDown, ChevronUp, MessageSquare, Sparkles, SlidersHorizontal, X, ArrowUpDown,
@@ -37,9 +39,13 @@ function formatDist(d: number) {
 
 type SortMode = 'distance' | 'rating' | 'name';
 
-export default function HospitalLocator() {
+// embedded: Comunidad > Descubrir > Hospitales la incrusta sin su propio MainLayout.
+export default function HospitalLocator({ embedded = false }: { embedded?: boolean } = {}) {
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const { language, t } = useLanguage();
   const { user } = useAuth();
+  const { confirm, dialog } = useConfirmAction();
+  const { formatDate } = useAppDateFormat();
   const es = language === 'es';
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [reviews, setReviews] = useState<Record<string, any[]>>({});
@@ -137,6 +143,18 @@ export default function HospitalLocator() {
 
   const handleSubmitReview = async () => {
     if (!user || !reviewDialog) return;
+    const hospName = hospitals.find(h => h.id === reviewDialog)?.name || '—';
+    // La reseña se ve públicamente en la ficha del hospital: primer clic no escribe.
+    const ok = await confirm({
+      title: t('mm2.community.confirmReviewTitle'),
+      description: t('mm2.community.confirmReviewDesc'),
+      details: [
+        { label: t('mm2.community.confirmReviewHospital'), value: hospName },
+        { label: t('mm2.community.confirmReviewRating'), value: `${reviewForm.rating}/5` },
+      ],
+      confirmLabel: t('mm2.community.confirmReviewCta'),
+    });
+    if (!ok) return;
     setSubmitting(true);
     const { error } = await supabase.from('hospital_reviews').insert({
       hospital_id: reviewDialog, user_id: user.id, rating: reviewForm.rating, comment: reviewForm.comment || null,
@@ -200,9 +218,9 @@ export default function HospitalLocator() {
     <div className="space-y-6">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc2')}</p>
-        <div className="px-3 py-2 rounded-lg bg-secondary/10 border border-secondary/30 flex items-center gap-2">
+        <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/30 flex items-center gap-2">
           <span aria-hidden>🏨</span>
-          <span className="text-sm font-medium text-secondary">{t('autoI18n.hospitalLoc3')}</span>
+          <span className="text-sm font-medium text-primary">{t('autoI18n.hospitalLoc3')}</span>
         </div>
       </div>
 
@@ -244,7 +262,7 @@ export default function HospitalLocator() {
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc9')}</p>
         <div className="grid grid-cols-5 gap-1.5">
           {[0, 3, 3.5, 4, 4.5].map(r => (
-            <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-secondary/15 text-secondary border-2 border-secondary shadow-sm ring-1 ring-secondary/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
+            <button key={r} onClick={() => setFilterMinRating(r)} className={`py-2 rounded-lg text-xs font-medium transition-all duration-200 text-center ${filterMinRating === r ? 'bg-primary/15 text-primary border-2 border-primary shadow-sm ring-1 ring-primary/30' : 'bg-muted/60 text-muted-foreground hover:bg-muted border border-transparent'}`}>
               {r === 0 ? t('autoI18n.hospitalLoc10') : `${r}+`}
             </button>
           ))}
@@ -299,7 +317,7 @@ export default function HospitalLocator() {
   );
 
   return (
-    <MainLayout>
+    <Wrapper>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Hero */}
         <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10 p-5 sm:p-8 border border-primary/10">
@@ -360,7 +378,7 @@ export default function HospitalLocator() {
         {/* Desktop: Sort inline (filtros hardcodeados a Privado · México) */}
         <div className="hidden sm:flex items-center justify-between gap-3 mb-4">
           <div className="flex gap-2 flex-wrap">
-            <span className="mm-chip mm-chip-active bg-secondary/15 text-secondary">
+            <span className="mm-chip mm-chip-active bg-primary/15 text-primary">
               {t('autoI18n.hospitalLoc27')}
             </span>
           </div>
@@ -380,22 +398,22 @@ export default function HospitalLocator() {
         {activeFilterCount > 0 && (
           <div className="flex gap-2 mb-3 overflow-x-auto pb-1 sm:hidden">
             {filterZone !== 'all' && (
-              <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterZone('all')}>
+              <Badge variant="outline" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer bg-muted/70 text-foreground" onClick={() => setFilterZone('all')}>
                 {filterZone} <X className="w-2.5 h-2.5" />
               </Badge>
             )}
             {filterSpecialty !== 'all' && (
-              <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterSpecialty('all')}>
+              <Badge variant="outline" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer bg-muted/70 text-foreground" onClick={() => setFilterSpecialty('all')}>
                 {filterSpecialty} <X className="w-2.5 h-2.5" />
               </Badge>
             )}
             {filterMinRating > 0 && (
-              <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterMinRating(0)}>
+              <Badge variant="outline" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer bg-muted/70 text-foreground" onClick={() => setFilterMinRating(0)}>
                 {filterMinRating}+ ⭐ <X className="w-2.5 h-2.5" />
               </Badge>
             )}
             {filterMaxDist < 100 && (
-              <Badge variant="secondary" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer" onClick={() => setFilterMaxDist(100)}>
+              <Badge variant="outline" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer bg-muted/70 text-foreground" onClick={() => setFilterMaxDist(100)}>
                 ≤{filterMaxDist}km <X className="w-2.5 h-2.5" />
               </Badge>
             )}
@@ -462,7 +480,7 @@ export default function HospitalLocator() {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                           {/* Overlays */}
                           <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${h.type === 'public' ? 'bg-primary/90 text-primary-foreground' : h.type === 'private' ? 'bg-secondary/90 text-secondary-foreground' : 'bg-accent/90 text-accent-foreground'}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold backdrop-blur-sm ${h.type === 'public' ? 'bg-primary/90 text-primary-foreground' : h.type === 'private' ? 'bg-info/90 text-info-foreground' : 'bg-accent/90 text-accent-foreground'}`}>
                               {h.type === 'public' ? t('autoI18n.hospitalLoc37') : h.type === 'private' ? t('autoI18n.hospitalLoc38') : t('autoI18n.hospitalLoc39')}
                             </span>
                           </div>
@@ -482,7 +500,7 @@ export default function HospitalLocator() {
                         </div>
                       ) : (
                         <div className="relative px-4 pt-3 flex items-center justify-between">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${h.type === 'public' ? 'bg-primary/10 text-primary' : h.type === 'private' ? 'bg-secondary/10 text-secondary' : 'bg-accent/15 text-accent'}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${h.type === 'public' ? 'bg-primary/10 text-primary' : h.type === 'private' ? 'bg-info/10 text-info' : 'bg-accent/15 text-accent'}`}>
                             {h.type === 'public' ? t('autoI18n.hospitalLoc40') : h.type === 'private' ? t('autoI18n.hospitalLoc41') : t('autoI18n.hospitalLoc42')}
                           </span>
                           {isFeatured && (
@@ -556,7 +574,7 @@ export default function HospitalLocator() {
                                   <Navigation className="w-3.5 h-3.5" /> Maps
                                 </a>
                               </Button>
-                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 border border-secondary/30 text-secondary bg-secondary/10 hover:bg-secondary/20" asChild>
+                              <Button size="sm" className="flex-1 text-xs gap-1.5 h-8 border border-info/30 text-info bg-info/10 hover:bg-info/20" asChild>
                                 <a href={`https://www.waze.com/ul?ll=${h.lat},${h.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                                   <Navigation className="w-3.5 h-3.5" /> Waze
                                 </a>
@@ -584,7 +602,7 @@ export default function HospitalLocator() {
                                 <p className="text-xs font-medium mb-1.5">{t('autoI18n.hospitalLoc46')}</p>
                                 <div className="flex flex-wrap gap-1">
                                   {h.specialties.map((sp: string, i: number) => (
-                                    <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                                    <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-primary/8 text-primary font-medium border border-primary/10">
                                       {sp}
                                     </span>
                                   ))}
@@ -618,7 +636,7 @@ export default function HospitalLocator() {
                                       <Star key={s} className={`w-3 h-3 ${s <= rv.rating ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`} />
                                     ))}
                                     <span className="text-[10px] text-muted-foreground ml-1">
-                                      {new Date(rv.created_at).toLocaleDateString()}
+                                      {formatDate(rv.created_at, 'PP')}
                                     </span>
                                   </div>
                                   {rv.comment && <p className="text-xs text-muted-foreground">{rv.comment}</p>}
@@ -671,7 +689,8 @@ export default function HospitalLocator() {
             </div>
           </DialogContent>
         </Dialog>
+        {dialog}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

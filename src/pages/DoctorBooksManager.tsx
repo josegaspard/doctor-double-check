@@ -11,8 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { downloadBookPdf, DoctorBook } from '@/components/doctor/DoctorBooks';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { ArrowLeft, BookOpen, Download, Loader2, Trash2, Upload, Eye, FileText, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { money2, fmtDate } from '@/lib/proFormat';
 
 // Panel del doctor para sus libros/cursos PDF de pago (cliente 2026-07-08).
 // El PDF va al bucket privado doctor-content (solo compradores/creador/admin
@@ -24,10 +26,14 @@ interface ManagedBook extends DoctorBook {
   moderation_status: 'pending' | 'approved' | 'rejected';
 }
 
-export default function DoctorBooksManager() {
+export default function DoctorBooksManager({ embedded = false }: { embedded?: boolean } = {}) {
+  // embedded=true: se pinta dentro de Contenido › Crear › Libros (ContentHub),
+  // sin su propio MainLayout ni título (11-sep-2026).
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const navigate = useNavigate();
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const [books, setBooks] = useState<ManagedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -56,6 +62,7 @@ export default function DoctorBooksManager() {
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
   if (role !== 'doctor' && role !== 'admin') {
+    if (embedded) return null; // ContentHub ya filtró el rol antes de llegar aquí
     return <Navigate to="/lives" replace />;
   }
 
@@ -82,6 +89,22 @@ export default function DoctorBooksManager() {
       toast.error(t('doctorBooks.fileTooBig').replace('{max}', String(MAX_PDF_MB)));
       return;
     }
+
+    // Publicar un libro de pago tiene consecuencias (queda visible y en
+    // venta): pasa por el modal de revisión común antes de subir el PDF y
+    // guardar el registro — nunca al primer clic (regla del encargo, 11-sep-2026).
+    const ok = await confirm({
+      title: t('mm2.content.hub.books.publishConfirmTitle'),
+      description: t('mm2.content.hub.books.publishConfirmDesc'),
+      details: [
+        { label: t('doctorBooks.fieldTitle'), value: title.trim() },
+        { label: t('doctorBooks.fieldPrice'), value: money2(priceNum, language) },
+        ...(originalNum ? [{ label: t('doctorBooks.fieldOriginalPrice'), value: money2(originalNum, language) }] : []),
+      ],
+      confirmLabel: t('doctorBooks.publishBook'),
+      tone: 'payment',
+    });
+    if (!ok) return;
 
     setUploading(true);
     try {
@@ -134,7 +157,16 @@ export default function DoctorBooksManager() {
   };
 
   const handleDelete = async (book: ManagedBook) => {
-    if (!window.confirm(t('doctorBooks.deleteConfirm').replace('{title}', book.title))) return;
+    // Borrar un libro es irreversible (PDF + registro): pasa por el modal de
+    // revisión común, nunca por el primer clic (regla del encargo, 11-sep-2026).
+    const ok = await confirm({
+      title: t('mm2.content.hub.books.deleteTitle'),
+      description: t('mm2.content.hub.books.deleteDesc'),
+      details: [{ label: t('mm2.content.hub.books.deleteLabel'), value: book.title }],
+      confirmLabel: t('doctorBooks.delete'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     setDeleting(book.id);
     try {
       await supabase.storage.from('doctor-content').remove([book.file_url]);
@@ -171,27 +203,31 @@ export default function DoctorBooksManager() {
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
-        </Button>
-
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              {t('doctorBooks.managerTitle')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">{t('doctorBooks.managerSubtitle')}</p>
-          </div>
-          {user?.id && (
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/doctor/${user.id}`)}>
-              <Eye className="w-4 h-4" />
-              {t('doctorBooks.viewOnProfile')}
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl'}>
+        {!embedded && (
+          <>
+            <Button variant="back" size="sm" onClick={() => navigate(-1)} className="mb-3 -ml-2 text-white hover:text-white">
+              <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorDashboardPage.back')}
             </Button>
-          )}
-        </div>
+
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  {t('doctorBooks.managerTitle')}
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">{t('doctorBooks.managerSubtitle')}</p>
+              </div>
+              {user?.id && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/doctor/${user.id}`)}>
+                  <Eye className="w-4 h-4" />
+                  {t('doctorBooks.viewOnProfile')}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Formulario de subida */}
         <Card className="mb-6">
@@ -319,12 +355,12 @@ export default function DoctorBooksManager() {
                       </div>
                       <div className="flex items-baseline gap-2 mt-1">
                         {book.original_price && (
-                          <span className="text-xs text-muted-foreground line-through">${Number(book.original_price).toLocaleString('es-MX')}</span>
+                          <span className="text-xs text-muted-foreground line-through">{money2(Number(book.original_price), language)}</span>
                         )}
-                        <span className="text-sm font-bold text-emerald-600">${Number(book.price).toLocaleString('es-MX')} MXN</span>
+                        <span className="text-sm font-bold text-emerald-600">{money2(Number(book.price), language)}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {new Date(book.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {fmtDate(new Date(book.created_at), language)}
                       </p>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -356,6 +392,7 @@ export default function DoctorBooksManager() {
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+      {dialog}
+    </Wrapper>
   );
 }

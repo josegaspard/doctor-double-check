@@ -60,13 +60,15 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AccessGuard from "./components/AccessGuard";
+import { DoctorLegacyRedirect } from "./components/routing/DoctorLegacyRedirect";
 
 // Lazy loaded pages
 const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
 // Diseño PRO del médico (cliente 7-sep-2026): agenda profesional y mis pacientes
 const DoctorAgenda = React.lazy(() => import("./pages/DoctorAgenda"));
 const DoctorPatients = React.lazy(() => import("./pages/DoctorPatients"));
-const DoctorConsultations = React.lazy(() => import("./pages/DoctorConsultations"));
+const DoctorPatientDetail = React.lazy(() => import("./pages/DoctorPatientDetail"));
+const ContentHub = React.lazy(() => import("./pages/ContentHub"));
 
 // Lazy loaded pages
 const RoleSelector = React.lazy(() => import("./pages/RoleSelector"));
@@ -80,13 +82,11 @@ const Chat = React.lazy(() => import("./pages/Chat"));
 const DoctorProfile = React.lazy(() => import("./pages/DoctorProfile"));
 const DoctorDashboard = React.lazy(() => import("./pages/DoctorDashboard"));
 const DoctorUpload = React.lazy(() => import("./pages/DoctorUpload"));
-const DoctorVault = React.lazy(() => import("./pages/DoctorVault"));
 const ResidentGroups = React.lazy(() => import("./pages/ResidentGroups"));
 const MedicalHistory = React.lazy(() => import("./pages/MedicalHistory"));
 const ClinicalSessions = React.lazy(() => import("./pages/ClinicalSessions"));
 const DoubleCheck = React.lazy(() => import("./pages/DoubleCheck"));
 const Settings = React.lazy(() => import("./pages/Settings"));
-const DoctorAvailability = React.lazy(() => import("./pages/DoctorAvailability"));
 const DoctorRecordings = React.lazy(() => import("./pages/DoctorRecordings"));
 const DoctorGoLive = React.lazy(() => import("./pages/DoctorGoLive"));
 const UserProfile = React.lazy(() => import("./pages/UserProfile"));
@@ -245,54 +245,56 @@ const App = () => {
                       <Route path="/" element={<Landing />} />
                       <Route path="/app" element={<RoleSelector />} />
                       <Route path="/login" element={<Login />} />
-                      <Route path="/lives" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate>} />
+                      <Route path="/lives" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate></DoctorLegacyRedirect>} />
                       <Route path="/live/:id" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate>} />
-                      <Route path="/recordings" element={<ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate>} />
+                      <Route path="/recordings" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate></DoctorLegacyRedirect>} />
                       <Route path="/recording/:id" element={<ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingPlayer /></ToggleGate>} />
-                      <Route path="/wallet" element={<AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><Wallet /></AccessGuard>} />
-                      <Route path="/wallet/ledger" element={<AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><WalletLedger /></AccessGuard>} />
+                      <Route path="/wallet" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><Wallet /></AccessGuard></DoctorLegacyRedirect>} />
+                      <Route path="/wallet/ledger" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><WalletLedger /></AccessGuard></DoctorLegacyRedirect>} />
                       <Route path="/chat" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><Chat /></ToggleGate>} />
                       {/* Chat exclusivo por distintivo (medalla/palomita) — solo doctores con badge. */}
                       <Route path="/badge-chat" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><BadgeChat /></AccessGuard>} />
                       <Route path="/doctor/:id" element={<DoctorProfile />} />
-                      <Route path="/profile" element={<UserProfile />} />
+                      <Route path="/profile" element={<DoctorLegacyRedirect><UserProfile /></DoctorLegacyRedirect>} />
                       <Route path="/verify-identity" element={<IdentityVerification />} />
                       {/* Rutas operativas del doctor: requieren perfil APROBADO
                           (antes un doctor 'pending' podía entrar a operar). */}
                       <Route path="/doctor/dashboard" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorDashboard /></AccessGuard>} />
                       <Route path="/doctor/agenda" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorAgenda /></AccessGuard>} />
                       <Route path="/doctor/patients" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorPatients /></AccessGuard>} />
-                      <Route path="/doctor/consultations" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorConsultations /></AccessGuard>} />
-                      <Route path="/doctor/upload" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorUpload /></AccessGuard>} />
-                      <Route path="/doctor/vault" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><ToggleGate toggleKey="enable_vault" feature="vault"><DoctorVault /></ToggleGate></AccessGuard>} />
-                      <Route path="/doctor/availability" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorAvailability /></AccessGuard>} />
-                      <Route path="/doctor/recordings" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorRecordings /></AccessGuard>} />
-                      <Route path="/doctor/content" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorContentLibrary /></AccessGuard>} />
+                      <Route path="/doctor/patients/:patientId" element={<AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorPatientDetail /></AccessGuard>} />
+                      <Route path="/contenido" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><ContentHub /></AccessGuard>} />
+                      <Route path="/doctor/consultations" element={<DoctorLegacyRedirect />} />
+                      <Route path="/doctor/upload" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorUpload /></AccessGuard></DoctorLegacyRedirect>} />
+                      <Route path="/doctor/vault" element={<DoctorLegacyRedirect />} />
+                      <Route path="/doctor/availability" element={<DoctorLegacyRedirect />} />
+                      <Route path="/doctor/recordings" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorRecordings /></AccessGuard></DoctorLegacyRedirect>} />
+                      <Route path="/doctor/content" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} requireApproved fallbackType="forbidden"><DoctorContentLibrary /></AccessGuard></DoctorLegacyRedirect>} />
                       {/* Libros/cursos PDF de pago (cliente 2026-07-08) */}
-                      <Route path="/doctor/books" element={<AccessGuard allowedRoles={['doctor', 'admin']} requireApproved fallbackType="forbidden"><DoctorBooksManager /></AccessGuard>} />
+                      <Route path="/doctor/books" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor', 'admin']} requireApproved fallbackType="forbidden"><DoctorBooksManager /></AccessGuard></DoctorLegacyRedirect>} />
                       {/* Lives: médicos SIEMPRE; residentes según el interruptor del admin
                           (enable_lives_residents). El permiso fino lo comprueba la propia
                           página y, sobre todo, la política de INSERT de `lives` en la base. */}
                       <Route path="/doctor/go-live" element={<AccessGuard allowedRoles={['doctor', 'resident']} requireApproved fallbackType="forbidden"><DoctorGoLive /></AccessGuard>} />
-                      <Route path="/doctor/subscribers" element={<SubscribersList />} />
+                      <Route path="/doctor/subscribers" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor', 'resident']} fallbackType="forbidden"><SubscribersList /></AccessGuard></DoctorLegacyRedirect>} />
                       <Route path="/resident-groups" element={<ResidentGroups />} />
                       <Route path="/medical-history" element={<MedicalHistory />} />
                       <Route path="/medical-record" element={<MedicalRecord />} />
                       <Route path="/vault" element={<ToggleGate toggleKey="enable_vault" feature="vault"><Vault /></ToggleGate>} />
                       <Route path="/education" element={<AccessGuard allowedRoles={['patient', 'doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><ClinicalSessions /></AccessGuard>} />
-                      <Route path="/meetings" element={<Meetings />} />
+                      <Route path="/meetings" element={<DoctorLegacyRedirect><Meetings /></DoctorLegacyRedirect>} />
                       {/* Congresos (cliente 2026-07-02): series de conferencias de varios doctores. */}
                       <Route path="/congresos" element={<Congresses />} />
                       <Route path="/congreso/:id" element={<CongressDetail />} />
                       <Route path="/congresses" element={<Navigate to="/congresos" replace />} />
                       <Route path="/foro" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><Foro /></AccessGuard>} />
-                      <Route path="/hospital-locator" element={<HospitalLocator />} />
+                      <Route path="/hospital-locator" element={<DoctorLegacyRedirect><HospitalLocator /></DoctorLegacyRedirect>} />
                       {/* Marketplace / venta de productos RESTAURADO (cliente 2026-06-29).
                           Gateado por el toggle enable_marketplace desde el admin. */}
                       <Route path="/medical-supplies" element={<AccessGuard allowedRoles={['patient']} fallbackType="forbidden"><ToggleGate toggleKey="enable_marketplace" feature="marketplace"><MedicalSupplies /></ToggleGate></AccessGuard>} />
-                      <Route path="/my-orders" element={<MyOrders />} />
-                      <Route path="/my-books" element={<MyBooks />} />
+                      <Route path="/my-orders" element={<DoctorLegacyRedirect><MyOrders /></DoctorLegacyRedirect>} />
+                      <Route path="/my-books" element={<DoctorLegacyRedirect><MyBooks /></DoctorLegacyRedirect>} />
                       <Route path="/order-success" element={<OrderSuccess />} />
                       <Route path="/double-check" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><DoubleCheck /></ToggleGate>} />
                       <Route path="/settings" element={<Settings />} />
@@ -307,7 +309,7 @@ const App = () => {
                       <Route path="/admin/reports" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminReports /></AccessGuard>} />
                       <Route path="/admin/content-moderation" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminContentModeration /></AccessGuard>} />
                       <Route path="/book/:doctorId" element={<AccessGuard allowedRoles={['patient','resident']} fallbackType="forbidden"><BookAppointment /></AccessGuard>} />
-                      <Route path="/my-appointments" element={<AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><MyAppointments /></AccessGuard>} />
+                      <Route path="/my-appointments" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><MyAppointments /></AccessGuard></DoctorLegacyRedirect>} />
                       {/* /vendor/products duplicaba al portal sin la UX de aprobación → redirect. */}
                       {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<Navigate to="/vendor/dashboard" replace />} />}
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
@@ -324,12 +326,12 @@ const App = () => {
                       <Route path="/admin/ranks" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRanks /></AccessGuard>} />
                       <Route path="/doctor/news" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
-                      <Route path="/doctors" element={<Doctors />} />
+                      <Route path="/doctors" element={<DoctorLegacyRedirect><Doctors /></DoctorLegacyRedirect>} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/onboarding" element={<Onboarding />} />
-                      <Route path="/doctor/bank-account" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorBankAccount /></AccessGuard>} />
-                      <Route path="/doctor/invoices" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorInvoices /></AccessGuard>} />
-                      <Route path="/doctor/earnings" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorEarnings /></AccessGuard>} />
+                      <Route path="/doctor/bank-account" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorBankAccount /></AccessGuard></DoctorLegacyRedirect>} />
+                      <Route path="/doctor/invoices" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorInvoices /></AccessGuard></DoctorLegacyRedirect>} />
+                      <Route path="/doctor/earnings" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorEarnings /></AccessGuard></DoctorLegacyRedirect>} />
                       <Route path="/doctor/email-history" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorEmailHistory /></AccessGuard>} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<Privacy />} />

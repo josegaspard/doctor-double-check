@@ -3,12 +3,12 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useVault } from '@/contexts/VaultContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
 import { useDoctorPatients, DoctorPatient } from '@/hooks/useDoctorPatients';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,29 +16,42 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
+import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
   Users, Plus, Search, ChevronDown, Calendar, Clock, CalendarDays, ClipboardList, FileText,
-  ArrowRight, MoreVertical, UserPlus, Link2, Download, MessageSquare, Loader2, X, Copy,
+  ArrowRight, MoreVertical, UserPlus, Link2, FolderOpen, MessageSquare, X, Copy,
 } from 'lucide-react';
-import { fill, initialsOf, norm, fmtDate, fmtTime, whenLabel } from '@/lib/proFormat';
+import { fill, initialsOf, norm, fmtDate, fmtTime } from '@/lib/proFormat';
 
-type Tab = 'all' | 'next' | 'followUp' | 'pending';
+type Tab = 'all' | 'next' | 'followUp' | 'pending' | 'docs';
 type Sort = 'recent' | 'name' | 'next';
 
+// 11-sep-2026: «Ver ficha» y los accesos Agenda/Consultas/Documentos de cada tarjeta
+// abren la ficha de ESE paciente (/doctor/patients/:id). El panel lateral y el
+// enlace a «Expedientes de pacientes» (/doctor/vault) se retiran: los documentos
+// viven ahora en Paciente > Documentos.
 export default function DoctorPatients() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
   const { toggles } = useSiteToggles();
+  const { getAccessibleFiles } = useVault();
   const { patients, loading, error, refresh } = useDoctorPatients();
+  const { confirm, dialog } = useConfirmAction();
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<Tab>('all');
   const [sort, setSort] = useState<Sort>('recent');
   const [addOpen, setAddOpen] = useState(false);
-  const [record, setRecord] = useState<DoctorPatient | null>(null);
+  const [scheduleFor, setScheduleFor] = useState<string | null>(null);
   const [openingChat, setOpeningChat] = useState<string | null>(null);
 
   const chatEnabled = !!toggles.enable_patient_chat;
+  const docPatientIds = useMemo(
+    () => new Set(getAccessibleFiles(user?.id || '').map(f => f.patientId)),
+    [getAccessibleFiles, user?.id],
+  );
+  const nameOf = (p: DoctorPatient) => p.name || t('mm2.patients.unnamed');
 
   const statusLabel = (p: DoctorPatient) => {
     switch (p.status) {
@@ -61,6 +74,7 @@ export default function DoctorPatients() {
       if (tab === 'next' && !p.nextAppointmentAt) return false;
       if (tab === 'followUp' && p.status !== 'followUp') return false;
       if (tab === 'pending' && !p.hasPendingRequest) return false;
+      if (tab === 'docs' && !docPatientIds.has(p.id)) return false;
       if (q) {
         const hay = norm(`${p.name} ${p.email || ''} ${statusLabel(p)} ${p.tier || ''}`);
         if (!hay.includes(q)) return false;
@@ -71,9 +85,7 @@ export default function DoctorPatients() {
     else if (sort === 'next') arr = [...arr].sort((a, b) => (a.nextAppointmentAt || '9999').localeCompare(b.nextAppointmentAt || '9999'));
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patients, query, tab, sort, language]);
-
-  if (role !== 'doctor') return <Navigate to="/lives" replace />;
+  }, [patients, query, tab, sort, language, docPatientIds]);
 
   const shareLink = `${window.location.origin}/app`;
   const copyLink = async () => {
@@ -97,6 +109,17 @@ export default function DoctorPatients() {
         .maybeSingle();
       let sessionId = existing?.id;
       if (!sessionId) {
+        // Crear una conversación nueva es una acción con consecuencias: primero la revisión.
+        const ok = await confirm({
+          title: fill(t('mm2.patients.chatConfirm.title'), { name: nameOf(p) }),
+          description: t('mm2.patients.chatConfirm.desc'),
+          details: [
+            { label: t('mm2.patients.chatConfirm.patient'), value: nameOf(p) },
+            { label: t('mm2.patients.chatConfirm.type'), value: t('mm2.patients.chatConfirm.typeValue') },
+          ],
+          confirmLabel: t('mm2.patients.chatConfirm.confirm'),
+        });
+        if (!ok) return;
         const { data: created, error: insErr } = await supabase
           .from('chat_sessions')
           .insert({
@@ -127,6 +150,11 @@ export default function DoctorPatients() {
     return withTime ? `${fmtDate(d, language)} · ${fmtTime(d, language)}` : fmtDate(d, language);
   };
 
+  const recordHref = (p: DoctorPatient, tabId?: string) => `/doctor/patients/${p.id}${tabId ? `?tab=${tabId}` : ''}`;
+
+  // Guard de rol al final: los hooks ya se ejecutaron.
+  if (role && role !== 'doctor') return <Navigate to="/lives" replace />;
+
   const countText = patients.length === 1 ? t('pro.patients.countOne') : fill(t('pro.patients.count'), { n: patients.length });
   const sortLabel = sort === 'recent' ? t('pro.patients.sortRecent') : sort === 'name' ? t('pro.patients.sortName') : t('pro.patients.sortNext');
 
@@ -152,7 +180,7 @@ export default function DoctorPatients() {
               {query && <button type="button" className="pro-kebab w-7 h-7" onClick={() => setQuery('')} aria-label={t('pro.common.close')}><X /></button>}
             </div>
             <div className="pro-seg">
-              {([['all', t('pro.patients.all')], ['next', t('pro.patients.nextConsultation')], ['followUp', t('pro.patients.followUp')], ['pending', t('pro.patients.pending')]] as [Tab, string][]).map(([k, l]) => (
+              {([['all', t('pro.patients.all')], ['next', t('pro.patients.nextConsultation')], ['followUp', t('pro.patients.followUp')], ['pending', t('pro.patients.pending')], ['docs', t('mm2.patients.list.withDocs')]] as [Tab, string][]).map(([k, l]) => (
                 <button key={k} type="button" className={tab === k ? 'is-active' : ''} onClick={() => setTab(k)}>{l}</button>
               ))}
             </div>
@@ -193,9 +221,9 @@ export default function DoctorPatients() {
               {list.map(p => (
                 <article key={p.id} className="pro-patient">
                   <div className="top">
-                    <span className="pro-initials">{p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : initialsOf(p.name)}</span>
+                    <span className="pro-initials">{p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : initialsOf(nameOf(p))}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="name">{p.countryFlag ? `${p.countryFlag} ` : ''}{p.name}</div>
+                      <div className="name">{p.countryFlag ? `${p.countryFlag} ` : ''}{nameOf(p)}</div>
                       <div className="mail">{p.email || '—'}</div>
                       <span className={`pro-pill mt-1.5 ${statusClass(p)}`}>{statusLabel(p)}</span>
                     </div>
@@ -204,10 +232,10 @@ export default function DoctorPatients() {
                         <button type="button" className="pro-kebab" aria-label={t('nav.more')}><MoreVertical /></button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem onClick={() => setRecord(p)}><Users className="w-4 h-4 mr-2" />{t('pro.patients.viewRecord')}</DropdownMenuItem>
-                        {chatEnabled && <DropdownMenuItem onClick={() => openChatWith(p)}><MessageSquare className="w-4 h-4 mr-2" />{t('pro.patients.openChat')}</DropdownMenuItem>}
-                        <DropdownMenuItem onClick={() => navigate('/doctor/availability?nueva=consulta')}><Calendar className="w-4 h-4 mr-2" />{t('pro.patients.schedule')}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate('/doctor/vault')}><FileText className="w-4 h-4 mr-2" />{t('pro.patients.openDocs')}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(recordHref(p))}><Users className="w-4 h-4 mr-2" />{t('pro.patients.viewRecord')}</DropdownMenuItem>
+                        {chatEnabled && <DropdownMenuItem disabled={openingChat === p.id} onClick={() => openChatWith(p)}><MessageSquare className="w-4 h-4 mr-2" />{t('pro.patients.openChat')}</DropdownMenuItem>}
+                        <DropdownMenuItem onClick={() => setScheduleFor(p.id)}><Calendar className="w-4 h-4 mr-2" />{t('pro.patients.schedule')}</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(recordHref(p, 'documentos'))}><FileText className="w-4 h-4 mr-2" />{t('pro.patients.openDocs')}</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -216,10 +244,10 @@ export default function DoctorPatients() {
                     <span><Clock />{t('pro.patients.next')}: {dateOr(p.nextAppointmentAt, true)}</span>
                   </div>
                   <div className="acts">
-                    <Link to="/doctor/agenda" title={t('pro.patients.agenda')}><CalendarDays /> <span>{t('pro.patients.agenda')}</span></Link>
-                    <Link to="/my-appointments" title={t('pro.patients.consultations')}><ClipboardList /> <span>{t('pro.patients.consultations')}</span></Link>
-                    <Link to="/doctor/vault" title={t('pro.patients.documents')}><FileText /> <span>{t('pro.patients.documents')}</span></Link>
-                    <button type="button" className="main" onClick={() => setRecord(p)}><span>{t('pro.patients.viewRecord')}</span> <ArrowRight /></button>
+                    <Link to={recordHref(p, 'agenda')} title={t('pro.patients.agenda')}><CalendarDays /> <span>{t('pro.patients.agenda')}</span></Link>
+                    <Link to={recordHref(p, 'consultas')} title={t('pro.patients.consultations')}><ClipboardList /> <span>{t('pro.patients.consultations')}</span></Link>
+                    <Link to={recordHref(p, 'documentos')} title={t('pro.patients.documents')}><FileText /> <span>{t('pro.patients.documents')}</span></Link>
+                    <button type="button" className="main" onClick={() => navigate(recordHref(p))}><span>{t('pro.patients.viewRecord')}</span> <ArrowRight /></button>
                   </div>
                 </article>
               ))}
@@ -243,7 +271,7 @@ export default function DoctorPatients() {
             <div className="pro-quick-acts">
               <button type="button" onClick={() => setAddOpen(true)}><UserPlus /> {t('pro.patients.add')}</button>
               <button type="button" onClick={copyLink}><Link2 /> {t('pro.patients.shareLink')}</button>
-              <Link to="/doctor/vault"><Download /> {t('pro.patients.importData')}</Link>
+              <button type="button" onClick={() => setTab('docs')}><FolderOpen /> {t('mm2.patients.list.sharedDocs')}</button>
             </div>
           </div>
         </section>
@@ -267,44 +295,14 @@ export default function DoctorPatients() {
         </DialogContent>
       </Dialog>
 
-      {/* Ficha del paciente */}
-      <Sheet open={!!record} onOpenChange={(o) => { if (!o) setRecord(null); }}>
-        <SheetContent side="right" className="w-[min(94vw,420px)] sm:max-w-[420px] overflow-y-auto">
-          {record && (
-            <>
-              <SheetHeader className="mb-4"><SheetTitle className="pro-card-title">{t('pro.patients.recordTitle')}</SheetTitle></SheetHeader>
-              <div className="flex items-center gap-3">
-                <span className="pro-initials w-16 h-16 text-lg">{record.avatarUrl ? <img src={record.avatarUrl} alt="" /> : initialsOf(record.name)}</span>
-                <div className="min-w-0">
-                  <div className="font-heading font-extrabold text-lg pro-ink truncate">{record.countryFlag ? `${record.countryFlag} ` : ''}{record.name}</div>
-                  <span className={`pro-pill mt-1 ${statusClass(record)}`}>{statusLabel(record)}</span>
-                </div>
-              </div>
-              <dl className="mt-5 space-y-2.5 text-sm">
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.email')}</dt><dd className="font-medium text-right truncate">{record.email || '—'}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.phone')}</dt><dd className="font-medium text-right">{record.phone || '—'}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.consultationsDone')}</dt><dd className="font-medium">{record.consultationsCount}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.lastConsultation')}</dt><dd className="font-medium text-right">{dateOr(record.lastConsultationAt)}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.next')}</dt><dd className="font-medium text-right">{dateOr(record.nextAppointmentAt, true)}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.lastContact')}</dt><dd className="font-medium text-right">{record.lastInteraction ? whenLabel(new Date(record.lastInteraction), language, t) : '—'}</dd></div>
-                {record.tier && (
-                  <div className="flex justify-between gap-3"><dt className="text-muted-foreground">{t('pro.patients.tier')}</dt><dd className="font-medium">{record.tier === 'premium' ? t('pro.patients.tierPremium') : record.tier === 'basic' ? t('pro.patients.tierBasic') : t('pro.patients.tierFree')}</dd></div>
-                )}
-              </dl>
-              <div className="grid gap-2 mt-6">
-                {chatEnabled && (
-                  <button type="button" className="pro-btn pro-btn-teal w-full" disabled={openingChat === record.id} onClick={() => openChatWith(record)}>
-                    {openingChat === record.id ? <Loader2 className="animate-spin" /> : <MessageSquare />} {t('pro.patients.openChat')}
-                  </button>
-                )}
-                <button type="button" className="pro-btn pro-btn-outline w-full" onClick={() => navigate('/doctor/availability?nueva=consulta')}><Calendar /> {t('pro.patients.schedule')}</button>
-                <Link to="/my-appointments" className="pro-btn pro-btn-outline w-full"><ClipboardList /> {t('pro.patients.consultations')}</Link>
-                <Link to="/doctor/vault" className="pro-btn pro-btn-outline w-full"><FileText /> {t('pro.patients.openDocs')}</Link>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      {/* Nueva consulta con el paciente ya elegido (nunca Disponibilidad) */}
+      <NewConsultationDialog
+        open={!!scheduleFor}
+        onOpenChange={(o) => { if (!o) setScheduleFor(null); }}
+        defaultPatientId={scheduleFor || undefined}
+        onCreated={() => { setScheduleFor(null); refresh(); }}
+      />
+      {dialog}
     </MainLayout>
   );
 }

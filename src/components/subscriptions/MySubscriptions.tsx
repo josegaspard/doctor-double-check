@@ -28,11 +28,12 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useAppDateFormat } from '@/lib/dateFormat';
+import { money2 } from '@/lib/proFormat';
 
 export function MySubscriptions() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { formatDate: fmt } = useAppDateFormat();
   const { subscriptions, isLoading, unsubscribe, updateNotificationPrefs, refresh } = useSubscriptions();
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [confirmCancelSub, setConfirmCancelSub] = useState<Subscription | null>(null);
@@ -48,7 +49,7 @@ export function MySubscriptions() {
 
     if (result.success) {
       if (confirmCancelSub.tier !== 'free' && confirmCancelSub.expiresAt) {
-        toast.success(`${t('mySubscriptions.cancelSuccessKeepAccess')} ${format(confirmCancelSub.expiresAt, "dd 'de' MMMM", { locale: es })}`);
+        toast.success(`${t('mySubscriptions.cancelSuccessKeepAccess')} ${fmt(confirmCancelSub.expiresAt, 'PPP')}`);
       } else {
         toast.success(t('mySubscriptions.cancelSuccess'));
       }
@@ -162,10 +163,10 @@ export function MySubscriptions() {
                   <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {t('mySubscriptions.since')} {format(sub.createdAt, 'dd MMM yyyy', { locale: es })}
+                      {t('mySubscriptions.since')} {fmt(sub.createdAt, 'd MMM yyyy')}
                     </span>
                     {sub.tier !== 'free' && sub.pricePaid > 0 && (
-                      <span>${sub.pricePaid}{t('mySubscriptions.perMonth')}</span>
+                      <span>{money2(sub.pricePaid, language)}{t('mySubscriptions.perMonth')}</span>
                     )}
                   </div>
 
@@ -235,7 +236,7 @@ export function MySubscriptions() {
                     <p className="text-sm font-medium text-warning flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {t('mySubscriptions.paidActiveUntil')}{' '}
-                      <strong>{format(confirmCancelSub.expiresAt, "dd 'de' MMMM yyyy", { locale: es })}</strong>
+                      <strong>{fmt(confirmCancelSub.expiresAt, 'PPP')}</strong>
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {t('mySubscriptions.afterDateNoChargesPrefix')} {confirmCancelSub.tier === 'premium' ? t('mySubscriptions.tierPremium') : t('mySubscriptions.tierBasic')}.

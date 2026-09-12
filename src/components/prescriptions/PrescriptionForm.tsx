@@ -12,7 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { exportPrescriptionToPDF, type Medication } from '@/lib/generatePrescriptionPDF';
 import { fetchDoctorCredentials } from '@/lib/doctorCredentials';
-import { 
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import {
   FileText, Plus, Trash2, Loader2, Download, Upload, Image, File, X 
 } from 'lucide-react';
 
@@ -32,6 +33,8 @@ interface PrescriptionFormProps {
 export function PrescriptionForm({ patientId, patientName, consultationId, onCreated }: PrescriptionFormProps) {
   const { user } = useAuth();
   const { language, t } = useLanguage();
+  // Firmar y emitir una receta es un documento legal: pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [patientAge, setPatientAge] = useState('');
   const [patientBirthDate, setPatientBirthDate] = useState('');
@@ -144,6 +147,22 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
       toast.error(t('autoI18n.prescForm3'));
       return;
     }
+
+    const medsPreview = validMeds
+      .map(m => `${m.name}${m.dosage ? ` ${m.dosage}` : ''}`.trim())
+      .join(', ') || t('mm2.confirm.prescriptionIssue.noMedsValue');
+    const ok = await confirm({
+      title: t('mm2.confirm.prescriptionIssue.title'),
+      description: t('mm2.confirm.prescriptionIssue.description'),
+      tone: 'destructive',
+      details: [
+        { label: t('mm2.confirm.prescriptionIssue.patientLabel'), value: patientName },
+        { label: t('mm2.confirm.prescriptionIssue.medsLabel'), value: medsPreview },
+        ...(diagnosis ? [{ label: t('mm2.confirm.prescriptionIssue.diagnosisLabel'), value: diagnosis }] : []),
+      ],
+      confirmLabel: t('mm2.confirm.prescriptionIssue.confirmLabel'),
+    });
+    if (!ok) return;
 
     setIsSubmitting(true);
     try {
@@ -438,6 +457,7 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
         )}
         {t('autoI18n.prescForm30')}
       </Button>
+      {dialog}
     </div>
   );
 }

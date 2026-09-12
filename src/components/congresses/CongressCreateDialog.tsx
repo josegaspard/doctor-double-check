@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Stethoscope, UserPlus, X, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { Congress, CongressSpeaker } from '@/lib/congresses';
@@ -37,6 +38,8 @@ interface Props {
 export function CongressCreateDialog({ open, onOpenChange, onSaved, editing }: Props) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  // Crear o guardar avisa a los conferencistas nuevos: pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const { specialtiesList: SPECIALTIES } = useSpecialties();
   const [isSaving, setIsSaving] = useState(false);
   const isEditing = !!editing;
@@ -146,6 +149,23 @@ export function CongressCreateDialog({ open, onOpenChange, onSaved, editing }: P
     if (!form.title.trim() || !user?.id) return;
     if (!form.startsAt || !form.endsAt) { toast.error(t('congresses.datesRequired')); return; }
     if (form.endsAt < form.startsAt) { toast.error(t('congresses.datesOrder')); return; }
+    const prevSpeakerIds = new Set((editing?.speakers || []).map(s => s.user_id));
+    const newSpeakerCount = speakers.filter(s => !prevSpeakerIds.has(s.userId)).length;
+    const ok = await confirm({
+      title: isEditing ? t('mm2.confirm.congressSave.titleEdit') : t('mm2.confirm.congressSave.titleNew'),
+      description: isEditing
+        ? t('mm2.confirm.congressSave.descriptionEdit')
+        : t('mm2.confirm.congressSave.descriptionNew'),
+      details: [
+        { label: t('mm2.confirm.congressCommon.nameLabel'), value: form.title.trim() },
+        {
+          label: t('mm2.confirm.congressSave.speakersLabel'),
+          value: newSpeakerCount > 0 ? String(newSpeakerCount) : t('mm2.confirm.meetingSave.inviteesNone'),
+        },
+      ],
+      confirmLabel: isEditing ? t('congresses.saveChanges') : t('congresses.createAction'),
+    });
+    if (!ok) return;
     setIsSaving(true);
 
     try {
@@ -346,6 +366,7 @@ export function CongressCreateDialog({ open, onOpenChange, onSaved, editing }: P
           </Button>
         </div>
       </DialogContent>
+      {dialog}
     </Dialog>
   );
 }

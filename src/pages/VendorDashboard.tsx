@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 import { toast } from 'sonner';
 import {
   Plus, Pencil, Trash2, Package, ShoppingCart, BarChart3, Loader2, Store,
@@ -255,6 +257,8 @@ export default function VendorDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, t } = useLanguage();
+  // Vender, cancelar, pagar el fee, borrar o esconder un producto: siempre con resumen.
+  const { confirm, dialog } = useConfirmAction();
   const es = language === 'es';
   const [vendor, setVendor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -315,6 +319,23 @@ export default function VendorDashboard() {
 
   const handleSaveProduct = async () => {
     if (!form.name || !vendor) return;
+    // Vista previa antes de mandar el producto a revisión (o de actualizarlo).
+    const ok = await confirm({
+      title: editingId ? t('mm2.confirm.productSave.titleEdit') : t('mm2.confirm.productSave.titleNew'),
+      description: editingId
+        ? t('mm2.confirm.productSave.descriptionEdit')
+        : t('mm2.confirm.productSave.descriptionNew'),
+      details: [
+        { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: form.name },
+        { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: money2(parseFloat(form.price) || 0, language) },
+        {
+          label: t('mm2.confirm.productVisibility.resultLabel'),
+          value: form.is_active ? t('mm2.confirm.productVisibility.resultVisible') : t('mm2.confirm.productVisibility.resultHidden'),
+        },
+      ],
+      confirmLabel: editingId ? t('mm2.confirm.productSave.confirmEdit') : t('mm2.confirm.productSave.confirmNew'),
+    });
+    if (!ok) return;
     setSaving(true);
     const payload: any = { name: form.name, description: form.description || null, category: form.category || null, price: parseFloat(form.price) || 0, vendor_id: vendor.id, image_url: form.image_url || null, stock: parseInt(form.stock) || 0, is_active: form.is_active };
     let error: any = null;
@@ -337,7 +358,56 @@ export default function VendorDashboard() {
 
   // Acciones sobre órdenes del marketplace de intermediación (misma edge
   // function que /marketplace: concretar, cancelar, pagar fee).
-  const feeOrderAction = async (orderId: string, action: 'complete' | 'cancel' | 'pay_fee') => {
+  const feeOrderAction = async (order: any, action: 'complete' | 'cancel' | 'pay_fee') => {
+    const orderId = order.id;
+    const cur = order.currency || 'MXN';
+    const productName = order.marketplace_products?.name || t('mkt.product');
+    const base = [
+      { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: productName },
+      { label: t('mm2.confirm.marketplaceCommon.buyerLabel'), value: order.buyerName || t('mkt.buyer') },
+      { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: money2(Number(order.product_price || 0), language, cur) },
+    ];
+    // Concretar, cancelar y pagar el fee pasan siempre por el resumen.
+    const ok = await confirm(
+      action === 'complete'
+        ? {
+            title: t('mm2.confirm.marketplaceComplete.title'),
+            description: t('mm2.confirm.marketplaceComplete.description'),
+            tone: 'payment',
+            details: [
+              ...base,
+              {
+                label: t('mm2.confirm.marketplaceCommon.feeLabel'),
+                value: money2(Number(order.fee_amount || Number(order.product_price || 0) * feeRate), language, cur),
+                emphasis: true,
+              },
+            ],
+            confirmLabel: t('mm2.confirm.marketplaceComplete.confirmLabel'),
+          }
+        : action === 'cancel'
+          ? {
+              title: t('mm2.confirm.marketplaceCancel.title'),
+              description: t('mm2.confirm.marketplaceCancel.description'),
+              tone: 'destructive',
+              details: base,
+              confirmLabel: t('mm2.confirm.marketplaceCancel.confirmLabel'),
+            }
+          : {
+              title: t('mm2.confirm.marketplaceFee.title'),
+              description: t('mm2.confirm.marketplaceFee.description'),
+              tone: 'payment',
+              details: [
+                ...base,
+                {
+                  label: t('mm2.confirm.marketplaceCommon.feeLabel'),
+                  value: money2(Number(order.fee_amount || 0), language, cur),
+                  emphasis: true,
+                },
+              ],
+              confirmLabel: t('mm2.confirm.marketplaceFee.confirmLabel'),
+            }
+    );
+    if (!ok) return;
     setActingOrderId(orderId);
     try {
       const { data, error } = await supabase.functions.invoke('marketplace-order', {
@@ -358,14 +428,41 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm(t('autoI18n.vendorDash48')) || !vendor) return;
-    const { error } = await supabase.from('marketplace_products').delete().eq('id', id);
+  // Sustituye el confirm() del navegador: el aviso va en el idioma de la sesión.
+  const handleDeleteProduct = async (product: any) => {
+    if (!vendor) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.productDelete.title'),
+      description: t('mm2.confirm.productDelete.description'),
+      tone: 'destructive',
+      details: [
+        { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: product?.name || t('mkt.product') },
+        { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: money2(Number(product?.price || 0), language) },
+      ],
+      confirmLabel: t('mm2.confirm.productDelete.confirmLabel'),
+    });
+    if (!ok) return;
+    const { error } = await supabase.from('marketplace_products').delete().eq('id', product.id);
     if (error) { toast.error(error.message); return; }
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts(prev => prev.filter(p => p.id !== product.id));
   };
 
-  const toggleProductActive = async (id: string, active: boolean) => {
+  const toggleProductActive = async (id: string, active: boolean, name?: string) => {
+    const ok = await confirm({
+      title: active ? t('mm2.confirm.productVisibility.titleActivate') : t('mm2.confirm.productVisibility.titleDeactivate'),
+      description: active
+        ? t('mm2.confirm.productVisibility.descriptionActivate')
+        : t('mm2.confirm.productVisibility.descriptionDeactivate'),
+      details: [
+        { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: name || t('mkt.product') },
+        {
+          label: t('mm2.confirm.productVisibility.resultLabel'),
+          value: active ? t('mm2.confirm.productVisibility.resultVisible') : t('mm2.confirm.productVisibility.resultHidden'),
+        },
+      ],
+      confirmLabel: active ? t('mkt.activate') : t('mkt.deactivate'),
+    });
+    if (!ok) return;
     const { error } = await supabase.from('marketplace_products').update({ is_active: active } as any).eq('id', id);
     if (error) { toast.error(error.message); return; }
     setProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: active } : p));
@@ -517,11 +614,11 @@ export default function VendorDashboard() {
                         <p className="text-[11px] text-destructive mt-1">{t('mkt.rejectionReason').replace('{note}', p.approval_note)}</p>
                       )}
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active)} title={p.is_active ? t('mkt.deactivate') : t('mkt.activate')}>
+                    <Button variant="ghost" size="icon" onClick={() => toggleProductActive(p.id, !p.is_active, p.name)} title={p.is_active ? t('mkt.deactivate') : t('mkt.activate')}>
                       {p.is_active ? <Eye className="w-4 h-4 text-success" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setForm({ name: p.name, description: p.description || '', category: p.category || '', price: p.price.toString(), image_url: p.image_url || '', stock: p.stock.toString(), is_active: p.is_active }); setDialogOpen(true); }}><Pencil className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                   </CardContent>
                 </Card>
               ))}
@@ -552,16 +649,16 @@ export default function VendorDashboard() {
                           </Button>
                           {o.status === 'ordered' && (
                             <>
-                              <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'complete')}>
+                              <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o, 'complete')}>
                                 {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} {t('mkt.completeSale')}
                               </Button>
-                              <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'cancel')}>
+                              <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o, 'cancel')}>
                                 <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                               </Button>
                             </>
                           )}
                           {o.status === 'completed' && o.fee_status === 'pending' && (
-                            <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o.id, 'pay_fee')}>
+                            <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => feeOrderAction(o, 'pay_fee')}>
                               {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} {t('mkt.payFee')} ${Number(o.fee_amount).toLocaleString()}
                             </Button>
                           )}
@@ -636,6 +733,8 @@ export default function VendorDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {dialog}
       </div>
     </MainLayout>
   );

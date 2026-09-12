@@ -6,6 +6,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useLives, Recording } from '@/contexts/LivesContext';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2, fmtDate } from '@/lib/proFormat';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -121,17 +123,24 @@ interface PastLive {
   paidRevenue: number;
 }
 
-export default function DoctorRecordings() {
+export default function DoctorRecordings({ embedded = false, initialTab: initialTabProp }: { embedded?: boolean; initialTab?: 'grabaciones' | 'lives-pasados' } = {}) {
+  // embedded=true: se pinta dentro de Contenido › Mis grabaciones (ContentHub),
+  // sin su propio MainLayout ni título — y sin leer `?tab=` de la URL, que ahí
+  // pertenece a la pestaña del hub, no a la interna grabaciones/lives pasados
+  // (11-sep-2026).
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const { refreshRecordings } = useLives();
   const isMobile = useIsMobile();
   const isCompact = useIsCompact();
 
-  // Tab from URL param
-  const initialTab = searchParams.get('tab') === 'lives-pasados' ? 'lives-pasados' : 'grabaciones';
+  // Tab from URL param (solo fuera del hub: incrustado, ese parámetro es del hub)
+  // Incrustado, la sub-pestaña llega por prop (el ?tab= de la URL es del hub).
+  const initialTab = (embedded ? initialTabProp : searchParams.get('tab')) === 'lives-pasados' ? 'lives-pasados' : 'grabaciones';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -433,10 +442,10 @@ export default function DoctorRecordings() {
   };
 
   useEffect(() => {
-    if (role !== 'doctor') {
+    if (!embedded && role !== 'doctor') {
       navigate('/lives');
     }
-  }, [role, navigate]);
+  }, [role, navigate, embedded]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -529,6 +538,20 @@ export default function DoctorRecordings() {
       toast.error(t('doctorRecordingsPage.validation.invalidPrice'));
       return;
     }
+    // Cambiar el precio afecta a lo que paga el comprador: pasa por el modal
+    // de revisión común, nunca al primer clic (regla del encargo, 11-sep-2026).
+    const ok = await confirm({
+      title: t('mm2.content.hub.recordings.priceConfirmTitle'),
+      description: t('mm2.content.hub.recordings.priceConfirmDesc'),
+      details: [
+        { label: t('mm2.content.hub.recordings.priceConfirmRecording'), value: editingRecording.title },
+        { label: t('mm2.content.hub.recordings.priceConfirmOld'), value: editingRecording.price === 0 ? t('doctorRecordingsPage.recording.free') : money2(editingRecording.price, language) },
+        { label: t('mm2.content.hub.recordings.priceConfirmNew'), value: newPrice === 0 ? t('doctorRecordingsPage.recording.free') : money2(newPrice, language) },
+      ],
+      confirmLabel: t('doctorRecordingsPage.actions.save'),
+      tone: 'payment',
+    });
+    if (!ok) return;
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -858,17 +881,11 @@ export default function DoctorRecordings() {
     return `${hours}${t('doctorRecordingsPage.units.hourShort')} ${mins}${t('doctorRecordingsPage.units.minuteShort')}`;
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-MX', {
-      day: 'numeric', month: 'short', year: 'numeric',
-    }).format(date);
-  };
+  // Idioma único por sesión (req. 11): el locale sigue al idioma activo, no a
+  // es-MX fijo — mismos ayudantes que el resto del hub (lib/proFormat).
+  const formatDate = (date: Date) => fmtDate(date, language);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency', currency: 'MXN',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => money2(amount, language);
 
   const getStats = (recordingId: string): RecordingStats => {
     return recordingStats.get(recordingId) || { recordingId, purchaseCount: 0, totalRevenue: 0, peakViewers: 0, likesCount: 0, totalComments: 0, paidComments: 0, chatPrice: 0, paidChatRevenue: 0 };
@@ -898,22 +915,24 @@ export default function DoctorRecordings() {
   if (role !== 'doctor') return null;
 
   return (
-    <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="back" size="icon" onClick={() => navigate('/doctor/dashboard')} className="hidden sm:flex">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              {t('doctorRecordingsPage.header.title')}
-            </h1>
-            <p className="text-muted-foreground">
-              {t('doctorRecordingsPage.header.subtitle')}
-            </p>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-4 py-6 max-w-6xl'}>
+        {/* Header — se oculta incrustado: la pestaña "Mis grabaciones" del hub ya lo dice */}
+        {!embedded && (
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="back" size="icon" onClick={() => navigate('/doctor/dashboard')} className="hidden sm:flex">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="font-heading text-2xl font-bold text-foreground">
+                {t('doctorRecordingsPage.header.title')}
+              </h1>
+              <p className="text-muted-foreground">
+                {t('doctorRecordingsPage.header.subtitle')}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -2101,6 +2120,8 @@ export default function DoctorRecordings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+
+      {dialog}
+    </Wrapper>
   );
 }

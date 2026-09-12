@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderWithRouter } from './helpers';
 
 // El mock de `t` resuelve las traducciones REALES en español (antes devolvía la
@@ -40,6 +40,16 @@ vi.mock('@/contexts/WalletContext', () => ({
 }));
 
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
+
+// El primer clic ya no cobra: abre el modal de revisión (useConfirmAction) y solo
+// el botón de confirmar ejecuta. El botón se arma a los ~350 ms, de ahí el waitFor.
+async function confirmReview() {
+  const dlg = await screen.findByRole('alertdialog');
+  const buttons = within(dlg).getAllByRole('button');
+  const confirmBtn = buttons[buttons.length - 1];
+  await waitFor(() => expect(confirmBtn).not.toBeDisabled());
+  fireEvent.click(confirmBtn);
+}
 
 describe('Recording paywall — wallet flow with state transitions', () => {
   beforeEach(() => {
@@ -84,6 +94,10 @@ describe('Recording paywall — wallet flow with state transitions', () => {
     const payBtn = screen.getByRole('button', { name: /Pagar con Wallet/i });
     fireEvent.click(payBtn);
 
+    // El primer clic NO cobra: hay que confirmar en el modal de revisión.
+    expect(purchaseWithWalletMock).not.toHaveBeenCalled();
+    await confirmReview();
+
     await waitFor(() => {
       expect(purchaseWithWalletMock).toHaveBeenCalledWith('rec-1');
     });
@@ -112,6 +126,7 @@ describe('Recording paywall — wallet flow with state transitions', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /Pagar con Wallet/i }));
+    await confirmReview();
 
     await waitFor(() => {
       expect(screen.getByText(/Pago rechazado/i)).toBeInTheDocument();

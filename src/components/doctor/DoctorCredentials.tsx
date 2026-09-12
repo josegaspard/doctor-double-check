@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SectionTabs, type SectionTabItem } from '@/components/common/SectionTabs';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +37,8 @@ import {
 } from 'lucide-react';
 import { InlineFileViewer } from '@/components/content/InlineFileViewer';
 import { toast } from 'sonner';
+import { fill } from '@/lib/proFormat';
+import { setCredentialVisibility, type CredentialTable } from '@/hooks/useDoctorPublicCredentials';
 
 interface Education {
   id: string;
@@ -46,6 +50,10 @@ interface Education {
   description: string | null;
   document_url: string | null;
   status: string;
+  /** El médico decide si esto sale en su perfil público (11-sep-2026). Sin
+   *  migración aplicada la columna no existe: se trata como `true` (lo que ya
+   *  veía todo el mundo antes de que existiera el interruptor). */
+  is_public?: boolean | null;
 }
 
 interface Certification {
@@ -57,6 +65,7 @@ interface Certification {
   credential_id: string | null;
   document_url: string | null;
   status: string;
+  is_public?: boolean | null;
 }
 
 interface Experience {
@@ -69,6 +78,7 @@ interface Experience {
   is_current: boolean;
   description: string | null;
   status: string;
+  is_public?: boolean | null;
 }
 
 const statusBadge = (status: string, t: (key: string) => string) => {
@@ -82,6 +92,12 @@ const statusBadge = (status: string, t: (key: string) => string) => {
   }
 };
 
+type CredTab = 'education' | 'certifications' | 'experience';
+
+/** `is_public` por defecto es `true` (mismo comportamiento que antes del
+ *  interruptor, y el default real de la columna una vez migrada). */
+const isPublicOf = (item: { is_public?: boolean | null }) => item.is_public !== false;
+
 interface DoctorCredentialsProps {
   doctorId: string;
   isOwner: boolean;
@@ -90,10 +106,12 @@ interface DoctorCredentialsProps {
 export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentialsProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const [education, setEducation] = useState<Education[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [experience, setExperience] = useState<Experience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [tab, setTab] = useState<CredTab>('education');
 
   // Estado de credenciales oficiales (Céd. Profesional / COFEPRIS) para mostrar alerta
   // de rechazo con motivo y permitir resubir documento al propio doctor.
@@ -313,11 +331,69 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     }
   };
 
-  const handleDelete = async (table: string, id: string) => {
+  // Borrar SIEMPRE pasa por confirmación (regla del encargo: nada destructivo
+  // en el primer clic). `label` es lo que se le enseña al médico en el resumen.
+  const handleDelete = async (table: string, id: string, label: string) => {
+    const ok = await confirm({
+      title: t('mm2.publicProfile.confirmDeleteTitle'),
+      description: fill(t('mm2.publicProfile.confirmDeleteDesc'), { item: label || '—' }),
+      confirmLabel: t('mm2.publicProfile.confirmDeleteAction'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     const { error } = await supabase.from(table as any).delete().eq('id', id).eq('doctor_id', doctorId);
     if (error) { toast.error(t('doctorCredentialsComponent.toastDeleteError')); return; }
     toast.success(t('doctorCredentialsComponent.toastDeleted'));
     fetchCredentials();
+  };
+
+  // Mostrar/ocultar una credencial YA aprobada en el perfil público. Activarla
+  // es «publicar»: pasa por confirmación. Ocultarla es una corrección segura
+  // y no la exige (regla del encargo: solo las acciones con consecuencias).
+  const handleToggleVisibility = async (table: CredentialTable, id: string, current: boolean) => {
+    const next = !current;
+    if (next) {
+      const ok = await confirm({
+        title: t('mm2.publicProfile.confirmPublishTitle'),
+        description: t('mm2.publicProfile.confirmPublishDesc'),
+        confirmLabel: t('mm2.publicProfile.confirmPublishAction'),
+        tone: 'default',
+      });
+      if (!ok) return;
+    }
+    const res = await setCredentialVisibility(table, id, next);
+    if (!res.ok) {
+      // Sin strictNullChecks el discriminante `ok` no estrecha el tipo: se lee el motivo aparte
+      // (mismo patrón que useCreateAppointment/NewConsultationDialog).
+      const reason = (res as { reason: 'pending_activation' | 'error' }).reason;
+      toast.error(
+        reason === 'pending_activation'
+          ? t('mm2.publicProfile.toastPendingActivation')
+          : t('mm2.publicProfile.toastVisibilityError')
+      );
+      return;
+    }
+    toast.success(next ? t('mm2.publicProfile.toastPublished') : t('mm2.publicProfile.toastHidden'));
+    if (table === 'doctor_education') setEducation(prev => prev.map(e => (e.id === id ? { ...e, is_public: next } : e)));
+    if (table === 'doctor_certifications') setCertifications(prev => prev.map(c => (c.id === id ? { ...c, is_public: next } : c)));
+    if (table === 'doctor_experience') setExperience(prev => prev.map(x => (x.id === id ? { ...x, is_public: next } : x)));
+  };
+
+  /** Interruptor + estado de publicación de un ítem. Solo lo ve el dueño. */
+  const VisibilityControl = ({ table, item }: { table: CredentialTable; item: { id: string; is_public?: boolean | null } }) => {
+    const pub = isPublicOf(item);
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className={`text-[11px] font-medium ${pub ? 'text-success' : 'text-muted-foreground'}`}>
+          {pub ? t('mm2.publicProfile.visibilityPublic') : t('mm2.publicProfile.visibilityPrivate')}
+        </span>
+        <Switch
+          checked={pub}
+          onCheckedChange={() => handleToggleVisibility(table, item.id, pub)}
+          aria-label={t('mm2.publicProfile.toggleAria')}
+        />
+      </div>
+    );
   };
 
   // Filter: owner sees all, public sees only approved
@@ -327,6 +403,14 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
 
   const hasContent = visibleEdu.length > 0 || visibleCert.length > 0 || visibleExp.length > 0;
 
+  // Tipado explícito para que SectionTabs infiera CredTab (y no el `string`
+  // genérico) y así `value`/`onChange` sigan casando con el estado del tab.
+  const credTabItems: SectionTabItem<CredTab>[] = [
+    { id: 'education', label: t('doctorCredentialsComponent.tabEducation'), icon: GraduationCap },
+    { id: 'certifications', label: t('doctorCredentialsComponent.tabCertifications'), icon: Award },
+    { id: 'experience', label: t('doctorCredentialsComponent.tabExperience'), icon: Briefcase },
+  ];
+
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
@@ -334,6 +418,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
   if (!hasContent && !isOwner) return null;
 
   return (
+    <>
     <Card className="mt-4">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
@@ -355,6 +440,17 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground leading-relaxed">
               {t('doctorCredentialsComponent.privacyNote')}
+            </p>
+          </div>
+        )}
+
+        {/* Qué ve el público — separa privado / pendiente de verificar / verificado /
+            publicado, para que el médico entienda las dos condiciones (11-sep-2026). */}
+        {isOwner && (
+          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-dashed border-border bg-muted/30 p-3">
+            <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {t('mm2.publicProfile.ownerVisibilityHint')}
             </p>
           </div>
         )}
@@ -428,24 +524,18 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
           </div>
         )}
 
-        <Tabs defaultValue="education" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="education" className="gap-1 text-xs">
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabEducation')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="certifications" className="gap-1 text-xs">
-              <Award className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabCertifications')}</span>
-            </TabsTrigger>
-            <TabsTrigger value="experience" className="gap-1 text-xs">
-              <Briefcase className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('doctorCredentialsComponent.tabExperience')}</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-4">
+          <SectionTabs<CredTab>
+            value={tab}
+            onChange={setTab}
+            variant="onLight"
+            ariaLabel={t('doctorCredentialsComponent.cardTitle')}
+            items={credTabItems}
+          />
 
           {/* Education */}
-          <TabsContent value="education" className="space-y-3">
+          {tab === 'education' && (
+          <div className="space-y-3">
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowEduDialog(true)}>
@@ -465,8 +555,8 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             )}
             {visibleEdu.map(edu => (
                 <div key={edu.id} className="border rounded-lg p-3 space-y-1">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <p className="font-semibold text-sm">{edu.degree}</p>
                       <p className="text-sm text-muted-foreground">{edu.institution}</p>
                       {edu.field_of_study && <p className="text-xs text-muted-foreground">{edu.field_of_study}</p>}
@@ -491,10 +581,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
                       {isOwner && statusBadge(edu.status, t)}
+                      {isOwner && <VisibilityControl table="doctor_education" item={edu} />}
                       {isOwner && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_education', edu.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_education', edu.id, edu.degree)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       )}
@@ -502,10 +593,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                   </div>
                 </div>
               ))}
-          </TabsContent>
+          </div>
+          )}
 
           {/* Certifications */}
-          <TabsContent value="certifications" className="space-y-3">
+          {tab === 'certifications' && (
+          <div className="space-y-3">
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowCertDialog(true)}>
@@ -526,8 +619,8 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             {visibleCert.length > 0 && (
               visibleCert.map(cert => (
                 <div key={cert.id} className="border rounded-lg p-3 space-y-1">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <p className="font-semibold text-sm">{cert.name}</p>
                       <p className="text-sm text-muted-foreground">{cert.issuing_organization}</p>
                       {cert.issue_date && <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.issuedLabel')}: {cert.issue_date}</p>}
@@ -550,10 +643,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
                       {isOwner && statusBadge(cert.status, t)}
+                      {isOwner && <VisibilityControl table="doctor_certifications" item={cert} />}
                       {isOwner && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_certifications', cert.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_certifications', cert.id, cert.name)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       )}
@@ -562,10 +656,12 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                 </div>
               ))
             )}
-          </TabsContent>
+          </div>
+          )}
 
           {/* Experience */}
-          <TabsContent value="experience" className="space-y-3">
+          {tab === 'experience' && (
+          <div className="space-y-3">
             {isOwner && (
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-1 w-full" onClick={() => setShowExpDialog(true)}>
@@ -586,8 +682,8 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
             {visibleExp.length > 0 && (
               visibleExp.map(exp => (
                 <div key={exp.id} className="border rounded-lg p-3 space-y-1">
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
                       <p className="font-semibold text-sm">{exp.title}</p>
                       <p className="text-sm text-muted-foreground">{exp.organization}</p>
                       {exp.location && <p className="text-xs text-muted-foreground">{exp.location}</p>}
@@ -596,10 +692,11 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                       </p>
                       {exp.description && <p className="text-xs mt-1">{exp.description}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end shrink-0">
                       {isOwner && statusBadge(exp.status, t)}
+                      {isOwner && <VisibilityControl table="doctor_experience" item={exp} />}
                       {isOwner && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_experience', exp.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete('doctor_experience', exp.id, exp.title)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </Button>
                       )}
@@ -608,8 +705,9 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                 </div>
               ))
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+          )}
+        </div>
       </CardContent>
 
       {/* Education Dialog */}
@@ -688,5 +786,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         </DialogContent>
       </Dialog>
     </Card>
+    {dialog}
+    </>
   );
 }

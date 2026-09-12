@@ -27,6 +27,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Recording } from '@/types/database';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 
 interface PaywallModalProps {
   open: boolean;
@@ -48,9 +50,11 @@ export default function PaywallModal({
   balance,
 }: PaywallModalProps) {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { purchaseWithWallet, isPurchasing: walletIsPurchasing } = usePurchases();
   const { getEffectiveRecordingPrice, hasPremiumTo } = useSubscriptions();
+  // El botón del paywall ya no cobra: primero enseña importe y saldo resultante.
+  const { confirm, dialog } = useConfirmAction();
 
   const isPurchasing = externalIsPurchasing || walletIsPurchasing;
 
@@ -72,6 +76,20 @@ export default function PaywallModal({
 
   const handleWalletPurchase = async () => {
     if (recording) {
+      const ok = await confirm({
+        title: t('mm2.confirm.payRecording.title'),
+        description: t('mm2.confirm.payRecording.description'),
+        tone: 'payment',
+        details: [
+          { label: t('mm2.confirm.payCommon.conceptLabel'), value: recording.title },
+          { label: t('mm2.confirm.payCommon.methodLabel'), value: t('mm2.confirm.payCommon.methodWallet') },
+          { label: t('mm2.confirm.payCommon.balanceNowLabel'), value: money2(balance, language) },
+          { label: t('mm2.confirm.payCommon.balanceAfterLabel'), value: money2(Math.max(0, balance - effectivePrice), language) },
+          { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(effectivePrice, language), emphasis: true },
+        ],
+        confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
+      });
+      if (!ok) return;
       const result = await purchaseWithWallet(recording.id);
       if (result.success) {
         onClose();
@@ -223,6 +241,8 @@ export default function PaywallModal({
         <Button variant="ghost" onClick={onClose} className="w-full">
           {t('paywall.cancel')}
         </Button>
+
+        {dialog}
       </DialogContent>
     </Dialog>
   );

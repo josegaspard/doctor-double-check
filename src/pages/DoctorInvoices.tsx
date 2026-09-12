@@ -39,8 +39,10 @@ import {
 } from 'lucide-react';
 import { InvoicePreviewModal } from '@/components/invoices/InvoicePreviewModal';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
+import { useAppDateFormat } from '@/lib/dateFormat';
+import { money2 } from '@/lib/proFormat';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { doctorHref } from '@/lib/doctorSections';
 
 interface Invoice {
   id: string;
@@ -71,10 +73,17 @@ interface EarningsSummary {
   payouts_enabled: boolean;
 }
 
-export default function DoctorInvoices() {
+export interface DoctorInvoicesProps {
+  /** Dentro de Cuenta > Finanzas > Cobrar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+}
+
+export default function DoctorInvoices({ embedded = false }: DoctorInvoicesProps = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
+  const { formatDate: fmt } = useAppDateFormat();
+  const { confirm, dialog } = useConfirmAction();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
@@ -94,7 +103,7 @@ export default function DoctorInvoices() {
 
   useEffect(() => {
     if (role !== 'doctor') {
-      navigate('/');
+      if (!embedded) navigate('/');
       return;
     }
     fetchData();
@@ -165,6 +174,20 @@ export default function DoctorInvoices() {
       return;
     }
 
+    // Revisión antes de subir: número, periodo, importe y archivo.
+    const ok = await confirm({
+      title: t('doctorInvoices.uploadNewInvoice'),
+      description: t('doctorInvoices.uploadNewInvoiceDesc'),
+      confirmLabel: t('doctorInvoices.uploadInvoice'),
+      details: [
+        { label: t('doctorInvoices.invoiceNumber'), value: invoiceNumber },
+        { label: `${t('doctorInvoices.periodFrom')} → ${t('doctorInvoices.periodTo')}`, value: `${periodStart} → ${periodEnd}` },
+        { label: t('doctorInvoices.filePdfOrImage'), value: selectedFile.name },
+        { label: t('doctorInvoices.amountMxn'), value: money2(parseFloat(amount) || 0, language), emphasis: true },
+      ],
+    });
+    if (!ok) return;
+
     setIsUploading(true);
     try {
       // Upload file to storage
@@ -205,7 +228,11 @@ export default function DoctorInvoices() {
   };
 
   const handleDelete = async (invoiceId: string) => {
-    if (!confirm(t('doctorInvoices.deleteInvoiceConfirm'))) return;
+    const ok = await confirm({
+      title: t('doctorInvoices.deleteInvoiceConfirm'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
 
     try {
       const { error } = await supabase
@@ -230,13 +257,18 @@ export default function DoctorInvoices() {
     setSelectedFile(null);
   };
 
+  // Fecha ISO (yyyy-MM-dd) para el <input type="date">: no es texto para
+  // mostrar (eso ya lo hace `fmt` con el idioma de la sesión), así que va sin
+  // date-fns y sin zona horaria — son las partes locales de la fecha, tal cual.
+  const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   const prefillWithPendingEarnings = () => {
     if (earnings?.pending_earnings) {
       setAmount(earnings.pending_earnings.toFixed(2));
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      setPeriodStart(format(firstDay, 'yyyy-MM-dd'));
-      setPeriodEnd(format(today, 'yyyy-MM-dd'));
+      setPeriodStart(isoDate(firstDay));
+      setPeriodEnd(isoDate(today));
     }
   };
 
@@ -256,32 +288,34 @@ export default function DoctorInvoices() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) => money2(Number(amount) || 0, language);
 
   if (role !== 'doctor') return null;
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+  const bankHref = doctorHref('cuenta', { tab: 'finanzas', f: 'banco' });
+
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <Button
-          variant="back"
-          size="sm"
-          onClick={() => navigate('/doctor/dashboard')}
-          className="mb-4 gap-2 hidden sm:inline-flex"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t('doctorInvoices.backToDashboard')}
-        </Button>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl'}>
+        {!embedded && (
+          <Button
+            variant="back"
+            size="sm"
+            onClick={() => navigate('/doctor/dashboard')}
+            className="mb-4 gap-2 hidden sm:inline-flex"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('doctorInvoices.backToDashboard')}
+          </Button>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <div className="min-w-0">
-            <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground">
-              {t('doctorInvoices.pageTitle')}
-            </h1>
+            {!embedded && (
+              <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground">
+                {t('doctorInvoices.pageTitle')}
+              </h1>
+            )}
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               {t('doctorInvoices.pageSubtitle')}
             </p>
@@ -292,7 +326,9 @@ export default function DoctorInvoices() {
           </Button>
         </div>
 
-        {/* Earnings Summary Cards */}
+        {/* Resumen de ganancias — dentro de Finanzas ya está en la pestaña
+            Ingresos: aquí solo hace falta si esta pantalla se abre suelta. */}
+        {!embedded && (
         <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide md:grid md:grid-cols-3 md:overflow-visible md:pb-0 mb-6">
           <Card className="border-success/30 bg-success/5 min-w-[200px] snap-center flex-shrink-0 md:min-w-0 md:flex-shrink">
             <CardContent className="p-3 sm:p-4">
@@ -348,7 +384,7 @@ export default function DoctorInvoices() {
                     <Button
                       variant="link"
                       className="p-0 h-auto text-warning"
-                      onClick={() => navigate('/doctor/bank-account')}
+                      onClick={() => navigate(bankHref)}
                     >
                       {t('doctorInvoices.setUp')} <ArrowRight className="w-3 h-3 ml-1" />
                     </Button>
@@ -358,6 +394,7 @@ export default function DoctorInvoices() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Info Banner */}
         {(earnings?.pending_earnings || 0) > 0 && (
@@ -433,13 +470,17 @@ export default function DoctorInvoices() {
                 <Badge variant="secondary" className="ml-1">{invoices.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="payouts" className="gap-2">
-              <DollarSign className="w-4 h-4" />
-              {t('doctorInvoices.paymentHistory')}
-              {payouts.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{payouts.length}</Badge>
-              )}
-            </TabsTrigger>
+            {/* Pagos recibidos: ya están en Finanzas > Ingresos cuando esta
+                pantalla va incrustada — no se repite la pestaña. */}
+            {!embedded && (
+              <TabsTrigger value="payouts" className="gap-2">
+                <DollarSign className="w-4 h-4" />
+                {t('doctorInvoices.paymentHistory')}
+                {payouts.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{payouts.length}</Badge>
+                )}
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="invoices">
@@ -491,14 +532,14 @@ export default function DoctorInvoices() {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
-                              {format(new Date(invoice.period_start), 'dd/MM/yy', { locale: language === 'es' ? es : enUS })} - {format(new Date(invoice.period_end), 'dd/MM/yy', { locale: language === 'es' ? es : enUS })}
+                              {fmt(invoice.period_start, 'd/MM/yy')} - {fmt(invoice.period_end, 'd/MM/yy')}
                             </div>
                             <div className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
                               {formatCurrency(invoice.amount)}
                             </div>
                             <div className="text-xs">
-                              {format(new Date(invoice.created_at), 'dd MMM yyyy', { locale: language === 'es' ? es : enUS })}
+                              {fmt(invoice.created_at, 'd MMM yyyy')}
                             </div>
                           </div>
                           {invoice.admin_notes && invoice.status === 'rejected' && (
@@ -584,8 +625,8 @@ export default function DoctorInvoices() {
                             <p className="font-semibold">{formatCurrency(payout.amount)}</p>
                             <p className="text-xs text-muted-foreground">
                               {payout.paid_at 
-                                ? format(new Date(payout.paid_at), 'dd MMM yyyy', { locale: language === 'es' ? es : enUS })
-                                : format(new Date(payout.created_at), 'dd MMM yyyy', { locale: language === 'es' ? es : enUS })}
+                                ? fmt(payout.paid_at, 'd MMM yyyy')
+                                : fmt(payout.created_at, 'd MMM yyyy')}
                             </p>
                           </div>
                         </div>
@@ -701,7 +742,8 @@ export default function DoctorInvoices() {
           onClose={() => setPreviewInvoice(null)}
           invoice={previewInvoice}
         />
+        {dialog}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

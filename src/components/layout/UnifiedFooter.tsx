@@ -93,7 +93,15 @@ export function UnifiedFooter({ variant }: Props) {
   const { config: adConfig } = useAdConfig();
   const { role } = useAuth();
 
+  // Respaldo mientras el integrador no añade las claves mm2.lang.* a los 8 idiomas.
+  const tf = (key: string, fallback: string) => {
+    const value = t(key);
+    return value === key ? fallback : value;
+  };
+
   // Translate labels using i18n keys when href is known; fallback to BD label.
+  // OJO: un enlace nuevo que el admin añada con un href que no esté en el mapa
+  // sigue saliendo con la etiqueta de la BD (castellano) en cualquier idioma.
   const translateLink = (l: { label: string; href: string }) => {
     const key = HREF_I18N_MAP[l.href];
     if (key) {
@@ -105,7 +113,7 @@ export function UnifiedFooter({ variant }: Props) {
 
   const platformLinksRaw = footerLinks.platform.some(l => l.href === '/for-residents')
     ? footerLinks.platform
-    : [...footerLinks.platform, { label: 'Para Residentes', href: '/for-residents' }];
+    : [...footerLinks.platform, { label: t('landingFooter.forResidents'), href: '/for-residents' }];
   // Garantizar el enlace al Portal de proveedores en el footer (cliente
   // 2026-07-02: va aquí, NO en el menú "Más") — solo para quien puede usarlo.
   const canSeeVendorPortal = role === 'doctor' || role === 'resident' || role === 'admin';
@@ -113,7 +121,7 @@ export function UnifiedFooter({ variant }: Props) {
     ? platformLinksRaw.filter(l => l.href !== '/vendor/dashboard')
     : platformLinksRaw.some(l => l.href === '/vendor/dashboard')
     ? platformLinksRaw
-    : [...platformLinksRaw, { label: 'Portal de proveedores', href: '/vendor/dashboard' }];
+    : [...platformLinksRaw, { label: t('landingFooter.vendorPortal'), href: '/vendor/dashboard' }];
   // Garantizar el enlace a Congresos en el footer (cliente 2026-07-02): serie de
   // conferencias de varios doctores, visible para todos los roles.
   const platformWithCongresses = platformWithVendors.some(l => l.href === '/congresos')
@@ -130,33 +138,24 @@ export function UnifiedFooter({ variant }: Props) {
   // (cliente 2026-06-29), aunque un override de site_settings lo haya quitado.
   const legalWithTerms = footerLinks.legal.some(l => l.href === '/terms')
     ? footerLinks.legal
-    : [{ label: 'Términos y Condiciones', href: '/terms' }, ...footerLinks.legal];
+    : [{ label: t('landingFooter.terms'), href: '/terms' }, ...footerLinks.legal];
   const legalLinksRaw = legalWithTerms.some(l => l.href === '/dmca')
     ? legalWithTerms
-    : [...legalWithTerms, { label: 'Protección DMCA', href: '/dmca' }];
+    : [...legalWithTerms, { label: t('landingFooter.dmca'), href: '/dmca' }];
   const legalLinks = legalLinksRaw.map(translateLink);
 
   // Copyright: el superadministrador puede sobrescribirlo desde /admin/site-settings
   // (site_settings → footer_links.copyright). Si no lo definió, se usa el texto
   // localizado con el año actual.
   const year = new Date().getFullYear();
-  const lang = String(language);
   const adminCopyright = footerLinks.copyright?.trim();
-  // El copyright del admin está en español; solo se usa cuando el idioma es es.
-  // En otros idiomas se usa el texto localizado (antes salía español en de/fr/etc.).
-  const copyright = (adminCopyright && lang === 'es')
+  // Antes había un literal por idioma aquí y catalán y chino caían a inglés
+  // ("All rights reserved.") dentro de una sesión que no era inglesa. Ahora va
+  // por clave, con {year}; para reescribirlo por idioma está
+  // site_settings.text_overrides, que t() ya aplica.
+  const copyright = (adminCopyright && language === 'es')
     ? adminCopyright
-    : lang === 'es'
-    ? `${year} Medical Masters. Todos los derechos reservados.`
-    : lang === 'pt'
-    ? `${year} Medical Masters. Todos os direitos reservados.`
-    : lang === 'fr'
-    ? `${year} Medical Masters. Tous droits réservés.`
-    : lang === 'it'
-    ? `${year} Medical Masters. Tutti i diritti riservati.`
-    : lang === 'de'
-    ? `${year} Medical Masters. Alle Rechte vorbehalten.`
-    : `${year} Medical Masters. All rights reserved.`;
+    : tf('mm2.lang.footerCopyright', `${year} Medical Masters.`).replace('{year}', String(year));
 
   if (variant === 'app') {
     return (

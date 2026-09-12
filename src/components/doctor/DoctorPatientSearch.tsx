@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Search, User, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { fill } from '@/lib/proFormat';
 
 interface PatientResult {
   user_id: string;
@@ -26,6 +28,8 @@ export function DoctorPatientSearch() {
   const [results, setResults] = useState<PatientResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState<string | null>(null);
+  // Crear una conversación nueva pasa por la revisión (a quién, qué tipo).
+  const { confirm, dialog } = useConfirmAction();
 
   useEffect(() => {
     if (term.trim().length < 2) {
@@ -65,6 +69,17 @@ export function DoctorPatientSearch() {
 
       let sessionId = existing?.id;
       if (!sessionId) {
+        const name = p.name || t('mm2.patients.unnamed');
+        const ok = await confirm({
+          title: fill(t('mm2.patients.chatConfirm.title'), { name }),
+          description: t('mm2.patients.chatConfirm.desc'),
+          details: [
+            { label: t('mm2.patients.chatConfirm.patient'), value: name },
+            { label: t('mm2.patients.chatConfirm.type'), value: t('mm2.patients.chatConfirm.typeValue') },
+          ],
+          confirmLabel: t('mm2.patients.chatConfirm.confirm'),
+        });
+        if (!ok) return;
         const { data: created, error } = await supabase
           .from('chat_sessions')
           .insert({
@@ -92,6 +107,7 @@ export function DoctorPatientSearch() {
   if (role !== 'doctor') return null;
 
   return (
+    <>
     <Card className="bg-card shadow-md border border-primary/40 ring-1 ring-primary/10">
       <CardHeader>
         {/* Misma combinación de colores que el banner "Doctores Disponibles Ahora"
@@ -160,5 +176,7 @@ export function DoctorPatientSearch() {
         </div>
       </CardContent>
     </Card>
+    {dialog}
+    </>
   );
 }

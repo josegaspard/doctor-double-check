@@ -8,6 +8,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { CongressCreateDialog } from '@/components/congresses/CongressCreateDialog';
 import { AttachRecordingsDialog } from '@/components/congresses/AttachRecordingsDialog';
 import { MeetingCreateDialog } from '@/components/meetings/MeetingCreateDialog';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -56,6 +57,8 @@ export default function CongressDetail() {
   const navigate = useNavigate();
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
+  // Borrar el congreso o archivarlo pasa por el resumen: nada al primer clic.
+  const { confirm, dialog } = useConfirmAction();
   const locale = language === 'es' ? esLocale : enUS;
 
   const [congress, setCongress] = useState<Congress | null>(null);
@@ -164,7 +167,15 @@ export default function CongressDetail() {
   // grabaciones NO se borran, solo dejan de estar agrupadas (FK ON DELETE SET NULL).
   const canDelete = !!user && !!congress && (congress.organizer_id === user.id || isAdmin);
   const handleDelete = async () => {
-    if (!congress || !window.confirm(t('congresses.confirmDelete'))) return;
+    if (!congress) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.congressDelete.title'),
+      description: t('mm2.confirm.congressDelete.description'),
+      tone: 'destructive',
+      details: [{ label: t('mm2.confirm.congressCommon.nameLabel'), value: congress.title }],
+      confirmLabel: t('mm2.confirm.congressDelete.confirmLabel'),
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from('congresses').delete().eq('id', congress.id);
     if (error) { toast.error(error.message); return; }
     toast.success(t('congresses.deletedToast'));
@@ -174,7 +185,15 @@ export default function CongressDetail() {
   const handleArchiveToggle = async () => {
     if (!congress) return;
     const toArchived = congress.status !== 'archived';
-    if (toArchived && !window.confirm(t('congresses.confirmArchive'))) return;
+    if (toArchived) {
+      const ok = await confirm({
+        title: t('mm2.confirm.congressArchive.title'),
+        description: t('mm2.confirm.congressArchive.description'),
+        details: [{ label: t('mm2.confirm.congressCommon.nameLabel'), value: congress.title }],
+        confirmLabel: t('mm2.confirm.congressArchive.confirmLabel'),
+      });
+      if (!ok) return;
+    }
     const { error } = await (supabase as any)
       .from('congresses')
       .update({ status: toArchived ? 'archived' : 'published' })
@@ -574,6 +593,7 @@ export default function CongressDetail() {
           canManage={canManage}
           onChanged={fetchAll}
         />
+        {dialog}
       </div>
     </MainLayout>
   );

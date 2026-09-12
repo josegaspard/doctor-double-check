@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fill, money, money2, fmtDate, fmtDayShort, norm } from '@/lib/proFormat';
+import { doctorHref } from '@/lib/doctorSections';
 
 interface Transaction {
   id: string;
@@ -66,7 +67,15 @@ const sourceOf = (raw?: string): SourceKey => {
 
 const PAGE_SIZE = 8;
 
-export default function DoctorEarnings() {
+export interface DoctorEarningsProps {
+  /** Dentro de Cuenta > Finanzas > Cobrar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+  /** Pestaña interna con la que abre (Cuenta > Finanzas la usa para ir
+   *  directo a «Retenciones» desde Pagos pendientes, por ejemplo). */
+  initialTab?: 'movements' | 'payouts' | 'holds';
+}
+
+export default function DoctorEarnings({ embedded = false, initialTab }: DoctorEarningsProps = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
@@ -94,11 +103,11 @@ export default function DoctorEarnings() {
   const [range, setRange] = useState<Range>('thisMonth');
   const [bucket, setBucket] = useState<Bucket>('day');
   const [sourceTab, setSourceTab] = useState<SourceKey | 'total'>('total');
-  const [tab, setTab] = useState<'movements' | 'payouts' | 'holds'>('movements');
+  const [tab, setTab] = useState<'movements' | 'payouts' | 'holds'>(initialTab || 'movements');
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (role && role !== 'doctor') { navigate('/'); return; }
+    if (role && role !== 'doctor') { if (!embedded) navigate('/'); return; }
     if (role === 'doctor') loadEarningsData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
@@ -389,12 +398,19 @@ export default function DoctorEarnings() {
     },
   ];
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+  const bankHref = doctorHref('cuenta', { tab: 'finanzas', f: 'banco' });
+  const invoicesHref = doctorHref('cuenta', { tab: 'finanzas', f: 'facturas' });
+  const walletHref = doctorHref('cuenta', { tab: 'finanzas', f: 'wallet' });
+
   return (
-    <MainLayout>
-      <div className="pro-container pro-page">
+    <Wrapper>
+      <div className={embedded ? '' : 'pro-container pro-page'}>
         <div className="pro-page-head">
           <div className="min-w-0">
-            <h1 className="pro-page-title"><Banknote className="w-7 h-7" /> <span className="truncate">{t('pro.earnings.title')}</span></h1>
+            {!embedded && (
+              <h1 className="pro-page-title"><Banknote className="w-7 h-7" /> <span className="truncate">{t('pro.earnings.title')}</span></h1>
+            )}
             <p className="pro-page-sub">{t('pro.earnings.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -413,7 +429,7 @@ export default function DoctorEarnings() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link to="/doctor/bank-account" className="pro-btn pro-btn-live flex-1 sm:flex-none">
+            <Link to={bankHref} className="pro-btn pro-btn-live flex-1 sm:flex-none">
               <Banknote /> {t('pro.earnings.withdraw')}
             </Link>
           </div>
@@ -429,7 +445,7 @@ export default function DoctorEarnings() {
         ) : (
           <>
             {/* KPIs */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div className={embedded ? 'grid grid-cols-2 gap-3 mb-4' : 'grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4'}>
               {kpis.map(k => (
                 <div key={k.label} className="pro-card pro-kpi">
                   <span className="pro-icon-box"><k.Icon /></span>
@@ -449,7 +465,7 @@ export default function DoctorEarnings() {
               ))}
             </div>
 
-            <div className="pro-work pro-work-2">
+            <div className={embedded ? 'pro-work' : 'pro-work pro-work-2'}>
               <div className="min-w-0 space-y-4">
                 {/* Gráfico por fuente */}
                 <section className="pro-card pro-card-pad min-w-0">
@@ -486,7 +502,7 @@ export default function DoctorEarnings() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_210px] gap-4 items-start">
+                  <div className={embedded ? 'grid grid-cols-1 gap-4 items-start' : 'grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_210px] gap-4 items-start'}>
                     {chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={210}>
                         <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
@@ -505,7 +521,7 @@ export default function DoctorEarnings() {
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="flex items-center justify-center h-[210px] pro-muted text-sm">{t('pro.earnings.noChartData')}</div>
+                      <div className="flex items-center justify-center h-[210px] min-w-0 px-4 text-center pro-muted text-sm">{t('pro.earnings.noChartData')}</div>
                     )}
 
                     <div className="pro-srcleg">
@@ -585,7 +601,7 @@ export default function DoctorEarnings() {
                                         if (!inv) return <span className="pro-muted">—</span>;
                                         return inv.file_url
                                           ? <a href={inv.file_url} target="_blank" rel="noreferrer" className="pro-link">{inv.invoice_number}</a>
-                                          : <Link to="/doctor/invoices" className="pro-link">{inv.invoice_number}</Link>;
+                                          : <Link to={invoicesHref} className="pro-link">{inv.invoice_number}</Link>;
                                       })()}
                                     </td>
                                   </tr>
@@ -688,7 +704,7 @@ export default function DoctorEarnings() {
                 <section className="pro-card pro-card-pad">
                   <div className="pro-card-head">
                     <h2 className="pro-card-title"><Building2 /> {t('pro.earnings.account')}</h2>
-                    <Link to="/doctor/bank-account" className="pro-link">{bank ? t('pro.earnings.editAccount') : t('pro.earnings.addAccount')}</Link>
+                    <Link to={bankHref} className="pro-link">{bank ? t('pro.earnings.editAccount') : t('pro.earnings.addAccount')}</Link>
                   </div>
                   {bank ? (
                     <div className="pro-bank">
@@ -707,7 +723,7 @@ export default function DoctorEarnings() {
                   ) : (
                     <>
                       <p className="pro-muted text-[12.5px]">{t('pro.earnings.noAccount')}</p>
-                      <Link to="/doctor/bank-account" className="pro-btn pro-btn-teal pro-btn-sm w-full mt-2"><Building2 /> {t('pro.earnings.addAccount')}</Link>
+                      <Link to={bankHref} className="pro-btn pro-btn-teal pro-btn-sm w-full mt-2"><Building2 /> {t('pro.earnings.addAccount')}</Link>
                     </>
                   )}
                 </section>
@@ -745,7 +761,7 @@ export default function DoctorEarnings() {
                     <span className="v" style={{ fontSize: 15 }}>{money2(totals.net, language)}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 mt-3">
-                    <Link to="/doctor/invoices" className="pro-btn pro-btn-outline pro-btn-sm">
+                    <Link to={invoicesHref} className="pro-btn pro-btn-outline pro-btn-sm">
                       <FileText /> {t('pro.earnings.invoices')}{invoicesCount > 0 ? ` (${invoicesCount})` : ''}
                     </Link>
                     <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleExportCSV}>
@@ -756,13 +772,13 @@ export default function DoctorEarnings() {
                     ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
                     : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate })}</p>
                   <p className="text-[11.5px] pro-muted mt-1">{t('pro.earnings.withdrawInfo')}</p>
-                  <Link to="/wallet" className="pro-link mt-1"><ArrowRight /> {t('nav.wallet') || 'Wallet'}</Link>
+                  <Link to={walletHref} className="pro-link mt-1"><ArrowRight /> {t('nav.wallet') || 'Wallet'}</Link>
                 </section>
               </aside>
             </div>
           </>
         )}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

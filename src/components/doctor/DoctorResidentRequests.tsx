@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { GraduationCap, Check, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 interface ConnectionRequest {
   id: string;
@@ -24,6 +25,8 @@ export function DoctorResidentRequests() {
   const [requests, setRequests] = useState<ConnectionRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  // Aceptar o rechazar ya no va al primer clic: se revisa quién es y qué podrá ver.
+  const { confirm, dialog } = useConfirmAction();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -60,7 +63,7 @@ export function DoctorResidentRequests() {
       setRequests(connections.map(c => ({
         id: c.id,
         resident_id: c.resident_id,
-        resident_name: profileMap[c.resident_id]?.name || 'Residente',
+        resident_name: profileMap[c.resident_id]?.name || t('mm2.confirm.residentRequest.defaultName'),
         resident_avatar: profileMap[c.resident_id]?.avatar_url || undefined,
         resident_specialty: specMap[c.resident_id],
         created_at: c.created_at,
@@ -72,8 +75,28 @@ export function DoctorResidentRequests() {
     }
   };
 
-  const handleRespond = async (connectionId: string, accept: boolean) => {
-    setRespondingId(connectionId);
+  const handleRespond = async (req: ConnectionRequest, accept: boolean) => {
+    const ok = await confirm({
+      title: accept
+        ? t('mm2.confirm.residentRequest.acceptTitle')
+        : t('mm2.confirm.residentRequest.rejectTitle'),
+      description: accept
+        ? t('mm2.confirm.residentRequest.acceptDescription')
+        : t('mm2.confirm.residentRequest.rejectDescription'),
+      tone: accept ? 'default' : 'destructive',
+      details: [
+        { label: t('mm2.confirm.residentRequest.residentLabel'), value: req.resident_name },
+        ...(req.resident_specialty
+          ? [{ label: t('mm2.confirm.residentRequest.specialtyLabel'), value: req.resident_specialty }]
+          : []),
+      ],
+      confirmLabel: accept
+        ? t('mm2.confirm.residentRequest.acceptConfirmLabel')
+        : t('mm2.confirm.residentRequest.rejectConfirmLabel'),
+    });
+    if (!ok) return;
+
+    setRespondingId(req.id);
     try {
       const { error } = await supabase
         .from('doctor_resident_connections')
@@ -81,13 +104,13 @@ export function DoctorResidentRequests() {
           status: accept ? 'accepted' : 'rejected',
           responded_at: new Date().toISOString(),
         })
-        .eq('id', connectionId);
+        .eq('id', req.id);
 
       if (error) throw error;
       toast.success(accept ? t('residents.requestAccepted') : t('residents.requestRejected'));
       await fetchRequests();
     } catch (err: any) {
-      toast.error(err.message || 'Error');
+      toast.error(err.message || t('common.error'));
     } finally {
       setRespondingId(null);
     }
@@ -125,7 +148,7 @@ export function DoctorResidentRequests() {
                 variant="ghost"
                 className="h-8 w-8 text-success hover:bg-success/10"
                 disabled={respondingId === req.id}
-                onClick={() => handleRespond(req.id, true)}
+                onClick={() => handleRespond(req, true)}
               >
                 {respondingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               </Button>
@@ -134,7 +157,7 @@ export function DoctorResidentRequests() {
                 variant="ghost"
                 className="h-8 w-8 text-destructive hover:bg-destructive/10"
                 disabled={respondingId === req.id}
-                onClick={() => handleRespond(req.id, false)}
+                onClick={() => handleRespond(req, false)}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -142,6 +165,7 @@ export function DoctorResidentRequests() {
           </div>
         ))}
       </CardContent>
+      {dialog}
     </Card>
   );
 }

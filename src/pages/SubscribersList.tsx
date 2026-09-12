@@ -20,6 +20,8 @@ import {
   CircleUser, CreditCard, Filter,
 } from 'lucide-react';
 import { initialsOf, norm, fmtDate, money } from '@/lib/proFormat';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { doctorHref } from '@/lib/doctorSections';
 
 // ---------------------------------------------------------------------------
 // Suscripciones — maqueta del cliente (10-sep-2026), diseño PRO.
@@ -59,12 +61,18 @@ interface SubPrefs {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-export default function SubscribersList() {
+export interface SubscribersListProps {
+  /** Dentro de Cuenta > Finanzas > Cobrar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+}
+
+export default function SubscribersList({ embedded = false }: SubscribersListProps = {}) {
   const { user, role } = useAuth();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
   const { pricing } = useSubscriptionPricing();
   const { toggles } = useSiteToggles();
+  const { confirm, dialog } = useConfirmAction();
 
   const [subs, setSubs] = useState<Subscriber[]>([]);
   const [prefs, setPrefs] = useState<Record<string, SubPrefs>>({});
@@ -216,6 +224,14 @@ export default function SubscribersList() {
         .maybeSingle();
       let sessionId = existing?.id;
       if (!sessionId) {
+        // No había conversación previa: se enseña a quién se escribe antes de
+        // crearla (requisito 10). Si ya existía, se entra directo, sin modal.
+        const ok = await confirm({
+          title: t('mm2.finance.startChatTitle'),
+          description: t('mm2.finance.startChatDesc'),
+          details: [{ label: t('pro.subs.colPerson'), value: s.name || t('pro.subs.noName') }],
+        });
+        if (!ok) { setOpeningChat(null); return; }
         const { data: created, error } = await supabase
           .from('chat_sessions')
           .insert({
@@ -441,7 +457,7 @@ export default function SubscribersList() {
 
   // 🚨 El guard de rol va DESPUÉS de todos los hooks (si no, React cambia el
   // número de hooks entre renders y revienta).
-  if (role && role !== 'doctor' && role !== 'resident') return <Navigate to="/" replace />;
+  if (role && role !== 'doctor' && role !== 'resident') return embedded ? null : <Navigate to="/" replace />;
 
   const kpis = [
     { key: 'subscribers' as Tab, Icon: Users, label: t('pro.subs.kpiActive'), value: String(stats.activeCount), sub: t('pro.subs.kpiActiveSub').replace('{n}', String(stats.paidActiveCount)) },
@@ -457,18 +473,25 @@ export default function SubscribersList() {
     { key: 'cancellations', label: t('pro.subs.tabCancellations'), count: stats.cancelled.length },
   ];
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+  const earningsHref = doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' });
+
   return (
-    <MainLayout>
-      <div className="pro-container pro-page">
+    <Wrapper>
+      <div className={embedded ? '' : 'pro-container pro-page'}>
         <div className="pro-page-head">
           <div className="min-w-0">
-            <h1 className="pro-page-title"><Users className="w-7 h-7" /> <span className="truncate">{t('pro.subs.title')}</span></h1>
+            {!embedded && (
+              <h1 className="pro-page-title"><Users className="w-7 h-7" /> <span className="truncate">{t('pro.subs.title')}</span></h1>
+            )}
             <p className="pro-page-sub">{t('pro.subs.subtitle')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Link to="/doctor/earnings" className="pro-btn pro-btn-ghost flex-1 sm:flex-none">
-              <CreditCard /> {t('pro.subs.goEarnings')}
-            </Link>
+            {!embedded && (
+              <Link to={earningsHref} className="pro-btn pro-btn-ghost flex-1 sm:flex-none">
+                <CreditCard /> {t('pro.subs.goEarnings')}
+              </Link>
+            )}
             <Link to={`/doctor/${user?.id}`} className="pro-btn pro-btn-white flex-1 sm:flex-none">
               <ExternalLink /> {t('pro.subs.publicProfile')}
             </Link>
@@ -476,7 +499,7 @@ export default function SubscribersList() {
         </div>
 
         {/* KPIs — cada una abre su pestaña */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className={embedded ? 'grid grid-cols-2 gap-3 mb-4' : 'grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4'}>
           {kpis.map(k => (
             <button key={k.label} type="button" className="pro-card pro-kpi" onClick={() => setTab(k.key)}>
               <span className="pro-icon-box"><k.Icon /></span>
@@ -489,7 +512,7 @@ export default function SubscribersList() {
           ))}
         </div>
 
-        <div className="pro-work pro-work-2">
+        <div className={embedded ? 'pro-work' : 'pro-work pro-work-2'}>
           <section className="pro-card pro-card-pad min-w-0">
             <div className="pro-seg mb-3">
               {tabs.map(tt => (
@@ -610,7 +633,8 @@ export default function SubscribersList() {
             <div className="mt-3">{selected && detailBody(selected)}</div>
           </SheetContent>
         </Sheet>
+        {dialog}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

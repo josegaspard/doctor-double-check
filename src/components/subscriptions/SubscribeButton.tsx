@@ -19,10 +19,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
+import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2, fill } from '@/lib/proFormat';
 
 interface SubscribeButtonProps {
   doctorId: string;
@@ -46,8 +49,11 @@ export function SubscribeButton({
   const { user, isAuthenticated } = useAuth();
   const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs } =
     useSubscriptions();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
+  const { pricing } = useSubscriptionPricing();
+  // El primer clic nunca suscribe ni manda a la pasarela: pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -55,6 +61,10 @@ export function SubscribeButton({
 
   const isSubscribed = isSubscribedTo(doctorId);
   const subscription = getSubscription(doctorId);
+  const doctorLabel = doctorName || t('subscribeButton.thisDoctorFallback');
+  // El precio que se enseña es el que cobra la función create-subscription-checkout.
+  const tierPrice = (tier: 'basic' | 'premium') =>
+    money2((tier === 'basic' ? pricing.basic_cents : pricing.premium_cents) / 100, language);
 
   // Don't show for own profile
   if (user?.id === doctorId) return null;
@@ -68,6 +78,18 @@ export function SubscribeButton({
       });
       return;
     }
+
+    const ok = await confirm({
+      title: t('mm2.confirm.subscribe.title'),
+      description: t('mm2.confirm.subscribe.description'),
+      details: [
+        { label: t('mm2.confirm.subscribe.doctorLabel'), value: doctorLabel },
+        { label: t('mm2.confirm.subscribe.planLabel'), value: t('mm2.confirm.subscribe.planFree') },
+        { label: t('mm2.confirm.subscribe.noticesLabel'), value: t('mm2.confirm.subscribe.noticesValue') },
+      ],
+      confirmLabel: t('mm2.confirm.subscribe.confirmLabel'),
+    });
+    if (!ok) return;
 
     setIsLoading(true);
     const result = await subscribe(doctorId, 'free', 0);
@@ -118,6 +140,31 @@ export function SubscribeButton({
   };
 
   const handleUpgrade = async (tier: 'basic' | 'premium') => {
+    // Tono «payment»: la tarjeta ya no cobra, solo selecciona el plan.
+    const ok = await confirm({
+      title: t('mm2.confirm.subscribeUpgrade.title'),
+      description: t('mm2.confirm.subscribeUpgrade.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.subscribeUpgrade.doctorLabel'), value: doctorLabel },
+        {
+          label: t('mm2.confirm.subscribeUpgrade.planLabel'),
+          value: tier === 'basic' ? t('subscriptions.basicTierName') : t('subscriptions.premiumTierName'),
+        },
+        {
+          label: t('mm2.confirm.subscribeUpgrade.billingLabel'),
+          value: t('mm2.confirm.subscribeUpgrade.billingMonthly'),
+        },
+        {
+          label: t('mm2.confirm.subscribeUpgrade.priceLabel'),
+          value: fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice(tier) }),
+          emphasis: true,
+        },
+      ],
+      confirmLabel: t('mm2.confirm.subscribeUpgrade.confirmLabel'),
+    });
+    if (!ok) return;
+
     setIsUpgrading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
@@ -142,16 +189,19 @@ export function SubscribeButton({
 
   if (!isSubscribed) {
     return (
-      <Button
-        variant={variant}
-        size={size}
-        onClick={handleSubscribe}
-        disabled={isLoading}
-        className={className}
-      >
-        <UserPlus className="h-4 w-4 mr-2" />
-        {t('subscriptions.subscribe')}
-      </Button>
+      <>
+        <Button
+          variant={variant}
+          size={size}
+          onClick={handleSubscribe}
+          disabled={isLoading}
+          className={className}
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          {t('subscriptions.subscribe')}
+        </Button>
+        {dialog}
+      </>
     );
   }
 
@@ -325,7 +375,9 @@ export function SubscribeButton({
                     <h4 className="font-semibold">{t('subscriptions.basicTierName')}</h4>
                     <p className="text-sm text-muted-foreground">{t('subscriptions.basicTierDescription')}</p>
                   </div>
-                  <Badge variant="outline">{t('subscriptions.basicPrice')}</Badge>
+                  <Badge variant="outline">
+                    {fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice('basic') })}
+                  </Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
                   <li>✓ {t('subscriptions.exclusiveContent')}</li>
@@ -346,7 +398,9 @@ export function SubscribeButton({
                     </h4>
                     <p className="text-sm text-muted-foreground">{t('subscriptions.premiumTierDescription')}</p>
                   </div>
-                  <Badge variant="default">{t('subscriptions.premiumPrice')}</Badge>
+                  <Badge variant="default">
+                    {fill(t('mm2.confirm.subscribeUpgrade.pricePerMonth'), { price: tierPrice('premium') })}
+                  </Badge>
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
                   <li>✓ {t('subscriptions.allBasicFeatures')}</li>
@@ -366,6 +420,8 @@ export function SubscribeButton({
           )}
         </DialogContent>
       </Dialog>
+
+      {dialog}
     </>
   );
 }

@@ -80,10 +80,11 @@ import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribed
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
-import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
+import { SenyeraIcon, LanguageOptionsList } from '@/components/settings/LanguageSwitcher';
 import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
 import { generatePlaceholderCedula, getSpecialistCredentialLabelKey } from '@/lib/cedulaVerification';
-import { OfficeHoursConfig } from '@/components/doctor/OfficeHoursConfig';
+import { doctorHref } from '@/lib/doctorSections';
+import { useSectionParam } from '@/components/common/SectionTabs';
 import { SignatureUpload } from '@/components/doctor/SignatureUpload';
 import { money } from '@/lib/proFormat';
 
@@ -114,8 +115,13 @@ interface DoctorProfile {
   office_hours_end?: string | null;
 }
 
-/** Pestañas de «Mi perfil profesional» (maqueta del cliente, 10-sep-2026). */
-type ProfTab = 'info' | 'career' | 'services' | 'availability' | 'media' | 'account';
+/** Pestañas de «Mi perfil profesional» en 4 bloques (reestructura 11-sep-2026):
+ *  identidad y verificación · trayectoria · servicios y disponibilidad ·
+ *  contenido y monetización. La disponibilidad se EDITA solo desde Agenda;
+ *  aquí queda un resumen de solo lectura dentro de «servicios». Sincronizada
+ *  con `?b=` para que un enlace lleve directo al bloque. */
+type ProfTab = 'identidad' | 'trayectoria' | 'servicios' | 'contenido';
+const PROF_TAB_IDS: readonly ProfTab[] = ['identidad', 'trayectoria', 'servicios', 'contenido'];
 
 interface ResidentProfile {
   specialty: string;
@@ -163,7 +169,14 @@ const cardVariants = {
   }
 };
 
-export default function UserProfile() {
+export interface UserProfileProps {
+  /** Cuenta > Perfil incrusta aquí el perfil profesional en sus 4 bloques
+   *  (b=identidad|trayectoria|servicios|contenido): sin MainLayout ni título
+   *  propio. Solo afecta a la rama médico; paciente/residente ignoran la prop. */
+  embedded?: boolean;
+}
+
+export default function UserProfile({ embedded = false }: UserProfileProps = {}) {
   const navigate = useNavigate();
   const { user, role, refreshUser } = useAuth();
   const { language, setLanguage, t } = useLanguage();
@@ -218,9 +231,10 @@ export default function UserProfile() {
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
   const [phoneRateLimited, setPhoneRateLimited] = useState(false);
 
-  // Perfil profesional PRO (maqueta 10-sep-2026): pestaña activa y las cifras
-  // de trayectoria y reseñas, que salen de tablas que ya existen.
-  const [profTab, setProfTab] = useState<ProfTab>('info');
+  // Perfil profesional PRO en 4 bloques (11-sep-2026): la pestaña activa vive
+  // en `?b=` (así doctorHref('perfil', { b: 'servicios' }) etc. abren directo)
+  // y las cifras de trayectoria y reseñas salen de tablas que ya existen.
+  const [profTab, setProfTab] = useSectionParam('b', PROF_TAB_IDS, 'identidad');
   const [careerCounts, setCareerCounts] = useState({ certifications: 0, education: 0, experience: 0 });
   const [reviewsCount, setReviewsCount] = useState(0);
 
@@ -623,25 +637,6 @@ export default function UserProfile() {
     }
   };
 
-  const handleLanguageChange = async (newLanguage: 'es' | 'en' | 'pt' | 'fr' | 'it' | 'de' | 'ca' | 'zh') => {
-    setIsSavingLanguage(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ preferred_language: newLanguage } as any)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      setLanguage(newLanguage);
-      toast.success(newLanguage === 'es' ? t('profile.languageUpdatedEs') : t('profile.languageUpdatedEn'));
-    } catch (error: any) {
-      toast.error(error.message || t('profile.languageError'));
-    } finally {
-      setIsSavingLanguage(false);
-    }
-  };
-
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return '-';
     const d = date instanceof Date ? date : new Date(date);
@@ -687,10 +682,8 @@ export default function UserProfile() {
   // NO tiene se ha dejado fuera a propósito: «Idiomas» que habla el médico y
   // «Modalidades de atención» no son columnas de doctor_profiles, y el número
   // de reseñas sale de consultation_ratings, que sí existe.
-  // La pestaña Disponibilidad monta `OfficeHoursConfig`, un componente que
-  // llevaba escrito desde siempre y que NO IMPORTABA NADIE: el horario de
-  // atención se enseña en el perfil público y en el chat, pero el médico no
-  // tenía forma de fijarlo. Aquí queda conectado.
+  // La pestaña Disponibilidad ya no edita el horario: desde el 11-sep-2026 vive en
+  // Agenda › Disponibilidad (tramos por día de la semana y días sueltos). Aquí se enlaza.
   // ==========================================================================
   if (role === 'doctor' && doctorProfile) {
     const specialties = [doctorProfile.specialty, ...(doctorProfile.secondary_specialties || [])].filter(Boolean);
@@ -701,26 +694,24 @@ export default function UserProfile() {
       .join(', ');
 
     const checklist = [
-      { done: !!user.avatarUrl, label: t('pro.profile.chkPhoto'), tab: 'media' as ProfTab },
-      { done: !!doctorProfile.bio, label: t('pro.profile.chkBio'), tab: 'info' as ProfTab },
-      { done: !!doctorProfile.location, label: t('pro.profile.chkLocation'), tab: 'info' as ProfTab },
-      { done: !!cedulaValue, label: t('pro.profile.chkCedula'), tab: 'info' as ProfTab },
-      { done: !!doctorProfile.numero_consejo, label: t(getSpecialistCredentialLabelKey(user.countryCode)), tab: 'info' as ProfTab },
-      { done: Number(doctorProfile.consultation_fee) > 0, label: t('pro.profile.chkFee'), tab: 'services' as ProfTab },
-      { done: careerCounts.certifications > 0, label: t('pro.profile.chkCertifications'), tab: 'career' as ProfTab },
-      { done: careerCounts.education > 0, label: t('pro.profile.chkEducation'), tab: 'career' as ProfTab },
-      { done: careerCounts.experience > 0, label: t('pro.profile.chkExperience'), tab: 'career' as ProfTab },
-      { done: (doctorProfile.office_days?.length || 0) > 0, label: t('pro.profile.chkHours'), tab: 'availability' as ProfTab },
+      { done: !!user.avatarUrl, label: t('pro.profile.chkPhoto'), tab: 'identidad' as ProfTab },
+      { done: !!doctorProfile.bio, label: t('pro.profile.chkBio'), tab: 'identidad' as ProfTab },
+      { done: !!doctorProfile.location, label: t('pro.profile.chkLocation'), tab: 'identidad' as ProfTab },
+      { done: !!cedulaValue, label: t('pro.profile.chkCedula'), tab: 'identidad' as ProfTab },
+      { done: !!doctorProfile.numero_consejo, label: t(getSpecialistCredentialLabelKey(user.countryCode)), tab: 'identidad' as ProfTab },
+      { done: Number(doctorProfile.consultation_fee) > 0, label: t('pro.profile.chkFee'), tab: 'servicios' as ProfTab },
+      { done: careerCounts.certifications > 0, label: t('pro.profile.chkCertifications'), tab: 'trayectoria' as ProfTab },
+      { done: careerCounts.education > 0, label: t('pro.profile.chkEducation'), tab: 'trayectoria' as ProfTab },
+      { done: careerCounts.experience > 0, label: t('pro.profile.chkExperience'), tab: 'trayectoria' as ProfTab },
+      { done: (doctorProfile.office_days?.length || 0) > 0, label: t('pro.profile.chkHours'), tab: 'servicios' as ProfTab },
     ];
     const completion = Math.round((checklist.filter(c => c.done).length / checklist.length) * 100);
 
     const profTabs: { key: ProfTab; label: string }[] = [
-      { key: 'info', label: t('pro.profile.tabInfo') },
-      { key: 'career', label: t('pro.profile.tabCareer') },
-      { key: 'services', label: t('pro.profile.tabServices') },
-      { key: 'availability', label: t('pro.profile.tabAvailability') },
-      { key: 'media', label: t('pro.profile.tabMedia') },
-      { key: 'account', label: t('pro.profile.tabAccount') },
+      { key: 'identidad', label: t('mm2.account.profileTabs.identidad') },
+      { key: 'trayectoria', label: t('mm2.account.profileTabs.trayectoria') },
+      { key: 'servicios', label: t('mm2.account.profileTabs.servicios') },
+      { key: 'contenido', label: t('mm2.account.profileTabs.contenido') },
     ];
 
     const statusPill = () => {
@@ -729,9 +720,12 @@ export default function UserProfile() {
       return <span className="pro-pill pro-pill-live">{t('profile.statusRejected')}</span>;
     };
 
+    const Wrapper = embedded ? React.Fragment : MainLayout;
+
     return (
-      <MainLayout>
-        <div className="pro-container pro-page">
+      <Wrapper>
+        <div className={embedded ? '' : 'pro-container pro-page'}>
+          {!embedded && (
           <div className="pro-page-head">
             <div className="min-w-0">
               <h1 className="pro-page-title"><Stethoscope className="w-7 h-7" /> <span className="truncate">{t('pro.profile.title')}</span></h1>
@@ -746,6 +740,7 @@ export default function UserProfile() {
               </Link>
             </div>
           </div>
+          )}
 
           {/* -------------------------------------------------- identidad */}
           <section className="pro-card pro-card-pad mb-3 sm:mb-4">
@@ -760,7 +755,10 @@ export default function UserProfile() {
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
               </div>
 
-              <div className="min-w-0 flex-1">
+              {/* Base de 220 px: incrustado en Cuenta (columna de ~620 px) el medidor de
+                  progreso (flex 1 1 200px) aplastaba el nombre a una sílaba por línea;
+                  con base propia, lo que no cabe salta de fila (pro-prof-head es wrap). */}
+              <div className="min-w-0 flex-[1_1_220px]">
                 {isEditingName ? (
                   <div className="flex items-center gap-2 flex-wrap">
                     <Input
@@ -820,8 +818,8 @@ export default function UserProfile() {
 
           <div className="pro-work pro-work-prof">
             <div className="min-w-0 space-y-3 sm:space-y-4">
-              {/* ------------------------------------------- Información */}
-              {profTab === 'info' && (
+              {/* ------------------------------ 1. Identidad y verificación */}
+              {profTab === 'identidad' && (
                 <>
                   <section className="pro-card pro-card-pad">
                     <div className="pro-card-head">
@@ -862,6 +860,23 @@ export default function UserProfile() {
                         {doctorProfile.bio && <p className="pro-row-sub mt-2">{doctorProfile.bio.length}/500</p>}
                       </>
                     )}
+                  </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Camera /> {t('pro.profile.photoTitle')}</h3>
+                    </div>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <span className="pro-initials w-20 h-20 text-[22px]">
+                        {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : getInitials(user.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={() => fileInputRef.current?.click()}>
+                          <Camera /> {t('profile.changePhoto')}
+                        </button>
+                        <p className="pro-row-sub mt-2">{t('pro.profile.photoHint')}</p>
+                      </div>
+                    </div>
                   </section>
 
                   <section className="pro-card pro-card-pad">
@@ -977,46 +992,151 @@ export default function UserProfile() {
                     </div>
                   </section>
 
+                  {/* Correo y teléfono: antes /profile y /settings se remitían el
+                      uno al otro y el médico no podía cambiarlos (bug encontrado
+                      11-sep-2026). Los mismos editores con OTP que ya usan
+                      paciente y residente, ahora también aquí. */}
                   <section className="pro-card pro-card-pad">
                     <div className="pro-card-head">
                       <h3 className="pro-card-title"><Mail /> {t('pro.profile.contact')}</h3>
-                      <Link to="/settings?s=account" className="pro-link">{t('nav.settings')} <ChevronRight /></Link>
                     </div>
                     <div className="pro-field">
                       <span className="k">{t('profile.email')}</span>
-                      <div className="row">
-                        <span className="box"><Mail /><span className="min-w-0 break-all">{user.email}</span></span>
-                        <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
+                      <div className="row flex-wrap">
+                        {isEditingEmail ? (
+                          <div className="flex items-center gap-2 flex-wrap w-full">
+                            <Input
+                              type="email"
+                              value={editedEmail}
+                              onChange={(e) => setEditedEmail(e.target.value)}
+                              placeholder={t('userProfilePage.newEmailPlaceholder')}
+                              className="flex-1 min-w-[180px] h-9 text-sm bg-white"
+                              autoFocus
+                              onKeyDown={(e) => e.key === 'Enter' && handleChangeEmail()}
+                            />
+                            <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleChangeEmail} disabled={isSavingEmail}>
+                              {isSavingEmail ? <Loader2 className="animate-spin" /> : <Send />}
+                            </button>
+                            <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => { setIsEditingEmail(false); setEditedEmail(''); }}>
+                              <X />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="box"><Mail /><span className="min-w-0 break-all">{user.email}</span></span>
+                            <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
+                            <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" aria-label={t('common.edit')} onClick={() => { setIsEditingEmail(true); setEditedEmail(''); }}>
+                              <Pencil />
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <p className="hint">{t('pro.profile.contactHint')}</p>
+                      {isEditingEmail && <p className="hint">{t('userProfilePage.emailVerificationNotice')}</p>}
                     </div>
+
                     <div className="pro-field">
                       <span className="k">{t('userProfilePage.phone')}</span>
-                      <div className="row">
-                        <span className="box">
-                          <Phone />
-                          {!isLoadingPhone && (userPhone ? userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3') : t('userProfilePage.notVerified'))}
-                        </span>
-                        {userPhone
-                          ? <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
-                          : <span className="pro-pill pro-pill-muted">{t('userProfilePage.notVerified')}</span>}
-                      </div>
+                      {isEditingPhone ? (
+                        !phoneOtpSent ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Select value={phoneCountryCode} onValueChange={setPhoneCountryCode}>
+                                <SelectTrigger className="w-[92px] h-9 text-sm bg-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {COUNTRY_CODES.map(c => (
+                                    <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="tel"
+                                inputMode="numeric"
+                                value={editedPhone}
+                                onChange={(e) => setEditedPhone(e.target.value.replace(/[^\d]/g, ''))}
+                                placeholder={t('userProfilePage.tenDigits')}
+                                className="flex-1 min-w-[140px] h-9 text-sm bg-white"
+                                maxLength={15}
+                              />
+                              <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleSendPhoneOtp} disabled={phoneSendingOtp || phoneRateLimited}>
+                                {phoneSendingOtp ? <Loader2 className="animate-spin" /> : <Send />}
+                              </button>
+                              <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={resetPhoneEdit}>
+                                <X />
+                              </button>
+                            </div>
+                            {phoneRateLimited && (
+                              <p className="hint" style={{ color: 'var(--pro-live)' }}>{t('userProfilePage.phoneRateLimitTryTomorrow')}</p>
+                            )}
+                            <p className="hint">{t('userProfilePage.phoneUsageInfo')}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="pro-row-sub">{t('userProfilePage.enterOtpInstruction')} {phoneCountryCode} {editedPhone}</p>
+                            <InputOTP maxLength={6} value={phoneOtpCode} onChange={setPhoneOtpCode}>
+                              <InputOTPGroup>
+                                {[0, 1, 2, 3, 4, 5].map(i => <InputOTPSlot key={i} index={i} />)}
+                              </InputOTPGroup>
+                            </InputOTP>
+                            <div className="flex items-center gap-2">
+                              <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleVerifyPhoneOtp} disabled={isVerifyingPhone || phoneOtpCode.length !== 6}>
+                                {isVerifyingPhone ? <Loader2 className="animate-spin" /> : <Check />} {t('userProfilePage.verify')}
+                              </button>
+                              <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={resetPhoneEdit}>{t('common.cancel')}</button>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="row">
+                          <span className="box">
+                            <Phone />
+                            {!isLoadingPhone && (userPhone ? userPhone.replace(/(\d{2})(\d+)(\d{4})/, '$1****$3') : t('userProfilePage.notVerified'))}
+                          </span>
+                          {userPhone
+                            ? <span className="pro-pill pro-pill-ok">{t('userProfilePage.verified')}</span>
+                            : <span className="pro-pill pro-pill-muted">{t('userProfilePage.notVerified')}</span>}
+                          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" aria-label={t('common.edit')} onClick={() => setIsEditingPhone(true)}>
+                            <Pencil />
+                          </button>
+                        </div>
+                      )}
                       <p className="hint">{t('pro.profile.phoneHint')}</p>
                     </div>
                   </section>
+
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Shield /> {t('profile.identityVerification')}</h3>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {isLoadingVerification ? (
+                        <span className="pro-pill pro-pill-muted">…</span>
+                      ) : verificationStatus === 'approved' ? (
+                        <span className="pro-pill pro-pill-ok">{t('profile.verified')}</span>
+                      ) : verificationStatus === 'pending' ? (
+                        <span className="pro-pill pro-pill-warn">{t('profile.pending')}</span>
+                      ) : (
+                        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/verify-identity')}>
+                          <FileCheck /> {t('profile.verify')}
+                        </button>
+                      )}
+                      <span className="pro-row-sub">{t('mm2.account.identityHint')}</span>
+                    </div>
+                  </section>
+
+                  <SignatureUpload />
                 </>
               )}
 
-              {/* -------------------------------------------- Trayectoria */}
-              {profTab === 'career' && (
+              {/* ------------------------------------------- 2. Trayectoria */}
+              {profTab === 'trayectoria' && (
                 <>
                   <DoctorCredentialsCard userId={user.id} />
                   <DoctorCredentials doctorId={user.id} isOwner />
                 </>
               )}
 
-              {/* --------------------------------------- Servicios y precios */}
-              {profTab === 'services' && (
+              {/* ------------------------------- 3. Servicios y disponibilidad */}
+              {profTab === 'servicios' && (
                 <>
                   <section className="pro-card pro-card-pad">
                     <div className="pro-card-head">
@@ -1028,6 +1148,26 @@ export default function UserProfile() {
                       variant="inline"
                     />
                     <p className="pro-row-sub mt-2">{t('pro.profile.consultPriceHint')}</p>
+                  </section>
+
+                  {/* La disponibilidad se EDITA solo desde Agenda (petición del
+                      cliente 11-sep-2026): aquí queda un resumen y el enlace. */}
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Clock /> {t('mm2.schedule.profileCard.title')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('mm2.schedule.profileCard.desc')}</p>
+                    <Link to={doctorHref('agenda', { tab: 'disponibilidad' })} className="pro-btn pro-btn-teal w-full sm:w-auto"><Clock /> {t('mm2.schedule.profileCard.cta')}</Link>
+                  </section>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><CalendarDays /> {t('pro.profile.agendaTitle')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('pro.profile.agendaHint')}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Link to="/doctor/agenda" className="pro-btn pro-btn-teal flex-1"><CalendarDays /> {t('pro.nav.agenda')}</Link>
+                      <Link to={doctorHref('agenda', { tab: 'disponibilidad' })} className="pro-btn pro-btn-outline flex-1"><Clock /> {t('nav.availability')}</Link>
+                    </div>
                   </section>
 
                   <section className="pro-card pro-card-pad">
@@ -1065,6 +1205,22 @@ export default function UserProfile() {
                       </div>
                     </div>
                   </section>
+                </>
+              )}
+
+              {/* --------------------------- 4. Contenido y monetización */}
+              {profTab === 'contenido' && (
+                <>
+                  <section className="pro-card pro-card-pad">
+                    <div className="pro-card-head">
+                      <h3 className="pro-card-title"><Camera /> {t('mm2.account.content.title')}</h3>
+                    </div>
+                    <p className="pro-row-sub mb-3">{t('mm2.account.content.hint')}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Link to={doctorHref('contenido', { tab: 'publicaciones' })} className="pro-btn pro-btn-teal flex-1"><Camera /> {t('mm2.account.content.goPublications')}</Link>
+                      <Link to={doctorHref('contenido', { tab: 'crear' })} className="pro-btn pro-btn-outline flex-1">{t('mm2.account.content.goCreate')}</Link>
+                    </div>
+                  </section>
 
                   <section className="pro-card pro-card-pad">
                     <div className="pro-card-head">
@@ -1072,112 +1228,14 @@ export default function UserProfile() {
                     </div>
                     <p className="pro-row-sub mb-3">{t('pro.profile.subscriptionsHint')}</p>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <Link to="/doctor/subscribers" className="pro-btn pro-btn-teal flex-1"><Users /> {t('pro.subs.title')}</Link>
-                      <Link to="/doctor/earnings" className="pro-btn pro-btn-outline flex-1"><Wallet /> {t('pro.subs.goEarnings')}</Link>
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {/* ------------------------------------------ Disponibilidad */}
-              {profTab === 'availability' && (
-                <>
-                  <OfficeHoursConfig />
-                  <section className="pro-card pro-card-pad">
-                    <div className="pro-card-head">
-                      <h3 className="pro-card-title"><CalendarDays /> {t('pro.profile.agendaTitle')}</h3>
-                    </div>
-                    <p className="pro-row-sub mb-3">{t('pro.profile.agendaHint')}</p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Link to="/doctor/agenda" className="pro-btn pro-btn-teal flex-1"><CalendarDays /> {t('pro.nav.agenda')}</Link>
-                      <Link to="/doctor/availability" className="pro-btn pro-btn-outline flex-1"><Clock /> {t('nav.availability')}</Link>
-                    </div>
-                  </section>
-                </>
-              )}
-
-              {/* ----------------------------------------------- Multimedia */}
-              {profTab === 'media' && (
-                <>
-                  <section className="pro-card pro-card-pad">
-                    <div className="pro-card-head">
-                      <h3 className="pro-card-title"><Camera /> {t('pro.profile.photoTitle')}</h3>
-                    </div>
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <span className="pro-initials w-20 h-20 text-[22px]">
-                        {user.avatarUrl ? <img src={user.avatarUrl} alt={user.name} /> : getInitials(user.name)}
-                      </span>
-                      <div className="min-w-0">
-                        <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={() => fileInputRef.current?.click()}>
-                          <Camera /> {t('profile.changePhoto')}
-                        </button>
-                        <p className="pro-row-sub mt-2">{t('pro.profile.photoHint')}</p>
-                      </div>
-                    </div>
-                  </section>
-                  <SignatureUpload />
-                </>
-              )}
-
-              {/* --------------------------------------------------- Cuenta */}
-              {profTab === 'account' && (
-                <>
-                  <section className="pro-card pro-card-pad">
-                    <div className="pro-card-head">
-                      <h3 className="pro-card-title"><Shield /> {t('profile.identityVerification')}</h3>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {isLoadingVerification ? (
-                        <span className="pro-pill pro-pill-muted">…</span>
-                      ) : verificationStatus === 'approved' ? (
-                        <span className="pro-pill pro-pill-ok">{t('profile.verified')}</span>
-                      ) : verificationStatus === 'pending' ? (
-                        <span className="pro-pill pro-pill-warn">{t('profile.pending')}</span>
-                      ) : (
-                        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/verify-identity')}>
-                          <FileCheck /> {t('profile.verify')}
-                        </button>
-                      )}
-                      <span className="pro-row-sub">{t('profile.memberSince')}: {user.createdAt ? formatDate(user.createdAt) : '-'}</span>
+                      <Link to={doctorHref('cuenta', { tab: 'finanzas', f: 'suscriptores' })} className="pro-btn pro-btn-teal flex-1"><Users /> {t('pro.subs.title')}</Link>
+                      <Link to={doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' })} className="pro-btn pro-btn-outline flex-1"><Wallet /> {t('pro.subs.goEarnings')}</Link>
                     </div>
                   </section>
 
-                  <section className="pro-card pro-card-pad">
-                    <div className="pro-card-head">
-                      <h3 className="pro-card-title"><Globe /> {t('profile.language')}</h3>
-                    </div>
-                    <p className="pro-row-sub mb-3">{t('profile.languageSubtitle')}</p>
-                    <Select value={language} onValueChange={handleLanguageChange} disabled={isSavingLanguage}>
-                      <SelectTrigger className="w-full md:w-64 bg-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="es"><span className="flex items-center gap-2">🇪🇸 Castellano</span></SelectItem>
-                        <SelectItem value="en"><span className="flex items-center gap-2">🇺🇸 English</span></SelectItem>
-                        <SelectItem value="pt"><span className="flex items-center gap-2">🇵🇹 Português</span></SelectItem>
-                        <SelectItem value="fr"><span className="flex items-center gap-2">🇫🇷 Français</span></SelectItem>
-                        <SelectItem value="it"><span className="flex items-center gap-2">🇮🇹 Italiano</span></SelectItem>
-                        <SelectItem value="de"><span className="flex items-center gap-2">🇩🇪 Deutsch</span></SelectItem>
-                        <SelectItem value="ca"><span className="flex items-center gap-2"><SenyeraIcon /> Català</span></SelectItem>
-                        <SelectItem value="zh"><span className="flex items-center gap-2">🇨🇳 中文</span></SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </section>
-
-                  <section className="pro-card pro-card-pad">
-                    <div className="pro-card-head">
-                      <h3 className="pro-card-title"><Settings /> {t('profile.quickLinks')}</h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Link to="/doctor/dashboard" className="pro-helprow"><Stethoscope /> <span>{t('userProfilePage.dashboard')}</span> <ChevronRight className="chev" /></Link>
-                      <Link to="/doctor/recordings" className="pro-helprow"><Camera /> <span>{t('profile.recordings')}</span> <ChevronRight className="chev" /></Link>
-                      <Link to="/settings" className="pro-helprow"><Settings /> <span>{t('nav.settings')}</span> <ChevronRight className="chev" /></Link>
-                      <Link to="/wallet" className="pro-helprow"><Wallet /> <span>{t('profile.myWallet')}</span> <ChevronRight className="chev" /></Link>
-                    </div>
-                  </section>
-
-                  {/* Los médicos también siguen a otros médicos y tienen su propio
-                      historial clínico: las dos tarjetas de siempre, intactas. */}
+                  {/* Los médicos también siguen a otros médicos: se queda aquí,
+                      no en Cuenta (que ya no repite lo profesional). */}
                   <MySubscribedDoctorsCard />
-                  <PatientClinicalHistoryCard />
                 </>
               )}
             </div>
@@ -1247,7 +1305,7 @@ export default function UserProfile() {
               { Icon: Briefcase, label: t('pro.profile.chkExperience'), value: careerCounts.experience },
               { Icon: GraduationCap, label: t('pro.profile.chkEducation'), value: careerCounts.education },
             ].map(s => (
-              <button key={s.label} type="button" className="pro-card pro-stat" onClick={() => setProfTab('career')}>
+              <button key={s.label} type="button" className="pro-card pro-stat" onClick={() => setProfTab('trayectoria')}>
                 <span className="pro-icon-box"><s.Icon /></span>
                 <span className="min-w-0">
                   <span className="k block">{s.label}</span>
@@ -1288,7 +1346,7 @@ export default function UserProfile() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </MainLayout>
+      </Wrapper>
     );
   }
 
@@ -1663,41 +1721,10 @@ export default function UserProfile() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Select 
-                  value={language} 
-                  onValueChange={handleLanguageChange}
-                  disabled={isSavingLanguage}
-                >
-                  <SelectTrigger className="w-full md:w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="es">
-                      <span className="flex items-center gap-2">🇪🇸 Castellano</span>
-                    </SelectItem>
-                    <SelectItem value="en">
-                      <span className="flex items-center gap-2">🇺🇸 English</span>
-                    </SelectItem>
-                    <SelectItem value="pt">
-                      <span className="flex items-center gap-2">🇵🇹 Português</span>
-                    </SelectItem>
-                    <SelectItem value="fr">
-                      <span className="flex items-center gap-2">🇫🇷 Français</span>
-                    </SelectItem>
-                    <SelectItem value="it">
-                      <span className="flex items-center gap-2">🇮🇹 Italiano</span>
-                    </SelectItem>
-                    <SelectItem value="de">
-                      <span className="flex items-center gap-2">🇩🇪 Deutsch</span>
-                    </SelectItem>
-                    <SelectItem value="ca">
-                      <span className="flex items-center gap-2"><SenyeraIcon /> Català</span>
-                    </SelectItem>
-                    <SelectItem value="zh">
-                      <span className="flex items-center gap-2">🇨🇳 中文</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Una sola lista de idiomas para toda la app (LanguageSwitcher): antes este
+                    selector escribía profiles.preferred_language a mano y luego setLanguage
+                    volvía a escribirlo (doble escritura), con banderas y nombres en duro. */}
+                <LanguageOptionsList variant="panel" />
               </CardContent>
             </Card>
           </motion.div>
@@ -1734,7 +1761,8 @@ export default function UserProfile() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-2 space-y-2"
                       >
-                        <p className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.current')}</Badge></p>
+                        {/* div, no p: Badge pinta un div y React avisa de <div> dentro de <p> */}
+                        <div className="text-sm font-medium ml-7 mb-2">{user.email} <Badge className="ml-1 bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.current')}</Badge></div>
                         <div className="flex items-center gap-2 ml-7 flex-wrap">
                           <Input
                             type="email"
@@ -1758,10 +1786,10 @@ export default function UserProfile() {
                         </p>
                       </motion.div>
                     ) : (
-                      <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
+                      <div className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
                         {user.email}
                         <Badge className="bg-success/10 text-success border-success text-[10px] whitespace-nowrap shrink-0">{t('userProfilePage.verified')}</Badge>
-                      </p>
+                      </div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -1847,7 +1875,7 @@ export default function UserProfile() {
                         )}
                       </motion.div>
                     ) : (
-                      <p className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
+                      <div className="mt-1 text-sm font-medium ml-7 flex items-center gap-2">
                         {!isLoadingPhone && (
                           userPhone ? (
                             <>
@@ -1858,7 +1886,7 @@ export default function UserProfile() {
                             <span className="text-muted-foreground italic">{t('userProfilePage.notVerified')}</span>
                           )
                         )}
-                      </p>
+                      </div>
                     )}
                   </AnimatePresence>
                 </div>

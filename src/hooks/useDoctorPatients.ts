@@ -18,7 +18,9 @@ export type PatientStatus = 'pending' | 'next' | 'followUp' | 'follower' | 'acti
 
 export interface DoctorPatient {
   id: string;
+  /** Vacío si la base no deja leer el nombre: la pantalla pone su texto de «sin nombre visible». */
   name: string;
+  nameHidden: boolean;
   email: string | null;
   phone: string | null;
   avatarUrl: string | null;
@@ -178,11 +180,28 @@ export function useDoctorPatients() {
           .in('id', missing);
         (pub || []).forEach((p: any) => { if (p?.id) profMap.set(p.id, p); });
       }
+      // Los que siguen sin perfil legible (paciente con chat, cita o consulta pero sin
+      // expediente compartido): con la migración 20260912 la ficha da nombre y foto,
+      // y solo con relación real. Sin ella se listan igual, sin nombre: antes
+      // desaparecían de la lista y el médico no podía abrir su ficha.
+      const stillMissing = ids.filter(id => !profMap.has(id));
+      if (stillMissing.length > 0) {
+        const overviews = await Promise.all(
+          stillMissing.slice(0, 40).map(id => (supabase.rpc as any)('doctor_get_patient_overview', { p_patient_id: id })),
+        );
+        overviews.forEach((res: any, i: number) => {
+          const pt = res?.data?.patient;
+          if (pt?.id) {
+            profMap.set(stillMissing[i], { id: pt.id, name: pt.name, avatar_url: pt.avatar_url, email: pt.email, phone: pt.phone, country_flag: pt.country_flag });
+          }
+        });
+      }
 
       const result: DoctorPatient[] = ids
-        .filter(id => profMap.has(id))
+        // Un seguidor sin perfil legible ni consulta ni cita no es un paciente que listar.
+        .filter(id => profMap.has(id) || !(map.get(id)!.source === 'subscriber' && map.get(id)!.consultationsCount === 0 && !map.get(id)!.nextAppointmentAt))
         .map(id => {
-          const p = profMap.get(id);
+          const p = profMap.get(id) || {};
           const e = map.get(id)!;
           let status: PatientStatus = 'active';
           if (e.nextAppointmentAt && e.nextAppointmentStatus === 'requested') status = 'pending';
@@ -191,7 +210,8 @@ export function useDoctorPatients() {
           else if (e.source === 'subscriber' && (e.tier === 'free' || !e.tier)) status = 'follower';
           return {
             id,
-            name: p.name || 'Paciente',
+            name: p.name || '',
+            nameHidden: !p.name,
             email: p.email ?? null,
             phone: p.phone ?? null,
             avatarUrl: p.avatar_url ?? null,

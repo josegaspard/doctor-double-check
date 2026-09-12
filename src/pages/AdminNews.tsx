@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import MainLayout from '@/components/layout/MainLayout';
 import { NewsEditor } from '@/components/admin/NewsEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +48,8 @@ interface DoctorPermission {
 export default function AdminNews() {
   const { role, supabaseUser } = useAuth();
   const { t } = useLanguage();
+  // Publicar/retirar y borrar una noticia pasan por el resumen (accesible también en /doctor/news).
+  const { confirm, dialog } = useConfirmAction();
   const navigate = useNavigate();
   const location = useLocation();
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -213,11 +216,21 @@ export default function AdminNews() {
   if (role !== 'admin' && !canPublish) return <Navigate to="/" replace />;
 
   const togglePublish = async (item: NewsItem) => {
+    const willPublish = !item.is_published;
+    const ok = await confirm({
+      title: willPublish ? t('mm2.confirm.newsPublish.titlePublish') : t('mm2.confirm.newsPublish.titleWithdraw'),
+      description: willPublish
+        ? t('mm2.confirm.newsPublish.descriptionPublish')
+        : t('mm2.confirm.newsPublish.descriptionWithdraw'),
+      details: [{ label: t('mm2.confirm.newsPublish.titleLabel'), value: item.title }],
+      confirmLabel: willPublish ? t('mm2.confirm.newsPublish.confirmPublish') : t('mm2.confirm.newsPublish.confirmWithdraw'),
+    });
+    if (!ok) return;
     const { error } = await supabase
       .from('medical_news')
       .update({
-        is_published: !item.is_published,
-        published_at: !item.is_published ? new Date().toISOString() : null,
+        is_published: willPublish,
+        published_at: willPublish ? new Date().toISOString() : null,
       })
       .eq('id', item.id);
     if (error) { toast.error(t('adminNews.toast.error')); return; }
@@ -225,8 +238,15 @@ export default function AdminNews() {
     fetchNews();
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm(t('adminNews.toast.deleteConfirm'))) return;
+  const deleteItem = async (id: string, title?: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.newsDelete.title'),
+      description: t('mm2.confirm.newsDelete.description'),
+      tone: 'destructive',
+      details: [{ label: t('mm2.confirm.newsPublish.titleLabel'), value: title || '—' }],
+      confirmLabel: t('mm2.confirm.newsDelete.confirmLabel'),
+    });
+    if (!ok) return;
     const { error } = await supabase.from('medical_news').delete().eq('id', id);
     if (error) { toast.error(t('adminNews.toast.deleteError')); return; }
     toast.success(t('adminNews.toast.newsDeleted'));
@@ -392,7 +412,7 @@ export default function AdminNews() {
                         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setEditingItem(item)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => deleteItem(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => deleteItem(item.id, item.title)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -474,6 +494,7 @@ export default function AdminNews() {
             </TabsContent>
           )}
         </Tabs>
+        {dialog}
       </div>
     </MainLayout>
   );

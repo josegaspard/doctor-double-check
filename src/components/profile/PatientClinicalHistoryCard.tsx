@@ -18,6 +18,8 @@ import {
   Plus, Trash2, Baby, Activity, Cigarette, Wine, Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { fill } from '@/lib/proFormat';
 
 // =================== Types ===================
 type ChronicOther = { cual: string; diagnostico: string; tratamiento: string; fecha: string };
@@ -105,6 +107,8 @@ function calcAge(dob: string | null): number | null {
 export function PatientClinicalHistoryCard() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  // Borrar un perfil de menor o copiarle el historial pasan por la revisión (antes: confirm() del navegador).
+  const { confirm, dialog } = useConfirmAction();
   const [history, setHistory] = useState<ClinicalHistory | null>(null);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -239,7 +243,15 @@ export function PatientClinicalHistoryCard() {
     }
   };
   const deleteChild = async (id: string) => {
-    if (!confirm(t('patientClinicalHistoryCard.child.confirmDelete'))) return;
+    const child = children.find(c => c.id === id);
+    const ok = await confirm({
+      title: t('mm2.confirm.childDelete.title'),
+      description: t('mm2.confirm.childDelete.desc'),
+      tone: 'destructive',
+      details: child ? [{ label: t('mm2.confirm.childDelete.nameLabel'), value: child.name }] : undefined,
+      confirmLabel: t('mm2.confirm.childDelete.cta'),
+    });
+    if (!ok) return;
     const { error } = await supabase.from('child_profiles').delete().eq('id', id);
     if (error) {
       toast.error(t('patientClinicalHistoryCard.child.deleteError'));
@@ -638,7 +650,13 @@ export function PatientClinicalHistoryCard() {
                     title={t('patientClinicalHistoryCard.children.duplicateTitle')}
                     onClick={async () => {
                       if (!user?.id) return;
-                      if (!confirm(`${t('patientClinicalHistoryCard.children.confirmDuplicatePrefix')} ${c.name}?`)) return;
+                      const ok = await confirm({
+                        title: fill(t('mm2.confirm.childDuplicate.title'), { name: c.name }),
+                        description: t('mm2.confirm.childDuplicate.desc'),
+                        details: [{ label: t('mm2.confirm.childDelete.nameLabel'), value: c.name }],
+                        confirmLabel: t('mm2.confirm.childDuplicate.cta'),
+                      });
+                      if (!ok) return;
                       const { data: mine } = await supabase
                         .from('patient_clinical_history')
                         .select('*')
@@ -942,6 +960,7 @@ export function PatientClinicalHistoryCard() {
           </CollapsibleContent>
         </Collapsible>
       </Card>
+      {dialog}
     </motion.div>
   );
 }

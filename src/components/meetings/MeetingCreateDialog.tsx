@@ -17,6 +17,7 @@ import {
 import { Loader2, Search, Stethoscope, UserPlus, X, Globe, Lock, Languages, Award } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 import { useSpecialties } from '@/hooks/useSpecialties';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
@@ -55,6 +56,8 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
   const { user, role } = useAuth();
   const { specialtiesList: SPECIALTIES } = useSpecialties();
   const { t } = useLanguage();
+  // Crear o guardar una reunión avisa a los invitados: pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const [isCreating, setIsCreating] = useState(false);
   // ¿El creador es doctor con medalla? Habilita la opción "reunión solo medallas".
   const [isGoldDoctor, setIsGoldDoctor] = useState(false);
@@ -266,6 +269,25 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
 
   const handleCreate = async () => {
     if (!form.title.trim() || !form.specialty || !user?.id) return;
+    const ok = await confirm({
+      title: isEditing ? t('mm2.confirm.meetingSave.titleEdit') : t('mm2.confirm.meetingSave.titleNew'),
+      description: isEditing
+        ? t('mm2.confirm.meetingSave.descriptionEdit')
+        : t('mm2.confirm.meetingSave.descriptionNew'),
+      details: [
+        { label: t('mm2.confirm.meetingSave.nameLabel'), value: form.title.trim() },
+        {
+          label: t('mm2.confirm.meetingSave.visibilityLabel'),
+          value: form.isPublic ? t('meetingCreateDialog.visibilityPublicTitle') : t('meetingCreateDialog.visibilityPrivateTitle'),
+        },
+        {
+          label: t('mm2.confirm.meetingSave.inviteesLabel'),
+          value: selectedInvitees.length > 0 ? String(selectedInvitees.length) : t('mm2.confirm.meetingSave.inviteesNone'),
+        },
+      ],
+      confirmLabel: isEditing ? t('meetingCreateDialog.saveChanges') : t('meetingCreateDialog.create'),
+    });
+    if (!ok) return;
     setIsCreating(true);
 
     try {
@@ -590,6 +612,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
           </Button>
         </div>
       </DialogContent>
+      {dialog}
     </Dialog>
   );
 }

@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import MainLayout from '@/components/layout/MainLayout';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -42,6 +43,8 @@ export default function NewsArticle() {
   const navigate = useNavigate();
   const { user, role, isAuthenticated } = useAuth();
   const { t, language } = useLanguage();
+  // Borrar un comentario propio también pasa por el resumen.
+  const { confirm, dialog } = useConfirmAction();
   const dateLocale = language === 'es' ? es : enUS;
   const isMobile = useIsMobile();
   const [article, setArticle] = useState<any>(null);
@@ -185,7 +188,15 @@ export default function NewsArticle() {
     setIsSending(false);
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = async (commentId: string, content?: string) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.commentDelete.title'),
+      description: t('mm2.confirm.commentDelete.description'),
+      tone: 'destructive',
+      details: content ? [{ label: t('mm2.confirm.commentDelete.textLabel'), value: content }] : undefined,
+      confirmLabel: t('mm2.confirm.commentDelete.confirmLabel'),
+    });
+    if (!ok) return;
     const { error } = await supabase.from('news_comments').delete().eq('id', commentId);
     if (error) { toast.error(t('common.error')); return; }
     if (article) fetchComments(article.id);
@@ -331,7 +342,7 @@ export default function NewsArticle() {
               {user?.id === comment.user_id && (
                 <button
                   className="text-[11px] text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                  onClick={() => handleDeleteComment(comment.id)}
+                  onClick={() => handleDeleteComment(comment.id, comment.content)}
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -746,6 +757,7 @@ export default function NewsArticle() {
           </aside>
         </div>
       </div>
+      {dialog}
     </MainLayout>
   );
 }

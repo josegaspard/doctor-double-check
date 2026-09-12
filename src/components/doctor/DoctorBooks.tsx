@@ -11,6 +11,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePurchases } from '@/hooks/usePurchases';
 import { BookOpen, Download, Wallet, CreditCard, Loader2, CheckCircle2, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 
 // Libros/cursos PDF de pago del doctor en su perfil público (cliente 2026-07-08).
 // Tarjeta estilo tienda: portada, badge "Descargable", precio tachado + precio
@@ -51,7 +53,9 @@ export async function downloadBookPdf(book: { file_url: string; title: string })
 export default function DoctorBooks({ doctorId, isOwner = false }: Props) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  // Comprar un libro pasa por el resumen: concepto, método e importe.
+  const { confirm, dialog } = useConfirmAction();
   const { balance, canAfford } = useWallet();
   const { hasPurchasedContent, isPurchasing, purchaseContentWithWallet, purchaseContentWithStripe } = usePurchases();
   const [books, setBooks] = useState<DoctorBook[]>([]);
@@ -99,8 +103,34 @@ export default function DoctorBooks({ doctorId, isOwner = false }: Props) {
     }
   };
 
+  const confirmBookPayment = async (method: 'wallet' | 'card') => {
+    if (!payingBook) return false;
+    const amount = Number(payingBook.price || 0);
+    return confirm({
+      title: t('mm2.confirm.payBook.title'),
+      description: t('mm2.confirm.payBook.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.payCommon.conceptLabel'), value: payingBook.title },
+        {
+          label: t('mm2.confirm.payCommon.methodLabel'),
+          value: method === 'wallet' ? t('mm2.confirm.payCommon.methodWallet') : t('mm2.confirm.payCommon.methodCard'),
+        },
+        ...(method === 'wallet'
+          ? [
+              { label: t('mm2.confirm.payCommon.balanceNowLabel'), value: money2(balance, language) },
+              { label: t('mm2.confirm.payCommon.balanceAfterLabel'), value: money2(Math.max(0, balance - amount), language) },
+            ]
+          : []),
+        { label: t('mm2.confirm.payCommon.amountLabel'), value: money2(amount, language), emphasis: true },
+      ],
+      confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
+    });
+  };
+
   const handleWalletPayment = async () => {
     if (!payingBook) return;
+    if (!(await confirmBookPayment('wallet'))) return;
     setProcessing(true);
     const result = await purchaseContentWithWallet(payingBook.id);
     setProcessing(false);
@@ -112,6 +142,7 @@ export default function DoctorBooks({ doctorId, isOwner = false }: Props) {
 
   const handleStripePayment = async () => {
     if (!payingBook) return;
+    if (!(await confirmBookPayment('card'))) return;
     setProcessing(true);
     const result = await purchaseContentWithStripe(payingBook.id);
     setProcessing(false);
@@ -337,6 +368,8 @@ export default function DoctorBooks({ doctorId, isOwner = false }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {dialog}
     </Card>
   );
 }

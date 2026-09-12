@@ -4,6 +4,9 @@ import { AlertTriangle, Loader2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useWallet } from '@/contexts/WalletContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2, fill } from '@/lib/proFormat';
 
 interface Props {
   consultationId: string | null;
@@ -31,6 +34,9 @@ export function ConsultationRefundBanner({
   messages,
 }: Props) {
   const { refreshWallet } = useWallet();
+  const { t, language } = useLanguage();
+  // Reembolsar ya no va al primer clic: se enseña el importe antes de pedirlo.
+  const { confirm, dialog } = useConfirmAction();
   const [isRequesting, setIsRequesting] = useState(false);
   const [refunded, setRefunded] = useState(false);
 
@@ -51,6 +57,14 @@ export function ConsultationRefundBanner({
 
   const handleRefund = async () => {
     if (!consultationId) return;
+    const ok = await confirm({
+      title: t('mm2.confirm.consultationRefund.title'),
+      description: t('mm2.confirm.consultationRefund.description'),
+      tone: 'payment',
+      details: [{ label: t('mm2.confirm.consultationRefund.destinationLabel'), value: t('mm2.confirm.payCommon.methodWallet') }],
+      confirmLabel: t('mm2.confirm.consultationRefund.confirmLabel'),
+    });
+    if (!ok) return;
     setIsRequesting(true);
     try {
       const { data, error } = await supabase.rpc('request_consultation_refund', {
@@ -59,14 +73,14 @@ export function ConsultationRefundBanner({
       if (error) throw error;
       const result = data as { success: boolean; error?: string; refunded_amount?: number };
       if (!result.success) {
-        toast.error(result.error || 'No se pudo procesar el reembolso');
+        toast.error(result.error || t('mm2.confirm.consultationRefund.genericError'));
         return;
       }
       setRefunded(true);
       await refreshWallet();
-      toast.success(`Reembolso emitido: $${result.refunded_amount?.toFixed(2)} en tu saldo`);
+      toast.success(fill(t('mm2.confirm.consultationRefund.issuedToast'), { amount: money2(result.refunded_amount || 0, language) }));
     } catch (err: any) {
-      toast.error(err?.message || 'Error al solicitar reembolso');
+      toast.error(err?.message || t('mm2.confirm.consultationRefund.genericError'));
     } finally {
       setIsRequesting(false);
     }
@@ -77,10 +91,10 @@ export function ConsultationRefundBanner({
       <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
       <div className="flex-1 text-sm">
         <p className="font-medium text-foreground">
-          El doctor no ha respondido en más de 72 horas
+          {t('mm2.confirm.consultationRefund.bannerTitle')}
         </p>
         <p className="text-muted-foreground text-xs mt-0.5">
-          Puedes solicitar un reembolso completo a tu saldo.
+          {t('mm2.confirm.consultationRefund.bannerBody')}
         </p>
       </div>
       <Button
@@ -91,8 +105,9 @@ export function ConsultationRefundBanner({
         className="border-primary/40 text-primary hover:bg-primary/10 hover:text-primary gap-1.5"
       >
         {isRequesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wallet className="w-3.5 h-3.5" />}
-        Reembolsar
+        {t('mm2.confirm.consultationRefund.buttonLabel')}
       </Button>
+      {dialog}
     </div>
   );
 }

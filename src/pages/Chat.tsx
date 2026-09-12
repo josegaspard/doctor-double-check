@@ -235,12 +235,15 @@ export default function Chat() {
     typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 2000);
   };
 
+  // La consulta ya NO se crea sola al abrir el chat (nadie confirmó nada
+  // todavía): solo se busca si ya existe. Se crea recién cuando el médico
+  // manda su primer mensaje (ver ensureConsultationForSession + handleSend),
+  // que es la primera acción real con consecuencias en esta conversación.
   useEffect(() => {
     if (selectedSession) {
       loadMessages(selectedSession);
       markAsRead(selectedSession);
-      const fetchOrCreateConsultation = async () => {
-        // First try to find an existing consultation for this session
+      const fetchConsultation = async () => {
         const { data } = await supabase
           .from('consultations')
           .select('id')
@@ -248,53 +251,45 @@ export default function Chat() {
           .order('started_at', { ascending: false })
           .limit(1)
           .maybeSingle();
-
-        if (data?.id) {
-          setConsultationId(data.id);
-          return;
-        }
-
-        // No consultation exists — auto-create one for active sessions
-        const session = allSessions.find(s => s.id === selectedSession);
-        if (!session || session.status !== 'active') {
-          setConsultationId(null);
-          return;
-        }
-
-        // Determine doctor and patient IDs
-        const doctorId = session.participant1Type === 'doctor' ? session.participant1Id
-          : session.participant2Type === 'doctor' ? session.participant2Id : null;
-        const patientId = session.participant1Type === 'patient' ? session.participant1Id
-          : session.participant2Type === 'patient' ? session.participant2Id : null;
-
-        if (!doctorId || !patientId) {
-          setConsultationId(null);
-          return;
-        }
-
-        const { data: newConsultation, error } = await supabase
-          .from('consultations')
-          .insert({
-            doctor_id: doctorId,
-            patient_id: patientId,
-            chat_session_id: selectedSession,
-            status: 'active',
-          })
-          .select('id')
-          .single();
-
-        if (!error && newConsultation) {
-          setConsultationId(newConsultation.id);
-        } else {
-          console.error('Error creating consultation:', error);
-          setConsultationId(null);
-        }
+        setConsultationId(data?.id || null);
       };
-      fetchOrCreateConsultation();
+      fetchConsultation();
     } else {
       setConsultationId(null);
     }
   }, [selectedSession, loadMessages, markAsRead]);
+
+  // Crea la consulta la primera vez que el médico escribe en esta sesión
+  // (antes se creaba sola con solo abrir el hilo, la escribiera quien la escribiera).
+  const ensureConsultationForSession = async (sessionId: string): Promise<string | null> => {
+    if (role !== 'doctor') return consultationId;
+    if (consultationId) return consultationId;
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session || session.status !== 'active') return null;
+
+    const doctorId = session.participant1Type === 'doctor' ? session.participant1Id
+      : session.participant2Type === 'doctor' ? session.participant2Id : null;
+    const patientId = session.participant1Type === 'patient' ? session.participant1Id
+      : session.participant2Type === 'patient' ? session.participant2Id : null;
+    if (!doctorId || !patientId) return null;
+
+    const { data: newConsultation, error } = await supabase
+      .from('consultations')
+      .insert({
+        doctor_id: doctorId,
+        patient_id: patientId,
+        chat_session_id: sessionId,
+        status: 'active',
+      })
+      .select('id')
+      .single();
+    if (error || !newConsultation) {
+      console.error('Error creating consultation:', error);
+      return null;
+    }
+    setConsultationId(newConsultation.id);
+    return newConsultation.id;
+  };
 
   // 🚨 La conversación abierta se suelta en el CLIC del carril, no en un efecto
   // sobre `view`. Con el efecto, el deep-link ?session= se pisaba a sí mismo:
@@ -309,7 +304,10 @@ export default function Chat() {
     // Limpiamos input + typing AL INSTANTE; sendMessage hace render optimista.
     setNewMessage('');
     setIsTyping(false);
-    void sendMessage(selectedSession, content, replyToId);
+    const session = selectedSession;
+    void ensureConsultationForSession(session).finally(() => {
+      void sendMessage(session, content, replyToId);
+    });
   };
 
   const handleCloseSession = async () => {
@@ -347,6 +345,7 @@ export default function Chat() {
     const fileMessage = fileType.startsWith('image/')
       ? `📷 [Imagen: ${fileName}]\n${fileUrl}`
       : `📎 [Archivo: ${fileName}]\n${fileUrl}`;
+    await ensureConsultationForSession(selectedSession);
     await sendMessage(selectedSession, fileMessage);
   };
 

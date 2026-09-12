@@ -20,6 +20,9 @@ import {
   Plus, Star, CircleCheck, Circle, User, AlertCircle, ArrowRight, Info,
 } from 'lucide-react';
 import { fill, initialsOf, norm, fmtTime, fmtDayLong, fmtDate, money } from '@/lib/proFormat';
+import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { doctorHref, doctorPatientHref } from '@/lib/doctorSections';
 
 type Tab = 'requests' | 'upcoming' | 'ongoing' | 'followUp' | 'done' | 'cancelled';
 type DateFilter = 'all' | 'today' | 'week' | 'month';
@@ -36,7 +39,9 @@ const TAB_OF: Record<ConsultStatus, Tab> = {
   cancelled: 'cancelled',
 };
 
-export default function DoctorConsultations() {
+// 11-sep-2026: vive incrustado en Agenda › Consultas (embedded). La ruta suelta
+// /doctor/consultations redirige allí; el modo página se conserva por si acaso.
+export default function DoctorConsultations({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
@@ -50,9 +55,18 @@ export default function DoctorConsultations() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [newConsultOpen, setNewConsultOpen] = useState(false);
+  const { confirm, dialog } = useConfirmAction();
 
   const chatEnabled = !!toggles.enable_patient_chat;
   const prescriptionsEnabled = toggles.enable_prescriptions !== false;
+
+  // Resumen común de las revisiones: quién, cuándo y por qué.
+  const reviewDetails = (c: DoctorConsultation) => [
+    { label: t('mm2.consults.patient'), value: c.patientName || t('mm2.patients.unnamed') },
+    { label: t('mm2.consults.when'), value: `${fmtDayLong(new Date(c.at), language)} · ${fmtTime(new Date(c.at), language)}` },
+    { label: t('mm2.consults.reason'), value: c.reason || t('mm2.consults.noReason') },
+  ];
 
   // ---------------------------------------------------------------- helpers
   const statusLabel = (s: ConsultStatus) => {
@@ -154,6 +168,13 @@ export default function DoctorConsultations() {
 
   // --------------------------------------------------------------- acciones
   const confirmAppt = async (c: DoctorConsultation) => {
+    const ok = await confirm({
+      title: t('mm2.consults.confirmAccept.title'),
+      description: t('mm2.consults.confirmAccept.desc'),
+      details: reviewDetails(c),
+      confirmLabel: t('mm2.consults.confirmAccept.cta'),
+    });
+    if (!ok) return;
     setBusy(c.id);
     const { error: err } = await supabase.from('appointments').update({ status: 'confirmed' } as any).eq('id', c.id);
     if (err) { setBusy(null); toast.error(err.message); return; }
@@ -187,7 +208,14 @@ export default function DoctorConsultations() {
   };
 
   const rejectAppt = async (c: DoctorConsultation) => {
-    if (!confirm(t('myAppointments.confirmReject'))) return;
+    const ok = await confirm({
+      title: t('mm2.consults.confirmReject.title'),
+      description: t('mm2.consults.confirmReject.desc'),
+      details: reviewDetails(c),
+      confirmLabel: t('mm2.consults.confirmReject.cta'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     setBusy(c.id);
     const { error: err } = await supabase
       .from('appointments')
@@ -200,7 +228,14 @@ export default function DoctorConsultations() {
   };
 
   const cancelAppt = async (c: DoctorConsultation) => {
-    if (!confirm(t('myAppointments.confirmCancel'))) return;
+    const ok = await confirm({
+      title: t('mm2.consults.confirmCancel.title'),
+      description: t('mm2.consults.confirmCancel.desc'),
+      details: reviewDetails(c),
+      confirmLabel: t('mm2.consults.confirmCancel.cta'),
+      tone: 'destructive',
+    });
+    if (!ok) return;
     setBusy(c.id);
     const { error: err } = await supabase
       .from('appointments')
@@ -213,7 +248,13 @@ export default function DoctorConsultations() {
   };
 
   const closeConsult = async (c: DoctorConsultation) => {
-    if (!confirm(t('pro.consults.confirmClose'))) return;
+    const ok = await confirm({
+      title: t('mm2.consults.confirmClose.title'),
+      description: t('mm2.consults.confirmClose.desc'),
+      details: reviewDetails(c),
+      confirmLabel: t('mm2.consults.confirmClose.cta'),
+    });
+    if (!ok) return;
     setBusy(c.id);
     const err = c.kind === 'appointment'
       ? (await supabase.from('appointments').update({ status: 'completed' } as any).eq('id', c.id)).error
@@ -275,7 +316,7 @@ export default function DoctorConsultations() {
             <div className="pro-row-name truncate">{c.patientName || t('pro.common.patient')}</div>
             <div className="pro-row-sub">MM-{c.patientId.slice(0, 6).toUpperCase()}</div>
           </div>
-          <Link to={`/doctor/vault?patient=${c.patientId}`} className="pro-btn pro-btn-outline pro-btn-xs">
+          <Link to={doctorPatientHref(c.patientId, 'resumen')} className="pro-btn pro-btn-outline pro-btn-xs">
             <Folder /> {t('pro.consults.dRecord')}
           </Link>
         </div>
@@ -309,13 +350,13 @@ export default function DoctorConsultations() {
             <span className="v">{consultationFee > 0 ? money(consultationFee, language) : t('pro.consults.dFeeFree')}</span>
           </div>
           <p className="text-[11.5px] pro-muted mt-1">{t('pro.consults.dFeeNote')}</p>
-          <Link to="/doctor/earnings" className="pro-link mt-1"><ArrowRight /> {t('pro.earnings.title')}</Link>
+          <Link to={doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' })} className="pro-link mt-1"><ArrowRight /> {t('pro.earnings.title')}</Link>
         </div>
 
         <div className="pro-ctx-block">
           <div className="pro-ctx-h"><Folder /> {t('pro.consults.dDocuments')}</div>
           {docsReady ? (
-            <Link to={`/doctor/vault?patient=${c.patientId}`} className="pro-link">
+            <Link to={doctorPatientHref(c.patientId, 'documentos')} className="pro-link">
               {fill(t('pro.consults.dDocumentsN'), { n: c.documentsCount })} <ChevronRight />
             </Link>
           ) : (
@@ -364,7 +405,7 @@ export default function DoctorConsultations() {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Link to={`/doctor/vault?patient=${c.patientId}`} className="pro-btn pro-btn-outline pro-btn-sm"><Folder /> {t('pro.consults.dDocuments')}</Link>
+          <Link to={doctorPatientHref(c.patientId, 'documentos')} className="pro-btn pro-btn-outline pro-btn-sm"><Folder /> {t('pro.consults.dDocuments')}</Link>
           {chatEnabled && (
             <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => openChat(c)}>
               <MessageSquare /> {t('pro.consults.chat')}
@@ -407,18 +448,21 @@ export default function DoctorConsultations() {
 
   // 🚨 Después de TODOS los hooks: un `return` antes deja el render con menos
   // hooks que el siguiente y React lanza «Rendered more hooks…».
-  if (role && role !== 'doctor') return <Navigate to="/my-appointments" replace />;
+  if (role && role !== 'doctor') return embedded ? null : <Navigate to="/my-appointments" replace />;
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
   return (
-    <MainLayout>
-      <div className="pro-container pro-page">
+    <Wrapper>
+      <div className={embedded ? '' : 'pro-container pro-page'}>
+        {/* Incrustada en la Agenda, la cabecera y «Nueva consulta» son de la Agenda. */}
+        {!embedded && (
         <div className="pro-page-head">
           <div className="min-w-0">
             <h1 className="pro-page-title"><Stethoscope className="w-7 h-7" /> <span className="truncate">{t('pro.consults.title')}</span></h1>
             <p className="pro-page-sub">{t('pro.consults.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button type="button" className="pro-btn pro-btn-live flex-1 sm:flex-none" onClick={() => navigate('/doctor/availability?nueva=consulta')}>
+            <button type="button" className="pro-btn pro-btn-live flex-1 sm:flex-none" onClick={() => setNewConsultOpen(true)}>
               <Plus /> {t('pro.consults.newConsultation')}
             </button>
             <Link to="/doctor/agenda" className="pro-btn pro-btn-white flex-1 sm:flex-none">
@@ -426,6 +470,7 @@ export default function DoctorConsultations() {
             </Link>
           </div>
         </div>
+        )}
 
         {/* KPIs — cada una lleva a su pestaña */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -577,7 +622,7 @@ export default function DoctorConsultations() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => pick(c)}>{t('pro.consults.details')}</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/doctor/vault?patient=${c.patientId}`)}>{t('pro.consults.dRecord')}</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(doctorPatientHref(c.patientId, 'resumen'))}>{t('pro.consults.dRecord')}</DropdownMenuItem>
                                 {prescriptionsEnabled && (
                                   <DropdownMenuItem onClick={() => navigate(`/prescriptions/new?patientId=${c.patientId}&patientName=${encodeURIComponent(c.patientName || '')}`)}>
                                     {t('pro.consults.dPrescribe')}
@@ -612,12 +657,6 @@ export default function DoctorConsultations() {
           </aside>
         </div>
 
-        {/* Enlace a la vista antigua: no se pierde nada de lo que había */}
-        <div className="mt-4">
-          <Link to="/my-appointments" className="pro-link" style={{ color: '#fff' }}>
-            <ArrowRight /> {t('pro.consults.patientView')}
-          </Link>
-        </div>
       </div>
 
       {/* Detalle en hoja lateral cuando no cabe la columna */}
@@ -627,6 +666,14 @@ export default function DoctorConsultations() {
           {selected && detail(selected)}
         </SheetContent>
       </Sheet>
-    </MainLayout>
+      {!embedded && (
+        <NewConsultationDialog
+          open={newConsultOpen}
+          onOpenChange={setNewConsultOpen}
+          onCreated={() => { setNewConsultOpen(false); refresh(); }}
+        />
+      )}
+      {dialog}
+    </Wrapper>
   );
 }

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle, AlertCircle, Building, CreditCard, RefreshCw, ExternalLink, ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 
 const MEXICAN_BANKS = [
   'BBVA', 'Santander', 'Banorte', 'HSBC', 'Scotiabank', 'Banamex/Citibanamex',
@@ -38,11 +39,17 @@ interface BankDetails {
   stripe_account_id: string | null;
 }
 
-export default function DoctorBankAccount() {
+export interface DoctorBankAccountProps {
+  /** Dentro de Cuenta > Finanzas > Cobrar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+}
+
+export default function DoctorBankAccount({ embedded = false }: DoctorBankAccountProps = {}) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, role } = useAuth();
   const { t } = useLanguage();
+  const { confirm, dialog } = useConfirmAction();
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isSavingBank, setIsSavingBank] = useState(false);
@@ -54,7 +61,7 @@ export default function DoctorBankAccount() {
   const [activeTab, setActiveTab] = useState('bank');
 
   useEffect(() => {
-    if (role !== 'doctor') { navigate('/'); return; }
+    if (role !== 'doctor') { if (!embedded) navigate('/'); return; }
     loadBankData();
   }, [role, navigate]);
 
@@ -123,6 +130,20 @@ export default function DoctorBankAccount() {
       toast.error(t('doctorBankAccount.fillBankClabeHolder'));
       return;
     }
+
+    // Revisión antes de guardar: aquí llegarán los próximos pagos.
+    const ok = await confirm({
+      title: t('doctorBankAccount.saveBankDetails'),
+      description: t('mm2.finance.bankConfirmDesc'),
+      confirmLabel: t('doctorBankAccount.saveBankDetails'),
+      details: [
+        { label: t('doctorBankAccount.bankLabel'), value: bankDetails.bank_name },
+        { label: t('doctorBankAccount.accountHolderName'), value: bankDetails.account_holder_name },
+        { label: 'CLABE', value: `•••• ${bankDetails.clabe.slice(-4)}`, emphasis: true },
+        ...(bankDetails.rfc ? [{ label: 'RFC', value: bankDetails.rfc }] : []),
+      ],
+    });
+    if (!ok) return;
 
     setIsSavingBank(true);
     try {
@@ -216,19 +237,25 @@ export default function DoctorBankAccount() {
 
   if (role !== 'doctor') return null;
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+
   return (
-    <MainLayout>
-      <div className="container mx-auto px-4 py-6 max-w-2xl">
-        <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 gap-2 hidden sm:inline-flex">
-          <ArrowLeft className="w-4 h-4" />
-          {t('doctorBankAccount.backToDashboard')}
-        </Button>
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-4 py-6 max-w-2xl'}>
+        {!embedded && (
+          <Button variant="back" size="sm" onClick={() => navigate('/doctor/dashboard')} className="mb-4 gap-2 hidden sm:inline-flex">
+            <ArrowLeft className="w-4 h-4" />
+            {t('doctorBankAccount.backToDashboard')}
+          </Button>
+        )}
 
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              {t('doctorBankAccount.pageTitle')}
-            </h1>
+            {!embedded && (
+              <h1 className="font-heading text-2xl font-bold text-foreground">
+                {t('doctorBankAccount.pageTitle')}
+              </h1>
+            )}
             <p className="text-muted-foreground mt-1">
               {t('doctorBankAccount.pageSubtitle')}
             </p>
@@ -432,7 +459,8 @@ export default function DoctorBankAccount() {
             </TabsContent>
           </Tabs>
         )}
+        {dialog}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

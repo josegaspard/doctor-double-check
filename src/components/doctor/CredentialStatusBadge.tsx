@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { CheckCircle2, Clock, XCircle, ShieldCheck, Info } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type CredentialType = 'cedula' | 'cofepris';
 export type CredentialStatus = 'pending' | 'approved' | 'rejected' | null | undefined;
@@ -31,6 +32,7 @@ export function CredentialStatusBadge({
   size = 'xs',
   className,
 }: CredentialStatusBadgeProps) {
+  const { t } = useLanguage();
   // Compliance: el badge SIEMPRE renderiza (en /lives card y en LivePlayer la
   // barra "Profesional verificado" debe ser visible aunque la credencial aún
   // no esté cargada). Si no hay value, mostramos "Pendiente" en vez de ocultar.
@@ -113,7 +115,7 @@ export function CredentialStatusBadge({
             <p className="text-muted-foreground">{config.tooltip}</p>
             {effectiveStatus === 'approved' && (
               <p className="text-success flex items-center gap-1 text-[11px] mt-1">
-                <CheckCircle2 className="w-3 h-3" /> Documento aprobado por Medical Masters
+                <CheckCircle2 className="w-3 h-3" /> {t('mm2.common.credentialApprovedBadge')}
               </p>
             )}
             {effectiveStatus === 'pending' && (

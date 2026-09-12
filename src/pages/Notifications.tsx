@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,6 +70,20 @@ export default function Notifications() {
   const { t, language } = useLanguage();
   const { notifications, unreadCount, isLoading, hasError, markAsRead, markAllAsRead, deleteNotification, deleteNotifications, refresh } = useNotifications();
   const dateLocale = language === 'es' ? es : enUS;
+  // Borrar una notificación suelta también pasa por el resumen (no solo el borrado masivo).
+  const { confirm, dialog } = useConfirmAction();
+
+  const handleDeleteOne = async (notification: Notification) => {
+    const ok = await confirm({
+      title: t('mm2.confirm.notificationDelete.title'),
+      description: t('mm2.confirm.notificationDelete.description'),
+      tone: 'destructive',
+      details: [{ label: t('mm2.confirm.notificationDelete.itemLabel'), value: stripLeadingEmoji(notification.title) }],
+      confirmLabel: t('mm2.confirm.notificationDelete.confirmLabel'),
+    });
+    if (!ok) return;
+    deleteNotification(notification.id);
+  };
 
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -290,7 +305,7 @@ export default function Notifications() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-10 w-10 text-destructive"
-                                onClick={(e) => { e.stopPropagation(); deleteNotification(notification.id); }}
+                                onClick={(e) => { e.stopPropagation(); handleDeleteOne(notification); }}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -344,6 +359,7 @@ export default function Notifications() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {dialog}
     </MainLayout>
   );
 }

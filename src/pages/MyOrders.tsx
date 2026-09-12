@@ -69,7 +69,12 @@ const ALL_COUNT_ACTIVE= 'bg-background/20 text-background';
 const TIMELINE_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
 const STATUS_FILTERS = ['all', 'pending', 'paid', 'shipped', 'delivered', 'cancelled'];
 
-export default function MyOrders() {
+export interface MyOrdersProps {
+  /** Dentro de Cuenta > Finanzas > Comprar: sin MainLayout ni título propio. */
+  embedded?: boolean;
+}
+
+export default function MyOrders({ embedded = false }: MyOrdersProps = {}) {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -172,10 +177,14 @@ export default function MyOrders() {
   const getStatusIdx = (status: string) => TIMELINE_STEPS.indexOf(status);
   const formatOrderId = (id: string) => `#${id.slice(0, 8).toUpperCase()}`;
 
+  const Wrapper = embedded ? React.Fragment : MainLayout;
+
   return (
-    <MainLayout>
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl">
-        {/* Header — panel sólido brand para que destaque sobre el fondo teal del brandbook */}
+    <Wrapper>
+      <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-3xl'}>
+        {/* Header — panel sólido brand para que destaque sobre el fondo teal del brandbook.
+            Dentro de Finanzas > Comprar ya hay cabecera propia: se omite. */}
+        {!embedded && (
         <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary to-secondary text-primary-foreground p-5 sm:p-8 shadow-xl border border-primary/30 overflow-hidden relative">
           <div aria-hidden className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-light/25 blur-2xl pointer-events-none" />
           <div className="relative">
@@ -208,6 +217,7 @@ export default function MyOrders() {
             )}
           </div>
         </div>
+        )}
 
         {/* Filters */}
         {orders.length > 0 && (
@@ -354,9 +364,9 @@ export default function MyOrders() {
                         )}
 
                         {o.status === 'cancelled' && (
-                          <div className="bg-destructive dark:bg-destructive/20 rounded-lg p-3 flex items-center gap-2">
+                          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-center gap-2">
                             <XCircle className="w-5 h-5 text-destructive" />
-                            <span className="text-sm text-destructive dark:text-destructive">{t('autoI18n.myOrders17')}</span>
+                            <span className="text-sm text-destructive">{t('autoI18n.myOrders17')}</span>
                           </div>
                         )}
 
@@ -526,6 +536,6 @@ export default function MyOrders() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </Wrapper>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PushNotificationToggle } from '@/components/notifications/PushNotificationToggle';
 import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
+import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
 import { ReferralProgram } from '@/components/referrals/ReferralProgram';
 import { MfaSettings } from '@/components/settings/MfaSettings';
 import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
@@ -28,11 +29,22 @@ import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { tzLabel } from '@/lib/proFormat';
+import { SectionTabs, useSectionParam, type SectionTabItem } from '@/components/common/SectionTabs';
+import UserProfilePage from '@/pages/UserProfile';
+import WalletPage from '@/pages/Wallet';
+import WalletLedgerPage from '@/pages/WalletLedger';
+import DoctorEarningsPage from '@/pages/DoctorEarnings';
+import DoctorInvoicesPage from '@/pages/DoctorInvoices';
+import DoctorBankAccountPage from '@/pages/DoctorBankAccount';
+import SubscribersListPage from '@/pages/SubscribersList';
+import MyBooksPage from '@/pages/MyBooks';
+import MyOrdersPage from '@/pages/MyOrders';
 import {
   Settings as SettingsIcon, Globe, Bell, Shield, CheckCircle, Mail, CreditCard, Loader2,
   ExternalLink, Moon, Sun, Trash2, AlertTriangle, User, Phone, MapPin, Lock, Clock,
   Gift, Palette, KeyRound, Pencil, Circle, LifeBuoy, Headphones, ChevronRight, BadgeCheck,
-  Stethoscope,
+  Stethoscope, Wallet as WalletIcon, TrendingUp, Percent, Landmark, Receipt, ListOrdered,
+  Users, ShoppingCart, ShoppingBag, Megaphone, Rss, HeartPulse, Eye, BookOpen, ArrowRight,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -48,9 +60,39 @@ import {
 // interruptores REALES de notificación.
 // El correo, el teléfono y el país se ENSEÑAN aquí y se editan en el perfil,
 // que es donde vive su verificación (OTP por SMS y confirmación por correo).
+//
+// 11-sep-2026 — reestructura del médico (decisiones del cliente, ver mapas).
+// Para PACIENTE y RESIDENTE, /settings sigue exactamente como estaba: las 7
+// secciones de siempre (account·security·notifications·billing·language·
+// appearance·referrals), sin tocar una coma.
+// Para el MÉDICO, Cuenta pasa a ser el hub único con la arquitectura que pidió
+// el cliente: perfil·seguridad·notificaciones·idioma·privacidad·finanzas·
+// historial. «Perfil» incrusta la página de perfil profesional (sus propios 4
+// bloques, con ?b=); «Finanzas» agrupa Comprar y Cobrar con ?f= e incrusta las
+// 8 páginas que antes eran rutas sueltas (Wallet, WalletLedger, DoctorEarnings,
+// DoctorInvoices, DoctorBankAccount, SubscribersList, MyBooks, MyOrders), todas
+// ya con su prop `embedded`. «Saldo» deja de existir como destino: no hay
+// ninguna entrada que lo nombre.
 // ---------------------------------------------------------------------------
 
-type Section = 'account' | 'security' | 'notifications' | 'billing' | 'language' | 'appearance' | 'referrals';
+type LegacySection = 'account' | 'security' | 'notifications' | 'billing' | 'language' | 'appearance' | 'referrals';
+const LEGACY_SECTIONS: readonly LegacySection[] = ['account', 'security', 'notifications', 'billing', 'language', 'appearance', 'referrals'];
+
+/** Arquitectura del médico (11-sep-2026): s=perfil|seguridad|notificaciones|idioma|privacidad|finanzas|historial */
+type DoctorAccountSection = 'perfil' | 'seguridad' | 'notificaciones' | 'idioma' | 'privacidad' | 'finanzas' | 'historial';
+const DOCTOR_ACCOUNT_SECTIONS: readonly DoctorAccountSection[] = ['perfil', 'seguridad', 'notificaciones', 'idioma', 'privacidad', 'finanzas', 'historial'];
+
+type AnySection = LegacySection | DoctorAccountSection;
+
+/** Finanzas: f=wallet|recargas|compras|suscripciones|marketplace|publicidad|referidos (Comprar)
+ *  · f=ingresos|comisiones|pendientes|suscriptores|banco|facturas|movimientos (Cobrar) */
+type FinanceTab =
+  | 'wallet' | 'recargas' | 'compras' | 'suscripciones' | 'marketplace' | 'publicidad' | 'referidos'
+  | 'ingresos' | 'comisiones' | 'pendientes' | 'suscriptores' | 'banco' | 'facturas' | 'movimientos';
+const FINANCE_TABS: readonly FinanceTab[] = [
+  'wallet', 'recargas', 'compras', 'suscripciones', 'marketplace', 'publicidad', 'referidos',
+  'ingresos', 'comisiones', 'pendientes', 'suscriptores', 'banco', 'facturas', 'movimientos',
+];
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -58,7 +100,6 @@ export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const { preferences, updatePreferences } = useNotifications();
-  const [params, setParams] = useSearchParams();
 
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
@@ -69,19 +110,15 @@ export default function Settings() {
   const [hasMfa, setHasMfa] = useState(false);
   const [hasPayout, setHasPayout] = useState(false);
 
-  const sectionFromUrl = (params.get('s') || '') as Section;
-  const [section, setSection] = useState<Section>(
-    ['account', 'security', 'notifications', 'billing', 'language', 'appearance', 'referrals'].includes(sectionFromUrl)
-      ? sectionFromUrl
-      : 'account'
-  );
+  // El médico usa la arquitectura nueva de 7 secciones; paciente y residente
+  // siguen viendo exactamente lo de siempre (petición explícita del cliente).
+  const isDoctorCuenta = role === 'doctor';
+  const allowedSections: readonly AnySection[] = isDoctorCuenta ? DOCTOR_ACCOUNT_SECTIONS : LEGACY_SECTIONS;
+  const fallbackSection: AnySection = isDoctorCuenta ? 'perfil' : 'account';
+  const [section, goSection] = useSectionParam<AnySection>('s', allowedSections, fallbackSection, { clear: ['f', 'b'] });
 
-  const goSection = (s: Section) => {
-    setSection(s);
-    const next = new URLSearchParams(params);
-    next.set('s', s);
-    setParams(next, { replace: true });
-  };
+  // Finanzas (solo médico): Comprar / Cobrar, con ?f=
+  const [financeTab, setFinanceTab] = useSectionParam<FinanceTab>('f', FINANCE_TABS, 'wallet');
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'ELIMINAR') {
@@ -199,7 +236,7 @@ export default function Settings() {
     return map[role || 'visitor'] || t('roles.visitor');
   }, [role, language]);
 
-  const sections: { key: Section; label: string; Icon: React.ElementType }[] = [
+  const legacySections: { key: LegacySection; label: string; Icon: React.ElementType }[] = [
     { key: 'account', label: t('pro.settings.navAccount'), Icon: User },
     { key: 'security', label: t('pro.settings.navSecurity'), Icon: Shield },
     { key: 'notifications', label: t('pro.settings.navNotifications'), Icon: Bell },
@@ -209,7 +246,41 @@ export default function Settings() {
     { key: 'referrals', label: t('pro.settings.navReferrals'), Icon: Gift },
   ];
 
+  const doctorSections: { key: DoctorAccountSection; label: string; Icon: React.ElementType }[] = [
+    { key: 'perfil', label: t('mm2.common.tabs.cuenta.perfil'), Icon: BadgeCheck },
+    { key: 'seguridad', label: t('mm2.common.tabs.cuenta.seguridad'), Icon: Shield },
+    { key: 'notificaciones', label: t('mm2.common.tabs.cuenta.notificaciones'), Icon: Bell },
+    { key: 'idioma', label: t('mm2.common.tabs.cuenta.idioma'), Icon: Globe },
+    { key: 'privacidad', label: t('mm2.common.tabs.cuenta.privacidad'), Icon: Lock },
+    { key: 'finanzas', label: t('mm2.common.tabs.cuenta.finanzas'), Icon: WalletIcon },
+    { key: 'historial', label: t('mm2.common.tabs.cuenta.historial'), Icon: HeartPulse },
+  ];
+
+  const sections = isDoctorCuenta ? doctorSections : legacySections;
+
   // ------------------------------------------------------------- secciones
+  // Zona de riesgo (borrado de cuenta) — reutilizada en «account» (todos los
+  // roles salvo médico) y en «privacidad» (médico, ver más abajo).
+  const deleteAccountBlock = (
+    <section className="pro-card pro-card-pad pro-danger">
+      <div className="pro-card-head">
+        <h2 className="pro-card-title pro-danger-title"><AlertTriangle /> {t('settingsPage.deleteAccountTitle')}</h2>
+      </div>
+      <p className="pro-row-sub mb-3">
+        {t('settingsPage.deleteAccountDescPart1')} <b>{t('settingsPage.deleteAccountDescStrong')}</b>
+        {t('settingsPage.deleteAccountDescPart2')}
+      </p>
+      <Button
+        variant="destructive"
+        className="gap-2 w-full sm:w-auto"
+        onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
+      >
+        <Trash2 className="w-4 h-4" />
+        {t('settingsPage.deleteAccountButton')}
+      </Button>
+    </section>
+  );
+
   const accountSection = (
     <>
       <section className="pro-card pro-card-pad">
@@ -277,62 +348,61 @@ export default function Settings() {
       </section>
 
       {/* Zona de riesgo — borrado de cuenta (requisito de App Store y Play). */}
-      <section className="pro-card pro-card-pad pro-danger">
-        <div className="pro-card-head">
-          <h2 className="pro-card-title pro-danger-title"><AlertTriangle /> {t('settingsPage.deleteAccountTitle')}</h2>
-        </div>
-        <p className="pro-row-sub mb-3">
-          {t('settingsPage.deleteAccountDescPart1')} <b>{t('settingsPage.deleteAccountDescStrong')}</b>
-          {t('settingsPage.deleteAccountDescPart2')}
-        </p>
-        <Button
-          variant="destructive"
-          className="gap-2 w-full sm:w-auto"
-          onClick={() => { setDeleteConfirmText(''); setDeleteDialogOpen(true); }}
-        >
-          <Trash2 className="w-4 h-4" />
-          {t('settingsPage.deleteAccountButton')}
-        </Button>
-      </section>
+      {deleteAccountBlock}
     </>
+  );
+
+  // Contraseña — común a security (legacy) y seguridad (médico).
+  const passwordCard = (
+    <section className="pro-card pro-card-pad">
+      <div className="pro-card-head">
+        <h2 className="pro-card-title"><KeyRound /> {t('pro.settings.accessTitle')}</h2>
+      </div>
+      <div className="pro-field">
+        <span className="k">{t('pro.settings.password')}</span>
+        <div className="row">
+          <span className="box"><Lock />••••••••••</span>
+          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/reset-password')}>
+            <Pencil /> {t('pro.settings.changePassword')}
+          </button>
+        </div>
+        <p className="hint">{t('pro.settings.passwordHint')}</p>
+      </div>
+    </section>
+  );
+
+  // Verificación de identidad — solo para security (legacy). El médico la
+  // tiene en Perfil > Identidad y verificación desde el 11-sep-2026.
+  const identityCard = (
+    <section className="pro-card pro-card-pad">
+      <div className="pro-card-head">
+        <h2 className="pro-card-title"><Shield /> {t('verification.title')}</h2>
+        {verificationPill()}
+      </div>
+      <p className="pro-row-sub mb-3">{t('verification.description')}</p>
+      <div className="flex items-center gap-3 flex-wrap">
+        {user?.avatarUrl
+          ? <img src={user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+          : <span className="pro-initials w-11 h-11 text-[13px]">{(user?.name || '?').charAt(0)}</span>}
+        <span className="pro-row-name min-w-0 truncate flex-1">{user?.name}</span>
+        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/verify-identity')}>
+          {isVerified ? t('settingsPage.viewVerification') : t('verification.startVerification')}
+        </button>
+      </div>
+    </section>
   );
 
   const securitySection = (
     <>
-      <section className="pro-card pro-card-pad">
-        <div className="pro-card-head">
-          <h2 className="pro-card-title"><KeyRound /> {t('pro.settings.accessTitle')}</h2>
-        </div>
-        <div className="pro-field">
-          <span className="k">{t('pro.settings.password')}</span>
-          <div className="row">
-            <span className="box"><Lock />••••••••••</span>
-            <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/reset-password')}>
-              <Pencil /> {t('pro.settings.changePassword')}
-            </button>
-          </div>
-          <p className="hint">{t('pro.settings.passwordHint')}</p>
-        </div>
-      </section>
+      {passwordCard}
+      {identityCard}
+      <MfaSettings />
+    </>
+  );
 
-      <section className="pro-card pro-card-pad">
-        <div className="pro-card-head">
-          <h2 className="pro-card-title"><Shield /> {t('verification.title')}</h2>
-          {verificationPill()}
-        </div>
-        <p className="pro-row-sub mb-3">{t('verification.description')}</p>
-        <div className="flex items-center gap-3 flex-wrap">
-          {user?.avatarUrl
-            ? <img src={user.avatarUrl} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-            : <span className="pro-initials w-11 h-11 text-[13px]">{(user?.name || '?').charAt(0)}</span>}
-          <span className="pro-row-name min-w-0 truncate flex-1">{user?.name}</span>
-          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => navigate('/verify-identity')}>
-            {isVerified ? t('settingsPage.viewVerification') : t('verification.startVerification')}
-          </button>
-        </div>
-      </section>
-
-      {/* Doble factor — el componente de siempre, sin tocar */}
+  const seguridadSectionDoctor = (
+    <>
+      {passwordCard}
       <MfaSettings />
     </>
   );
@@ -433,6 +503,18 @@ export default function Settings() {
     </>
   );
 
+  // Moneda — común a billing (legacy) e idioma (médico: la moneda es
+  // preferencia de visualización, no cobro, y ahí queda mejor acompañada).
+  const currencyBlock = (
+    <section className="pro-card pro-card-pad">
+      <div className="pro-card-head">
+        <h2 className="pro-card-title"><Globe /> {t('settingsPage.currency')}</h2>
+      </div>
+      <p className="pro-row-sub mb-3">{t('settingsPage.currencyDescription')}</p>
+      <CurrencySelector />
+    </section>
+  );
+
   const billingSection = (
     <>
       <section className="pro-card pro-card-pad">
@@ -452,20 +534,14 @@ export default function Settings() {
         <p className="pro-row-sub mt-2">{t('settings.paymentPortalNote')}</p>
       </section>
 
-      <section className="pro-card pro-card-pad">
-        <div className="pro-card-head">
-          <h2 className="pro-card-title"><Globe /> {t('settingsPage.currency')}</h2>
-        </div>
-        <p className="pro-row-sub mb-3">{t('settingsPage.currencyDescription')}</p>
-        <CurrencySelector />
-      </section>
+      {currencyBlock}
 
       {/* Mis suscripciones — el componente de siempre */}
       <MySubscriptions />
     </>
   );
 
-  const languageSection = (
+  const languageButtonsBlock = (
     <section className="pro-card pro-card-pad">
       <div className="pro-card-head">
         <h2 className="pro-card-title"><Globe /> {t('settings.language')}</h2>
@@ -504,7 +580,9 @@ export default function Settings() {
     </section>
   );
 
-  const appearanceSection = (
+  const languageSection = languageButtonsBlock;
+
+  const appearanceBlock = (
     <section className="pro-card pro-card-pad">
       <div className="pro-card-head">
         <h2 className="pro-card-title">
@@ -524,6 +602,214 @@ export default function Settings() {
         />
       </div>
     </section>
+  );
+
+  const appearanceSection = appearanceBlock;
+
+  // Idioma y apariencia del médico: idioma + zona horaria + modo oscuro +
+  // moneda, todo en un único sitio (antes repartido en language/appearance/
+  // billing y en el selector propio de /profile > Cuenta, ya retirado).
+  const idiomaSectionDoctor = (
+    <>
+      {languageButtonsBlock}
+      {appearanceBlock}
+      {currencyBlock}
+    </>
+  );
+
+  // -------------------------------------------------------- Cuenta > Perfil
+  // Perfil profesional del médico: la propia página, incrustada, con sus 4
+  // bloques (identidad · trayectoria · servicios · contenido, con ?b=). Ya
+  // incluye correo y teléfono editables (con OTP) dentro de Identidad.
+  const perfilSectionDoctor = <UserProfilePage embedded />;
+
+  // ---------------------------------------------------- Cuenta > Privacidad
+  const privacidadSectionDoctor = (
+    <>
+      <section className="pro-card pro-card-pad">
+        <div className="pro-card-head">
+          <h2 className="pro-card-title"><Eye /> {t('mm2.account.privacyPublicTitle')}</h2>
+        </div>
+        <p className="pro-row-sub mb-2">{t('mm2.account.privacyPublicHint')}</p>
+        <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+          <li>{t('mm2.account.privacyPublicItem1')}</li>
+          <li>{t('mm2.account.privacyPublicItem2')}</li>
+          <li>{t('mm2.account.privacyPublicItem3')}</li>
+        </ul>
+        {user?.id && (
+          <Link to={`/doctor/${user.id}`} className="pro-link mt-3 inline-flex">
+            <Eye /> {t('pro.profile.publicPreview')}
+          </Link>
+        )}
+      </section>
+
+      <section className="pro-card pro-card-pad">
+        <div className="pro-card-head">
+          <h2 className="pro-card-title"><Lock /> {t('mm2.account.privacyPrivateTitle')}</h2>
+        </div>
+        <p className="pro-row-sub">{t('mm2.account.privacyPrivateHint')}</p>
+      </section>
+
+      <section className="pro-card pro-card-pad">
+        <div className="pro-card-head">
+          <h2 className="pro-card-title"><Shield /> {t('mm2.account.arcoTitle')}</h2>
+        </div>
+        <p className="pro-row-sub mb-3">{t('mm2.account.arcoHint')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/arco" className="pro-btn pro-btn-outline">{t('mm2.account.arcoCta')}</Link>
+          <Link to="/privacy" className="pro-btn pro-btn-outline">{t('mm2.account.privacyPolicyCta')}</Link>
+        </div>
+      </section>
+
+      {/* Zona de riesgo, reubicada aquí para el médico (petición del cliente:
+          «Privacidad» agrupa también eliminar cuenta). */}
+      {deleteAccountBlock}
+    </>
+  );
+
+  // ----------------------------------------------------- Cuenta > Historial
+  // Historial médico personal del médico (el suyo, como paciente). MedicalRecord
+  // no es un fichero de este paquete: se enlaza en vez de incrustarse (ver
+  // openIssues) para no montar layouts ajenos por duplicado.
+  const historialSectionDoctor = (
+    <section className="pro-card pro-card-pad text-center py-10">
+      <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+        <HeartPulse className="w-6 h-6" />
+      </div>
+      <h2 className="pro-card-title justify-center">{t('mm2.common.tabs.cuenta.historial')}</h2>
+      <p className="pro-row-sub mt-1 mb-4 max-w-md mx-auto">{t('mm2.account.historyHint')}</p>
+      <Link to="/medical-record" className="pro-btn pro-btn-teal">
+        {t('mm2.account.historyOpen')} <ArrowRight />
+      </Link>
+    </section>
+  );
+
+  // ------------------------------------------------------ Cuenta > Finanzas
+  const financeCompraTabs: SectionTabItem<FinanceTab>[] = [
+    { id: 'wallet', label: t('mm2.common.tabs.cuenta.finanzasOpciones.wallet'), icon: WalletIcon },
+    { id: 'recargas', label: t('mm2.common.tabs.cuenta.finanzasOpciones.recargas'), icon: CreditCard },
+    { id: 'compras', label: t('mm2.common.tabs.cuenta.finanzasOpciones.compras'), icon: ShoppingCart },
+    { id: 'suscripciones', label: t('mm2.common.tabs.cuenta.finanzasOpciones.suscripciones'), icon: Rss },
+    { id: 'marketplace', label: t('mm2.finance.tabMarketplace'), icon: ShoppingBag },
+    { id: 'publicidad', label: t('mm2.finance.tabAdvertising'), icon: Megaphone },
+    { id: 'referidos', label: t('mm2.finance.tabReferrals'), icon: Gift },
+  ];
+  const financeCobraTabs: SectionTabItem<FinanceTab>[] = [
+    { id: 'ingresos', label: t('mm2.common.tabs.cuenta.finanzasOpciones.ingresos'), icon: TrendingUp },
+    { id: 'comisiones', label: t('mm2.common.tabs.cuenta.finanzasOpciones.comisiones'), icon: Percent },
+    { id: 'pendientes', label: t('mm2.common.tabs.cuenta.finanzasOpciones.pendientes'), icon: Clock },
+    { id: 'suscriptores', label: t('mm2.common.tabs.cuenta.finanzasOpciones.suscriptores'), icon: Users },
+    { id: 'banco', label: t('mm2.common.tabs.cuenta.finanzasOpciones.banco'), icon: Landmark },
+    { id: 'facturas', label: t('mm2.common.tabs.cuenta.finanzasOpciones.facturas'), icon: Receipt },
+    { id: 'movimientos', label: t('mm2.common.tabs.cuenta.finanzasOpciones.movimientos'), icon: ListOrdered },
+  ];
+
+  // Marketplace y publicidad no son ficheros de este paquete (MedicalMarketplace.tsx
+  // y AdvertiserDashboard.tsx): en vez de incrustarlos se enlaza a su ruta ya viva,
+  // que es justo el destino que pide la decisión D4 del cliente.
+  const financeLinkCard = (icon: React.ReactNode, titleKey: string, hintKey: string, href: string, ctaKey: string) => (
+    <section className="pro-card pro-card-pad text-center py-10">
+      <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">{icon}</div>
+      <h2 className="pro-card-title justify-center">{t(titleKey)}</h2>
+      <p className="pro-row-sub mt-1 mb-4 max-w-sm mx-auto">{t(hintKey)}</p>
+      <Link to={href} className="pro-btn pro-btn-teal">{t(ctaKey)} <ArrowRight /></Link>
+    </section>
+  );
+
+  const financeTabContent = () => {
+    switch (financeTab) {
+      case 'wallet':
+        return <WalletPage embedded />;
+      case 'recargas':
+        return <WalletLedgerPage embedded scope="spend" defaultType="topup" />;
+      case 'compras':
+        return (
+          <>
+            <section className="pro-card pro-card-pad">
+              <div className="pro-card-head">
+                <h2 className="pro-card-title"><BookOpen /> {t('mm2.finance.purchasesBooksTitle')}</h2>
+              </div>
+              <MyBooksPage embedded />
+            </section>
+            <section className="pro-card pro-card-pad">
+              <div className="pro-card-head">
+                <h2 className="pro-card-title"><ShoppingBag /> {t('mm2.finance.purchasesOrdersTitle')}</h2>
+              </div>
+              <MyOrdersPage embedded />
+            </section>
+          </>
+        );
+      case 'suscripciones':
+        return (
+          <>
+            <section className="pro-card pro-card-pad">
+              <div className="pro-card-head">
+                <h2 className="pro-card-title"><CreditCard /> {t('settings.managePayments')}</h2>
+              </div>
+              <p className="pro-row-sub mb-3">{t('settings.managePaymentsDescription')}</p>
+              <button
+                type="button"
+                onClick={handleManageSubscriptions}
+                disabled={isLoadingPortal}
+                className="pro-btn pro-btn-teal w-full sm:w-auto"
+              >
+                {isLoadingPortal ? <Loader2 className="animate-spin" /> : <ExternalLink />}
+                {t('settings.openPaymentPortal')}
+              </button>
+            </section>
+            <MySubscriptions />
+            <MySubscribedDoctorsCard />
+          </>
+        );
+      case 'marketplace':
+        return financeLinkCard(<ShoppingBag />, 'mm2.finance.tabMarketplace', 'mm2.finance.marketplaceHint', '/marketplace', 'mm2.finance.marketplaceCta');
+      case 'publicidad':
+        return financeLinkCard(<Megaphone />, 'mm2.finance.tabAdvertising', 'mm2.finance.advertisingHint', '/advertiser/dashboard', 'mm2.finance.advertisingCta');
+      case 'referidos':
+        return <ReferralProgram />;
+      case 'ingresos':
+      case 'comisiones':
+      case 'movimientos':
+        return <DoctorEarningsPage embedded />;
+      case 'pendientes':
+        return <DoctorEarningsPage embedded initialTab="holds" />;
+      case 'suscriptores':
+        return <SubscribersListPage embedded />;
+      case 'banco':
+        return <DoctorBankAccountPage embedded />;
+      case 'facturas':
+        return <DoctorInvoicesPage embedded />;
+      default:
+        return null;
+    }
+  };
+
+  const finanzasSectionDoctor = (
+    <div className="space-y-3 sm:space-y-4">
+      <section className="pro-card p-2 sm:p-3">
+        <p className="px-2 pt-1 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t('mm2.common.tabs.cuenta.finanzasGrupos.comprar')}
+        </p>
+        <SectionTabs
+          value={financeTab}
+          onChange={setFinanceTab}
+          items={financeCompraTabs}
+          variant="onLight"
+          ariaLabel={t('mm2.common.tabs.cuenta.finanzasGrupos.comprar')}
+        />
+        <p className="px-2 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          {t('mm2.common.tabs.cuenta.finanzasGrupos.cobrar')}
+        </p>
+        <SectionTabs
+          value={financeTab}
+          onChange={setFinanceTab}
+          items={financeCobraTabs}
+          variant="onLight"
+          ariaLabel={t('mm2.common.tabs.cuenta.finanzasGrupos.cobrar')}
+        />
+      </section>
+      {financeTabContent()}
+    </div>
   );
 
   const summaryRows = [
@@ -546,9 +832,14 @@ export default function Settings() {
             <h1 className="pro-page-title"><SettingsIcon className="w-7 h-7" /> <span className="truncate">{t('pro.settings.title')}</span></h1>
             <p className="pro-page-sub">{t('pro.settings.subtitle')}</p>
           </div>
-          <Link to="/profile" className="pro-btn pro-btn-white w-full sm:w-auto">
-            <User /> {t('pro.settings.goProfile')}
-          </Link>
+          {/* Para el médico, «Perfil» ya es una pestaña de esta misma página:
+              el botón a /profile sobra (y hoy /profile es la MISMA página sin
+              incrustar; ver routesNeeded para la redirección). */}
+          {!isDoctorCuenta && (
+            <Link to="/profile" className="pro-btn pro-btn-white w-full sm:w-auto">
+              <User /> {t('pro.settings.goProfile')}
+            </Link>
+          )}
         </div>
 
         <div className="pro-work pro-work-set">
@@ -560,7 +851,7 @@ export default function Settings() {
                 type="button"
                 className={`pro-lane-item ${section === s.key ? 'is-active' : ''}`}
                 aria-pressed={section === s.key}
-                onClick={() => goSection(s.key)}
+                onClick={() => goSection(s.key as AnySection)}
               >
                 <s.Icon />
                 <span className="label">{s.label}</span>
@@ -570,13 +861,27 @@ export default function Settings() {
 
           {/* --------------------------------------------------- contenido */}
           <div className="min-w-0 space-y-3 sm:space-y-4">
-            {section === 'account' && accountSection}
-            {section === 'security' && securitySection}
-            {section === 'notifications' && notificationsSection}
-            {section === 'billing' && billingSection}
-            {section === 'language' && languageSection}
-            {section === 'appearance' && appearanceSection}
-            {section === 'referrals' && <ReferralProgram />}
+            {isDoctorCuenta ? (
+              <>
+                {section === 'perfil' && perfilSectionDoctor}
+                {section === 'seguridad' && seguridadSectionDoctor}
+                {section === 'notificaciones' && notificationsSection}
+                {section === 'idioma' && idiomaSectionDoctor}
+                {section === 'privacidad' && privacidadSectionDoctor}
+                {section === 'finanzas' && finanzasSectionDoctor}
+                {section === 'historial' && historialSectionDoctor}
+              </>
+            ) : (
+              <>
+                {section === 'account' && accountSection}
+                {section === 'security' && securitySection}
+                {section === 'notifications' && notificationsSection}
+                {section === 'billing' && billingSection}
+                {section === 'language' && languageSection}
+                {section === 'appearance' && appearanceSection}
+                {section === 'referrals' && <ReferralProgram />}
+              </>
+            )}
           </div>
 
           {/* ----------------------------------------------------- resumen */}
@@ -596,47 +901,49 @@ export default function Settings() {
               ))}
             </section>
 
-            <section className="pro-card pro-card-pad">
-              <div className="pro-card-head">
-                <h2 className="pro-card-title"><Bell /> {t('pro.settings.quickPrefs')}</h2>
-              </div>
-              <div className="pro-setrow">
-                <span className="pro-icon-box"><Mail /></span>
-                <Label htmlFor="q-email" className="lbl cursor-pointer flex-1">
-                  <b>{t('settings.enableEmails')}</b>
-                  <span>{t('settings.masterSwitch')}</span>
-                </Label>
-                <Switch
-                  id="q-email"
-                  checked={preferences?.emailNotifications ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ emailNotifications: checked })}
-                />
-              </div>
-              <div className="pro-setrow">
-                <span className="pro-icon-box"><Bell /></span>
-                <Label htmlFor="q-push" className="lbl cursor-pointer flex-1">
-                  <b>{t('settings.pushNotifications')}</b>
-                  <span>{t('settings.pushDescription')}</span>
-                </Label>
-                <Switch
-                  id="q-push"
-                  checked={preferences?.pushNotifications ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ pushNotifications: checked })}
-                />
-              </div>
-              <div className="pro-setrow">
-                <span className="pro-icon-box"><SettingsIcon /></span>
-                <Label htmlFor="q-inapp" className="lbl cursor-pointer flex-1">
-                  <b>{t('settings.inAppNotifications')}</b>
-                  <span>{t('settings.inAppDescription')}</span>
-                </Label>
-                <Switch
-                  id="q-inapp"
-                  checked={preferences?.inAppNotifications ?? true}
-                  onCheckedChange={(checked) => updatePreferences({ inAppNotifications: checked })}
-                />
-              </div>
-            </section>
+            {!isDoctorCuenta && (
+              <section className="pro-card pro-card-pad">
+                <div className="pro-card-head">
+                  <h2 className="pro-card-title"><Bell /> {t('pro.settings.quickPrefs')}</h2>
+                </div>
+                <div className="pro-setrow">
+                  <span className="pro-icon-box"><Mail /></span>
+                  <Label htmlFor="q-email" className="lbl cursor-pointer flex-1">
+                    <b>{t('settings.enableEmails')}</b>
+                    <span>{t('settings.masterSwitch')}</span>
+                  </Label>
+                  <Switch
+                    id="q-email"
+                    checked={preferences?.emailNotifications ?? true}
+                    onCheckedChange={(checked) => updatePreferences({ emailNotifications: checked })}
+                  />
+                </div>
+                <div className="pro-setrow">
+                  <span className="pro-icon-box"><Bell /></span>
+                  <Label htmlFor="q-push" className="lbl cursor-pointer flex-1">
+                    <b>{t('settings.pushNotifications')}</b>
+                    <span>{t('settings.pushDescription')}</span>
+                  </Label>
+                  <Switch
+                    id="q-push"
+                    checked={preferences?.pushNotifications ?? true}
+                    onCheckedChange={(checked) => updatePreferences({ pushNotifications: checked })}
+                  />
+                </div>
+                <div className="pro-setrow">
+                  <span className="pro-icon-box"><SettingsIcon /></span>
+                  <Label htmlFor="q-inapp" className="lbl cursor-pointer flex-1">
+                    <b>{t('settings.inAppNotifications')}</b>
+                    <span>{t('settings.inAppDescription')}</span>
+                  </Label>
+                  <Switch
+                    id="q-inapp"
+                    checked={preferences?.inAppNotifications ?? true}
+                    onCheckedChange={(checked) => updatePreferences({ inAppNotifications: checked })}
+                  />
+                </div>
+              </section>
+            )}
 
             <section className="pro-card pro-card-pad">
               <div className="pro-card-head">

@@ -8,6 +8,7 @@ import {
   User, CalendarDays, Lock, Folder, Stethoscope, ChevronRight, Clock, Video, Loader2,
 } from 'lucide-react';
 import { initialsOf, fmtDate, fmtTime, whenLabel } from '@/lib/proFormat';
+import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
 
 interface Props {
   session: ChatSession;
@@ -40,6 +41,8 @@ export function ChatClinicalContext({ session, other, officeHours, isAvailable }
   const { t, language } = useLanguage();
   const [ctx, setCtx] = useState<Ctx | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Diálogo «Nueva consulta» con el paciente de esta conversación */
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const otherIsPatient = other.type === 'patient';
   const doctorId = role === 'doctor' ? user?.id : other.userId;
@@ -213,12 +216,24 @@ export function ChatClinicalContext({ session, other, officeHours, isAvailable }
             ) : (
               <>
                 <p className="text-[12.5px] pro-muted">{t('pro.chatPro.ctxNoNext')}</p>
-                <Link
-                  to={role === 'doctor' ? '/doctor/availability?nueva=consulta' : `/book/${other.userId}`}
-                  className="pro-btn pro-btn-outline pro-btn-sm w-full mt-2"
-                >
-                  <CalendarDays /> {t('pro.chatPro.ctxSchedule')}
-                </Link>
+                {/* «Nueva consulta» abre el flujo propio con el paciente del chat ya
+                    elegido. Antes llevaba a /doctor/availability?nueva=consulta, que
+                    es el editor del horario semanal: no agendaba nada. */}
+                {role === 'doctor' ? (
+                  otherIsPatient && (
+                    <button
+                      type="button"
+                      className="pro-btn pro-btn-outline pro-btn-sm w-full mt-2"
+                      onClick={() => setScheduleOpen(true)}
+                    >
+                      <CalendarDays /> {t('pro.chatPro.ctxSchedule')}
+                    </button>
+                  )
+                ) : (
+                  <Link to={`/book/${other.userId}`} className="pro-btn pro-btn-outline pro-btn-sm w-full mt-2">
+                    <CalendarDays /> {t('pro.chatPro.ctxSchedule')}
+                  </Link>
+                )}
               </>
             )}
           </div>
@@ -236,6 +251,14 @@ export function ChatClinicalContext({ session, other, officeHours, isAvailable }
             </span>
           </div>
         </div>
+      )}
+
+      {role === 'doctor' && otherIsPatient && (
+        <NewConsultationDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          defaultPatientId={other.userId}
+        />
       )}
     </div>
   );

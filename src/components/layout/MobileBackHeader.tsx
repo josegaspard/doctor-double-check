@@ -20,6 +20,10 @@ const ROOT_ROUTES = [
   // Pestañas raíz del médico en el diseño PRO (7-sep-2026)
   '/doctor/agenda',
   '/doctor/patients',
+  // Secciones del médico (11-sep-2026)
+  '/foro',
+  '/education',
+  '/contenido',
   '/',
 ];
 
@@ -76,7 +80,8 @@ export function MobileBackHeader() {
   
   // For dynamic routes like /news/:id, /doctors/:id, etc.
   if (!titleKey) {
-    if (path.startsWith('/news/')) titleKey = 'backHeader.article';
+    if (path.startsWith('/doctor/patients/')) titleKey = 'mm2.patients.back';
+    else if (path.startsWith('/news/')) titleKey = 'backHeader.article';
     else if (path.startsWith('/doctors/') || path.startsWith('/doctor/')) titleKey = 'backHeader.doctor';
     else if (path.startsWith('/live/')) titleKey = 'backHeader.live';
     else if (path.startsWith('/recording/')) titleKey = 'backHeader.recording';

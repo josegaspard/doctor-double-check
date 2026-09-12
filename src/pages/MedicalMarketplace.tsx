@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { money2 } from '@/lib/proFormat';
 import {
   Store, Loader2, HandHeart, ShieldCheck, Clock, Tag, Plus, PackagePlus, Lock, CheckCircle,
   Search, SlidersHorizontal, X, Sparkles, Package, Boxes, ClipboardList, MessageCircle, XCircle,
@@ -66,7 +68,9 @@ export default function MedicalMarketplace() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  // Nada de la tienda (vender, cancelar, pagar fee, publicar) se ejecuta al primer clic.
+  const { confirm, dialog } = useConfirmAction();
   const sb = supabase as any; // tablas/columnas nuevas aún no tipadas (migración con token)
 
   const [loading, setLoading] = useState(true);
@@ -264,7 +268,44 @@ export default function MedicalMarketplace() {
     navigate(o?.chat_session_id ? `/chat?session=${o.chat_session_id}` : '/chat');
 
   // Vendedor concreta la venta (sin pago de por medio) o cualquiera cancela la orden.
-  const orderAction = async (orderId: string, action: 'complete' | 'cancel') => {
+  // El primer clic solo abre el resumen: nada se envía sin confirmar.
+  const orderAction = async (order: OrderRow, action: 'complete' | 'cancel') => {
+    const orderId = order.id;
+    const price = money2(Number(order.product_price || 0), language, order.currency || 'MXN');
+    const ok = await confirm(
+      action === 'complete'
+        ? {
+            title: t('mm2.confirm.marketplaceComplete.title'),
+            description: t('mm2.confirm.marketplaceComplete.description'),
+            tone: 'payment',
+            details: [
+              { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: order.productName || t('mkt.product') },
+              { label: t('mm2.confirm.marketplaceCommon.buyerLabel'), value: order.buyerName || t('mkt.buyer') },
+              { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: price },
+              {
+                label: t('mm2.confirm.marketplaceCommon.feeLabel'),
+                value: money2(Number(order.fee_amount || feeFor(Number(order.product_price || 0))), language, order.currency || 'MXN'),
+                emphasis: true,
+              },
+            ],
+            confirmLabel: t('mm2.confirm.marketplaceComplete.confirmLabel'),
+          }
+        : {
+            title: t('mm2.confirm.marketplaceCancel.title'),
+            description: t('mm2.confirm.marketplaceCancel.description'),
+            tone: 'destructive',
+            details: [
+              { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: order.productName || t('mkt.product') },
+              {
+                label: t('mm2.confirm.marketplaceCommon.counterpartLabel'),
+                value: order.vendorName || order.buyerName || t('mkt.vendor'),
+              },
+              { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: price },
+            ],
+            confirmLabel: t('mm2.confirm.marketplaceCancel.confirmLabel'),
+          }
+    );
+    if (!ok) return;
     setActingOrderId(orderId);
     try {
       const { data, error } = await supabase.functions.invoke('marketplace-order', {
@@ -284,7 +325,27 @@ export default function MedicalMarketplace() {
   };
 
   // El VENDEDOR paga el fee de la venta concretada (Stripe).
-  const payFee = async (orderId: string) => {
+  const payFee = async (order: OrderRow) => {
+    const orderId = order.id;
+    const ok = await confirm({
+      title: t('mm2.confirm.marketplaceFee.title'),
+      description: t('mm2.confirm.marketplaceFee.description'),
+      tone: 'payment',
+      details: [
+        { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: order.productName || t('mkt.product') },
+        {
+          label: t('mm2.confirm.marketplaceCommon.priceLabel'),
+          value: money2(Number(order.product_price || 0), language, order.currency || 'MXN'),
+        },
+        {
+          label: t('mm2.confirm.marketplaceCommon.feeLabel'),
+          value: money2(Number(order.fee_amount || 0), language, order.currency || 'MXN'),
+          emphasis: true,
+        },
+      ],
+      confirmLabel: t('mm2.confirm.marketplaceFee.confirmLabel'),
+    });
+    if (!ok) return;
     setPayingFeeId(orderId);
     try {
       const { data, error } = await supabase.functions.invoke('marketplace-order', {
@@ -320,6 +381,19 @@ export default function MedicalMarketplace() {
       toast({ title: t('mkt.toastInvalidTitle'), description: t('mkt.toastInvalidDesc'), variant: 'destructive' });
       return;
     }
+    // Vista previa antes de publicar: nombre, precio, fee estimado y revisión.
+    const ok = await confirm({
+      title: t('mm2.confirm.marketplacePublish.title'),
+      description: t('mm2.confirm.marketplacePublish.description'),
+      details: [
+        { label: t('mm2.confirm.marketplaceCommon.productLabel'), value: pubForm.name.trim() },
+        { label: t('mm2.confirm.marketplaceCommon.priceLabel'), value: money2(price, language) },
+        { label: t('mm2.confirm.marketplaceCommon.feeLabel'), value: money2(feeFor(price), language) },
+        { label: t('mm2.confirm.marketplacePublish.visibilityLabel'), value: t('mm2.confirm.marketplacePublish.visibilityValue') },
+      ],
+      confirmLabel: t('mm2.confirm.marketplacePublish.confirmLabel'),
+    });
+    if (!ok) return;
     setPublishing(true);
     try {
       const { error } = await sb.from('marketplace_products').insert({
@@ -546,10 +620,10 @@ export default function MedicalMarketplace() {
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
                             <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
-                          <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'complete')}>
+                          <Button type="button" size="sm" className="h-8 gap-1" disabled={actingOrderId === o.id} onClick={() => orderAction(o, 'complete')}>
                             {actingOrderId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} {t('mkt.completeSale')}
                           </Button>
-                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
+                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o, 'cancel')}>
                             <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                           </Button>
                         </>
@@ -557,7 +631,7 @@ export default function MedicalMarketplace() {
                       {o.status === 'completed' && o.fee_status === 'pending' && (
                         <>
                           <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" /> {t('mkt.saleCompleted')}</Badge>
-                          <Button type="button" size="sm" className="h-8 gap-1" disabled={payingFeeId === o.id} onClick={() => payFee(o.id)}>
+                          <Button type="button" size="sm" className="h-8 gap-1" disabled={payingFeeId === o.id} onClick={() => payFee(o)}>
                             {payingFeeId === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BadgeDollarSign className="w-3.5 h-3.5" />} {t('mkt.payFee')} ${Number(o.fee_amount).toLocaleString()}
                           </Button>
                         </>
@@ -594,7 +668,7 @@ export default function MedicalMarketplace() {
                           <Button type="button" size="sm" variant="outline" className="h-8 gap-1" onClick={() => goToOrderChat(o)}>
                             <MessageCircle className="w-3.5 h-3.5" /> {t('mkt.chat')}
                           </Button>
-                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o.id, 'cancel')}>
+                          <Button type="button" size="sm" variant="ghost" className="h-8 gap-1 text-destructive hover:text-destructive" disabled={actingOrderId === o.id} onClick={() => orderAction(o, 'cancel')}>
                             <XCircle className="w-3.5 h-3.5" /> {t('mkt.cancel')}
                           </Button>
                         </>
@@ -695,8 +769,14 @@ export default function MedicalMarketplace() {
           </DialogHeader>
           {interestProduct && (
             <div className="rounded-lg bg-muted/50 p-3 text-sm space-y-1">
-              <div className="flex justify-between"><span>{interestProduct.name}</span><b>${Number(interestProduct.price).toLocaleString()}</b></div>
+              <div className="flex justify-between"><span>{interestProduct.name}</span><b>{money2(Number(interestProduct.price), language, interestProduct.currency || 'MXN')}</b></div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{t('mm2.confirm.marketplaceInterest.vendorLabel')}</span>
+                <span>{interestProduct.vendorName || t('mkt.vendor')}</span>
+              </div>
               <p className="text-xs text-muted-foreground pt-1">{t('mkt.noPaymentNote')}</p>
+              {/* El resumen dice también que se abrirá un chat con el proveedor. */}
+              <p className="text-xs text-muted-foreground">{t('mm2.confirm.marketplaceInterest.chatNote')}</p>
             </div>
           )}
           <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
@@ -734,6 +814,8 @@ export default function MedicalMarketplace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {dialog}
     </MainLayout>
   );
 }

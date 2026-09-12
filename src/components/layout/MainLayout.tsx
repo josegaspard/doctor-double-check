@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
+import { DOCTOR_SECTIONS, doctorSectionForPath, doctorHref } from '@/lib/doctorSections';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { useHasAdCampaigns } from '@/hooks/useHasAdCampaigns';
@@ -73,47 +74,21 @@ interface NavItem {
 }
 
 // ============================================================================
-// MÉDICO — diseño PRO aprobado por el cliente el 7-sep-2026.
-// Barra en píldora: Inicio · Agenda · Mis pacientes · Consultas · Lives y
-// contenidos · Comunidad · Más ▾ (todo lo demás cuelga de "Más").
+// MÉDICO — reestructura del 11-sep-2026: siete secciones y nada más en la píldora
+// (Inicio · Agenda · Pacientes · Comunidad · Aprendizaje · Contenido · Cuenta).
+// El Chat es un icono global de la cabecera. Lo que colgaba de «Más» vive dentro de
+// su sección (lib/doctorSections) y sus rutas antiguas redirigen allí.
 // ============================================================================
-const doctorPrimaryNav: NavItem[] = [
-  { labelKey: 'pro.nav.home', href: '/doctor/dashboard', icon: LayoutDashboard, roles: ['doctor'] },
-  { labelKey: 'pro.nav.agenda', href: '/doctor/agenda', icon: CalendarDays, roles: ['doctor'] },
-  { labelKey: 'pro.nav.patients', shortLabelKey: 'pro.nav.patientsShort', href: '/doctor/patients', icon: Users, roles: ['doctor'] },
-  { labelKey: 'pro.nav.consultations', href: '/doctor/consultations', icon: Stethoscope, roles: ['doctor'] },
-  // La pestaña Lives abre la PORTADA de lives (`?vista=directo`); la parrilla es
-  // la vista inicial de /lives. Lo pidió el cliente el 7-sep-2026.
-  { labelKey: 'pro.nav.livesContent', shortLabelKey: 'nav.lives', href: '/lives?vista=directo', icon: Video, roles: ['doctor'] },
-  { labelKey: 'pro.nav.community', href: '/foro', icon: MessageSquare, roles: ['doctor'] },
-];
-
-const doctorMoreNav: NavItem[] = [
-  { labelKey: 'nav.education', href: '/education', icon: GraduationCap, roles: ['doctor'] },
-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['doctor'] },
-  // La vista anterior de citas sigue accesible: la pantalla nueva de Consultas
-  // no la sustituye, la amplía.
-  { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['doctor'] },
-  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'] },
-  { labelKey: 'pro.nav.patientFiles', href: '/doctor/vault', icon: Folder, roles: ['doctor'] },
-  ...(FEATURE_FLAGS.marketplaceFeeModel
-    ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor'] } as NavItem]
-    : []),
-  { labelKey: 'pro.nav.myContent', href: '/doctor/content', icon: FolderOpen, roles: ['doctor'] },
-  { labelKey: 'pro.nav.myRecordings', href: '/doctor/recordings', icon: PlayCircle, roles: ['doctor'] },
-  { labelKey: 'nav.upload', href: '/doctor/upload', icon: Upload, roles: ['doctor'] },
-  { labelKey: 'pro.nav.books', href: '/doctor/books', icon: BookOpen, roles: ['doctor'] },
-  // «Disponibilidad» sale del menú «Más» a petición de la clienta (10-sep-2026): la
-  // Agenda ya da acceso a lo mismo (Configurar, Gestionar, Programar y el clic en un
-  // hueco). La RUTA /doctor/availability sigue viva y enlazada desde Agenda, Panel y
-  // Mis pacientes — solo se quita la entrada duplicada del menú.
-  { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['doctor'] },
-  { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['doctor'], toggleKey: 'enable_prescriptions' },
-  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['doctor'], toggleKey: 'show_news_section' },
-  { labelKey: 'nav.meetings', href: '/meetings', icon: Users, roles: ['doctor'] },
-  { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['doctor'] },
-  { labelKey: 'nav.earnings', href: '/doctor/earnings', icon: DollarSign, roles: ['doctor'] },
-];
+type DoctorNavItem = NavItem & { sectionId: string };
+const doctorNav: DoctorNavItem[] = DOCTOR_SECTIONS.map(s => ({
+  labelKey: s.labelKey,
+  href: s.path,
+  icon: s.icon,
+  roles: ['doctor'],
+  sectionId: s.id,
+}));
+// Móvil: cuatro fijas; Aprendizaje, Contenido y Cuenta van en el cajón.
+const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 
 // ============================================================================
 // RESTO DE ROLES — orden del menú definido por el cliente (2026-06-29).
@@ -145,12 +120,9 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   const lives = { label: t('nav.lives'), href: '/lives', icon: Radio };
 
   if (role === 'doctor') {
-    return [
-      { label: t('pro.nav.home'), href: '/doctor/dashboard', icon: LayoutDashboard },
-      { label: t('pro.nav.agenda'), href: '/doctor/agenda', icon: CalendarDays },
-      { label: t('pro.nav.patientsShort'), href: '/doctor/patients', icon: Users },
-      { label: t('nav.lives'), href: '/lives?vista=directo', icon: Radio },
-    ];
+    return doctorNav
+      .filter(s => DOCTOR_BOTTOM_TABS.includes(s.sectionId))
+      .map(s => ({ label: t(s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId }));
   }
 
   if (role === 'patient') {
@@ -288,10 +260,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   // Píldora superior: primarios + "Más".
   const { primaryNav, moreNav } = useMemo(() => {
     if (role === 'doctor') {
-      return {
-        primaryNav: doctorPrimaryNav.filter(i => keepItem(i, 'doctor')),
-        moreNav: doctorMoreNav.filter(i => keepItem(i, 'doctor')),
-      };
+      return { primaryNav: doctorNav.filter(i => keepItem(i, 'doctor')) as NavItem[], moreNav: [] as NavItem[] };
     }
     // Paciente: todos directos (cliente 2026-07-09); resto: 5 + Más.
     if (role === 'patient') return { primaryNav: filteredNavItems, moreNav: [] as NavItem[] };
@@ -306,8 +275,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   const moreNavItems = useMemo(() => {
     const bottomTabPaths = bottomTabs.map(tab => pathOf(tab.href));
-    const all = role === 'doctor' ? [...primaryNav, ...moreNav] : filteredNavItems;
-    return all.filter(item => !bottomTabPaths.includes(pathOf(item.href)));
+    const all = role === 'doctor' ? primaryNav : filteredNavItems;
+    // Médico: Cuenta ya sale en el bloque de cuenta del cajón.
+    return all.filter(item =>
+      !bottomTabPaths.includes(pathOf(item.href)) && !(role === 'doctor' && (item as DoctorNavItem).sectionId === 'cuenta'));
   }, [filteredNavItems, bottomTabs, primaryNav, moreNav, role]);
 
   const isActiveHref = (href: string) => {
@@ -316,6 +287,11 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     if (p === '/') return location.pathname === '/';
     return location.pathname === p || location.pathname.startsWith(p + '/');
   };
+
+  // Médico: la sección se ilumina por la ruta (una ficha de paciente es Pacientes, /lives es Contenido…).
+  const activeSection = role === 'doctor' ? doctorSectionForPath(location.pathname) : null;
+  const isActiveItem = (item: { href: string; sectionId?: string }) =>
+    item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
 
   const handleLogout = () => {
     logout();
@@ -361,7 +337,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-64 max-h-[70vh] overflow-y-auto">
         {moreNav.map((item) => {
-          const isActive = isActiveHref(item.href);
+          const isActive = isActiveItem(item as DoctorNavItem);
           return (
             <DropdownMenuItem
               key={item.href}
@@ -403,17 +379,22 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
             {/* Navegación en píldora (tablet y escritorio) */}
             <nav className="hidden sm:flex flex-1 min-w-0 justify-center" aria-label={t('mainLayout.sectionNavigation')}>
               <div className="pro-navpill">
-                {primaryNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={isActiveHref(item.href) ? 'is-active' : ''}
-                    aria-current={isActiveHref(item.href) ? 'page' : undefined}
-                  >
-                    <span className="hidden xl:inline">{t(item.labelKey)}</span>
-                    <span className="xl:hidden">{t(item.shortLabelKey || item.labelKey)}</span>
-                  </Link>
-                ))}
+                {primaryNav.map((item) => {
+                  const active = isActiveItem(item as DoctorNavItem);
+                  const label = t(item.labelKey);
+                  return role === 'doctor' ? (
+                    // Siete secciones: por debajo de 1280 px solo iconos; la activa lleva su nombre desde 768 px.
+                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} aria-label={label} title={label}>
+                      <item.icon className="w-4 h-4 xl:hidden" aria-hidden="true" />
+                      <span className={active ? 'hidden md:inline' : 'hidden xl:inline'}>{label}</span>
+                    </Link>
+                  ) : (
+                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
+                      <span className="hidden xl:inline">{label}</span>
+                      <span className="xl:hidden">{t(item.shortLabelKey || item.labelKey)}</span>
+                    </Link>
+                  );
+                })}
                 {moreNav.length > 0 && renderMoreDropdown('center')}
               </div>
             </nav>
@@ -451,7 +432,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
               <GlobalSearch />
               <LanguageSwitcher />
               {isAuthenticated && <span className="hidden sm:block"><NotificationBell /></span>}
-              {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+              {(role === 'patient' || role === 'resident') && (
                 <Link to="/wallet" aria-label={t('nav.wallet')} className="hidden sm:inline-flex app-header-control px-2.5">
                   <Wallet className="w-4 h-4" />
                 </Link>
@@ -479,20 +460,20 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/profile')} className="py-3 text-sm">
+                    <DropdownMenuItem onClick={() => navigate(role === 'doctor' ? doctorHref('cuenta') : '/profile')} className="py-3 text-sm">
                       <User className="w-4 h-4 mr-2" />
-                      {t('nav.profile')}
+                      {role === 'doctor' ? t('mm2.common.nav.cuenta') : t('nav.profile')}
                     </DropdownMenuItem>
-                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+                    {(role === 'patient' || role === 'resident') && (
                       <DropdownMenuItem onClick={() => navigate('/wallet')} className="py-3 text-sm">
                         <Wallet className="w-4 h-4 mr-2" />
                         {t('nav.wallet')}
                       </DropdownMenuItem>
                     )}
                     {role === 'doctor' && (
-                      <DropdownMenuItem onClick={() => navigate('/doctor/earnings')} className="py-3 text-sm">
-                        <DollarSign className="w-4 h-4 mr-2" />
-                        {t('nav.earnings')}
+                      <DropdownMenuItem onClick={() => navigate(doctorHref('cuenta', { tab: 'finanzas' }))} className="py-3 text-sm">
+                        <Wallet className="w-4 h-4 mr-2" />
+                        {t('mm2.common.tabs.cuenta.finanzas')}
                       </DropdownMenuItem>
                     )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
@@ -510,10 +491,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         </span>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
-                      <Settings className="w-4 h-4 mr-2" />
-                      {t('nav.settings')}
-                    </DropdownMenuItem>
+                    {role !== 'doctor' && (
+                      <DropdownMenuItem onClick={() => navigate('/settings')} className="py-3 text-sm">
+                        <Settings className="w-4 h-4 mr-2" />
+                        {t('nav.settings')}
+                      </DropdownMenuItem>
+                    )}
                     {(role === 'patient' || role === 'resident' || role === 'doctor') && (
                       <DropdownMenuItem onClick={() => setTutorialOpen(true)} className="py-3 text-sm">
                         <GraduationCap className="w-4 h-4 mr-2" />
@@ -562,7 +545,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border sm:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="flex items-center justify-around h-16 px-1">
             {bottomTabs.map((tab) => {
-              const isActive = isActiveHref(tab.href);
+              const isActive = isActiveItem(tab as { href: string; sectionId?: string });
               const TabIcon = tab.icon;
 
               let badgeCount = 0;
@@ -663,7 +646,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <div className="space-y-1 mb-4">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">{t('mainLayout.sectionNavigation')}</p>
                   {moreNavItems.map((item) => {
-                    const isActive = isActiveHref(item.href);
+                    const isActive = isActiveItem(item as DoctorNavItem);
                     return (
                       <Link
                         key={item.href}
@@ -692,29 +675,29 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   <div className="space-y-1">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">{t('mainLayout.sectionAccount')}</p>
                     <Link
-                      to="/profile"
+                      to={role === 'doctor' ? doctorHref('cuenta') : '/profile'}
                       onClick={() => setMoreSheetOpen(false)}
                       className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                        location.pathname === '/profile' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        (role === 'doctor' ? activeSection === 'cuenta' : location.pathname === '/profile') ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
                       }`}
                     >
                       <User className="w-5 h-5" />
-                      <span className="text-sm font-medium">{t('nav.profile')}</span>
+                      <span className="text-sm font-medium">{role === 'doctor' ? t('mm2.common.nav.cuenta') : t('nav.profile')}</span>
                     </Link>
                     {role === 'doctor' && (
                       <Link
-                        to="/doctor/earnings"
+                        to={doctorHref('cuenta', { tab: 'finanzas' })}
                         onClick={() => setMoreSheetOpen(false)}
                         className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors border ${
-                          location.pathname === '/doctor/earnings' ? 'bg-success/15 border-success/30 text-success' : 'bg-success/10 border-success/20 text-foreground hover:bg-success/15'
+                          activeSection === 'cuenta' && location.search.includes('finanzas') ? 'bg-success/15 border-success/30 text-success' : 'bg-success/10 border-success/20 text-foreground hover:bg-success/15'
                         }`}
                       >
                         <DollarSign className="w-5 h-5 text-success" />
-                        <span className="text-sm font-medium">{t('nav.earnings')}</span>
+                        <span className="text-sm font-medium">{t('mm2.common.tabs.cuenta.finanzas')}</span>
                         <span className="ml-auto text-xs font-semibold text-muted-foreground">${pendingEarnings.toLocaleString()}</span>
                       </Link>
                     )}
-                    {(role === 'patient' || role === 'resident' || role === 'doctor') && (
+                    {(role === 'patient' || role === 'resident') && (
                       <Link
                         to="/wallet"
                         onClick={() => setMoreSheetOpen(false)}
@@ -765,16 +748,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         </span>
                       )}
                     </Link>
-                    <Link
-                      to="/settings"
-                      onClick={() => setMoreSheetOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
-                        location.pathname === '/settings' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <Settings className="w-5 h-5" />
-                      <span className="text-sm font-medium">{t('nav.settings')}</span>
-                    </Link>
+                    {role !== 'doctor' && (
+                      <Link
+                        to="/settings"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/settings' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Settings className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.settings')}</span>
+                      </Link>
+                    )}
                   </div>
                   <div className="border-t border-border my-3" />
                   <button

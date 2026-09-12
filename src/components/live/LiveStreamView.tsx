@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLiveBackgrounds } from '@/hooks/useLiveBackgrounds';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LiveStreamViewProps {
   liveData: {
@@ -66,6 +67,7 @@ export function LiveStreamView({
   ownerToken,
   isMobile,
 }: LiveStreamViewProps) {
+  const { t } = useLanguage();
   const [mobileChatOpen, setMobileChatOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [mobileFullscreen, setMobileFullscreen] = useState(false);
@@ -155,7 +157,7 @@ export function LiveStreamView({
           <DoctorBadgeIcon userId={supabaseUser?.id ?? user?.id} size="sm" className="flex-shrink-0" />
         </span>
         {liveData.specialty && <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{liveData.specialty}</p>}
-        {ownCedula && <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">Céd. <span className="font-mono">{ownCedula}</span></p>}
+        {ownCedula && <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">{t('mm2.common.licenseAbbrev')} <span className="font-mono">{ownCedula}</span></p>}
         {user?.email && <p className="text-white/60 text-[9px] sm:text-[10px] leading-tight truncate">{user.email}</p>}
       </div>
     </>
@@ -330,7 +332,7 @@ export function LiveStreamView({
                 className="h-11 gap-1.5 rounded-full px-3 sm:px-5"
               >
                 <StopCircle className="w-5 h-5" />
-                <span className="hidden sm:inline">Finalizar</span>
+                <span className="hidden sm:inline">{t('mm2.common.endLive')}</span>
               </Button>
             </div>
             <DynamicWatermark email={user?.email} userId={user?.id} />
@@ -345,7 +347,7 @@ export function LiveStreamView({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
-              <span className="font-semibold text-sm">Chat en vivo</span>
+              <span className="font-semibold text-sm">{t('mm2.common.liveChatTitle')}</span>
               <Button variant="ghost" size="icon" onClick={() => setMobileChatOpen(false)} className="h-8 w-8">
                 <X className="w-4 h-4" />
               </Button>
