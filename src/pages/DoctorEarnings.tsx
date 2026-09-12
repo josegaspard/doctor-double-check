@@ -10,12 +10,13 @@ import {
 import { toast } from 'sonner';
 import {
   Wallet, TrendingUp, TrendingDown, Clock, Percent, Banknote, CalendarDays, ChevronDown,
-  ChevronLeft, ChevronRight, Download, FileText, Loader2, CheckCircle2, Building2,
-  Info, ArrowRight, Lock, Receipt,
+  ChevronLeft, ChevronRight, Download, FileText, Loader2, Building2,
+  Info, ArrowRight, Lock, Receipt, MoreHorizontal, Pencil,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { fill, money, money2, fmtDate, fmtDayShort, norm } from '@/lib/proFormat';
+import { fill, money, money2, fmtDate, fmtDayShort } from '@/lib/proFormat';
 import { doctorHref } from '@/lib/doctorSections';
+import '@/styles/diseno-finanzas.css';
 
 interface Transaction {
   id: string;
@@ -43,6 +44,9 @@ interface BankAccount {
 }
 
 type Range = 'last30' | 'thisMonth' | 'prevMonth' | 'last90' | 'year' | 'all';
+/** Rango de fechas de la página; Cuenta › Finanzas lo pinta en su hero. */
+export type EarningsRange = Range;
+const RANGES: readonly Range[] = ['last30', 'thisMonth', 'prevMonth', 'last90', 'year', 'all'];
 type SourceKey = 'consultations' | 'subscriptions' | 'content' | 'lives' | 'other';
 type Bucket = 'day' | 'week' | 'month';
 
@@ -67,15 +71,69 @@ const sourceOf = (raw?: string): SourceKey => {
 
 const PAGE_SIZE = 8;
 
+// ------------------------------------------------------------------ rangos
+const rangeBounds = (r: Range): { from: Date; to: Date } => {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  switch (r) {
+    case 'thisMonth': return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: end };
+    case 'prevMonth': return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1), to: new Date(now.getFullYear(), now.getMonth(), 1) };
+    case 'last90': return { from: new Date(end.getTime() - 90 * 86_400_000), to: end };
+    case 'year': return { from: new Date(now.getFullYear(), 0, 1), to: end };
+    case 'all': return { from: new Date(2000, 0, 1), to: end };
+    default: return { from: new Date(end.getTime() - 30 * 86_400_000), to: end };
+  }
+};
+const rangeLabelOf = (t: (k: string) => string, r: Range) => ({
+  last30: t('pro.earnings.rangeLast30'),
+  thisMonth: t('pro.earnings.rangeThisMonth'),
+  prevMonth: t('pro.earnings.rangePrevMonth'),
+  last90: t('pro.earnings.range90'),
+  year: t('pro.earnings.rangeYear'),
+  all: t('pro.earnings.rangeAll'),
+}[r]);
+
+/** Selector de rango («1 sep 2026 – 30 sep 2026 ▾»). Lo usa esta página y el
+ *  hero de Cuenta › Finanzas (diseño de Marta, 12-sep-2026). */
+export function EarningsRangeMenu({ value, onChange, className }: { value: Range; onChange: (r: Range) => void; className?: string }) {
+  const { language, t } = useLanguage();
+  const { from, to } = rangeBounds(value);
+  /** «1 sep 2026 – 30 sep 2026», como la maqueta, en vez del nombre del preset */
+  const rangeDates = `${fmtDate(from, language)} – ${fmtDate(new Date(to.getTime() - 86_400_000), language)}`;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={`pro-btn pro-btn-white ${className || ''}`}>
+          <CalendarDays />
+          <span className="hidden sm:inline">{rangeDates}</span>
+          <span className="sm:hidden">{rangeLabelOf(t, value)}</span>
+          <ChevronDown />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {RANGES.map(r => (
+          <DropdownMenuItem key={r} onClick={() => onChange(r)}>{rangeLabelOf(t, r)}</DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export interface DoctorEarningsProps {
   /** Dentro de Cuenta > Finanzas > Cobrar: sin MainLayout ni título propio. */
   embedded?: boolean;
   /** Pestaña interna con la que abre (Cuenta > Finanzas la usa para ir
    *  directo a «Retenciones» desde Pagos pendientes, por ejemplo). */
   initialTab?: 'movements' | 'payouts' | 'holds';
+  /** Modo ancho (diseño de Marta): la cabecera —título, rango y «Retirar
+   *  saldo»— la pinta el hero de Cuenta; aquí solo el cuerpo. */
+  wide?: boolean;
+  /** Rango controlado desde fuera (el hero de Cuenta). Si no llega, la
+   *  página guarda el suyo como siempre. */
+  range?: Range;
 }
 
-export default function DoctorEarnings({ embedded = false, initialTab }: DoctorEarningsProps = {}) {
+export default function DoctorEarnings({ embedded = false, initialTab, wide = false, range: rangeProp }: DoctorEarningsProps = {}) {
   const navigate = useNavigate();
   const { user, role } = useAuth();
   const { language, t } = useLanguage();
@@ -100,7 +158,9 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
   const [totalPaid, setTotalPaid] = useState(0);
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
 
-  const [range, setRange] = useState<Range>('thisMonth');
+  const [rangeOwn, setRangeOwn] = useState<Range>('thisMonth');
+  const range: Range = rangeProp ?? rangeOwn;
+  const setRange = setRangeOwn;
   const [bucket, setBucket] = useState<Bucket>('day');
   const [sourceTab, setSourceTab] = useState<SourceKey | 'total'>('total');
   const [tab, setTab] = useState<'movements' | 'payouts' | 'holds'>(initialTab || 'movements');
@@ -171,31 +231,7 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
     }
   };
 
-  // ------------------------------------------------------------------ rangos
-  const rangeBounds = (r: Range): { from: Date; to: Date } => {
-    const now = new Date();
-    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    switch (r) {
-      case 'thisMonth': return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: end };
-      case 'prevMonth': return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1), to: new Date(now.getFullYear(), now.getMonth(), 1) };
-      case 'last90': return { from: new Date(end.getTime() - 90 * 86_400_000), to: end };
-      case 'year': return { from: new Date(now.getFullYear(), 0, 1), to: end };
-      case 'all': return { from: new Date(2000, 0, 1), to: end };
-      default: return { from: new Date(end.getTime() - 30 * 86_400_000), to: end };
-    }
-  };
-  const rangeLabel = (r: Range) => ({
-    last30: t('pro.earnings.rangeLast30'),
-    thisMonth: t('pro.earnings.rangeThisMonth'),
-    prevMonth: t('pro.earnings.rangePrevMonth'),
-    last90: t('pro.earnings.range90'),
-    year: t('pro.earnings.rangeYear'),
-    all: t('pro.earnings.rangeAll'),
-  }[r]);
-
-  const { from, to } = rangeBounds(range);
-  /** «1 sep 2026 – 30 sep 2026», como la maqueta, en vez del nombre del preset */
-  const rangeDates = `${fmtDate(from, language)} – ${fmtDate(new Date(to.getTime() - 86_400_000), language)}`;
+  const rangeLabel = (r: Range) => rangeLabelOf(t, r);
 
   const inRange = (iso: string, a: Date, b: Date) => {
     const d = new Date(iso).getTime();
@@ -402,38 +438,39 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
   const bankHref = doctorHref('cuenta', { tab: 'finanzas', f: 'banco' });
   const invoicesHref = doctorHref('cuenta', { tab: 'finanzas', f: 'facturas' });
   const walletHref = doctorHref('cuenta', { tab: 'finanzas', f: 'wallet' });
+  const commissionNote = hasPerTypeRates
+    ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
+    : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate });
+  /** «Desglose de ingresos (este mes)»: el nombre del preset va en minúscula
+   *  dentro del paréntesis en las lenguas romances; en de/en se deja tal cual. */
+  const breakdownRange = (() => {
+    const r = rangeLabel(range);
+    return ['es', 'pt', 'it', 'fr', 'ca'].includes(language) ? r.charAt(0).toLowerCase() + r.slice(1) : r;
+  })();
+  const chartKeys = (['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[])
+    .filter(k => k !== 'other' || bySource.other > 0);
 
   return (
     <Wrapper>
       <div className={embedded ? '' : 'pro-container pro-page'}>
-        <div className="pro-page-head">
-          <div className="min-w-0">
-            {!embedded && (
-              <h1 className="pro-page-title"><Banknote className="w-7 h-7" /> <span className="truncate">{t('pro.earnings.title')}</span></h1>
-            )}
-            <p className="pro-page-sub">{t('pro.earnings.subtitle')}</p>
+        {/* Cabecera propia solo fuera del modo ancho: en Cuenta › Finanzas el
+            hero (título, rango y «Retirar saldo») lo pinta Settings. */}
+        {!wide && (
+          <div className="pro-page-head">
+            <div className="min-w-0">
+              {!embedded && (
+                <h1 className="pro-page-title"><Banknote className="w-7 h-7" /> <span className="truncate">{t('pro.earnings.title')}</span></h1>
+              )}
+              <p className="pro-page-sub">{t('pro.earnings.subtitle')}</p>
+            </div>
+            <div className="fin-hero-actions">
+              <EarningsRangeMenu value={range} onChange={setRange} />
+              <Link to={bankHref} className="pro-btn pro-btn-live">
+                <Banknote /> {t('pro.earnings.withdraw')}
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none">
-                  <CalendarDays />
-                  <span className="hidden sm:inline">{rangeDates}</span>
-                  <span className="sm:hidden">{rangeLabel(range)}</span>
-                  <ChevronDown />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(['last30', 'thisMonth', 'prevMonth', 'last90', 'year', 'all'] as Range[]).map(r => (
-                  <DropdownMenuItem key={r} onClick={() => setRange(r)}>{rangeLabel(r)}</DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link to={bankHref} className="pro-btn pro-btn-live flex-1 sm:flex-none">
-              <Banknote /> {t('pro.earnings.withdraw')}
-            </Link>
-          </div>
-        </div>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>
@@ -443,110 +480,124 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
             <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={loadEarningsData}>{t('pro.common.retry')}</button>
           </div>
         ) : (
-          <>
-            {/* KPIs */}
-            <div className={embedded ? 'grid grid-cols-2 gap-3 mb-4' : 'grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4'}>
-              {kpis.map(k => (
-                <div key={k.label} className="pro-card pro-kpi">
-                  <span className="pro-icon-box"><k.Icon /></span>
-                  <span className="min-w-0">
-                    <span className="pro-kpi-label block">{k.label}</span>
-                    <span className="pro-kpi-value block">{k.value}</span>
-                    <span className="pro-kpi-sub block">
-                      {k.delta != null && (
-                        <span className={`pro-delta ${k.delta >= 0 ? 'pro-delta-up' : 'pro-delta-down'} mr-1`}>
-                          {k.delta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        </span>
-                      )}
-                      {k.sub}
+          <div className="fin-root">
+            <div className="fin-grid">
+              {/* ---------------------------------- 4 KPI en una sola tarjeta */}
+              <section className="pro-card fin-kpis" aria-label={t('pro.earnings.title')}>
+                {kpis.map(k => (
+                  <div key={k.label} className="fin-kpi">
+                    <span className="pro-icon-box"><k.Icon /></span>
+                    <span className="txt">
+                      <span className="pro-kpi-label">{k.label}</span>
+                      <span className="pro-kpi-value">{k.value}</span>
+                      <span className="pro-kpi-sub">
+                        {k.delta != null && (
+                          <span className={`pro-delta ${k.delta >= 0 ? 'pro-delta-up' : 'pro-delta-down'}`}>
+                            {k.delta >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                          </span>
+                        )}
+                        <span>{k.sub}</span>
+                      </span>
                     </span>
-                  </span>
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </section>
 
-            <div className={embedded ? 'pro-work' : 'pro-work pro-work-2'}>
-              <div className="min-w-0 space-y-4">
-                {/* Gráfico por fuente */}
-                <section className="pro-card pro-card-pad min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <div className="pro-seg">
-                      {(['total', 'consultations', 'subscriptions', 'content', 'lives'] as const).map(s => (
-                        <button key={s} type="button" className={sourceTab === s ? 'is-active' : ''} aria-pressed={sourceTab === s} onClick={() => setSourceTab(s)}>
-                          {s === 'total' ? t('pro.earnings.srcTotal') : sourceLabel(s)}
-                        </button>
+              {/* ---------------- Columna principal: gráfica por fuente + movimientos */}
+              <div className="fin-main">
+              <section className="pro-card pro-card-pad fin-chartcard">
+                <div className="fin-tools">
+                  <div className="pro-seg">
+                    {(['total', 'consultations', 'subscriptions', 'content', 'lives'] as const).map(s => (
+                      <button key={s} type="button" className={sourceTab === s ? 'is-active' : ''} aria-pressed={sourceTab === s} onClick={() => setSourceTab(s)}>
+                        {s === 'total' ? t('pro.earnings.srcTotal') : sourceLabel(s)}
+                      </button>
+                    ))}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="pro-btn pro-btn-outline pro-btn-sm ml-auto">
+                        {bucket === 'day' ? t('pro.earnings.byDay') : bucket === 'week' ? t('pro.earnings.byWeek') : t('pro.earnings.byMonth')} <ChevronDown />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setBucket('day')}>{t('pro.earnings.byDay')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setBucket('week')}>{t('pro.earnings.byWeek')}</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setBucket('month')}>{t('pro.earnings.byMonth')}</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <h2 className="pro-card-title mb-0.5">{t('pro.earnings.bySource')}</h2>
+                <div className="fin-total">
+                  <span className="pro-kpi-value">{money2(periodNet, language)}</span>
+                  {range === 'thisMonth' && monthDelta.pct != null && (
+                    <span className={`pro-delta ${monthDelta.pct >= 0 ? 'pro-delta-up' : 'pro-delta-down'}`}>
+                      {monthDelta.pct >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                      {monthDelta.pct >= 0 ? '+' : ''}{monthDelta.pct}% {t('pro.earnings.vsPrevMonth')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="fin-chartbody">
+                  <div className="fin-plotcol">
+                    <div className="fin-plot">
+                      {chartData.length > 0 ? (
+                        <div className="abs">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#eaf1f4" vertical={false} />
+                              <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#6b7a89' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                              <YAxis tick={{ fontSize: 10, fill: '#6b7a89' }} axisLine={false} tickLine={false} width={54} />
+                              <Tooltip
+                                formatter={(v: number, name: string) => [money(Number(v), language), sourceLabel(name as SourceKey)]}
+                                contentStyle={{ background: '#fff', border: '1px solid #e3ecf0', borderRadius: 12, fontSize: 12 }}
+                              />
+                              {(['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[])
+                                .filter(k => sourceTab === 'total' || sourceTab === k)
+                                .map((k, i, arr) => (
+                                  <Bar key={k} dataKey={k} stackId="a" fill={SOURCE_COLORS[k]} radius={i === arr.length - 1 ? [5, 5, 0, 0] : undefined} />
+                                ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="abs fin-empty pro-muted text-sm">{t('pro.earnings.noChartData')}</div>
+                      )}
+                    </div>
+                    {/* Leyenda de colores bajo la gráfica, como la maqueta */}
+                    <div className="fin-legend" aria-hidden="true">
+                      {chartKeys.map(k => (
+                        <span key={k}><i style={{ background: SOURCE_COLORS[k] }} />{sourceLabel(k)}</span>
                       ))}
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm ml-auto">
-                          {bucket === 'day' ? t('pro.earnings.byDay') : bucket === 'week' ? t('pro.earnings.byWeek') : t('pro.earnings.byMonth')} <ChevronDown />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setBucket('day')}>{t('pro.earnings.byDay')}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setBucket('week')}>{t('pro.earnings.byWeek')}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setBucket('month')}>{t('pro.earnings.byMonth')}</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
 
-                  <h2 className="pro-card-title mb-0.5">{t('pro.earnings.bySource')}</h2>
-                  <div className="flex items-baseline gap-2 mb-3 flex-wrap">
-                    <span className="pro-kpi-value">{money2(periodNet, language)}</span>
-                    {range === 'thisMonth' && monthDelta.pct != null && (
-                      <span className={`pro-delta ${monthDelta.pct >= 0 ? 'pro-delta-up' : 'pro-delta-down'}`}>
-                        {monthDelta.pct >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                        {monthDelta.pct >= 0 ? '+' : ''}{monthDelta.pct}% {t('pro.earnings.vsPrevMonth')}
-                      </span>
-                    )}
+                  <div className="pro-srcleg fin-srcleg">
+                    {(['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[]).map(k => {
+                      const v = bySource[k];
+                      if (k === 'other' && v === 0) return null;
+                      const pct = periodNet > 0 ? Math.round((v / periodNet) * 100) : 0;
+                      return (
+                        <div key={k} className="pro-srcleg-row">
+                          <span className="swatch" style={{ background: SOURCE_COLORS[k] }} />
+                          <span className="lbl">{sourceLabel(k)}</span>
+                          <span className="amt">{money2(v, language)}</span>
+                          <span className="pct">({pct}%)</span>
+                        </div>
+                      );
+                    })}
                   </div>
+                </div>
+              </section>
 
-                  <div className={embedded ? 'grid grid-cols-1 gap-4 items-start' : 'grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_210px] gap-4 items-start'}>
-                    {chartData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={210}>
-                        <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#eaf1f4" vertical={false} />
-                          <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#6b7a89' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                          <YAxis tick={{ fontSize: 10, fill: '#6b7a89' }} axisLine={false} tickLine={false} width={54} />
-                          <Tooltip
-                            formatter={(v: number, name: string) => [money(Number(v), language), sourceLabel(name as SourceKey)]}
-                            contentStyle={{ background: '#fff', border: '1px solid #e3ecf0', borderRadius: 12, fontSize: 12 }}
-                          />
-                          {(['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[])
-                            .filter(k => sourceTab === 'total' || sourceTab === k)
-                            .map((k, i, arr) => (
-                              <Bar key={k} dataKey={k} stackId="a" fill={SOURCE_COLORS[k]} radius={i === arr.length - 1 ? [5, 5, 0, 0] : undefined} />
-                            ))}
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-[210px] min-w-0 px-4 text-center pro-muted text-sm">{t('pro.earnings.noChartData')}</div>
-                    )}
-
-                    <div className="pro-srcleg">
-                      {(['consultations', 'subscriptions', 'content', 'lives', 'other'] as SourceKey[]).map(k => {
-                        const v = bySource[k];
-                        if (k === 'other' && v === 0) return null;
-                        const pct = periodNet > 0 ? Math.round((v / periodNet) * 100) : 0;
-                        return (
-                          <div key={k} className="pro-srcleg-row">
-                            <span className="swatch" style={{ background: SOURCE_COLORS[k] }} />
-                            <span className="lbl">{sourceLabel(k)}</span>
-                            <span className="amt">{money2(v, language)}</span>
-                            <span className="pct">({pct}%)</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-
-                {/* Movimientos / pagos / retenciones */}
-                <section className="pro-card pro-card-pad min-w-0">
-                  <div className="pro-card-head flex-wrap">
+              {/* ---------------------------- Movimientos / pagos / retenciones */}
+              <section className="pro-card pro-card-pad fin-tablecard">
+                <div className="pro-card-head">
+                  <h2 className="pro-card-title">{t('pro.earnings.movements')}</h2>
+                  <div className="fin-tabtools">
                     <div className="pro-seg">
-                      <button type="button" className={tab === 'movements' ? 'is-active' : ''} aria-pressed={tab === 'movements'} onClick={() => setTab('movements')}>{t('pro.earnings.movements')}</button>
+                      <button type="button" className={tab === 'movements' ? 'is-active' : ''} aria-pressed={tab === 'movements'} onClick={() => setTab('movements')}>{t('pro.earnings.transactions')}</button>
                       <button type="button" className={tab === 'payouts' ? 'is-active' : ''} aria-pressed={tab === 'payouts'} onClick={() => setTab('payouts')}>{t('pro.earnings.payouts')}</button>
                       {holds.length > 0 && (
                         <button type="button" className={tab === 'holds' ? 'is-active' : ''} aria-pressed={tab === 'holds'} onClick={() => setTab('holds')}>{t('pro.earnings.holds')}</button>
@@ -556,71 +607,92 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
                       <Download /> CSV
                     </button>
                   </div>
+                </div>
 
-                  {tab === 'movements' && (
-                    filteredTx.length === 0 ? (
-                      <p className="pro-muted text-sm py-8 text-center">{t('pro.earnings.noMovements')}</p>
-                    ) : (
-                      <>
-                        <div className="pro-tablewrap">
-                          <table className="pro-table">
-                            <thead>
-                              <tr>
-                                <th>{t('pro.earnings.thDate')}</th>
-                                <th>{t('pro.earnings.thClient')}</th>
-                                <th>{t('pro.earnings.thConcept')}</th>
-                                <th>{t('pro.earnings.thSource')}</th>
-                                <th className="text-right">{t('pro.earnings.thGross')}</th>
-                                <th className="text-right">{fill(t('pro.earnings.thCommission'), { p: commissionRate })}</th>
-                                <th className="text-right">{t('pro.earnings.thNet')}</th>
-                                <th>{t('pro.earnings.thStatus')}</th>
-                                <th>{t('pro.earnings.thInvoice')}</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {pageRows.map(tx => {
-                                const k = sourceOf((tx.metadata as any)?.source);
-                                const gross = grossOf(tx);
-                                return (
-                                  <tr key={tx.id}>
-                                    <td>{fmtDate(new Date(tx.created_at), language)}</td>
-                                    <td className="strong">{clientOf(tx)}</td>
-                                    <td>{tx.description}</td>
-                                    <td>
+                {tab === 'movements' && (
+                  filteredTx.length === 0 ? (
+                    <p className="pro-muted text-sm py-8 text-center">{t('pro.earnings.noMovements')}</p>
+                  ) : (
+                    <>
+                      <div className="pro-tablewrap">
+                        <table className="pro-table">
+                          <thead>
+                            <tr>
+                              <th>{t('pro.earnings.thDate')}</th>
+                              <th>{t('pro.earnings.thClient')}</th>
+                              {/* En columna estrecha (< 820 px) Concepto y Fuente se pliegan
+                                  bajo el cliente (`.fin-rowsub`) en vez de forzar scroll. */}
+                              <th className="fin-col-concept">{t('pro.earnings.thConcept')}</th>
+                              <th className="fin-col-source">{t('pro.earnings.thSource')}</th>
+                              <th className="text-right">{t('pro.earnings.thGross')}</th>
+                              <th className="text-right">{fill(t('pro.earnings.thCommission'), { p: commissionRate })}</th>
+                              <th className="text-right">{t('pro.earnings.thNet')}</th>
+                              <th>{t('pro.earnings.thStatus')}</th>
+                              <th>{t('pro.earnings.thInvoice')}</th>
+                              <th><span className="sr-only">{t('nav.more')}</span></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pageRows.map(tx => {
+                              const k = sourceOf((tx.metadata as any)?.source);
+                              const gross = grossOf(tx);
+                              // La factura del periodo que cubre este movimiento
+                              // (`doctor_invoices` guarda periodo y número).
+                              const inv = invoiceFor(tx.created_at);
+                              return (
+                                <tr key={tx.id}>
+                                  <td>{fmtDate(new Date(tx.created_at), language)}</td>
+                                  <td className="strong">
+                                    {clientOf(tx)}
+                                    <span className="fin-rowsub">
+                                      {tx.description}
                                       <span className="pro-mini" style={{ color: SOURCE_COLORS[k] }}>{sourceLabel(k)}</span>
-                                    </td>
-                                    <td className="num">{money2(gross, language)}</td>
-                                    <td className="num">{money2(commissionOf(tx), language)}</td>
-                                    <td className="num strong">{money2(netOf(tx), language)}</td>
-                                    <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
-                                    <td>
-                                      {/* La factura del periodo que cubre este movimiento
-                                          (`doctor_invoices` guarda periodo y número). */}
-                                      {(() => {
-                                        const inv = invoiceFor(tx.created_at);
-                                        if (!inv) return <span className="pro-muted">—</span>;
-                                        return inv.file_url
-                                          ? <a href={inv.file_url} target="_blank" rel="noreferrer" className="pro-link">{inv.invoice_number}</a>
-                                          : <Link to={invoicesHref} className="pro-link">{inv.invoice_number}</Link>;
-                                      })()}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                        <p className="text-[11.5px] pro-muted mt-2">
+                                    </span>
+                                  </td>
+                                  <td className="fin-col-concept">{tx.description}</td>
+                                  <td className="fin-col-source">
+                                    <span className="pro-mini" style={{ color: SOURCE_COLORS[k] }}>{sourceLabel(k)}</span>
+                                  </td>
+                                  <td className="num">{money2(gross, language)}</td>
+                                  <td className="num">{money2(commissionOf(tx), language)}</td>
+                                  <td className="num strong">{money2(netOf(tx), language)}</td>
+                                  <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
+                                  <td>
+                                    {!inv
+                                      ? <span className="pro-muted">—</span>
+                                      : inv.file_url
+                                        ? <a href={inv.file_url} target="_blank" rel="noreferrer" className="pro-link"><FileText /> {inv.invoice_number}</a>
+                                        : <Link to={invoicesHref} className="pro-link"><FileText /> {inv.invoice_number}</Link>}
+                                  </td>
+                                  <td className="act">
+                                    {/* «⋯» de la maqueta: solo enlaces que ya existen (factura del
+                                        movimiento y la sección de facturas); sin acciones nuevas. */}
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button type="button" className="pro-kebab" aria-label={t('nav.more')}><MoreHorizontal /></button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        {inv && (
+                                          inv.file_url
+                                            ? <DropdownMenuItem asChild><a href={inv.file_url} target="_blank" rel="noreferrer"><FileText className="w-4 h-4 mr-2" />{t('pro.earnings.thInvoice')} {inv.invoice_number}</a></DropdownMenuItem>
+                                            : <DropdownMenuItem asChild><Link to={invoicesHref}><FileText className="w-4 h-4 mr-2" />{t('pro.earnings.thInvoice')} {inv.invoice_number}</Link></DropdownMenuItem>
+                                        )}
+                                        <DropdownMenuItem asChild><Link to={invoicesHref}><Receipt className="w-4 h-4 mr-2" />{t('mm2.finance.allInvoices')}</Link></DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleExportCSV}><Download className="w-4 h-4 mr-2" />{t('pro.earnings.downloadReport')}</DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="fin-foot">
+                        <p className="text-[11.5px] pro-muted m-0">
                           {fill(t('pro.earnings.showing'), { a: pageRows.length, b: filteredTx.length })}
                           {sourceTab !== 'total' && ` · ${sourceLabel(sourceTab)}: ${money2(tableTotals.net, language)} ${t('pro.earnings.net').toLowerCase()}`}
                         </p>
-                        {/* Descargo: el importe abonado es el neto; bruto y comisión son cálculo */}
-                        <div className="pro-note mt-2">
-                          <Info />
-                          <span>{hasPerTypeRates
-                            ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
-                            : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate })}</span>
-                        </div>
                         {pages > 1 && (
                           <div className="pro-pager">
                             {/* La ventana SIGUE a la página actual: antes se quedaba
@@ -645,76 +717,86 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
                             <button type="button" disabled={page === pages} onClick={() => setPage(p => Math.min(pages, p + 1))}><ChevronRight className="w-4 h-4 mx-auto" /></button>
                           </div>
                         )}
-                      </>
-                    )
-                  )}
-
-                  {tab === 'payouts' && (
-                    payouts.length === 0 ? (
-                      <p className="pro-muted text-sm py-8 text-center">{t('pro.earnings.nextPayoutNone')}</p>
-                    ) : (
-                      <div>
-                        {payouts.map(p => (
-                          <div key={p.id} className="pro-row">
-                            <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Banknote /></span>
-                            <span className="min-w-0 flex-1">
-                              <span className="pro-row-name block">{money2(Number(p.amount), language)}</span>
-                              <span className="pro-row-sub block">
-                                {fmtDate(new Date(p.created_at), language)}
-                                {' · '}{p.stripe_transfer_id?.startsWith('manual_') ? t('pro.earnings.methodManual') : p.stripe_transfer_id ? 'Stripe' : t('pro.earnings.methodManual')}
-                              </span>
-                              {p.error_message && <span className="pro-row-sub block" style={{ color: 'var(--pro-live)' }}>{p.error_message}</span>}
-                            </span>
-                            <span className={`pro-pill ${p.status === 'paid' ? 'pro-pill-ok' : p.status === 'failed' ? 'pro-pill-live' : 'pro-pill-warn'}`}>
-                              {p.status === 'paid' ? t('pro.earnings.statusPaid')
-                                : p.status === 'failed' ? t('pro.earnings.statusFailed')
-                                : p.status === 'processing' ? t('pro.earnings.statusProcessing')
-                                : t('pro.earnings.statusPendingPayout')}
-                            </span>
-                          </div>
-                        ))}
                       </div>
-                    )
-                  )}
+                      {/* Descargo: el importe abonado es el neto; bruto y comisión son cálculo */}
+                      <div className="pro-note">
+                        <Info />
+                        <span>{commissionNote}</span>
+                      </div>
+                    </>
+                  )
+                )}
 
-                  {tab === 'holds' && (
+                {tab === 'payouts' && (
+                  payouts.length === 0 ? (
+                    <p className="pro-muted text-sm py-8 text-center">{t('pro.earnings.nextPayoutNone')}</p>
+                  ) : (
                     <div>
-                      {holds.map(h => (
-                        <div key={h.id} className="pro-row">
-                          <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Lock /></span>
+                      {payouts.map(p => (
+                        <div key={p.id} className="pro-row">
+                          <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Banknote /></span>
                           <span className="min-w-0 flex-1">
-                            <span className="pro-row-name block">{money2(Number(h.amount), language)}</span>
+                            <span className="pro-row-name block">{money2(Number(p.amount), language)}</span>
                             <span className="pro-row-sub block">
-                              {h.release_at ? fill(t('pro.earnings.holdUntil'), { d: fmtDate(new Date(h.release_at), language) }) : t('pro.earnings.holdNoDate')}
-                              {h.reason ? ` · ${h.reason}` : ''}
+                              {fmtDate(new Date(p.created_at), language)}
+                              {' · '}{p.stripe_transfer_id?.startsWith('manual_') ? t('pro.earnings.methodManual') : p.stripe_transfer_id ? 'Stripe' : t('pro.earnings.methodManual')}
                             </span>
+                            {p.error_message && <span className="pro-row-sub block" style={{ color: 'var(--pro-live)' }}>{p.error_message}</span>}
                           </span>
-                          <span className={`pro-pill ${h.status === 'held' ? 'pro-pill-warn' : 'pro-pill-ok'}`}>
-                            {h.status === 'held' ? t('pro.earnings.statusHeld') : t('pro.earnings.statusPaid')}
+                          <span className={`pro-pill ${p.status === 'paid' ? 'pro-pill-ok' : p.status === 'failed' ? 'pro-pill-live' : 'pro-pill-warn'}`}>
+                            {p.status === 'paid' ? t('pro.earnings.statusPaid')
+                              : p.status === 'failed' ? t('pro.earnings.statusFailed')
+                              : p.status === 'processing' ? t('pro.earnings.statusProcessing')
+                              : t('pro.earnings.statusPendingPayout')}
                           </span>
                         </div>
                       ))}
                     </div>
-                  )}
-                </section>
+                  )
+                )}
+
+                {tab === 'holds' && (
+                  <div>
+                    {holds.map(h => (
+                      <div key={h.id} className="pro-row">
+                        <span className="pro-icon-box" style={{ width: 34, height: 34 }}><Lock /></span>
+                        <span className="min-w-0 flex-1">
+                          <span className="pro-row-name block">{money2(Number(h.amount), language)}</span>
+                          <span className="pro-row-sub block">
+                            {h.release_at ? fill(t('pro.earnings.holdUntil'), { d: fmtDate(new Date(h.release_at), language) }) : t('pro.earnings.holdNoDate')}
+                            {h.reason ? ` · ${h.reason}` : ''}
+                          </span>
+                        </span>
+                        <span className={`pro-pill ${h.status === 'held' ? 'pro-pill-warn' : 'pro-pill-ok'}`}>
+                          {h.status === 'held' ? t('pro.earnings.statusHeld') : t('pro.earnings.statusPaid')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
               </div>
 
               {/* ------------------------------------------- columna derecha */}
-              <aside className="space-y-4 min-w-0">
+              <aside className="fin-side">
                 <section className="pro-card pro-card-pad">
                   <div className="pro-card-head">
-                    <h2 className="pro-card-title"><Building2 /> {t('pro.earnings.account')}</h2>
-                    <Link to={bankHref} className="pro-link">{bank ? t('pro.earnings.editAccount') : t('pro.earnings.addAccount')}</Link>
+                    <h2 className="pro-card-title">{t('pro.earnings.account')}</h2>
+                    {bank && (
+                      <Link to={bankHref} className="pro-btn pro-btn-outline pro-btn-sm">
+                        <Pencil /> {t('pro.earnings.editAccount')}
+                      </Link>
+                    )}
                   </div>
                   {bank ? (
                     <div className="pro-bank">
                       <span className="pro-icon-box"><Building2 /></span>
                       <span className="min-w-0 flex-1">
-                        <span className="pro-row-name block truncate">{bank.bank_name || bank.payment_method || '—'}</span>
-                        <span className="pro-row-sub block truncate">
+                        <span className="pro-row-name block">{bank.bank_name || bank.payment_method || '—'}</span>
+                        <span className="pro-row-sub block">
                           {bank.clabe_last4 ? `${t('pro.earnings.accountOf')} **** ${bank.clabe_last4}` : ''}
                         </span>
-                        {bank.account_holder_name && <span className="pro-row-sub block truncate">{bank.account_holder_name}</span>}
+                        {bank.account_holder_name && <span className="pro-row-sub block">{bank.account_holder_name}</span>}
                       </span>
                       <span className={`pro-pill ${bank.is_verified ? 'pro-pill-ok' : 'pro-pill-warn'}`}>
                         {bank.is_verified ? t('pro.earnings.verified') : t('pro.earnings.unverified')}
@@ -729,54 +811,79 @@ export default function DoctorEarnings({ embedded = false, initialTab }: DoctorE
                 </section>
 
                 <section className="pro-card pro-card-pad">
-                  <h2 className="pro-card-title mb-2"><CalendarDays /> {t('pro.earnings.nextPayout')}</h2>
-                  <div className="pro-kpi-value">{money2(pendingEarnings, language)}</div>
-                  <p className="pro-kpi-sub">
-                    {/* Sin importe no hay pago: anunciar una fecha sería contradecirse. */}
-                    {pendingEarnings <= 0
-                      ? t('pro.earnings.nextPayoutNone')
-                      : nextRelease
-                        ? fill(t('pro.earnings.nextPayoutOn'), { d: fmtDate(new Date(nextRelease), language) })
-                        : payoutFrequency || t('pro.earnings.nextPayoutNone')}
-                  </p>
+                  <div className="fin-next">
+                    <span className="pro-icon-box"><CalendarDays /></span>
+                    <div className="txt">
+                      <h2 className="pro-card-title">{t('pro.earnings.nextPayout')}</h2>
+                      <div className="pro-kpi-value">{money2(pendingEarnings, language)}</div>
+                      <p className="pro-kpi-sub">
+                        {/* Sin importe no hay pago: anunciar una fecha sería contradecirse. */}
+                        {pendingEarnings <= 0
+                          ? t('pro.earnings.nextPayoutNone')
+                          : nextRelease
+                            ? fill(t('pro.earnings.nextPayoutOn'), { d: fmtDate(new Date(nextRelease), language) })
+                            : payoutFrequency || t('pro.earnings.nextPayoutNone')}
+                      </p>
+                    </div>
+                  </div>
                   {activeHolds.length > 0 && pendingEarnings > 0 && (
-                    <div className="pro-note mt-2">
+                    <div className="pro-note mt-3">
                       <Info /><span>{fill(t('pro.earnings.nextPayoutNote'), { n: activeHolds.length })}</span>
                     </div>
                   )}
                   {/* El histórico ya cobrado: el panel anterior lo enseñaba y se
                       había perdido (`total_earnings` se pedía y se tiraba). */}
-                  <div className="pro-ctx-line mt-2" style={{ borderTop: '1px solid var(--pro-line)', paddingTop: 8 }}>
+                  <div className="pro-ctx-line fin-hist">
                     <span className="k">{t('pro.earnings.alreadyPaid')}</span>
                     <span className="v">{money2(totalPaid, language)}</span>
                   </div>
                 </section>
 
-                <section className="pro-card pro-card-pad">
-                  <h2 className="pro-card-title mb-2"><Receipt /> {fill(t('pro.earnings.breakdown'), { r: rangeLabel(range) })}</h2>
+                <section className="pro-card pro-card-pad fin-breakdown">
+                  <h2 className="pro-card-title mb-2">{fill(t('pro.earnings.breakdown'), { r: breakdownRange })}</h2>
                   <div className="pro-ctx-line"><span className="k">{t('pro.earnings.gross')}</span><span className="v">{money2(totals.gross, language)}</span></div>
                   <div className="pro-ctx-line"><span className="k">{fill(t('pro.earnings.commission'), { p: commissionRate })}</span><span className="v">− {money2(totals.commission, language)}</span></div>
-                  <div className="pro-ctx-line" style={{ borderTop: '1px solid var(--pro-line)', marginTop: 6, paddingTop: 8 }}>
-                    <span className="k" style={{ fontWeight: 700 }}>{t('pro.earnings.net')}</span>
-                    <span className="v" style={{ fontSize: 15 }}>{money2(totals.net, language)}</span>
+                  <div className="pro-ctx-line total">
+                    <span className="k">{t('pro.earnings.net')}</span>
+                    <span className="v">{money2(totals.net, language)}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <Link to={invoicesHref} className="pro-btn pro-btn-outline pro-btn-sm">
-                      <FileText /> {t('pro.earnings.invoices')}{invoicesCount > 0 ? ` (${invoicesCount})` : ''}
-                    </Link>
+                  <div className="fin-btns">
+                    {/* «Facturas ▾»: lista las facturas que ya existen y enlaza a la
+                        sección; sin facturas es el enlace de siempre. */}
+                    {invoices.length === 0 ? (
+                      <Link to={invoicesHref} className="pro-btn pro-btn-outline pro-btn-sm">
+                        <FileText /> {t('pro.earnings.invoices')}
+                      </Link>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm">
+                            <FileText /> {t('pro.earnings.invoices')} ({invoicesCount}) <ChevronDown />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {invoices.slice(0, 6).map(inv => (
+                            inv.file_url
+                              ? <DropdownMenuItem key={inv.id} asChild><a href={inv.file_url} target="_blank" rel="noreferrer">{inv.invoice_number}</a></DropdownMenuItem>
+                              : <DropdownMenuItem key={inv.id} asChild><Link to={invoicesHref}>{inv.invoice_number}</Link></DropdownMenuItem>
+                          ))}
+                          <DropdownMenuItem asChild><Link to={invoicesHref}><Receipt className="w-4 h-4 mr-2" />{t('mm2.finance.allInvoices')}</Link></DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={handleExportCSV}>
                       <Download /> {t('pro.earnings.downloadReport')}
                     </button>
                   </div>
-                  <p className="text-[11.5px] pro-muted mt-2">{hasPerTypeRates
-                    ? fill(t('pro.earnings.commissionNotePerType'), { p: commissionRate })
-                    : fill(t('pro.earnings.commissionNoteFlat'), { p: commissionRate })}</p>
-                  <p className="text-[11.5px] pro-muted mt-1">{t('pro.earnings.withdrawInfo')}</p>
+                  {/* Descargo del cálculo: bruto = dato, comisión y neto = cálculo.
+                      Acompaña al desglose SIEMPRE, haya o no movimientos. */}
+                  <p className="fin-fine">{commissionNote}</p>
+                  <p className="fin-fine">{t('pro.earnings.withdrawInfo')}</p>
                   <Link to={walletHref} className="pro-link mt-1"><ArrowRight /> {t('nav.wallet') || 'Wallet'}</Link>
                 </section>
               </aside>
             </div>
-          </>
+          </div>
         )}
       </div>
     </Wrapper>

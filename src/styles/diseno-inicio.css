@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Panel de médico · diseño de Marta (mockup «panel-de-medico.jpg», 12-sep-2026)
+   Solo lo usa src/pages/DoctorDashboard.tsx. El color, el radio y la sombra
+   vienen de las clases `pro-*` de src/index.css; aquí va únicamente la
+   maquetación: cuatro KPI iguales, agenda de hoy (2/3) + pacientes recientes
+   (1/3) y las tres tarjetas de abajo (Próximo Live · Pendientes · Resumen
+   del mes). Las reglas responsivas van por @container (no por viewport) para
+   que la página se comporte igual si algún día se incrusta en una columna.
+   ========================================================================== */
+
+.di-shell { container-type: inline-size; container-name: di; }
+
+/* ---------- Fila 1 · cuatro KPI iguales (4 col ≥ 960 de contenedor, 2 en tableta, 1 en móvil) ---------- */
+.di-kpis { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); margin-bottom: 12px; }
+@container di (min-width: 560px) {
+  .di-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+}
+@container di (min-width: 960px) {
+  .di-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .di-kpis.is-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Cada KPI va dentro de un envoltorio que es el contenedor consultado: un
+   elemento no puede consultarse a sí mismo, así que la regla de «tarjeta
+   estrecha» y el `cqi` del valor miran al envoltorio, no a la tarjeta. */
+.di-kpi-wrap { container-type: inline-size; container-name: dikpi; min-width: 0; display: grid; }
+.di-kpi {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "icon body chev";
+  align-items: start;
+  column-gap: 14px;
+  padding: 17px 18px;
+  min-height: 104px;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+button.di-kpi { cursor: pointer; }
+button.di-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32, 42, 0.55), 0 2px 6px rgba(3, 32, 42, 0.10); }
+.di-kpi > .pro-icon-box { grid-area: icon; }
+.di-kpi-body { grid-area: body; min-width: 0; }
+.di-kpi-chev { grid-area: chev; align-self: center; width: 20px; height: 20px; color: var(--pro-muted) !important; }
+/* Etiqueta completa, nunca recortada; el ojo de «Ingresos del mes» va a su lado */
+.di-kpi-label { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; font-size: 13px; font-weight: 500; line-height: 1.25; color: var(--pro-muted); }
+.di-kpi-eye { width: 24px; height: 24px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: var(--pro-muted) !important; flex-shrink: 0; cursor: pointer; }
+.di-kpi-eye:hover { background: #f1f6f8; }
+.di-kpi-eye svg { width: 15px; height: 15px; color: currentColor !important; }
+/* El valor se escala con el ancho de SU tarjeta (cqi del envoltorio): con la
+   tarjeta de 288 px de 1280/1440 el cuerpo mide 164 px y un importe de seis
+   cifras («$123,450 MXN») cabe sin pisar el chevron. `width: max-content` hace
+   que la caja mida el texto real, no todo el ancho del cuerpo. */
+.di-kpi-value {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.2rem, 8cqi, 1.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--pro-ink);
+  margin-top: 4px;
+  white-space: nowrap;
+  width: max-content;
+  max-width: 100%;
+}
+.di-kpi-sub { font-size: 12.5px; color: var(--pro-muted); margin-top: 4px; }
+/* Tarjeta estrecha (4 columnas entre 1024 y 1280 px): el icono sube, el chevron
+   se queda a su derecha y el texto usa todo el ancho de la tarjeta. Con el
+   cuerpo a todo el ancho, el valor puede escalar más sin pisar nada. */
+@container dikpi (max-width: 275px) {
+  .di-kpi { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "icon chev" "body body"; row-gap: 10px; }
+  .di-kpi-value { font-size: clamp(1.2rem, 10.5cqi, 1.75rem); }
+}
+
+/* ---------- Fila 2 · Agenda de hoy + Pacientes recientes (62/38, la proporción medida en el mockup) ---------- */
+.di-row2 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); margin-bottom: 12px; }
+@container di (min-width: 900px) {
+  .di-row2 { grid-template-columns: minmax(0, 5fr) minmax(0, 3fr); gap: 16px; margin-bottom: 16px; }
+}
+/* Cabecera de tarjeta: si el enlace no cabe, baja de línea; el título no se parte */
+.di-shell .pro-card-head { flex-wrap: wrap; row-gap: 4px; }
+/* Estado vacío: la tarjeta sin datos NO se estira a la altura de su vecina
+   (evita 300-450 px de blanco cuando la cuenta no tiene consultas ni Lives);
+   las tarjetas con datos siguen igualando alturas entre sí. */
+.di-row2 > .is-empty, .di-row3 > .is-empty { align-self: start; }
+
+/* Fila de agenda: hora · iniciales · nombre · tipo · píldora · botón · kebab */
+.di-agenda { container-type: inline-size; container-name: diag; }
+.di-agenda .pro-row { gap: 12px; }
+.di-name { font-weight: 700; font-size: 14px; line-height: 1.25; color: var(--pro-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.di-agenda .di-type { font-size: 13px; color: var(--pro-muted); flex: 0 0 auto; max-width: 160px; }
+.di-agenda .di-sub-type { display: none; font-size: 12.5px; color: var(--pro-muted); margin-top: 2px; }
+.di-stack { display: none; margin-top: 6px; }
+.di-inline { display: inline-flex; }
+.di-btn-label { display: inline; }
+@container diag (max-width: 599px) {
+  .di-agenda .di-type { display: none; }
+  .di-agenda .di-sub-type { display: block; }
+}
+@container diag (max-width: 459px) {
+  .di-agenda .di-inline { display: none; }
+  .di-agenda .di-stack { display: flex; }
+  .di-agenda .di-btn-label { display: none; }
+  .di-agenda .pro-row { gap: 10px; }
+}
+.di-hours { font-size: 12.5px; color: var(--pro-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pro-line); }
+
+/* Pacientes recientes: la píldora baja bajo el nombre cuando la tarjeta es estrecha */
+.di-patients { container-type: inline-size; container-name: dipat; }
+@container dipat (max-width: 379px) {
+  .di-patients .di-inline { display: none; }
+  .di-patients .di-stack { display: flex; }
+}
+
+/* ---------- Fila 3 · Próximo Live · Pendientes · Resumen del mes ---------- */
+.di-row3 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+@container di (min-width: 700px) {
+  .di-row3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .di-row3 > .di-span { grid-column: 1 / -1; }
+}
+@container di (min-width: 960px) {
+  .di-row3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .di-row3.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .di-row3 > .di-span { grid-column: auto; }
+}
+
+/* Próximo Live: miniatura oscura con el icono de directo + título + fecha + «Gestionar» */
+.di-live { display: flex; gap: 14px; align-items: flex-start; min-width: 0; }
+.di-live-thumb { width: 100px; height: 80px; border-radius: 12px; background: #0b2f3a; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.di-live-thumb svg { width: 28px; height: 28px; color: var(--pro-live) !important; }
+.di-live-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.di-live-title { font-weight: 700; font-size: 14.5px; line-height: 1.25; color: var(--pro-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.di-live-when { font-size: 13px; color: var(--pro-muted); }
+.di-live-actions { display: flex; justify-content: flex-end; margin-top: 8px; }

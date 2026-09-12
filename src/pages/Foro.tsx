@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import '@/styles/diseno-comunidad.css';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from '@/components/ui/dialog';
@@ -747,28 +746,27 @@ export default function Foro() {
     const images = atts.filter((a) => a.type === 'image');
     const others = atts.filter((a) => a.type !== 'image');
     return (
-      <div className="mt-2 space-y-2">
+      <div className="dc-post-att">
         {images.length > 0 && (
-          <div className={`grid gap-2 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          <div className={`dc-post-att-grid${images.length === 1 ? ' is-single' : ''}`}>
             {images.map((a) => (
               signedUrls[a.path]
                 ? <a key={a.path} href={signedUrls[a.path]} target="_blank" rel="noopener noreferrer">
-                    <img src={signedUrls[a.path]} alt={a.name} className="rounded-lg max-h-80 w-full object-cover border border-border" />
+                    <img src={signedUrls[a.path]} alt={a.name} />
                   </a>
-                : <Skeleton key={a.path} className="h-40 w-full rounded-lg" />
+                : <div key={a.path} className="dc-skel-in" aria-hidden="true" />
             ))}
           </div>
         )}
         {others.map((a) => (
           a.type === 'video'
             ? (signedUrls[a.path]
-                ? <video key={a.path} controls preload="metadata" playsInline src={signedUrls[a.path]} className="rounded-lg w-full max-h-96 bg-black border border-border" />
-                : <Skeleton key={a.path} className="h-40 w-full rounded-lg" />)
-            : <a key={a.path} href={signedUrls[a.path] || '#'} target="_blank" rel="noopener noreferrer"
-                 className="flex items-center gap-2 text-sm text-primary border border-border rounded-lg px-3 py-2 bg-muted/30">
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate">{a.name}</span>
-                <span className="text-[11px] text-muted-foreground ml-auto whitespace-nowrap">PDF · {(a.size / 1024 / 1024).toFixed(1)} MB</span>
+                ? <video key={a.path} controls preload="metadata" playsInline src={signedUrls[a.path]} />
+                : <div key={a.path} className="dc-skel-in" aria-hidden="true" />)
+            : <a key={a.path} href={signedUrls[a.path] || '#'} target="_blank" rel="noopener noreferrer" className="dc-post-file">
+                <FileText />
+                <span className="nm">{a.name}</span>
+                <span className="sz">PDF · {(a.size / 1024 / 1024).toFixed(1)} MB</span>
               </a>
         ))}
       </div>
@@ -777,78 +775,81 @@ export default function Foro() {
 
   const visiblePosts = selectedCategory === 'all' ? posts : posts.filter((p) => p.category === selectedCategory);
   const categoryMeta = (id: ForumCategory) => CATEGORIES.find((c) => c.id === id)!;
-  const chipClass = (active: boolean) =>
-    `inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 border ${
-      active ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-foreground border-border'
-    }`;
   const dailyCats = CATEGORIES.filter((c) => c.daily);
   const promptFor = (cat: ForumCategory) => todayPrompts.find((p) => p.category === cat);
 
   // ---- Pestaña FEED -----------------------------------------------------------
-  const feed = (
-    <>
-      {/* HOY — las propuestas del día (una por categoría) + Casos de éxito */}
-      <Card className="mb-4 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <CalendarDays className="w-5 h-5 text-primary shrink-0" />
-              <div className="min-w-0">
-                <div className="font-semibold text-foreground leading-tight">{t('forum.today')} · {cap(dayFmt.format(new Date()))}</div>
-                <div className="text-xs text-muted-foreground">{t('forum.todayIntro')}</div>
-              </div>
-            </div>
-          </div>
-          {promptsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
-              {CATEGORIES.map((c) => <Skeleton key={c.id} className="h-28 w-full rounded-lg" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2">
-              {dailyCats.map((c) => {
-                const Icon = c.icon;
-                const p = promptFor(c.id);
-                // «Casos de éxito» ya es daily (migración 20260912 amplía
-                // forum_publish_daily + siembra el banco), pero antes de aplicarla
-                // — o si el banco se agota ese día— no hay propuesta: en ese caso
-                // se usa la invitación propia de esta categoría, no el texto genérico.
-                const isExito = c.id === 'caso_exito';
-                return (
-                  <div key={c.id} className={`rounded-lg border p-3 flex flex-col gap-2 ${c.anonymous ? 'border-amber-300/60 bg-amber-50/40 dark:bg-amber-950/10' : 'border-border bg-muted/20'}`}>
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-                      <Icon className="w-3.5 h-3.5" />
-                      <span className="truncate">{t(c.labelKey)}</span>
-                    </div>
-                    <p className="text-[13px] leading-snug text-foreground flex-1 break-words">
-                      {p ? p.title : (
-                        <span className="text-muted-foreground">
-                          {isExito ? t('mm2.community.successCardText') : t('forum.noPromptToday')}
-                        </span>
-                      )}
-                    </p>
-                    {p?.body && <p className="text-[12px] text-muted-foreground leading-snug line-clamp-3">{p.body}</p>}
-                    {p?.image_url && <img src={p.image_url} alt="" className="rounded-md max-h-32 w-full object-cover border border-border" />}
-                    <Button size="sm" className="h-8 text-xs gap-1 self-start" onClick={() => openComposer(c.id, p || null)}>
-                      <Send className="w-3.5 h-3.5" />
-                      {p ? t('forum.respond') : isExito ? t('mm2.community.successCardCta') : t('forum.publishFree')}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+  // Diseño 12-sep-2026 (lenguaje de los mockups de Marta): columna principal
+  // (feed) + carril «Propuestas de hoy». El carril es UN solo nodo del DOM: a
+  // ≥1280 px va pegado a la derecha (sticky) y por debajo se coloca ENCIMA del
+  // feed en rejilla de 2 (1 en móvil) con grid-template-areas
+  // (src/styles/diseno-comunidad.css). Mismos datos y handlers que antes.
+  // `bg-card` como en DoctorPatients: exime a todo lo de dentro de las reglas
+  // globales de index.css que pintan de blanco iconos, bordes e inputs sueltos.
+  const promptsRail = (
+    <aside className="dc-feed-rail pro-card pro-card-pad bg-card" aria-label={t('mm2.community.todayPrompts')}>
+      <div className="dc-rail-head">
+        <span className="pro-icon-box"><CalendarDays /></span>
+        <div className="min-w-0">
+          <h2 className="dc-rail-title">{t('mm2.community.todayPrompts')}</h2>
+          <div className="dc-rail-date">{t('forum.today')} · {cap(dayFmt.format(new Date()))}</div>
+          <div className="dc-rail-intro">{t('forum.todayIntro')}</div>
+        </div>
+      </div>
+      {promptsLoading ? (
+        <div className="dc-prompts" aria-busy="true">
+          {dailyCats.map((c) => <div key={c.id} className="dc-skel-in" aria-hidden="true" />)}
+        </div>
+      ) : (
+        <div className="dc-prompts">
+          {dailyCats.map((c) => {
+            const Icon = c.icon;
+            const p = promptFor(c.id);
+            // «Casos de éxito» ya es daily (migración 20260912 amplía
+            // forum_publish_daily + siembra el banco), pero antes de aplicarla
+            // — o si el banco se agota ese día— no hay propuesta: en ese caso
+            // se usa la invitación propia de esta categoría, no el texto genérico.
+            const isExito = c.id === 'caso_exito';
+            return (
+              <article key={c.id} className={`dc-prompt${c.anonymous ? ' is-anon' : ''}`}>
+                <div className="dc-prompt-cat">
+                  <Icon />
+                  <span>{t(c.labelKey)}</span>
+                </div>
+                <p className={`dc-prompt-text${p ? '' : ' is-empty'}`}>
+                  {p ? p.title : (isExito ? t('mm2.community.successCardText') : t('forum.noPromptToday'))}
+                </p>
+                {p?.body && <p className="dc-prompt-body">{p.body}</p>}
+                {p?.image_url && <img src={p.image_url} alt="" className="dc-prompt-img" />}
+                <button type="button" className="pro-btn pro-btn-teal pro-btn-xs" onClick={() => openComposer(c.id, p || null)}>
+                  <Send />
+                  {p ? t('forum.respond') : isExito ? t('mm2.community.successCardCta') : t('forum.publishFree')}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </aside>
+  );
 
-      {/* Category chips — seleccionables (sólido/outline) sin hover que parpadee */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
-        <button type="button" className={chipClass(selectedCategory === 'all')} onClick={() => setSelectedCategory('all')}>
+  const feedMain = (
+    <div className="dc-feed-main">
+      {/* Chips de categoría: aria-pressed (nunca role=tab), en varias líneas, nunca cortados */}
+      <div className="dc-chips" role="group" aria-label={t('forum.categoryLabel')}>
+        <button
+          type="button"
+          className={`pro-chip${selectedCategory === 'all' ? ' is-active' : ''}`}
+          aria-pressed={selectedCategory === 'all'}
+          onClick={() => setSelectedCategory('all')}
+        >
           {t('forum.allCategories')}
         </button>
         {CATEGORIES.map((c) => {
           const Icon = c.icon;
+          const active = selectedCategory === c.id;
           return (
-            <button key={c.id} type="button" className={chipClass(selectedCategory === c.id)} onClick={() => setSelectedCategory(c.id)}>
+            <button key={c.id} type="button" className={`pro-chip${active ? ' is-active' : ''}`} aria-pressed={active} onClick={() => setSelectedCategory(c.id)}>
               <Icon className="w-3.5 h-3.5" />
               {t(c.labelKey)}
             </button>
@@ -856,22 +857,20 @@ export default function Foro() {
         })}
       </div>
 
-      {/* Posts */}
+      {/* Publicaciones */}
       {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-28 w-full" />
-          <Skeleton className="h-28 w-full" />
-          <Skeleton className="h-28 w-full" />
+        <div className="dc-posts" aria-busy="true">
+          <div className="dc-skel" aria-hidden="true" />
+          <div className="dc-skel" aria-hidden="true" />
+          <div className="dc-skel" aria-hidden="true" />
         </div>
       ) : visiblePosts.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <MessagesSquare className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p className="text-sm">{t('forum.empty')}</p>
-          </CardContent>
-        </Card>
+        <div className="pro-card bg-card dc-empty">
+          <MessagesSquare />
+          <p>{t('forum.empty')}</p>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div className="dc-posts">
           {visiblePosts.map((post, idx) => {
             const meta = categoryMeta(post.category);
             const Icon = meta.icon;
@@ -886,68 +885,62 @@ export default function Foro() {
             return (
               <React.Fragment key={post.id}>
                 {postDay !== prevDay && (
-                  <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    <span>{dayLabel(postDay)}</span>
-                    <div className="h-px bg-border flex-1" />
-                  </div>
+                  <div className="dc-day"><span>{dayLabel(postDay)}</span></div>
                 )}
-                <Card id={`post-${post.id}`} className={highlighted ? 'ring-2 ring-primary/40' : undefined}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                        <Badge variant="secondary" className="gap-1 text-[11px]">
-                          <Icon className="w-3 h-3" />
+                <article id={`post-${post.id}`} className={`pro-card bg-card dc-post${highlighted ? ' is-focus' : ''}`}>
+                    <div className="dc-post-top">
+                      <div className="dc-post-tags">
+                        <span className="pro-pill pro-pill-info pro-pill-plain">
+                          <Icon />
                           {t(meta.labelKey)}
-                        </Badge>
+                        </span>
                         {post.specialty && (
-                          <Badge variant="outline" className="text-[11px] font-normal">{post.specialty}</Badge>
+                          <span className="pro-pill pro-pill-muted pro-pill-plain">{post.specialty}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="dc-post-actions">
                         {role === 'admin' && post.is_anonymous && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground"
+                          <button
+                            type="button"
+                            className="pro-kebab"
                             title={t('forum.reveal')}
                             aria-label={t('forum.reveal')}
                             onClick={() => openReveal(post)}
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                          </Button>
+                            <Eye />
+                          </button>
                         )}
                         {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive"
+                          <button
+                            type="button"
+                            className="pro-kebab is-danger"
                             aria-label={t('forum.delete')}
                             onClick={() => handleDeletePost(post)}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                            <Trash2 />
+                          </button>
                         )}
                       </div>
                     </div>
                     {prompt && (
-                      <p className="text-[11px] text-primary flex items-start gap-1 mb-1">
-                        <CornerDownRight className="w-3 h-3 mt-0.5 shrink-0" />
-                        <span className="min-w-0"><span className="text-muted-foreground">{t('forum.respondsTo')}: </span>{prompt.title}</span>
+                      <p className="dc-post-prompt">
+                        <CornerDownRight />
+                        <span><span className="lbl">{t('forum.respondsTo')}: </span>{prompt.title}</span>
                       </p>
                     )}
-                    <h3 className="font-semibold text-foreground leading-snug break-words">{post.title}</h3>
-                    <p className="text-sm text-foreground/90 mt-1 whitespace-pre-wrap break-words">{post.body}</p>
+                    <h3 className="dc-post-title">{post.title}</h3>
+                    <p className="dc-post-body">{post.body}</p>
                     {post.image_url && (
-                      <img src={post.image_url} alt="" className="rounded-lg max-h-72 sm:max-h-96 w-auto max-w-full mt-2 border border-border" />
+                      <img src={post.image_url} alt="" className="dc-post-img" />
                     )}
                     {renderAttachments(post.attachments)}
-                    <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1.5 min-w-0">
+                    <div className="dc-post-meta">
+                      <span className="who">
                         {post.is_anonymous ? (
-                          <><EyeOff className="w-3.5 h-3.5" />{t('forum.anonymous')}</>
+                          <><EyeOff />{t('forum.anonymous')}</>
                         ) : (
                           <>
-                            <span className="truncate">{post.authorName || 'Dr.'}</span>
+                            <span className="nm">{post.authorName || 'Dr.'}</span>
                             {/* Distintivo de categoría del autor (cliente 2026-08-28) */}
                             <ProfileCategoryMark userId={post.author_id} size="sm" className="flex-shrink-0" />
                           </>
@@ -957,18 +950,19 @@ export default function Foro() {
                       </span>
                       <button
                         type="button"
-                        className="flex items-center gap-1 flex-shrink-0"
+                        className="cmt"
+                        aria-expanded={isExpanded}
                         onClick={() => {
                           setExpandedPost(isExpanded ? null : post.id);
                           resetComposer();
                         }}
                       >
-                        <MessageCircle className="w-3.5 h-3.5" />
+                        <MessageCircle />
                         {commentCount} {t('forum.comments')}
                       </button>
                     </div>
                     {isExpanded && (
-                      <div className="mt-3 pt-3 border-t border-border">
+                      <div className="dc-post-comments">
                         {comments.length > 0 && (
                           <div className="divide-y divide-border/40 mb-2">
                             {comments.map((c) => renderComment(c))}
@@ -1049,14 +1043,13 @@ export default function Foro() {
                         />
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                </article>
               </React.Fragment>
             );
           })}
         </div>
       )}
-    </>
+    </div>
   );
 
   return (
@@ -1071,18 +1064,22 @@ export default function Foro() {
             </h1>
             <p className="pro-page-sub">{t('mm2.community.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {role === 'admin' && (
-              <Button asChild variant="outline" size="sm" className="gap-1.5 hidden sm:inline-flex">
-                <Link to="/admin/forum"><Settings2 className="w-4 h-4" />{t('forum.adminPanel')}</Link>
-              </Button>
+              <Link to="/admin/forum" className="pro-btn pro-btn-ghost dc-admin-link hidden sm:inline-flex">
+                <Settings2 />{t('forum.adminPanel')}
+              </Link>
             )}
             <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) { clearNewFiles(); setNewPrompt(null); } }}>
               <DialogTrigger asChild>
-                <Button className="gap-2 flex-shrink-0" onClick={() => { if (tab !== 'feed') setTab('feed'); if (!newSpecialty && mySpecialty) setNewSpecialty(mySpecialty); }}>
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('forum.newPost')}</span>
-                </Button>
+                <button
+                  type="button"
+                  className="pro-btn pro-btn-white w-full sm:w-auto"
+                  onClick={() => { if (tab !== 'feed') setTab('feed'); if (!newSpecialty && mySpecialty) setNewSpecialty(mySpecialty); }}
+                >
+                  <Plus />
+                  {t('forum.newPost')}
+                </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
                 <DialogHeader>
@@ -1234,7 +1231,7 @@ export default function Foro() {
         </div>
 
         {tab === 'feed' ? (
-          <div className="max-w-3xl">{feed}</div>
+          <div className="dc-feed">{feedMain}{promptsRail}</div>
         ) : view === 'medicos' ? (
           <Doctors embedded />
         ) : (

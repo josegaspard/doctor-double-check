@@ -33,7 +33,8 @@ import { SectionTabs, useSectionParam, type SectionTabItem } from '@/components/
 import UserProfilePage from '@/pages/UserProfile';
 import WalletPage from '@/pages/Wallet';
 import WalletLedgerPage from '@/pages/WalletLedger';
-import DoctorEarningsPage from '@/pages/DoctorEarnings';
+import DoctorEarningsPage, { EarningsRangeMenu, type EarningsRange } from '@/pages/DoctorEarnings';
+import '@/styles/diseno-finanzas.css';
 import DoctorInvoicesPage from '@/pages/DoctorInvoices';
 import DoctorBankAccountPage from '@/pages/DoctorBankAccount';
 import SubscribersListPage from '@/pages/SubscribersList';
@@ -44,7 +45,7 @@ import {
   ExternalLink, Moon, Sun, Trash2, AlertTriangle, User, Phone, MapPin, Lock, Clock,
   Gift, Palette, KeyRound, Pencil, Circle, LifeBuoy, Headphones, ChevronRight, BadgeCheck,
   Stethoscope, Wallet as WalletIcon, TrendingUp, Percent, Landmark, Receipt, ListOrdered,
-  Users, ShoppingCart, ShoppingBag, Megaphone, Rss, HeartPulse, Eye, BookOpen, ArrowRight,
+  Users, ShoppingCart, ShoppingBag, Megaphone, Rss, HeartPulse, Eye, BookOpen, ArrowRight, Banknote,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -93,6 +94,10 @@ const FINANCE_TABS: readonly FinanceTab[] = [
   'wallet', 'recargas', 'compras', 'suscripciones', 'marketplace', 'publicidad', 'referidos',
   'ingresos', 'comisiones', 'pendientes', 'suscriptores', 'banco', 'facturas', 'movimientos',
 ];
+/** Grupo Cobrar: el hero pasa a ser «Ingresos y pagos» (diseño de Marta, 12-sep-2026). */
+const FINANCE_COLLECT_TABS: readonly FinanceTab[] = ['ingresos', 'comisiones', 'pendientes', 'suscriptores', 'banco', 'facturas', 'movimientos'];
+/** Pestañas que incrustan DoctorEarnings: las únicas donde el rango de fechas del hero actúa. */
+const FINANCE_EARNINGS_TABS: readonly FinanceTab[] = ['ingresos', 'comisiones', 'pendientes', 'movimientos'];
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -119,6 +124,14 @@ export default function Settings() {
 
   // Finanzas (solo médico): Comprar / Cobrar, con ?f=
   const [financeTab, setFinanceTab] = useSectionParam<FinanceTab>('f', FINANCE_TABS, 'wallet');
+  // Diseño de Marta (12-sep-2026): en Finanzas el contenido ocupa todo el ancho a la
+  // derecha del carril (sin el resumen), y en el grupo Cobrar el hero es el de
+  // «Ingresos y pagos» con el rango de fechas y «Retirar saldo». El rango vive
+  // aquí porque lo pinta el hero; DoctorEarnings lo recibe como prop.
+  const isFinanzas = isDoctorCuenta && section === 'finanzas';
+  const isFinanzasCobrar = isFinanzas && FINANCE_COLLECT_TABS.includes(financeTab);
+  const isEarningsTab = isFinanzas && FINANCE_EARNINGS_TABS.includes(financeTab);
+  const [earningsRange, setEarningsRange] = useState<EarningsRange>('thisMonth');
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'ELIMINAR') {
@@ -770,9 +783,9 @@ export default function Settings() {
       case 'ingresos':
       case 'comisiones':
       case 'movimientos':
-        return <DoctorEarningsPage embedded />;
+        return <DoctorEarningsPage embedded wide range={earningsRange} />;
       case 'pendientes':
-        return <DoctorEarningsPage embedded initialTab="holds" />;
+        return <DoctorEarningsPage embedded wide range={earningsRange} initialTab="holds" />;
       case 'suscriptores':
         return <SubscribersListPage embedded />;
       case 'banco':
@@ -795,6 +808,7 @@ export default function Settings() {
           onChange={setFinanceTab}
           items={financeCompraTabs}
           variant="onLight"
+          className="flex-wrap"
           ariaLabel={t('mm2.common.tabs.cuenta.finanzasGrupos.comprar')}
         />
         <p className="px-2 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -805,10 +819,14 @@ export default function Settings() {
           onChange={setFinanceTab}
           items={financeCobraTabs}
           variant="onLight"
+          className="flex-wrap"
           ariaLabel={t('mm2.common.tabs.cuenta.finanzasGrupos.cobrar')}
         />
       </section>
-      {financeTabContent()}
+      {/* Grupo Comprar: subpáginas acotadas a ≈820 px para que no se estiren en la columna ancha */}
+      <div className={`space-y-3 sm:space-y-4 min-w-0 ${isFinanzasCobrar ? '' : 'fin-narrow'}`}>
+        {financeTabContent()}
+      </div>
     </div>
   );
 
@@ -827,22 +845,42 @@ export default function Settings() {
   return (
     <MainLayout>
       <div className="pro-container pro-page">
-        <div className="pro-page-head">
-          <div className="min-w-0">
-            <h1 className="pro-page-title"><SettingsIcon className="w-7 h-7" /> <span className="truncate">{t('pro.settings.title')}</span></h1>
-            <p className="pro-page-sub">{t('pro.settings.subtitle')}</p>
+        {isFinanzasCobrar ? (
+          /* Hero «Ingresos y pagos» (grupo Cobrar): rango de fechas + Retirar saldo.
+             «Retirar saldo» lleva a la cuenta bancaria, igual que en DoctorEarnings;
+             no existe ningún flujo de retiro y no se inventa. */
+          <div className="pro-page-head">
+            <div className="min-w-0">
+              <h1 className="pro-page-title">{t('pro.earnings.title')}</h1>
+              <p className="pro-page-sub">{t('pro.earnings.subtitle')}</p>
+            </div>
+            <div className="fin-hero-actions">
+              {isEarningsTab && <EarningsRangeMenu value={earningsRange} onChange={setEarningsRange} />}
+              {financeTab !== 'banco' && (
+                <button type="button" className="pro-btn pro-btn-live" onClick={() => setFinanceTab('banco')}>
+                  <Banknote /> {t('pro.earnings.withdraw')}
+                </button>
+              )}
+            </div>
           </div>
-          {/* Para el médico, «Perfil» ya es una pestaña de esta misma página:
-              el botón a /profile sobra (y hoy /profile es la MISMA página sin
-              incrustar; ver routesNeeded para la redirección). */}
-          {!isDoctorCuenta && (
-            <Link to="/profile" className="pro-btn pro-btn-white w-full sm:w-auto">
-              <User /> {t('pro.settings.goProfile')}
-            </Link>
-          )}
-        </div>
+        ) : (
+          <div className="pro-page-head">
+            <div className="min-w-0">
+              <h1 className="pro-page-title"><SettingsIcon className="w-7 h-7" /> <span className="truncate">{t('pro.settings.title')}</span></h1>
+              <p className="pro-page-sub">{t('pro.settings.subtitle')}</p>
+            </div>
+            {/* Para el médico, «Perfil» ya es una pestaña de esta misma página:
+                el botón a /profile sobra (y hoy /profile es la MISMA página sin
+                incrustar; ver routesNeeded para la redirección). */}
+            {!isDoctorCuenta && (
+              <Link to="/profile" className="pro-btn pro-btn-white w-full sm:w-auto">
+                <User /> {t('pro.settings.goProfile')}
+              </Link>
+            )}
+          </div>
+        )}
 
-        <div className="pro-work pro-work-set">
+        <div className={`pro-work pro-work-set ${isFinanzas ? 'fin-work' : ''}`}>
           {/* ------------------------------------------- carril de secciones */}
           <nav className="pro-card pro-setnav" aria-label={t('pro.settings.title')}>
             {sections.map(s => (
@@ -884,7 +922,9 @@ export default function Settings() {
             )}
           </div>
 
-          {/* ----------------------------------------------------- resumen */}
+          {/* ----------------------------------------------------- resumen
+              En Finanzas no se pinta: el contenido ocupa todo el ancho (diseño de Marta). */}
+          {!isFinanzas && (
           <aside className="min-w-0 space-y-3 sm:space-y-4 hidden xl:block">
             <section className="pro-card pro-card-pad">
               <div className="pro-card-head">
@@ -959,6 +999,7 @@ export default function Settings() {
               </div>
             </section>
           </aside>
+          )}
         </div>
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

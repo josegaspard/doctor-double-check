@@ -19,10 +19,11 @@ import { DoctorPatientSearch } from '@/components/doctor/DoctorPatientSearch';
 import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
-  Users, Plus, Search, ChevronDown, Calendar, Clock, CalendarDays, ClipboardList, FileText,
-  ArrowRight, MoreVertical, UserPlus, Link2, FolderOpen, MessageSquare, X, Copy,
+  Users, Plus, Search, ChevronDown, Calendar, CalendarDays, ClipboardList, FileText,
+  ArrowRight, MoreHorizontal, UserPlus, Link2, FolderOpen, MessageSquare, X, Copy,
 } from 'lucide-react';
-import { fill, initialsOf, norm, fmtDate, fmtTime } from '@/lib/proFormat';
+import { fill, initialsOf, norm, fmtDate, fmtDayShort, fmtTime } from '@/lib/proFormat';
+import '@/styles/diseno-pacientes.css';
 
 type Tab = 'all' | 'next' | 'followUp' | 'pending' | 'docs';
 type Sort = 'recent' | 'name' | 'next';
@@ -144,10 +145,12 @@ export default function DoctorPatients() {
     }
   };
 
+  // Fecha corta («5 sep») como en el mockup; el año solo aparece si no es el actual.
   const dateOr = (iso: string | null, withTime = false) => {
     if (!iso) return t('pro.patients.noDate');
     const d = new Date(iso);
-    return withTime ? `${fmtDate(d, language)} · ${fmtTime(d, language)}` : fmtDate(d, language);
+    const day = d.getFullYear() === new Date().getFullYear() ? fmtDayShort(d, language) : fmtDate(d, language);
+    return withTime ? `${day} · ${fmtTime(d, language)}` : day;
   };
 
   const recordHref = (p: DoctorPatient, tabId?: string) => `/doctor/patients/${p.id}${tabId ? `?tab=${tabId}` : ''}`;
@@ -171,9 +174,9 @@ export default function DoctorPatients() {
           </button>
         </div>
 
-        <section className="pro-card pro-card-pad bg-card min-w-0">
+        <section className="pro-card pro-card-pad bg-card min-w-0 dp-shell">
           {/* Buscador · pestañas · orden */}
-          <div className="flex flex-col lg:flex-row gap-3 lg:items-center mb-3">
+          <div className="dp-toolbar flex flex-col lg:flex-row gap-3 lg:items-center mb-3">
             <div className="pro-search lg:max-w-[520px] lg:flex-1">
               <Search />
               <input type="search" className="bg-white" value={query} onChange={e => setQuery(e.target.value)} placeholder={t('pro.patients.searchPlaceholder')} aria-label={t('pro.patients.searchPlaceholder')} />
@@ -205,7 +208,7 @@ export default function DoctorPatients() {
           )}
 
           {loading && patients.length === 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="dp-grid">
               {[0, 1, 2].map(i => <div key={i} className="h-44 rounded-2xl bg-[#eef3f6] animate-pulse" />)}
             </div>
           ) : patients.length === 0 ? (
@@ -216,20 +219,20 @@ export default function DoctorPatients() {
               <button type="button" className="pro-btn pro-btn-teal mt-4" onClick={() => setAddOpen(true)}><Plus /> {t('pro.patients.add')}</button>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {list.length === 0 && <p className="pro-muted text-sm sm:col-span-2 xl:col-span-3">{t('pro.patients.noMatch')}</p>}
+            <div className="dp-grid">
+              {list.length === 0 && <p className="pro-muted text-sm dp-span">{t('pro.patients.noMatch')}</p>}
               {list.map(p => (
-                <article key={p.id} className="pro-patient">
+                <article key={p.id} className="pro-patient dp-card">
                   <div className="top">
                     <span className="pro-initials">{p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : initialsOf(nameOf(p))}</span>
                     <div className="min-w-0 flex-1">
                       <div className="name">{p.countryFlag ? `${p.countryFlag} ` : ''}{nameOf(p)}</div>
-                      <div className="mail">{p.email || '—'}</div>
+                      <div className="mail" title={p.email || undefined}>{p.email || '—'}</div>
                       <span className={`pro-pill mt-1.5 ${statusClass(p)}`}>{statusLabel(p)}</span>
                     </div>
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
-                        <button type="button" className="pro-kebab" aria-label={t('nav.more')}><MoreVertical /></button>
+                        <button type="button" className="pro-kebab" aria-label={t('nav.more')}><MoreHorizontal /></button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52">
                         <DropdownMenuItem onClick={() => navigate(recordHref(p))}><Users className="w-4 h-4 mr-2" />{t('pro.patients.viewRecord')}</DropdownMenuItem>
@@ -239,11 +242,11 @@ export default function DoctorPatients() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <div className="dates">
+                  <div className="dp-meta">
                     <span><Calendar />{t('pro.patients.lastConsultation')}: {dateOr(p.lastConsultationAt)}</span>
-                    <span><Clock />{t('pro.patients.next')}: {dateOr(p.nextAppointmentAt, true)}</span>
+                    <span>{t('pro.patients.next')}: {dateOr(p.nextAppointmentAt, true)}</span>
                   </div>
-                  <div className="acts">
+                  <div className="dp-acts">
                     <Link to={recordHref(p, 'agenda')} title={t('pro.patients.agenda')}><CalendarDays /> <span>{t('pro.patients.agenda')}</span></Link>
                     <Link to={recordHref(p, 'consultas')} title={t('pro.patients.consultations')}><ClipboardList /> <span>{t('pro.patients.consultations')}</span></Link>
                     <Link to={recordHref(p, 'documentos')} title={t('pro.patients.documents')}><FileText /> <span>{t('pro.patients.documents')}</span></Link>
@@ -260,15 +263,15 @@ export default function DoctorPatients() {
           )}
 
           {/* Empieza a organizar tu consulta */}
-          <div className="pro-quick mt-4 flex-col md:flex-row md:items-center">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="pro-quick dp-quick mt-4">
+            <div className="dp-quick-intro">
               <span className="pro-icon-box"><UserPlus /></span>
               <div className="min-w-0">
                 <div className="font-heading font-extrabold pro-ink text-base sm:text-[17px]">{t('pro.patients.getStarted')}</div>
                 <div className="pro-muted text-xs sm:text-sm">{t('pro.patients.getStartedDesc')}</div>
               </div>
             </div>
-            <div className="pro-quick-acts">
+            <div className="dp-quick-acts">
               <button type="button" onClick={() => setAddOpen(true)}><UserPlus /> {t('pro.patients.add')}</button>
               <button type="button" onClick={copyLink}><Link2 /> {t('pro.patients.shareLink')}</button>
               <button type="button" onClick={() => setTab('docs')}><FolderOpen /> {t('mm2.patients.list.sharedDocs')}</button>

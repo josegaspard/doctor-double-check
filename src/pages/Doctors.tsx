@@ -48,6 +48,7 @@ import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
+import '@/styles/diseno-comunidad.css';
 
 // DIRECTORIO DE MÉDICOS (Comunidad > Descubrir > Médicos, 11-sep-2026).
 //
@@ -1010,7 +1011,9 @@ export default function Doctors({
         </Card>
       ) : (
         <>
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {/* La rejilla real la fija .dc-doc-grid por ancho disponible (tarjetas ≥280 px):
+              con 3 columnas por viewport a 1024 px las tarjetas salían estranguladas. */}
+          <div className="dc-doc-grid grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {visibleDoctors.map(doctor => {
               const isAvailable = isDoctorAvailableNow(doctor);
               const isFollowing = followedDoctors.has(doctor.user_id);
@@ -1028,9 +1031,11 @@ export default function Doctors({
                   <CardContent className="p-0">
                     {/* Top section with subtle gradient */}
                     <div className="p-4 pb-3">
-                      <div className="flex items-start gap-3">
+                      {/* Cabecera en rejilla (diseño 12-sep-2026): foto en dos filas, nombre en
+                          2 líneas sin elipsis y el precio en su propia fila bajo las insignias. */}
+                      <div className="dc-doc-head">
                         {/* Avatar */}
-                        <div className="relative flex-shrink-0">
+                        <div className="dc-doc-avatar relative flex-shrink-0">
                           <Avatar className="w-14 h-14 border-2 border-background shadow-sm">
                             <AvatarImage src={doctor.avatar_url || undefined} />
                             <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
@@ -1043,9 +1048,9 @@ export default function Doctors({
                         </div>
 
                         {/* Name + specialty + badge — wrap-friendly para tablet/móvil */}
-                        <div className="flex-1 min-w-0">
+                        <div className="dc-doc-id">
                           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-0.5 min-w-0">
-                            <h3 className="font-semibold text-sm truncate min-w-0 max-w-full group-hover:text-primary transition-colors">
+                            <h3 className="dc-doc-name font-semibold text-sm group-hover:text-primary transition-colors">
                               {doctor.name || 'Doctor'}
                             </h3>
                             {doctor.is_identity_verified && (
@@ -1075,33 +1080,32 @@ export default function Doctors({
                           </div>
                         </div>
 
-                        {/* Precio visible para todos los roles — tooltip aclara si el visor no puede comprar */}
+                        {/* Precio visible para todos los roles — tooltip aclara si el visor no puede comprar.
+                            Fila propia bajo las insignias: nunca empuja el nombre. */}
                         {doctor.consultation_fee > 0 && (
                           <div
-                            className="flex-shrink-0 text-right"
+                            className="dc-doc-price"
                             title={role === 'patient' || role === 'resident' ? undefined : t('doctors.priceTooltip')}
                           >
-                            <p className="text-[10px] text-muted-foreground leading-tight">
-                              {t('doctors.from')}
-                            </p>
+                            <span className="text-muted-foreground">{t('doctors.from')}</span>
                             {role === 'resident' ? (
-                              <div className="flex flex-col items-end">
+                              <>
                                 <PriceDisplay
                                   amount={doctor.consultation_fee}
                                   size="sm"
-                                  className="text-[10px] text-muted-foreground line-through leading-none"
+                                  className="text-muted-foreground line-through"
                                 />
                                 <PriceDisplay
                                   amount={doctor.consultation_fee * 0.5}
                                   size="sm"
-                                  className="font-bold text-primary"
+                                  className="amt font-bold text-primary"
                                 />
-                              </div>
+                              </>
                             ) : (
                               <PriceDisplay
                                 amount={doctor.consultation_fee}
                                 size="sm"
-                                className="font-bold text-primary"
+                                className="amt font-bold text-primary"
                               />
                             )}
                           </div>
@@ -1110,7 +1114,7 @@ export default function Doctors({
                     </div>
 
                     {/* Stats bar */}
-                    <div className="px-4 pb-3 flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="dc-doc-stats px-4 pb-3 flex items-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Star className="w-3.5 h-3.5 text-warning fill-warning" />
                         <span className="font-medium text-foreground">{Number(doctor.rating).toFixed(1)}</span>
@@ -1143,15 +1147,15 @@ export default function Doctors({
                     )}
 
                     {/* Bottom: availability + actions */}
-                    <div className="px-4 py-3 border-t bg-muted/20 flex items-center justify-between gap-2">
+                    <div className="dc-doc-foot px-4 py-3 border-t bg-muted/20 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         {isAvailable ? (
-                          <div className="flex items-center gap-1.5 text-success text-xs font-medium">
+                          <div className="dc-doc-avail flex items-center gap-1.5 text-success text-xs font-medium">
                             <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
                             {t('doctors.availableNow')}
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                          <div className="dc-doc-avail flex items-center gap-1.5 text-muted-foreground text-xs">
                             <Clock className="w-3 h-3" />
                             {t('doctors.notAvailable')}
                           </div>

@@ -1,0 +1,112 @@
+/* Diseño de Marta (12-sep-2026) · Agenda profesional.
+   Solo presentación: ajusta lo que ya pinta DoctorAgenda.tsx con las clases pro-*
+   de index.css. Todo va bajo .dz-agenda para no tocar otras pantallas. */
+
+/* ---------- Cabecera: título + tres acciones ---------- */
+.dz-agenda .dz-agenda-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .dz-agenda .dz-agenda-actions { width: auto; justify-content: flex-end; }
+}
+@media (max-width: 639px) {
+  .dz-agenda .dz-agenda-actions > .pro-btn { flex: 1 1 auto; }
+}
+.dz-agenda .pro-page-title > span { min-width: 0; }
+
+/* ---------- Barra de herramientas del calendario ---------- */
+.dz-agenda .dz-cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+.dz-agenda .dz-cal-toolbar > h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+/* Los dos segmentos van juntos: si no caben (1024 px) bajan de línea en bloque y
+   quedan a la derecha, como en el mockup */
+.dz-agenda .dz-cal-segs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+@media (max-width: 639px) {
+  .dz-agenda .dz-cal-toolbar > h2 { flex-basis: 100%; white-space: normal; order: -1; }
+  .dz-agenda .dz-cal-segs { flex: 1 1 100%; margin-left: 0; }
+}
+
+/* Accesos al carril en móvil/tableta: tres botones iguales, etiqueta completa */
+.dz-agenda .dz-rail-mobile {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.dz-agenda .dz-rail-mobile .pro-btn {
+  flex-direction: column;
+  height: auto;
+  min-height: 56px;
+  padding: 8px 6px;
+  gap: 4px;
+  white-space: normal;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.15;
+}
+.dz-agenda .dz-rail-mobile .pro-btn svg { width: 17px; height: 17px; }
+/* En escritorio (≥1024) manda el carril lateral; esta regla gana a `lg:hidden` por especificidad */
+@media (min-width: 1024px) {
+  .dz-agenda .dz-rail-mobile { display: none; }
+}
+
+/* ---------- Rejilla horaria ---------- */
+/* Cabeceras de día cortas «Lun 7 sep»: sin elipsis nunca */
+.dz-agenda .pro-cal-day { overflow: visible; text-overflow: clip; font-size: 12.5px; }
+.dz-agenda .pro-cal-day.is-today { color: #2f6fdb; }
+/* Los eventos de una hora muestran sus tres líneas (hora · nombre · estado) */
+.dz-agenda .pro-cal-ev { padding: 5px 8px; line-height: 1.2; }
+.dz-agenda .pro-cal-ev .st { margin-top: 3px; }
+
+/* Horario de atención como bloque «Disponible» (mockup): no tapa los clics */
+.dz-agenda .dz-avail-band {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  border-radius: 10px;
+  background: rgba(214, 229, 250, 0.62);
+  border-left: 3px solid #7fa7e3;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--pro-ink-2);
+  overflow: hidden;
+  pointer-events: none;
+}
+.dz-agenda .dz-avail-band b { display: block; font-weight: 800; font-size: 12.5px; color: var(--pro-ink); }
+.dz-agenda .dz-avail-band > span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dz-agenda .dz-avail-band svg { width: 16px; height: 16px; margin-top: 8px; color: #2f6fdb; }
+.dz-agenda .dz-avail-band.is-short svg { display: none; }
+
+/* ---------- Carril lateral (Hoy · Resumen · Próximo Live) ---------- */
+.dz-agenda .dz-agenda-rail { gap: 10px; }
+.dz-agenda .dz-agenda-rail .pro-rail-tab {
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 118px;
+  padding: 16px 10px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+/* El chevrón queda arriba y apunta hacia la izquierda, como en el mockup */
+.dz-agenda .dz-agenda-rail .pro-rail-tab svg { transform: rotate(180deg); width: 16px; height: 16px; }

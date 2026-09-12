@@ -30,10 +30,11 @@ import { ScheduleEditor } from '@/components/doctor/schedule/ScheduleEditor';
 import { DOCTOR_SECTION_BY_ID, doctorPatientHref } from '@/lib/doctorSections';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Ban, Plus, Radio, Video,
-  Clock, MessageSquare, Loader2, Trash2, ArrowRight, ListChecks, Sun, User, Users,
+  Clock, MessageSquare, Loader2, Trash2, ArrowRight, ListChecks, Sun, User, Users, Settings,
 } from 'lucide-react';
 import { fill, cap, fmtTime, fmtDayLong, whenLabel, tzLabel, initialsOf } from '@/lib/proFormat';
 import { getIntlLocale } from '@/lib/dateLocale';
+import '@/styles/diseno-agenda.css';
 
 const DoctorConsultations = React.lazy(() => import('@/pages/DoctorConsultations'));
 const DoctorAvailabilityPage = React.lazy(() => import('@/pages/DoctorAvailability'));
@@ -46,9 +47,11 @@ type View = 'month' | 'week' | 'day';
 type Filter = 'all' | 'consultations' | 'lives' | 'availability';
 type Rail = 'today' | 'summary' | 'nextLive';
 
-const HOUR_START = 7;
-const HOUR_END = 21; // exclusivo: la última fila es 20:00–21:00
-const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+// Franja mínima de la rejilla (diseño 12-sep-2026): 08:00–21:00, es decir, filas de
+// 08:00 a 20:00. Si el horario del médico o algún evento visible se sale de ahí, la
+// franja se amplía (ver hourStart/hourEnd en el componente).
+const MIN_HOUR_START = 8;
+const MIN_HOUR_END = 21; // exclusivo: la última fila es 20:00–21:00
 const WEEK = { weekStartsOn: 1 as const };
 const HOURS_COLOR = '#7fa7e3';
 
@@ -193,8 +196,29 @@ export default function DoctorAgenda() {
   }, [scheduleRanges, range.start, range.end]);
   const showHours = filter === 'all' || filter === 'availability';
 
+  // Franja de la rejilla: al menos 08:00–20:00; más amplia si el horario del médico o
+  // algún evento visible (que no sea un bloqueo de día completo) se sale de ahí.
+  const { hourStart, hourEnd } = useMemo(() => {
+    let s = MIN_HOUR_START;
+    let e = MIN_HOUR_END;
+    hoursByDay.forEach(list => list.forEach(h => {
+      s = Math.min(s, Math.floor(toMin(h.start) / 60));
+      e = Math.max(e, Math.ceil(toMin(h.end) / 60));
+    }));
+    visible.forEach(ev => {
+      if (ev.kind === 'blocked' && ev.durationMinutes >= 24 * 60) return;
+      const base = startOfDay(ev.start).getTime();
+      s = Math.min(s, Math.floor((ev.start.getTime() - base) / 3600000));
+      e = Math.max(e, Math.ceil((ev.end.getTime() - base) / 3600000));
+    });
+    s = Math.max(0, s);
+    e = Math.min(24, Math.max(e, s + 1));
+    return { hourStart: s, hourEnd: e };
+  }, [hoursByDay, visible]);
+  const hours = useMemo(() => Array.from({ length: hourEnd - hourStart }, (_, i) => hourStart + i), [hourStart, hourEnd]);
+
   const HOUR_PX = isMobile ? 52 : 56;
-  const totalH = HOURS.length * HOUR_PX;
+  const totalH = hours.length * HOUR_PX;
   const dayKey = (d: Date) => format(d, 'yyyy-MM-dd');
   const patientLabel = (e: AgendaEvent) => (e.kind === 'appointment' ? e.patientName || t('mm2.patients.unnamed') : e.title);
   const durationLabel = (m: number) => (m < 60 ? `${m} ${t('pro.common.min')}` : `${m / 60} ${t('pro.common.hours')}`);
@@ -245,7 +269,13 @@ export default function DoctorAgenda() {
     return romance ? `${s.getDate()} ${month(s)} – ${e.getDate()} ${month(e)} ${e.getFullYear()}` : `${cap(month(s))} ${s.getDate()} – ${cap(month(e))} ${e.getDate()}, ${e.getFullYear()}`;
   };
 
-  const dayHead = (d: Date) => cap(new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(d).replace(/\./g, ''));
+  // Cabecera de día corta «Lun 7 sep» (mockup). En chino se deja el orden de Intl.
+  const dayHead = (d: Date) => {
+    if (/^zh/.test(language)) return new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(d);
+    const weekday = cap(new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d).replace(/\./g, ''));
+    const month = new Intl.DateTimeFormat(locale, { month: 'short' }).format(d).replace(/\./g, '');
+    return `${weekday} ${d.getDate()} ${month}`;
+  };
 
   const kindLabel = (e: AgendaEvent) => {
     if (e.kind === 'appointment') return e.status === 'requested' ? t('pro.agenda.pendingConsultation') : t('pro.agenda.consultation');
@@ -363,41 +393,45 @@ export default function DoctorAgenda() {
           <div key={d.toISOString()} className={`pro-cal-day ${isToday(d) ? 'is-today' : ''}`}>{gridDays.length === 1 ? fmtDayLong(d, language) : dayHead(d)}</div>
         ))}
       </div>
-      <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: isMobile ? '58vh' : '64vh' }}>
+      {/* La franja completa se ve sin desplazamiento interno (mockup): la página es la que baja. */}
+      <div>
         <div className="pro-cal-body">
           <div className="pro-cal-gutter" style={{ height: totalH }}>
-            {HOURS.map(h => <div key={h} className="pro-cal-hour">{String(h).padStart(2, '0')}:00</div>)}
+            {hours.map(h => <div key={h} className="pro-cal-hour">{String(h).padStart(2, '0')}:00</div>)}
           </div>
           {gridDays.map(d => {
-            const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), HOUR_START, 0, 0, 0);
+            const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hourStart, 0, 0, 0);
             const dayEvents = visible.filter(e => isSameDay(e.start, d) || (e.start < startOfDay(d) && e.end > startOfDay(d)));
             const laid = layoutDay(dayEvents);
             const nowTop = isToday(d) ? ((nowTick.getTime() - dayStart.getTime()) / 3600000) * HOUR_PX : -1;
             return (
               <div key={d.toISOString()} className={`pro-cal-col ${isToday(d) ? 'is-today' : ''}`} style={{ height: totalH }}>
-                {HOURS.map(h => (
-                  <div key={h} className="pro-cal-slot" style={{ top: (h - HOUR_START) * HOUR_PX }} onClick={() => openSlot(d, h)} role="button" aria-label={`${dayHead(d)} ${String(h).padStart(2, '0')}:00`} />
+                {hours.map(h => (
+                  <div key={h} className="pro-cal-slot" style={{ top: (h - hourStart) * HOUR_PX }} onClick={() => openSlot(d, h)} role="button" aria-label={`${dayHead(d)} ${String(h).padStart(2, '0')}:00`} />
                 ))}
-                {/* Horario de atención: franja de fondo que no tapa los clics */}
+                {/* Horario de atención: bloque «Disponible» de fondo que no tapa los clics */}
                 {showHours && (hoursByDay.get(dayKey(d)) || []).map(h => {
-                  const from = Math.max(0, toMin(h.start) - HOUR_START * 60);
-                  const to = Math.min(HOURS.length * 60, toMin(h.end) - HOUR_START * 60);
+                  const from = Math.max(0, toMin(h.start) - hourStart * 60);
+                  const to = Math.min(hours.length * 60, toMin(h.end) - hourStart * 60);
                   if (to <= from) return null;
+                  const bandH = ((to - from) / 60) * HOUR_PX;
                   return (
                     <div
                       key={`hours-${h.start}-${h.end}`}
                       aria-hidden="true"
-                      style={{
-                        position: 'absolute', left: 0, right: 0, top: (from / 60) * HOUR_PX, height: ((to - from) / 60) * HOUR_PX,
-                        background: 'rgba(127,167,227,0.16)', borderLeft: `3px solid ${HOURS_COLOR}`, pointerEvents: 'none',
-                      }}
-                    />
+                      className={`dz-avail-band ${bandH < 72 ? 'is-short' : ''}`}
+                      style={{ top: (from / 60) * HOUR_PX, height: bandH }}
+                    >
+                      <b>{h.start} – {h.end}</b>
+                      <span>{t('pro.agenda.available')}</span>
+                      <CalendarIcon />
+                    </div>
                   );
                 })}
                 {laid.map(({ ev, lane, count }) => {
                   const startMin = Math.max(0, (ev.start.getTime() - dayStart.getTime()) / 60000);
-                  const endMin = Math.min(HOURS.length * 60, (ev.end.getTime() - dayStart.getTime()) / 60000);
-                  if (endMin <= 0 || startMin >= HOURS.length * 60) return null;
+                  const endMin = Math.min(hours.length * 60, (ev.end.getTime() - dayStart.getTime()) / 60000);
+                  if (endMin <= 0 || startMin >= hours.length * 60) return null;
                   const top = (startMin / 60) * HOUR_PX;
                   const height = Math.max(28, ((endMin - startMin) / 60) * HOUR_PX - 2);
                   const w = 100 / count;
@@ -426,7 +460,7 @@ export default function DoctorAgenda() {
             <div key={d.toISOString()} className={`pro-month-cell ${isSameMonth(d, cursor) ? '' : 'is-out'} ${isToday(d) ? 'is-today' : ''}`} onClick={() => { setCursor(d); setView('day'); }}>
               <span className="d">{d.getDate()}</span>
               {hours.length > 0 && (
-                <span className="pro-month-ev" style={{ borderLeftColor: HOURS_COLOR, background: '#eef4fd' }} title={t('mm2.agenda.hoursLegend')}>
+                <span className="pro-month-ev" style={{ borderLeftColor: HOURS_COLOR, background: '#eef4fd' }} title={t('pro.agenda.available')}>
                   <Clock className="inline w-3 h-3 -mt-0.5 mr-0.5" />{hours.map(h => `${h.start}–${h.end}`).join(', ')}
                 </span>
               )}
@@ -444,9 +478,11 @@ export default function DoctorAgenda() {
     </div>
   );
 
-  const railButton = (key: Rail, label: string, Icon: React.ElementType) => (
-    <button key={key} type="button" className={`pro-rail-tab ${rail === key ? 'is-active' : ''}`} onClick={() => setRail(key)}>
-      <Icon className="w-4 h-4" /> {label}
+  // Pastilla del carril (mockup): etiqueta vertical con el chevrón arriba. El texto va
+  // rotado 180° por CSS, así que el último hijo es el que queda arriba.
+  const railButton = (key: Rail, label: string) => (
+    <button key={key} type="button" className={`pro-rail-tab ${rail === key ? 'is-active' : ''}`} onClick={() => setRail(key)} aria-pressed={rail === key}>
+      {label} <ChevronLeft aria-hidden="true" />
     </button>
   );
 
@@ -538,15 +574,17 @@ export default function DoctorAgenda() {
 
   return (
     <MainLayout>
-      <div className="pro-container pro-page">
+      <div className="pro-container pro-page dz-agenda">
+        {/* Cabecera (mockup): «Agenda profesional» + Configurar disponibilidad · Bloquear horario · + Nueva consulta */}
         <div className="pro-page-head">
           <div className="min-w-0">
-            <h1 className="pro-page-title"><CalendarIcon className="w-7 h-7" /> <span className="truncate">{t('mm2.agenda.title')}</span></h1>
-            <p className="pro-page-sub">{t('mm2.agenda.subtitle')}</p>
+            <h1 className="pro-page-title"><CalendarIcon className="w-7 h-7" /> <span>{t('pro.agenda.title')}</span></h1>
+            <p className="pro-page-sub">{t('pro.agenda.subtitle')}</p>
           </div>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button type="button" className="pro-btn pro-btn-ghost flex-1 sm:flex-none" onClick={() => openBlockDialog()}><Ban /> {t('pro.agenda.block')}</button>
-            <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none" onClick={() => openNewConsultation()}><Plus /> {t('mm2.agenda.newConsultation')}</button>
+          <div className="dz-agenda-actions">
+            <button type="button" className="pro-btn pro-btn-ghost" onClick={() => changeTab('disponibilidad')}><Settings /> {t('pro.agenda.configure')}</button>
+            <button type="button" className="pro-btn pro-btn-ghost" onClick={() => openBlockDialog()}><Ban /> {t('pro.agenda.block')}</button>
+            <button type="button" className="pro-btn pro-btn-white" onClick={() => openNewConsultation()}><Plus /> {t('mm2.agenda.newConsultation')}</button>
           </div>
         </div>
 
@@ -556,22 +594,25 @@ export default function DoctorAgenda() {
           <div className="flex gap-3 items-start">
             <section className="pro-card pro-card-pad bg-card min-w-0 flex-1">
               {/* Barra de herramientas */}
-              <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="dz-cal-toolbar">
                 <div className="flex items-center gap-1.5">
                   <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setCursor(new Date())}>{t('pro.agenda.today')}</button>
                   <button type="button" className="pro-btn pro-btn-outline pro-btn-icon" onClick={() => go(-1)} aria-label={t('pro.agenda.prev')}><ChevronLeft /></button>
                   <button type="button" className="pro-btn pro-btn-outline pro-btn-icon" onClick={() => go(1)} aria-label={t('pro.agenda.next')}><ChevronRight /></button>
                 </div>
-                <h2 className="font-heading font-extrabold text-base sm:text-lg pro-ink min-w-0 flex-1 truncate">{rangeLabel()}</h2>
-                <div className="pro-seg">
-                  {([['all', t('pro.agenda.all')], ['consultations', t('pro.agenda.consultations')], ['lives', t('pro.agenda.lives')], ['availability', t('pro.agenda.availability')]] as [Filter, string][]).map(([k, l]) => (
-                    <button key={k} type="button" className={filter === k ? 'is-active' : ''} onClick={() => setFilter(k)}>{l}</button>
-                  ))}
-                </div>
-                <div className="pro-seg">
-                  {([['month', t('pro.agenda.month')], ['week', t('pro.agenda.week')], ['day', t('pro.agenda.day')]] as [View, string][]).map(([k, l]) => (
-                    <button key={k} type="button" className={view === k ? 'is-active' : ''} onClick={() => setView(k)}>{l}</button>
-                  ))}
+                <h2 className="font-heading font-extrabold text-base sm:text-lg pro-ink">{rangeLabel()}</h2>
+                {/* Los dos segmentos bajan juntos de línea cuando no caben (1024 px) */}
+                <div className="dz-cal-segs">
+                  <div className="pro-seg">
+                    {([['all', t('pro.agenda.all')], ['consultations', t('pro.agenda.consultations')], ['lives', t('pro.agenda.lives')], ['availability', t('pro.agenda.availability')]] as [Filter, string][]).map(([k, l]) => (
+                      <button key={k} type="button" className={filter === k ? 'is-active' : ''} onClick={() => setFilter(k)}>{l}</button>
+                    ))}
+                  </div>
+                  <div className="pro-seg">
+                    {([['month', t('pro.agenda.month')], ['week', t('pro.agenda.week')], ['day', t('pro.agenda.day')]] as [View, string][]).map(([k, l]) => (
+                      <button key={k} type="button" className={view === k ? 'is-active' : ''} onClick={() => setView(k)}>{l}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -610,7 +651,7 @@ export default function DoctorAgenda() {
               <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t" style={{ borderColor: 'var(--pro-line)' }}>
                 <div className="pro-legend">
                   <span><i style={{ background: '#1f9d5a' }} />{t('pro.agenda.legendConsultation')}</span>
-                  <span><i style={{ background: HOURS_COLOR }} />{t('mm2.agenda.hoursLegend')}</span>
+                  <span><i style={{ background: HOURS_COLOR }} />{t('pro.agenda.legendAvailable')}</span>
                   <span><i style={{ background: '#e5322d' }} />{t('pro.agenda.legendLive')}</span>
                   <span><i style={{ background: '#b8c4cf' }} />{t('pro.agenda.legendUnavailable')}</span>
                 </div>
@@ -618,18 +659,18 @@ export default function DoctorAgenda() {
               </div>
 
               {/* Accesos del carril en móvil/tablet */}
-              <div className="flex gap-2 mt-3 lg:hidden">
+              <div className="dz-rail-mobile mt-3 lg:hidden">
                 {([['today', t('pro.agenda.railToday'), Sun], ['summary', t('pro.agenda.railSummary'), ListChecks], ['nextLive', t('pro.agenda.railNextLive'), Radio]] as [Rail, string, React.ElementType][]).map(([k, l, Icon]) => (
-                  <button key={k} type="button" className="pro-btn pro-btn-outline pro-btn-sm flex-1 min-w-0 overflow-hidden px-2" onClick={() => setRail(k)}><Icon /> <span className="truncate">{l}</span></button>
+                  <button key={k} type="button" className="pro-btn pro-btn-outline" onClick={() => setRail(k)}><Icon /> <span>{l}</span></button>
                 ))}
               </div>
             </section>
 
             {/* Carril lateral (escritorio) */}
-            <aside className="hidden lg:flex flex-col gap-2 pro-rail-tabs sticky top-24 shrink-0">
-              {railButton('today', t('pro.agenda.railToday'), Sun)}
-              {railButton('summary', t('pro.agenda.railSummary'), ListChecks)}
-              {railButton('nextLive', t('pro.agenda.railNextLive'), Radio)}
+            <aside className="hidden lg:flex flex-col pro-rail-tabs dz-agenda-rail sticky top-24 shrink-0">
+              {railButton('today', t('pro.agenda.railToday'))}
+              {railButton('summary', t('pro.agenda.railSummary'))}
+              {railButton('nextLive', t('pro.agenda.railNextLive'))}
             </aside>
           </div>
         )}

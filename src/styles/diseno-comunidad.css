@@ -1,0 +1,177 @@
+/* ==========================================================================
+   Comunidad · Foro (feed) y Descubrir › Médicos · lenguaje visual de los
+   mockups de Marta (12-sep-2026). Lo importan src/pages/Foro.tsx y
+   src/pages/Doctors.tsx. Reutiliza `pro-*` de src/index.css (tarjeta blanca,
+   píldoras, chips, botones) y NO toca ninguna función.
+
+   Feed: a partir de 1280 px, dos columnas (feed ≤ 860 px + carril de 340 px
+   pegado a la derecha) y por debajo las propuestas del día van ENCIMA del
+   feed en rejilla de 2 (1 en móvil). Es el MISMO nodo del DOM: solo cambia
+   con grid-template-areas.
+   ========================================================================== */
+
+/* ---------- Rejilla del feed ---------- */
+.dc-feed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "rail" "main";
+  gap: 1rem;
+  align-items: start;
+}
+.dc-feed-main { grid-area: main; min-width: 0; }
+.dc-feed-rail { grid-area: rail; min-width: 0; }
+@media (min-width: 1280px) {
+  .dc-feed {
+    grid-template-columns: minmax(0, 860px) 340px;
+    grid-template-areas: "main rail";
+    gap: 1.5rem;
+  }
+  /* Barra superior sticky de 68 px + aire. El carril va compacto para que las
+     cinco propuestas quepan en una ventana de ~800 px de alto; si aun así es
+     más alto que la ventana, se desplaza por dentro (la sombra queda fuera
+     del recorte) y ningún botón queda inalcanzable. */
+  .dc-feed > .dc-feed-rail {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 92px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 16px 16px 14px;
+  }
+  .dc-feed > .dc-feed-rail .dc-prompts { gap: 8px; }
+  .dc-feed > .dc-feed-rail .dc-prompt { padding: 10px 12px; gap: 6px; }
+}
+
+/* Enlace al panel de administración del foro (solo admin): en móvil no cabe en la
+   cabecera; se fija aquí porque `.pro-btn` impone display:inline-flex. */
+@media (max-width: 639px) { .dc-admin-link { display: none; } }
+
+/* ---------- Carril «Propuestas de hoy» ---------- */
+.dc-rail-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; min-width: 0; }
+.dc-rail-head .pro-icon-box { width: 34px; height: 34px; }
+.dc-rail-head .pro-icon-box svg { width: 17px; height: 17px; }
+.dc-rail-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 0.98rem; line-height: 1.2; margin: 0;
+  color: var(--pro-ink, #17293d); overflow-wrap: anywhere;
+}
+.dc-rail-date { font-size: 12px; color: var(--pro-ink-2, #3c4f63); margin-top: 2px; }
+.dc-rail-intro { font-size: 11.5px; line-height: 1.3; color: var(--pro-muted, #6b7a89); margin-top: 1px; }
+
+.dc-prompts { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) and (max-width: 1279px) {
+  .dc-prompts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.dc-prompt {
+  display: flex; flex-direction: column; gap: 7px; min-width: 0;
+  padding: 11px 13px; border: 1px solid #e3ecf0; border-radius: 13px; background: #fff;
+}
+.dc-prompt.is-anon { border-color: #f1dca4; background: #fffaf0; }
+.dc-prompt-cat {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.25;
+  color: var(--pro-teal, #227787);
+}
+.dc-prompt-cat svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--pro-teal, #227787) !important; }
+.dc-prompt-cat span { min-width: 0; overflow-wrap: anywhere; }
+.dc-prompt-text { flex: 1; font-size: 13px; line-height: 1.38; color: var(--pro-ink, #17293d); overflow-wrap: anywhere; margin: 0; }
+.dc-prompt > .pro-btn.pro-btn-xs { height: 30px; font-size: 12px; padding: 0 10px; }
+.dc-prompt-text.is-empty { color: var(--pro-muted, #6b7a89); }
+.dc-prompt-body {
+  font-size: 12.5px; line-height: 1.35; color: var(--pro-muted, #6b7a89); margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.dc-prompt-img { display: block; width: 100%; max-height: 140px; object-fit: cover; border-radius: 10px; border: 1px solid #e3ecf0; }
+.dc-prompt > .pro-btn { align-self: flex-start; }
+.dc-skel-in { border-radius: 14px; background: #eef3f6; min-height: 120px; animation: dc-pulse 1.4s ease-in-out infinite; }
+
+/* ---------- Chips de categoría (sobre el fondo teal, siempre completos) ---------- */
+.dc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+
+/* ---------- Separador de día ---------- */
+.dc-day {
+  display: flex; align-items: center; gap: 10px; padding-top: 4px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+}
+.dc-day::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.28); }
+
+/* ---------- Publicaciones ---------- */
+.dc-posts { display: flex; flex-direction: column; gap: 14px; }
+.dc-skel { border-radius: 18px; background: rgba(255, 255, 255, 0.55); min-height: 150px; animation: dc-pulse 1.4s ease-in-out infinite; }
+@keyframes dc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.dc-empty { text-align: center; padding: 3rem 1rem; color: var(--pro-muted, #6b7a89); font-size: 14px; }
+.dc-empty svg { width: 40px; height: 40px; margin: 0 auto 12px; opacity: .4; color: var(--pro-teal, #227787) !important; }
+
+.dc-post { padding: 1rem; }
+@media (min-width: 640px) { .dc-post { padding: 1.25rem; } }
+.dc-post.is-focus { box-shadow: var(--pro-shadow), 0 0 0 3px rgba(34, 119, 135, 0.35); }
+.dc-post-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.dc-post-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+/* Las etiquetas (categoría, especialidad) pueden ser largas: se parten, nunca se cortan. */
+.dc-post-tags .pro-pill { max-width: 100%; height: auto; min-height: 26px; padding: 4px 10px; white-space: normal; line-height: 1.2; }
+.dc-post-tags .pro-pill svg { width: 13px; height: 13px; flex-shrink: 0; color: currentColor !important; }
+.dc-post-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.dc-post-actions .is-danger { color: var(--pro-live, #e5322d) !important; }
+.dc-post-actions .is-danger svg { color: currentColor !important; }
+.dc-post-prompt { display: flex; align-items: flex-start; gap: 5px; margin: 0 0 6px; font-size: 12px; line-height: 1.35; color: var(--pro-teal, #227787); }
+.dc-post-prompt svg { width: 13px; height: 13px; margin-top: 2px; flex-shrink: 0; color: var(--pro-teal, #227787) !important; }
+.dc-post-prompt .lbl { color: var(--pro-muted, #6b7a89); }
+.dc-post-prompt span { min-width: 0; overflow-wrap: anywhere; }
+.dc-post-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 1.1rem; line-height: 1.25; margin: 0;
+  color: var(--pro-ink, #17293d); overflow-wrap: anywhere;
+}
+.dc-post-body { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: var(--pro-ink-2, #3c4f63); white-space: pre-wrap; overflow-wrap: anywhere; }
+.dc-post-img { display: block; width: 100%; max-height: 420px; object-fit: cover; border-radius: 14px; margin-top: 12px; background: #eef3f6; }
+.dc-post-att { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.dc-post-att-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dc-post-att-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+.dc-post-att-grid a { display: block; min-width: 0; }
+.dc-post-att-grid img { display: block; width: 100%; max-height: 420px; object-fit: cover; border-radius: 14px; background: #eef3f6; }
+.dc-post-att-grid .dc-skel-in { min-height: 160px; }
+.dc-post-att video { display: block; width: 100%; max-height: 420px; border-radius: 14px; background: #000; }
+.dc-post-file {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 10px 12px; border: 1px solid #e3ecf0; border-radius: 12px; background: #f7fafb;
+  font-size: 13px; color: var(--pro-teal, #227787) !important;
+}
+.dc-post-file svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--pro-teal, #227787) !important; }
+.dc-post-file .nm { min-width: 0; overflow-wrap: anywhere; }
+.dc-post-file .sz { margin-left: auto; white-space: nowrap; font-size: 11.5px; color: var(--pro-muted, #6b7a89); }
+.dc-post-meta {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 10px; flex-wrap: wrap;
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--pro-line, #e3ecf0);
+  font-size: 12.5px; color: var(--pro-muted, #6b7a89);
+}
+.dc-post-meta .who { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.dc-post-meta .who svg { width: 14px; height: 14px; flex-shrink: 0; }
+.dc-post-meta .who .nm { font-weight: 600; color: var(--pro-ink-2, #3c4f63); overflow-wrap: anywhere; }
+.dc-post-meta .cmt {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  font-weight: 600; white-space: nowrap; background: transparent; border: 0; padding: 0;
+  color: var(--pro-teal, #227787) !important;
+}
+.dc-post-meta .cmt svg { width: 15px; height: 15px; color: currentColor !important; }
+.dc-post-comments { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--pro-line, #e3ecf0); }
+
+/* ---------- Descubrir › Médicos: tarjeta del directorio ----------
+   Cabecera en rejilla: la foto ocupa dos filas, el nombre se parte en 2 líneas
+   (sin elipsis) y «Desde $X» baja a su propia fila bajo las insignias, así
+   nunca empuja el nombre. Todo lo demás de la tarjeta sigue igual. */
+/* Rejilla por ancho disponible (no por viewport): tarjetas de ≥280 px, así a
+   1024 px salen 2 columnas holgadas en vez de 3 estranguladas. Se dobla la
+   clase para ganar a las utilidades responsivas de Tailwind que siguen en el
+   nodo (un test comprueba que existen). */
+.dc-doc-grid.dc-doc-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.dc-doc-stats { flex-wrap: wrap; row-gap: 4px; }
+.dc-doc-stats > span { white-space: nowrap; }
+.dc-doc-foot { flex-wrap: wrap; row-gap: 8px; }
+.dc-doc-avail { white-space: nowrap; }
+.dc-doc-head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 6px; align-items: start; }
+.dc-doc-avatar { grid-row: 1 / span 2; }
+.dc-doc-id { min-width: 0; }
+.dc-doc-name { flex: 0 1 auto; min-width: 0; max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+.dc-doc-price { grid-column: 2; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; font-size: 12px; line-height: 1.2; }
+.dc-doc-price .amt { font-weight: 800; font-size: 14px; }

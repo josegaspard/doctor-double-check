@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Perfil público del médico · diseño de Marta
+   (mockup «perfil-publico-directorio.jpg», 12-sep-2026)
+   Solo lo usa src/pages/DoctorProfile.tsx y sus piezas en
+   src/components/doctor/public-profile/. Reutiliza el lenguaje `pro-*` de
+   src/index.css (tarjeta blanca, píldoras, botones, icono en círculo) y
+   añade la rejilla del mockup: hero a todo el ancho con bloque de CTA a la
+   derecha, pestañas-chip y cuerpo 2/3 + 1/3.
+   Prefijo `pp-` (el paquete de pacientes ya usa `dp-`).
+   Las reglas responsivas van por @container para que la página se comporte
+   igual si algún día se incrusta en una columna estrecha.
+   ========================================================================== */
+
+.pp-shell { container-type: inline-size; container-name: pp; }
+
+/* ---------- Migas ---------- */
+.pp-crumbs {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  color: rgba(255, 255, 255, 0.88); font-size: 13.5px; margin-bottom: 14px; min-width: 0;
+}
+.pp-crumbs a { display: inline-flex; align-items: center; gap: 6px; color: #ffffff !important; font-weight: 600; }
+.pp-crumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pp-crumbs svg { width: 16px; height: 16px; flex-shrink: 0; }
+.pp-crumbs a svg { color: #ffffff !important; }
+.pp-crumbs .sep { color: rgba(255, 255, 255, 0.6) !important; }
+.pp-crumbs .cur { color: #ffffff; font-weight: 700; min-width: 0; }
+
+/* ---------- Avisos (perfil en revisión · en directo ahora) ---------- */
+.pp-banner { padding: 14px 16px; margin-bottom: 14px; }
+.pp-banner-live { border: 2px solid var(--pro-live); cursor: pointer; }
+
+/* ---------- Hero ---------- */
+.pp-hero { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 20px; padding: 20px; margin-bottom: 16px; }
+.pp-hero-main { display: flex; gap: 22px; min-width: 0; }
+.pp-photo {
+  width: 200px; height: 200px; border-radius: 28px; overflow: hidden; flex-shrink: 0;
+  background: #e6f3f5; display: flex; align-items: center; justify-content: center;
+}
+.pp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pp-photo .pp-initials {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 56px; color: var(--pro-teal); letter-spacing: -0.02em;
+}
+.pp-id { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.pp-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
+.pp-name {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); line-height: 1.1;
+  color: var(--pro-ink); margin: 0; letter-spacing: -0.01em; overflow-wrap: anywhere;
+}
+.pp-verified { width: 26px; height: 26px; color: var(--pro-teal) !important; flex-shrink: 0; }
+.pp-follow { margin-left: 2px; }
+.pp-follow button { height: 32px; border-radius: 10px; font-size: 12.5px; }
+.pp-spec {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 700; font-size: 1.15rem; color: var(--pro-teal); line-height: 1.2;
+}
+.pp-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pp-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--pro-ink-2); }
+.pp-meta > span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.pp-meta svg { width: 17px; height: 17px; color: var(--pro-teal) !important; flex-shrink: 0; }
+.pp-meta .star svg { color: #d99a06 !important; fill: #d99a06; }
+.pp-bio { font-size: 14px; line-height: 1.5; color: var(--pro-ink-2); margin: 0; overflow-wrap: anywhere; }
+.pp-bio.is-clamped { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.pp-more { align-self: flex-start; color: var(--pro-teal) !important; font-size: 13px; font-weight: 600; }
+.pp-more:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Bloque destacado de la derecha: precio · Solicitar consulta · Ver sus Lives */
+.pp-cta {
+  background: #e9f5f8; border-radius: 24px; padding: 18px 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
+  min-width: 0;
+}
+.pp-cta-from { font-size: 14px; color: var(--pro-ink-2); display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.pp-cta-from b {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-size: 1.3rem; font-weight: 800; color: var(--pro-ink);
+}
+.pp-cta-from b .inline-flex { font-size: inherit; font-weight: inherit; }
+.pp-cta .pro-btn { width: 100%; }
+.pp-cta-primary { height: 52px !important; font-size: 16px !important; border-radius: 14px !important; }
+.pp-cta-primary svg { width: 20px !important; height: 20px !important; }
+.pp-cta-row { display: flex; gap: 8px; width: 100%; align-items: center; }
+.pp-cta-row .pro-btn { flex: 1; min-width: 0; }
+.pp-cta-row .pro-btn > span { overflow: hidden; text-overflow: ellipsis; }
+.pp-cta-phrase { font-size: 13px; color: var(--pro-ink-2); line-height: 1.4; max-width: 36ch; margin: 2px 0 0; }
+.pp-hours { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 10px; font-size: 12.5px; color: var(--pro-ink-2); margin-top: 4px; }
+.pp-hours > span { display: inline-flex; align-items: center; gap: 5px; }
+.pp-hours svg { width: 14px; height: 14px; color: var(--pro-teal) !important; }
+.pp-hours .pro-pill { height: 22px; font-size: 11px; padding: 0 8px; }
+.pp-disclaimer { font-size: 10.5px; color: var(--pro-muted); line-height: 1.3; margin: 0; max-width: 40ch; }
+
+/* ---------- Pestañas-chip (SectionTabs onLight, botones con aria-pressed) ---------- */
+.pp-tabs { background: #ffffff !important; border-color: #ffffff !important; box-shadow: var(--pro-shadow); padding: 6px !important; border-radius: 16px !important; gap: 4px !important; }
+.pp-tabs > button { flex: 1 1 auto; justify-content: center; height: 40px; border-radius: 12px; font-size: 14px; padding: 0 12px; }
+.pp-tabs > button[aria-pressed="true"] { background: var(--pro-teal) !important; color: #ffffff !important; }
+.pp-tabs > button[aria-pressed="true"] * { color: #ffffff !important; }
+
+/* ---------- Cuerpo: 2/3 + 1/3 ---------- */
+.pp-body { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+.pp-main, .pp-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pp-hint { font-size: 12.5px; color: var(--pro-muted); text-align: right; flex: 0 1 auto; }
+/* En la columna estrecha el título manda: la nota de cabecera baja a otra línea antes de estrangularlo. */
+.pp-side .pro-card-head, .pp-main .pro-card-head { flex-wrap: wrap; }
+.pp-main .pro-card-title, .pp-side .pro-card-title { flex: 1 1 auto; }
+
+/* ---------- Servicios y precios ---------- */
+/* La columna del título tiene suelo (180 px): el pie (duración · precio · botón) se parte en
+   dos líneas antes de estrangular el título. */
+.pp-svc { display: grid; grid-template-columns: 44px minmax(180px, 1fr) minmax(0, auto); align-items: center; gap: 12px 16px; padding: 12px 0; border-top: 1px solid var(--pro-line); }
+.pp-svc:first-of-type { border-top: 0; padding-top: 4px; }
+.pp-svc-title { font-weight: 700; font-size: 15px; color: var(--pro-ink); }
+.pp-svc-desc { font-size: 12.5px; color: var(--pro-muted); margin-top: 2px; }
+.pp-svc-foot { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
+.pp-svc-dur { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--pro-ink-2); white-space: nowrap; }
+.pp-svc-dur svg { width: 16px; height: 16px; color: var(--pro-teal) !important; }
+.pp-svc-price {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 1.15rem; color: var(--pro-ink); white-space: nowrap;
+}
+.pp-svc-price .inline-flex { font-size: inherit; font-weight: inherit; }
+.pp-svc-price .text-success { color: var(--pro-ok); }
+
+/* ---------- Trayectoria profesional ---------- */
+.pp-career-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+.pp-career-tools .pro-seg { flex: 0 1 auto; }
+.pp-career-tools .pro-search { flex: 1 1 220px; height: 40px; box-shadow: none; border: 1px solid #d6e1e7; }
+.pp-career-tools .pro-search input { flex: 1; min-width: 0; background: transparent; outline: none; font-size: 13.5px; color: var(--pro-ink); }
+.pp-cred { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 6px 16px; padding: 12px 0; border-top: 1px solid var(--pro-line); }
+.pp-cred-year { font-weight: 800; font-size: 14px; color: var(--pro-ink); }
+.pp-cred-org { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pp-cred-org .pro-icon-box { width: 36px; height: 36px; }
+.pp-cred-org .pro-icon-box svg { width: 17px; height: 17px; }
+.pp-cred-org b, .pp-cred-title b { display: block; font-size: 14px; font-weight: 700; color: var(--pro-ink); line-height: 1.3; overflow-wrap: anywhere; }
+.pp-cred-org small, .pp-cred-title small { display: block; font-size: 12px; color: var(--pro-muted); margin-top: 1px; }
+.pp-cred-title { min-width: 0; }
+.pp-cred-ok { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--pro-ok); margin-top: 2px; }
+.pp-cred-ok svg { width: 14px; height: 14px; color: var(--pro-ok) !important; }
+.pp-cred-desc { grid-column: 2 / -1; font-size: 12.5px; color: var(--pro-ink-2); margin: 0; }
+.pp-owner-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 14px; font-size: 12.5px; color: var(--pro-muted); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pro-line); }
+.pp-owner-line .acts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pp-owner-panel { margin-top: 12px; }
+
+/* ---------- Suscripciones ---------- */
+.pp-tier { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 18px; background: #eef7f9; }
+.pp-tier + .pp-tier { margin-top: 10px; }
+.pp-tier .pro-icon-box { width: 48px; height: 48px; background: #ffffff; }
+.pp-tier-name { font-weight: 700; font-size: 15px; color: var(--pro-ink); }
+.pp-tier-price {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  font-weight: 800; font-size: 1.15rem; color: var(--pro-ink); line-height: 1.2;
+}
+.pp-tier-price small { font-family: 'Inter', system-ui, sans-serif; font-weight: 500; font-size: 13px; color: var(--pro-muted); }
+.pp-tier ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.pp-tier li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--pro-ink-2); }
+.pp-tier li svg { width: 14px; height: 14px; color: var(--pro-ok) !important; flex-shrink: 0; }
+.pp-subs-cta { margin-top: 12px; }
+.pp-subs-cta > button, .pp-subs-cta > div { width: 100%; }
+.pp-subs-cta > div > button { flex: 1; }
+
+/* ---------- Próximo Live ---------- */
+.pp-live { display: flex; gap: 14px; align-items: flex-start; min-width: 0; color: inherit; }
+.pp-live-thumb {
+  width: 150px; aspect-ratio: 16 / 10; border-radius: 14px; flex-shrink: 0; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #0f3d4a 0%, #0b2f3a 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.pp-live-thumb > svg { width: 30px; height: 30px; color: #ffffff !important; opacity: 0.9; }
+.pp-live-thumb .dot { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 9999px; background: var(--pro-live); display: flex; align-items: center; justify-content: center; }
+.pp-live-thumb .dot svg { width: 14px; height: 14px; color: #ffffff !important; }
+.pp-live-title { font-weight: 700; font-size: 15px; color: var(--pro-ink); line-height: 1.25; overflow-wrap: anywhere; }
+.pp-live-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--pro-ink-2); margin-top: 6px; }
+.pp-live-meta > span { display: inline-flex; align-items: center; gap: 6px; }
+.pp-live-meta svg { width: 15px; height: 15px; color: var(--pro-teal) !important; }
+.pp-live-desc { font-size: 12.5px; color: var(--pro-muted); margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pp-live-all { margin-top: 12px; width: 100%; }
+.pp-empty { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--pro-muted); padding: 4px 0; margin: 0; }
+.pp-empty svg { width: 16px; height: 16px; }
+
+/* ---------- Bloques heredados (libros, congresos, eventos, reseñas, panel de edición) ---------- */
+.pp-embed > * { margin-top: 0 !important; border: 0 !important; border-radius: var(--pro-radius) !important; box-shadow: var(--pro-shadow) !important; background: #ffffff !important; }
+.pp-embed:empty { display: none; }
+
+/* ---------- Responsive por contenedor ---------- */
+@container pp (max-width: 1120px) {
+  .pp-hero { grid-template-columns: minmax(0, 1fr) 340px; }
+  .pp-body { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+@container pp (max-width: 920px) {
+  .pp-hero { grid-template-columns: 1fr; }
+  .pp-body { grid-template-columns: 1fr; }
+  .pp-cta { padding: 16px; }
+  .pp-cta-phrase { max-width: none; }
+}
+/* Pestañas en 2 filas de 2 chips cuando no caben (antes se desplazaban con la barra oculta y «Lives» quedaba fuera de vista). */
+@container pp (max-width: 700px) {
+  .pp-tabs { flex-wrap: wrap; overflow: visible !important; }
+  .pp-tabs > button { flex: 1 1 45%; }
+}
+@container pp (max-width: 640px) {
+  .pp-hero { padding: 16px; }
+  .pp-hero-main { flex-direction: column; align-items: center; text-align: center; }
+  .pp-photo { width: 150px; height: 150px; border-radius: 24px; }
+  .pp-photo .pp-initials { font-size: 44px; }
+  .pp-name-row, .pp-meta, .pp-badges { justify-content: center; }
+  .pp-more { align-self: center; }
+  .pp-svc { grid-template-columns: 44px minmax(0, 1fr); }
+  .pp-svc-foot { grid-column: 2; justify-content: flex-start; gap: 12px 16px; }
+  .pp-cred { grid-template-columns: 56px minmax(0, 1fr); }
+  .pp-cred-title { grid-column: 2; }
+  .pp-live { flex-direction: column; }
+  .pp-live-thumb { width: 100%; }
+  .pp-career-tools .pro-search { flex-basis: 100%; }
+}

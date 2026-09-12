@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -472,13 +471,13 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
             </Button>
             <h2 className="text-base sm:text-lg font-semibold capitalize">{getHeaderLabel()}</h2>
           </div>
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-            <TabsList className="h-9">
-              <TabsTrigger value="month" className="text-xs px-3">{t('availabilityPage.month')}</TabsTrigger>
-              <TabsTrigger value="week" className="text-xs px-3">{t('availabilityPage.week')}</TabsTrigger>
-              <TabsTrigger value="day" className="text-xs px-3">{t('availabilityPage.day')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Mes / Semana / Día como chips con aria-pressed: el CSS global pinta en blanco
+              cualquier [role=tab] dentro de <main>, así que nada de Tabs de shadcn aquí. */}
+          <div className="pro-seg">
+            {([['month', t('availabilityPage.month')], ['week', t('availabilityPage.week')], ['day', t('availabilityPage.day')]] as [ViewMode, string][]).map(([k, l]) => (
+              <button key={k} type="button" className={viewMode === k ? 'is-active' : ''} aria-pressed={viewMode === k} onClick={() => setViewMode(k)}>{l}</button>
+            ))}
+          </div>
         </div>
 
         {/* Legend — pills con fondo de marca sólido para que se distingan

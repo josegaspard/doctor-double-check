@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { BOOKING_SLOT_MIN } from '@/lib/booking';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -52,7 +53,7 @@ const formatTime = (iso: string, lang: string = 'es') =>
 // Orientación (cliente 2026-07-07): el doctor define su horario semanal de atención
 // (office_days + horas). Aquí generamos turnos reservables de 30 min dentro de ese
 // horario para las próximas semanas, sin que el doctor tenga que crear cada turno.
-const ORIENTATION_SLOT_MIN = 30;
+const ORIENTATION_SLOT_MIN = BOOKING_SLOT_MIN;
 const ORIENTATION_HORIZON_DAYS = 21;
 const DAY_NUM: Record<string, number> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,

@@ -1,0 +1,151 @@
+/* ==========================================================================
+   Cuenta › Finanzas · diseño de Marta (mockup «ingresos-y-pagos.jpg», 12-sep-2026)
+   Lo usan src/pages/Settings.tsx (hero y rejilla cuando s=finanzas) y
+   src/pages/DoctorEarnings.tsx (modo ancho). Reutiliza el lenguaje `pro-*`
+   de src/index.css (tarjeta blanca, píldoras, KPI, tabla, paginador).
+   Las reglas responsivas van por @container, no por viewport: la página vive
+   incrustada en la columna de Cuenta, a la derecha del carril de secciones.
+   ========================================================================== */
+
+/* ---------- Cuenta › Finanzas: carril · contenido (sin el resumen derecho) ---------- */
+.pro-work-set.fin-work { grid-template-columns: 1fr; }
+@media (min-width: 900px) { .pro-work-set.fin-work { grid-template-columns: 224px minmax(0, 1fr); } }
+
+/* Subpáginas del grupo Comprar: que no se estiren en la columna ancha */
+.fin-narrow { max-width: 820px; }
+
+/* Hero «Ingresos y pagos»: rango de fechas + Retirar saldo, a la derecha */
+.fin-hero-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; }
+@media (min-width: 640px) { .fin-hero-actions { width: auto; } }
+.fin-hero-actions > * { flex: 1 1 auto; }
+@media (min-width: 640px) { .fin-hero-actions > * { flex: 0 0 auto; } }
+
+/* ---------- Ingresos y pagos (modo ancho) ---------- */
+.fin-root { container-type: inline-size; container-name: fin; min-width: 0; }
+.fin-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "kpis" "main" "side";
+  align-items: start;
+  min-width: 0;
+}
+.fin-grid > .fin-kpis { grid-area: kpis; }
+.fin-grid > .fin-main { grid-area: main; }
+.fin-grid > .fin-side { grid-area: side; }
+/* Dos columnas (≈ 2/3 + 1/3): gráfica + tabla | cuenta·próximo pago·desglose.
+   Por debajo (Cuenta a 1024 px deja ≈ 736 px) la derecha se apila debajo. */
+/* La derecha mide 320 px fijos (como la maqueta): con 300 los botones
+   «Facturas» + «Descargar informe» (≈ 105 + 167 px) no cabían en una fila.
+   Dentro de Cuenta el contenedor va de 900 a 960 px, así que la izquierda
+   guarda 564–624 px, suficiente para la tabla plegada (≈ 520 px). */
+@container fin (min-width: 920px) {
+  .fin-grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-areas: "kpis kpis" "main side";
+  }
+}
+/* Columna principal: es contenedor propio para que la gráfica y la tabla
+   respondan a SU ancho, no al de la página. */
+.fin-main { display: grid; gap: 1rem; min-width: 0; container-type: inline-size; container-name: finmain; }
+
+/* ---------- Fila de 4 KPI en UNA tarjeta con separadores verticales ---------- */
+.fin-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px 0; }
+.fin-kpi { display: flex; align-items: flex-start; gap: 10px; padding: 14px; min-width: 0; }
+.fin-kpi + .fin-kpi { border-left: 1px solid var(--pro-line); }
+.fin-kpi .pro-icon-box { width: 42px; height: 42px; }
+.fin-kpi .txt { min-width: 0; display: flex; flex-direction: column; }
+.fin-kpi .pro-kpi-value { font-size: 1.45rem; }
+.fin-kpi .pro-kpi-sub { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+@container fin (max-width: 919px) {
+  .fin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fin-kpi:nth-child(3) { border-left: 0; }
+  .fin-kpi:nth-child(n + 3) { border-top: 1px solid var(--pro-line); }
+}
+@container fin (max-width: 479px) {
+  .fin-kpis { grid-template-columns: minmax(0, 1fr); }
+  .fin-kpi + .fin-kpi { border-left: 0; border-top: 1px solid var(--pro-line); }
+}
+
+/* ---------- Ingresos por fuente: chips · Por día · total · gráfica + leyenda ---------- */
+.fin-chartcard { display: flex; flex-direction: column; min-width: 0; }
+.fin-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.fin-tools .pro-seg { flex: 1 1 auto; min-width: 0; }
+.fin-tools .pro-seg > button { flex: 1 1 auto; }
+.fin-total { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.fin-chartbody { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); min-height: 0; align-items: stretch; }
+@container finmain (min-width: 560px) { .fin-chartbody { grid-template-columns: minmax(0, 1fr) 224px; } }
+.fin-plotcol { display: flex; flex-direction: column; min-width: 0; }
+.fin-plot { position: relative; flex: 1 1 auto; min-height: 230px; min-width: 0; }
+.fin-plot > .abs { position: absolute; inset: 0; }
+.fin-empty { display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 16px; }
+.fin-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--pro-ink-2); }
+.fin-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fin-legend i { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
+/* Columna estrecha (móvil, Cuenta a 1024 no llega aquí): los chips de fuente
+   pasan a dos filas en vez de cortarse, y la lista de la derecha ya hace de
+   leyenda, así que la de debajo de la gráfica sobra. */
+@container finmain (max-width: 559px) {
+  .fin-tools .pro-seg { flex-wrap: wrap; overflow: visible; }
+  .fin-legend { display: none; }
+}
+.fin-srcleg { align-self: center; }
+.fin-srcleg .pro-srcleg-row { padding: 6px 0; border-top: 1px solid var(--pro-line); font-size: 12.5px; }
+.fin-srcleg .pro-srcleg-row:first-child { border-top: 0; }
+
+/* ---------- Últimos movimientos: tabla + pie con «Mostrando…» y paginador ---------- */
+.fin-tablecard { min-width: 0; }
+.fin-tablecard .pro-card-head { flex-wrap: wrap; }
+.fin-tablecard .fin-tabtools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.fin-tablecard .pro-table { min-width: 820px; font-size: 12px; }
+.fin-tablecard .pro-table th, .fin-tablecard .pro-table td { padding-left: 8px; padding-right: 8px; }
+.fin-tablecard .pro-table td:first-child { white-space: nowrap; }
+.fin-tablecard .pro-table td.act { width: 40px; padding: 4px; text-align: center; }
+/* Concepto · Fuente plegados bajo el cliente: solo se ven en columna estrecha */
+.fin-rowsub { display: none; font-weight: 500; font-size: 11px; color: var(--pro-ink-2); line-height: 1.35; margin-top: 2px; }
+/* Columna estrecha (en Cuenta la izquierda mide ≈ 620–740 px): en vez de
+   desplazar 10 columnas, Concepto y Fuente pasan a la segunda línea del
+   cliente y la tabla cabe entera. Sigue siendo la misma tabla (CSV incluido). */
+@container finmain (max-width: 819px) {
+  .fin-tablecard .pro-table { min-width: 500px; font-size: 11.5px; }
+  .fin-tablecard .pro-table th, .fin-tablecard .pro-table td { padding-left: 6px; padding-right: 6px; }
+  /* Cabeceras a dos líneas («Paciente / Cliente», «Comisión (20%)»): en nowrap
+     eran ellas las que forzaban 640 px de tabla. */
+  .fin-tablecard .pro-table th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
+  /* index.css pone `overflow-wrap: anywhere` global y partía «Comis-ión»: las
+     cabeceras solo se parten entre palabras. */
+  .fin-tablecard .pro-table th { overflow-wrap: normal; word-break: normal; hyphens: none; }
+  .fin-rowsub .pro-mini { margin-left: 6px; }
+  .fin-tablecard .pro-table td { padding-top: 8px; padding-bottom: 8px; }
+  .fin-tablecard .pro-table td.act { width: 32px; padding: 4px 0; }
+  .fin-tablecard .fin-col-concept, .fin-tablecard .fin-col-source { display: none; }
+  .fin-rowsub { display: block; }
+  .fin-tablecard .pro-pill { font-size: 11px; padding-left: 8px; padding-right: 8px; }
+}
+.fin-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin-top: 10px; }
+.fin-foot .pro-pager { padding-top: 0; justify-content: flex-end; margin-left: auto; }
+.fin-tablecard .pro-note { margin-top: 12px; }
+
+/* ---------- Columna derecha: cuenta · próximo pago · desglose ---------- */
+.fin-side { display: grid; gap: 1rem; min-width: 0; align-content: start; }
+.fin-side .pro-card-head { flex-wrap: wrap; }
+.fin-side .pro-card-title { font-size: 1rem; }
+.fin-side .pro-bank { padding: 12px; }
+.fin-side .pro-bank .pro-row-name { white-space: normal; }
+.fin-next { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.fin-next .txt { min-width: 0; flex: 1; }
+.fin-next .pro-kpi-value { font-size: 1.45rem; }
+.fin-hist { border-top: 1px solid var(--pro-line); margin-top: 10px; padding-top: 8px; }
+.fin-breakdown .pro-ctx-line { padding: 5px 0; font-size: 13px; }
+.fin-breakdown .pro-ctx-line.total { border-top: 1px solid var(--pro-line); margin-top: 4px; padding-top: 10px; }
+.fin-breakdown .pro-ctx-line.total .k { color: var(--pro-ink); font-weight: 700; }
+.fin-breakdown .pro-ctx-line.total .v { font-size: 15px; font-weight: 800; }
+/* «Facturas» y «Descargar informe» lado a lado en la columna de 300/320 px
+   (≈ 268–288 px útiles); solo se apilan cuando de verdad no caben. */
+.fin-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+/* Base `auto`: la línea se decide por el ancho REAL de cada botón (≈ 97 + 157 px),
+   no por una base fija que el min-content de «Descargar informe» desborda. */
+.fin-btns > * { flex: 1 1 auto; white-space: nowrap; min-width: 0; }
+.fin-btns .pro-btn { padding-left: 10px; padding-right: 10px; gap: 6px; }
+.fin-fine { font-size: 11.5px; color: var(--pro-muted); margin-top: 10px; line-height: 1.45; }
+.fin-fine + .fin-fine { margin-top: 4px; }

@@ -1,8 +1,16 @@
-// Inicio del médico (/doctor/dashboard) — 2.ª reorganización, 11-sep-2026.
+// Inicio del médico (/doctor/dashboard) — diseño de Marta, 12-sep-2026.
 //
-// Requisito 9 del encargo: el Inicio SOLO trae lo del día — lo próximo (consulta
-// o Live), la agenda de hoy, las tareas pendientes, los mensajes sin leer, los
-// pacientes recientes, la actividad reciente y un resumen financiero opcional.
+// Requisito 9 del encargo: el Inicio SOLO trae lo del día — la próxima consulta,
+// la agenda de hoy, las tareas pendientes, los mensajes sin leer, los pacientes
+// recientes, el próximo Live y un resumen financiero opcional.
+//
+// Maquetación según el mockup «panel-de-medico.jpg»: cabecera «Panel de médico»,
+// cuatro KPI iguales, agenda de hoy (2/3) + pacientes recientes (1/3) y tres
+// tarjetas abajo (Próximo Live · Pendientes · Resumen del mes). Solo cambia el
+// diseño: los datos y los handlers son los de la reorganización del 11-sep.
+// «Actividad reciente» sale porque el mockup no lo dibuja; lo que hacía la
+// tarjeta «Lo siguiente» (entrar a la sala, ir al Live, ver detalles) sigue
+// disponible en las filas de la agenda, en «Próximo Live» y en la cabecera.
 //
 // Sale de aquí el inventario «Herramientas del panel» (14 módulos: correos,
 // libros, archivos, configuración, analítica sin datos, buscador de pacientes,
@@ -24,7 +32,6 @@ import { useDoctorPatients } from '@/hooks/useDoctorPatients';
 import { useDoctorAgenda, AgendaEvent } from '@/hooks/useDoctorAgenda';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +54,6 @@ import {
   CheckSquare,
   Eye,
   EyeOff,
-  CheckCircle,
   Clock,
   PlayCircle,
   Stethoscope,
@@ -58,9 +64,7 @@ import { fill, initialsOf, money, isSameDay } from '@/lib/proFormat';
 import { useAppDateFormat } from '@/lib/dateFormat';
 import { doctorHref, doctorPatientHref } from '@/lib/doctorSections';
 import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
-import { DashboardRecentActivity } from '@/components/doctor/DashboardRecentActivity';
-import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
-import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge';
+import '@/styles/diseno-inicio.css';
 
 /** Preferencia nueva: enseñar o no TODO el resumen financiero (KPI + gráfico). */
 const SHOW_FINANCE_KEY = 'mm.pro.showFinance';
@@ -69,35 +73,41 @@ const LEGACY_INCOME_KEY = 'mm.pro.showIncome';
 /** Una consulta confirmada que pasó hace más de una hora está «por cerrar». */
 const TO_CLOSE_MARGIN_MS = 60 * 60 * 1000;
 
+/** KPI del mockup: icono en círculo · etiqueta completa · valor grande · sub · chevron. */
 function Kpi({
   icon: Icon,
   label,
+  labelAside,
   value,
   sub,
   chevron,
   onClick,
-  aside,
 }: {
   icon: React.ElementType;
   label: string;
+  /** Control pequeño junto a la etiqueta (el ojo de «Ingresos del mes»). */
+  labelAside?: React.ReactNode;
   value: React.ReactNode;
   sub?: React.ReactNode;
   chevron?: boolean;
   onClick?: () => void;
-  aside?: React.ReactNode;
 }) {
   const Tag: any = onClick ? 'button' : 'div';
+  // El envoltorio es el contenedor (@container dikpi) que consulta la tarjeta:
+  // así la regla de «tarjeta estrecha» se aplica de verdad (un elemento no
+  // puede consultarse a sí mismo).
   return (
-    <Tag type={onClick ? 'button' : undefined} onClick={onClick} className="pro-card pro-kpi bg-card">
-      <span className="pro-icon-box"><Icon /></span>
-      <div className="min-w-0 flex-1">
-        <div className="pro-kpi-label truncate">{label}</div>
-        <div className="pro-kpi-value truncate">{value}</div>
-        {sub && <div className="pro-kpi-sub truncate">{sub}</div>}
-      </div>
-      {aside}
-      {chevron && <ChevronRight className="pro-kpi-chev w-5 h-5" />}
-    </Tag>
+    <div className="di-kpi-wrap">
+      <Tag type={onClick ? 'button' : undefined} onClick={onClick} className="pro-card di-kpi bg-card">
+        <span className="pro-icon-box"><Icon /></span>
+        <div className="di-kpi-body">
+          <div className="di-kpi-label"><span>{label}</span>{labelAside}</div>
+          <div className="di-kpi-value">{value}</div>
+          {sub && <div className="di-kpi-sub">{sub}</div>}
+        </div>
+        {chevron && <ChevronRight className="di-kpi-chev" />}
+      </Tag>
+    </div>
   );
 }
 
@@ -205,11 +215,6 @@ export default function DoctorDashboard() {
     return found?.id || null;
   }, [sessions]);
 
-  const patientName = useCallback(
-    (id: string) => patients.find(p => p.id === id)?.name || null,
-    [patients],
-  );
-
   const todayEvents = useMemo(() => events.filter(e => isSameDay(e.start, now)), [events, now]);
   /** Los tramos de horario no son citas: se resumen en una línea, no en filas. */
   const todayScheduled = useMemo(
@@ -224,16 +229,13 @@ export default function DoctorDashboard() {
     return { from, to };
   }, [todayEvents]);
 
+  /** Próxima consulta (KPI 1): la primera cita confirmada o solicitada que no haya terminado. */
   const nextAppt = useMemo(
     () => events.find(e => e.kind === 'appointment' && (e.status === 'confirmed' || e.status === 'requested') && e.end.getTime() >= now.getTime()),
     [events, now],
   );
+  /** Próximo Live (tarjeta de la fila 3): sale de `doctor_availability` type `live`, como en la Agenda. */
   const nextLive = useMemo(() => events.find(e => e.kind === 'live' && e.end.getTime() >= now.getTime()), [events, now]);
-  /** Lo próximo = lo primero que ocurra, sea consulta o Live (requisito 9). */
-  const nextUp = useMemo(() => {
-    if (nextAppt && nextLive) return nextAppt.start <= nextLive.start ? nextAppt : nextLive;
-    return nextAppt || nextLive || null;
-  }, [nextAppt, nextLive]);
 
   const requestedCount = useMemo(
     () => events.filter(e => e.kind === 'appointment' && e.status === 'requested' && e.start.getTime() >= now.getTime()).length,
@@ -255,9 +257,6 @@ export default function DoctorDashboard() {
   if (role !== 'doctor') {
     return <Navigate to="/lives" replace />;
   }
-
-  const doctorProfile = user?.doctorProfile;
-  const isApproved = doctorProfile?.status === 'approved';
 
   const typeLabel = (e: AgendaEvent) => {
     if (e.kind === 'appointment') {
@@ -292,6 +291,9 @@ export default function DoctorDashboard() {
     if (isSameDay(d, now)) return fill(t('mm2.dashboard.next.inHours'), { n: Math.round(mins / 60) });
     return `${fmt.formatDate(d, 'd MMM')} · ${fmt.formatTime(d)}`;
   };
+
+  /** «10 sep» (sin el punto de la abreviatura que añaden algunos idiomas). */
+  const dateShort = (d: Date) => fmt.formatDate(d, 'd MMM').replace('.', '');
 
   const patientStatusLabel = (status: string) => {
     if (status === 'pending') return t('mm2.dashboard.patients.statusPending');
@@ -352,33 +354,42 @@ export default function DoctorDashboard() {
     });
   }
 
+  /** Sub del KPI «Próxima consulta»: «En N min» si es hoy; la fecha corta si es otro día. */
+  const nextApptSub = nextAppt
+    ? (isSameDay(nextAppt.start, now) ? whenSub(nextAppt.start) : dateShort(nextAppt.start))
+    : t('mm2.dashboard.kpi.noConsultationsToday');
+
+  // Estados vacíos: la tarjeta sin datos no se estira a la altura de la vecina (CSS `.is-empty`).
+  const agendaEmpty = !agendaLoading && todayScheduled.length === 0;
+  const patientsEmpty = recentPatients.length === 0;
+  const liveEmpty = !agendaLoading && !nextLive;
+  const tasksEmpty = pendingItems.length === 0;
+
+  const amountToggle = (
+    <span
+      role="button"
+      tabIndex={0}
+      aria-label={showAmount ? t('mm2.dashboard.finance.hideAmount') : t('mm2.dashboard.finance.showAmount')}
+      title={showAmount ? t('mm2.dashboard.finance.hideAmount') : t('mm2.dashboard.finance.showAmount')}
+      onClick={(e) => { e.stopPropagation(); toggleAmount(); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleAmount(); } }}
+      className="di-kpi-eye"
+    >
+      {showAmount ? <EyeOff /> : <Eye />}
+    </span>
+  );
+
   return (
     <MainLayout>
-      <div className="pro-container pro-page">
-        {/* Cabecera */}
+      <div className="pro-container pro-page di-shell">
+        {/* Cabecera: «Panel de médico» con el icono de Live delante + subtítulo */}
         <div className="pro-page-head">
           <div className="min-w-0">
             <h1 className="pro-page-title">
               <span className="pro-live-dot"><Radio className="w-5 h-5" style={{ color: 'var(--pro-live)' }} /></span>
-              <span className="truncate">{t('mm2.dashboard.title')}</span>
+              <span>{t('mm2.dashboard.panelTitle')}</span>
             </h1>
-            <p className="pro-page-sub">
-              <span className="inline-flex items-center gap-1 min-w-0 max-w-full align-bottom">
-                <span className="truncate">
-                  {fill(t('mm2.dashboard.greeting'), { name: user?.name?.split(' ')[0] || '' })} · {t('mm2.dashboard.subtitle')}
-                </span>
-                <DoctorBadgeIcon userId={user?.id} size="md" className="flex-shrink-0" />
-              </span>
-            </p>
-            {isApproved && (
-              <div className="pro-badges-row">
-                <Badge variant="verified" className="gap-1 px-2 py-0.5 text-[10px] sm:text-xs">
-                  <CheckCircle className="w-3 h-3" />
-                  {t('mm2.dashboard.verified')}
-                </Badge>
-                <DoctorBadge type={getDoctorBadgeType(doctorProfile?.totalConsultations || 0, doctorProfile?.rating || 0, (doctorProfile as any)?.badgeOverride ?? null)} />
-              </div>
-            )}
+            <p className="pro-page-sub">{t('mm2.dashboard.subtitle')}</p>
           </div>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none" onClick={() => openNewConsultation()}>
@@ -390,117 +401,47 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        {/* Lo próximo + KPIs del día */}
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-12">
-          <section className="pro-card pro-card-pad bg-card lg:col-span-5 min-w-0">
-            <div className="pro-card-head">
-              <h2 className="pro-card-title"><CalendarClock /> <span className="truncate">{t('mm2.dashboard.next.title')}</span></h2>
-              <Link to={doctorHref('agenda', { tab: 'calendario' })} className="pro-link">{t('mm2.dashboard.next.agenda')} <ArrowRight /></Link>
-            </div>
-            {nextUp ? (
-              <div className="flex items-center gap-3">
-                <span className="pro-initials w-12 h-12 flex-shrink-0">
-                  {nextUp.kind === 'live'
-                    ? <Radio className="w-5 h-5" />
-                    : nextUp.patientAvatar
-                      ? <img src={nextUp.patientAvatar} alt="" />
-                      : initialsOf(nextUp.patientName)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="pro-pill pro-pill-plain pro-pill-info">
-                      {nextUp.kind === 'live' ? t('mm2.dashboard.next.live') : t('mm2.dashboard.next.consultation')}
-                    </span>
-                    {nextUp.kind === 'appointment' && statusPill(nextUp)}
-                  </div>
-                  <div className="pro-row-name truncate mt-1">{nextUp.title}</div>
-                  <div className="pro-row-sub">{fmt.formatTime(nextUp.start)} · {whenSub(nextUp.start)}</div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {nextUp.kind === 'appointment' && canStart(nextUp) && (
-                      <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={() => window.open(nextUp.roomUrl!, '_blank')}>
-                        <Video /> {t('mm2.dashboard.next.enterRoom')}
-                      </button>
-                    )}
-                    {nextUp.kind === 'live' && (
-                      <Link to="/doctor/go-live" className="pro-btn pro-btn-teal pro-btn-sm">
-                        <Radio /> {t('mm2.dashboard.next.goLive')}
-                      </Link>
-                    )}
-                    <Link
-                      to={nextUp.kind === 'live'
-                        ? doctorHref('contenido', { tab: 'lives' })
-                        : doctorHref('agenda', { tab: 'consultas' })}
-                      className="pro-btn pro-btn-outline pro-btn-sm"
-                    >
-                      {t('mm2.dashboard.next.details')}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="py-2">
-                <p className="pro-muted text-sm">{t('mm2.dashboard.next.empty')}</p>
-                <button type="button" className="pro-btn pro-btn-outline pro-btn-sm mt-3" onClick={() => openNewConsultation()}>
-                  <Plus /> {t('mm2.dashboard.newConsultation')}
-                </button>
-              </div>
-            )}
-          </section>
-
-          <div className={`lg:col-span-7 grid grid-cols-1 min-[440px]:grid-cols-2 ${showFinance ? 'xl:grid-cols-3' : ''} gap-3 sm:gap-4 content-start`}>
+        {/* Fila 1 · cuatro KPI iguales */}
+        <div className={`di-kpis${showFinance ? '' : ' is-3'}`}>
+          <Kpi
+            icon={CalendarClock}
+            label={t('mm2.dashboard.kpi.nextConsultation')}
+            value={nextAppt ? fmt.formatTime(nextAppt.start) : (agendaLoading ? '…' : '—')}
+            sub={nextAppt || !agendaLoading ? nextApptSub : undefined}
+          />
+          <Kpi
+            icon={MessageSquare}
+            label={t('mm2.dashboard.kpi.pendingMessages')}
+            value={chatUnread}
+            chevron
+            onClick={() => navigate('/chat')}
+          />
+          <Kpi
+            icon={Users}
+            label={t('mm2.dashboard.kpi.activePatients')}
+            value={patients.length}
+            chevron
+            onClick={() => navigate(doctorHref('pacientes'))}
+          />
+          {showFinance && (
             <Kpi
-              icon={MessageSquare}
-              label={t('mm2.dashboard.kpi.unread')}
-              value={chatUnread}
+              icon={BarChart3}
+              label={t('mm2.dashboard.kpi.income')}
+              labelAside={amountToggle}
+              value={monthEarnings ? (showAmount ? `${money(monthEarnings.total, language)} MXN` : '$ ••••') : '…'}
               chevron
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate(doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' }))}
             />
-            <Kpi
-              icon={Users}
-              label={t('mm2.dashboard.kpi.patients')}
-              value={patients.length}
-              chevron
-              onClick={() => navigate(doctorHref('pacientes'))}
-            />
-            {showFinance && (
-              <Kpi
-                icon={BarChart3}
-                label={t('mm2.dashboard.kpi.income')}
-                value={monthEarnings ? (showAmount ? `${money(monthEarnings.total, language)} MXN` : '$ ••••') : '…'}
-                chevron
-                onClick={() => navigate(doctorHref('cuenta', { tab: 'finanzas', f: 'ingresos' }))}
-                aside={
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    aria-label={showAmount ? t('mm2.dashboard.finance.hideAmount') : t('mm2.dashboard.finance.showAmount')}
-                    onClick={(e) => { e.stopPropagation(); toggleAmount(); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleAmount(); } }}
-                    className="pro-kebab self-center"
-                  >
-                    {showAmount ? <EyeOff /> : <Eye />}
-                  </span>
-                }
-              />
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Agenda de hoy + Pacientes recientes */}
-        <div className="grid gap-3 sm:gap-4 lg:grid-cols-12 mt-3 sm:mt-4">
-          <section className="pro-card pro-card-pad bg-card lg:col-span-7 min-w-0">
+        {/* Fila 2 · Agenda de hoy (2/3) + Pacientes recientes (1/3) */}
+        <div className="di-row2">
+          <section className={`pro-card pro-card-pad bg-card di-agenda min-w-0${agendaEmpty ? ' is-empty' : ''}`}>
             <div className="pro-card-head">
-              <h2 className="pro-card-title"><Calendar /> <span className="truncate">{t('mm2.dashboard.today.title')}</span></h2>
+              <h2 className="pro-card-title"><Calendar /> <span>{t('mm2.dashboard.today.title')}</span></h2>
               <Link to={doctorHref('agenda', { tab: 'calendario' })} className="pro-link">{t('mm2.dashboard.today.fullAgenda')} <ArrowRight /></Link>
             </div>
-            {todayHours && (
-              <p className="pro-muted text-[12.5px] mb-2">
-                <Clock className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
-                {fill(t('mm2.dashboard.today.hours'), { from: fmt.formatTime(todayHours.from), to: fmt.formatTime(todayHours.to) })}
-                {' · '}
-                <Link to={doctorHref('agenda', { tab: 'disponibilidad' })} className="pro-link inline">{t('mm2.dashboard.today.editHours')}</Link>
-              </p>
-            )}
             {agendaLoading && todayScheduled.length === 0 ? (
               <div className="space-y-2">
                 {[0, 1, 2].map(i => <div key={i} className="h-12 rounded-xl bg-[#eef3f6] animate-pulse" />)}
@@ -518,19 +459,20 @@ export default function DoctorDashboard() {
                         {e.patientAvatar ? <img src={e.patientAvatar} alt="" /> : e.kind === 'appointment' ? initialsOf(e.patientName) : e.kind === 'live' ? <Radio className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="pro-row-name truncate">{e.title}</div>
-                        <div className="pro-row-sub truncate">{typeLabel(e)}</div>
-                        <div className="sm:hidden mt-1">{statusPill(e)}</div>
+                        <div className="di-name">{e.title}</div>
+                        <div className="di-sub-type">{typeLabel(e)}</div>
+                        <div className="di-stack">{statusPill(e)}</div>
                       </div>
-                      <span className="hidden sm:inline-flex">{statusPill(e)}</span>
+                      <span className="di-type">{typeLabel(e)}</span>
+                      <span className="di-inline">{statusPill(e)}</span>
                       {e.kind === 'appointment' ? (
                         canStart(e) ? (
                           <button type="button" className="pro-btn pro-btn-teal pro-btn-sm" onClick={() => window.open(e.roomUrl!, '_blank')}>
-                            <Video /> <span className="hidden sm:inline">{t('mm2.dashboard.today.start')}</span>
+                            <Video /> <span className="di-btn-label">{t('mm2.dashboard.today.start')}</span>
                           </button>
                         ) : (
                           <Link to={doctorHref('agenda', { tab: 'consultas' })} className="pro-btn pro-btn-outline pro-btn-sm">
-                            <Video /> <span className="hidden sm:inline">{t('mm2.dashboard.today.view')}</span>
+                            <Video /> <span className="di-btn-label">{t('mm2.dashboard.today.view')}</span>
                           </Link>
                         )
                       ) : (
@@ -538,7 +480,7 @@ export default function DoctorDashboard() {
                           to={e.kind === 'live' ? doctorHref('contenido', { tab: 'lives' }) : doctorHref('agenda', { tab: 'disponibilidad' })}
                           className="pro-btn pro-btn-outline pro-btn-sm"
                         >
-                          <Calendar /> <span className="hidden sm:inline">{t('mm2.dashboard.today.view')}</span>
+                          <Calendar /> <span className="di-btn-label">{t('mm2.dashboard.today.view')}</span>
                         </Link>
                       )}
                       <DropdownMenu modal={false}>
@@ -571,11 +513,20 @@ export default function DoctorDashboard() {
                 })}
               </div>
             )}
+            {/* Horario de hoy: línea discreta al pie (el mockup no la dibuja, pero el enlace a editar el horario se conserva) */}
+            {todayHours && (
+              <p className="di-hours">
+                <Clock className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                {fill(t('mm2.dashboard.today.hours'), { from: fmt.formatTime(todayHours.from), to: fmt.formatTime(todayHours.to) })}
+                {' · '}
+                <Link to={doctorHref('agenda', { tab: 'disponibilidad' })} className="pro-link inline">{t('mm2.dashboard.today.editHours')}</Link>
+              </p>
+            )}
           </section>
 
-          <section className="pro-card pro-card-pad bg-card lg:col-span-5 min-w-0">
+          <section className={`pro-card pro-card-pad bg-card di-patients min-w-0${patientsEmpty ? ' is-empty' : ''}`}>
             <div className="pro-card-head">
-              <h2 className="pro-card-title"><Users /> <span className="truncate">{t('mm2.dashboard.patients.title')}</span></h2>
+              <h2 className="pro-card-title"><Users /> <span>{t('mm2.dashboard.patients.title')}</span></h2>
               <Link to={doctorHref('pacientes')} className="pro-link">{t('mm2.dashboard.patients.viewAll')} <ArrowRight /></Link>
             </div>
             {recentPatients.length === 0 ? (
@@ -590,14 +541,15 @@ export default function DoctorDashboard() {
                         {p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : initialsOf(p.name)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <Link to={doctorPatientHref(p.id, 'resumen')} className="pro-row-name truncate block">{p.name || t('mm2.patients.unnamed')}</Link>
-                        <div className="pro-row-sub truncate">
+                        <Link to={doctorPatientHref(p.id, 'resumen')} className="di-name">{p.name || t('mm2.patients.unnamed')}</Link>
+                        <div className="pro-row-sub">
                           {p.lastInteraction
                             ? `${t('mm2.dashboard.patients.lastContact')}: ${fmt.formatDate(new Date(p.lastInteraction), 'd MMM')}`
                             : patientStatusLabel(p.status)}
                         </div>
+                        <div className="di-stack"><span className={patientStatusClass(p.status)}>{patientStatusLabel(p.status)}</span></div>
                       </div>
-                      <span className={`${patientStatusClass(p.status)} hidden min-[380px]:inline-flex`}>{patientStatusLabel(p.status)}</span>
+                      <span className={`${patientStatusClass(p.status)} di-inline`}>{patientStatusLabel(p.status)}</span>
                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <button type="button" className="pro-kebab" aria-label={t('mm2.dashboard.more')}><MoreVertical /></button>
@@ -633,11 +585,47 @@ export default function DoctorDashboard() {
           </section>
         </div>
 
-        {/* Tareas pendientes · Actividad reciente · Resumen financiero (opcional) */}
-        <div className={`grid gap-3 sm:gap-4 md:grid-cols-2 ${showFinance ? 'xl:grid-cols-3' : ''} mt-3 sm:mt-4`}>
-          <section className="pro-card pro-card-pad bg-card min-w-0">
+        {/* Fila 3 · Próximo Live · Pendientes · Resumen del mes (opcional) */}
+        <div className={`di-row3${showFinance ? '' : ' is-2'}`}>
+          <section className={`pro-card pro-card-pad bg-card min-w-0${liveEmpty ? ' is-empty' : ''}`}>
             <div className="pro-card-head">
-              <h2 className="pro-card-title"><CheckSquare /> <span className="truncate">{t('mm2.dashboard.tasks.title')}</span></h2>
+              <h2 className="pro-card-title"><Video /> <span>{t('mm2.dashboard.live.title')}</span></h2>
+              <Link to={doctorHref('contenido', { tab: 'lives' })} className="pro-link">{t('mm2.dashboard.live.viewAll')} <ArrowRight /></Link>
+            </div>
+            {agendaLoading && !nextLive ? (
+              <div className="di-live">
+                <div className="di-live-thumb animate-pulse" style={{ background: '#eef3f6' }} />
+                <div className="di-live-body">
+                  <div className="h-4 w-3/4 rounded bg-[#eef3f6] animate-pulse" />
+                  <div className="h-3 w-1/2 rounded bg-[#eef3f6] animate-pulse" />
+                </div>
+              </div>
+            ) : nextLive ? (
+              <div className="di-live">
+                <span className="di-live-thumb"><Radio /></span>
+                <div className="di-live-body">
+                  <div className="di-live-title">{nextLive.title}</div>
+                  <div className="di-live-when">{dateShort(nextLive.start)} · {fmt.formatTime(nextLive.start)}</div>
+                  <div className="di-live-actions">
+                    <Link to={doctorHref('agenda', { tab: 'disponibilidad' })} className="pro-btn pro-btn-outline pro-btn-sm">
+                      {t('mm2.dashboard.live.manage')}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-2">
+                <p className="pro-muted text-sm">{t('mm2.dashboard.live.empty')}</p>
+                <Link to={doctorHref('contenido', { tab: 'crear', crear: 'live' })} className="pro-link mt-2">
+                  {t('mm2.dashboard.live.schedule')} <ArrowRight />
+                </Link>
+              </div>
+            )}
+          </section>
+
+          <section className={`pro-card pro-card-pad bg-card min-w-0${tasksEmpty ? ' is-empty' : ''}`}>
+            <div className="pro-card-head">
+              <h2 className="pro-card-title"><CheckSquare /> <span>{t('mm2.dashboard.tasks.title')}</span></h2>
             </div>
             {pendingItems.length === 0 ? (
               <p className="pro-muted text-sm py-3">{t('mm2.dashboard.tasks.empty')}</p>
@@ -646,7 +634,7 @@ export default function DoctorDashboard() {
                 {pendingItems.map((item, i) => (
                   <Link key={i} to={item.href} className="pro-todo">
                     <item.icon />
-                    <span className="min-w-0 truncate">{item.text}</span>
+                    <span className="min-w-0 flex-1">{item.text}</span>
                     <ChevronRight className="chev w-4 h-4" />
                   </Link>
                 ))}
@@ -654,12 +642,10 @@ export default function DoctorDashboard() {
             )}
           </section>
 
-          <DashboardRecentActivity nameById={patientName} />
-
           {showFinance && (
-            <section className="pro-card pro-card-pad bg-card min-w-0 md:col-span-2 xl:col-span-1">
+            <section className="pro-card pro-card-pad bg-card min-w-0 di-span">
               <div className="pro-card-head">
-                <h2 className="pro-card-title"><BarChart3 /> <span className="truncate">{t('mm2.dashboard.finance.title')}</span></h2>
+                <h2 className="pro-card-title"><BarChart3 /> <span>{t('mm2.dashboard.finance.monthSummary')}</span></h2>
                 <button
                   type="button"
                   className="pro-kebab"
