@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, FileText, AlertCircle } from 'lucide-react';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSeconds = 600, className }: Props) {
+  const { t } = useLanguage();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const path = useMemo(() => extractPath(bucket, fileUrl), [fileUrl, bucket]);
@@ -85,7 +87,7 @@ export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSecond
       <div className={wrapClass} {...noDownloadProps}>
         <SecureImage
           signedUrl={signedUrl}
-          alt="Archivo adjunto"
+          alt={t('prescriptionDetailPage.attachedFile.title')}
           bucket={bucket}
           fileId={path}
           maxHeight="75vh"

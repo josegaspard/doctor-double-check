@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Gauge, Subtitles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,6 +27,7 @@ function fmt(s: number) {
 }
 
 export default function RecordingControls({ videoRef, containerRef, recordingId, hasCaptions }: Props) {
+  const { t } = useLanguage();
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -186,7 +188,7 @@ export default function RecordingControls({ videoRef, containerRef, recordingId,
 
         <div className="ml-auto flex items-center gap-3">
           {hasCaptions && (
-            <button onClick={toggleCc} aria-label="subtítulos" className={`transition-colors ${ccOn ? 'text-primary' : 'hover:text-primary'}`}>
+            <button onClick={toggleCc} aria-label={t('recordings.captions.subtitles')} className={`transition-colors ${ccOn ? 'text-primary' : 'hover:text-primary'}`}>
               <Subtitles className="w-5 h-5" />
             </button>
           )}

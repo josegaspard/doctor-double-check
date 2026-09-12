@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle2, RefreshCw, AlertCircle, Radio, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export function LiveProcessingOverlay({
   const [progressValue, setProgressValue] = useState(10);
   const [redirectCancelled, setRedirectCancelled] = useState(false);
 
+  const { t } = useLanguage();
   const refetchStatus = useCallback(async () => {
     try {
       const { data, error } = await (supabase as any)
@@ -93,7 +95,7 @@ export function LiveProcessingOverlay({
         className="absolute top-4 left-4 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground shadow-lg animate-pulse"
       >
         <Radio className="w-3.5 h-3.5" />
-        <span className="text-xs font-bold uppercase tracking-wide">EN VIVO</span>
+        <span className="text-xs font-bold uppercase tracking-wide">{t('liveProcessing.liveBadge')}</span>
         <span className="text-xs opacity-80 flex items-center gap-1">
           <Eye className="w-3 h-3" />
           {viewerCount}

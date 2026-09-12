@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Hls from 'hls.js';
@@ -53,6 +54,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const { t } = useLanguage();
   const effectivePlaybackUrl = useMemo(() => {
     if (!playbackUrl) return undefined;
     const separator = playbackUrl.includes('?') ? '&' : '?';
@@ -298,7 +300,7 @@ export const CloudflareStreamPlayer = React.forwardRef<HTMLDivElement, Cloudflar
         <div className="absolute inset-0 flex items-center justify-center bg-black/80">
           <div className="text-center">
             <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-            <p className="text-white/80">Conectando...</p>
+            <p className="text-white/80">{t('videoCall.connecting')}</p>
             {!isConnected && retryCountRef.current > 0 && (
               <p className="text-white/60 text-xs mt-2">Intento {retryCountRef.current}/{MAX_RETRIES}</p>
             )}
