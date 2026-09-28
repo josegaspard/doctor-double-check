@@ -3167,6 +3167,8 @@ export const es = {
       'Reumatología': 'Reumatología',
       'Traumatología': 'Traumatología',
       'Urología': 'Urología',
+      'Psicología': 'Psicología',
+      'Nutrición': 'Nutrición',
       'Casos Clínicos': 'Casos Clínicos',
       'Explicaciones': 'Explicaciones',
       'Procedimientos': 'Procedimientos',

@@ -3004,6 +3004,8 @@ export const zh = {
       "Reumatología": "风湿科",
       "Traumatología": "创伤外科",
       "Urología": "泌尿科",
+      "Psicología": "心理学",
+      "Nutrición": "营养学",
       "Casos Clínicos": "临床病例",
       "Explicaciones": "讲解",
       "Procedimientos": "操作规程",

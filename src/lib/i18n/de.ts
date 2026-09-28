@@ -3110,6 +3110,8 @@ export const de = {
       "Reumatología": "Rheumatologie",
       "Traumatología": "Unfallchirurgie",
       "Urología": "Urologie",
+      "Psicología": "Psychologie",
+      "Nutrición": "Ernährung",
       "Casos Clínicos": "Klinische Fälle",
       Explicaciones: "Erklärungen",
       Procedimientos: "Verfahren",

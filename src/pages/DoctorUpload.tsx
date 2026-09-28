@@ -33,6 +33,8 @@ const CONTENT_CATEGORIES = [
   'Oftalmología', 'Oncología', 'Ortopedia', 'Otorrinolaringología', 'Patología',
   'Pediatría', 'Psiquiatría', 'Radiología', 'Reumatología', 'Traumatología',
   'Urología',
+  // Psicología y Nutrición: las pidió el cliente el 27-sep-2026, «debajo de las especialidades médicas».
+  'Psicología', 'Nutrición',
   'Casos Clínicos', 'Explicaciones', 'Procedimientos', 'Conferencias',
   'Otro',
 ];

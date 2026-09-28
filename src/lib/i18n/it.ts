@@ -3110,6 +3110,8 @@ export const it = {
       "Reumatología": "Reumatologia",
       "Traumatología": "Traumatologia",
       "Urología": "Urologia",
+      "Psicología": "Psicologia",
+      "Nutrición": "Nutrizione",
       "Casos Clínicos": "Casi Clinici",
       Explicaciones: "Spiegazioni",
       Procedimientos: "Procedure",

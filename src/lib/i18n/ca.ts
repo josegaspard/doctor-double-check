@@ -3003,6 +3003,8 @@ export const ca = {
       "Reumatología": "Reumatologia",
       "Traumatología": "Traumatologia",
       "Urología": "Urologia",
+      "Psicología": "Psicologia",
+      "Nutrición": "Nutrició",
       "Casos Clínicos": "Casos Clínics",
       "Explicaciones": "Explicacions",
       "Procedimientos": "Procediments",
