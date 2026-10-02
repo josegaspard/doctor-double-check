@@ -9200,7 +9200,7 @@ export const ca = {
     },
     lang: {
       change: 'Canviar d\'idioma',
-      footerCopyright: '{year} Medical Masters. Tots els drets reservats.',
+      footerCopyright: '© {year} Medical Masters. Tots els drets reservats.',
       sessionNote: 'Tota la sessió es mostra en l\'idioma que triïs.',
       title: 'Idioma',
     },
@@ -11435,5 +11435,10 @@ export const ca = {
       tierPremium: 'Premium',
       chatError: 'No s\'ha pogut obrir la conversa',
     },
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'Permís COFEPRIS',
+    chkInReview: 'en revisió',
   },
 };

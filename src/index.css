@@ -1482,6 +1482,7 @@
   [class*="bg-accent"] *,
   [class*="bg-white"] *,
   [class*="bg-light"] *,
+  [class*="pro-card"] *,
   button *,
   a *,
   [role="dialog"] *,
@@ -1853,14 +1854,16 @@
 }
 
 /* 16b. Botones outline (border-input) y cualquier botón con bg-background/bg-card:
-       fondo casi blanco, deben llevar texto e iconos oscuros desde reposo Y en hover. */
+       fondo casi blanco, deben llevar texto e iconos oscuros desde reposo Y en hover.
+   (2-oct) Excluye [role="tab"]: su data-[state=active]:bg-background pintaba de blanco
+   también la pestaña inactiva y no se distinguía cuál estaba activa (login). */
 .app-bg-image :is(button, a)[class*="border-input"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )),
-.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+.app-bg-image :is(button, a)[class*="bg-background"]:not([role="tab"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *,
@@ -1876,7 +1879,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )) svg,
-.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+.app-bg-image :is(button, a)[class*="bg-background"]:not([role="tab"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *,
@@ -1890,7 +1893,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover,
-.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+.app-bg-image :is(button, a)[class*="bg-background"]:not([role="tab"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *,
@@ -1906,7 +1909,7 @@
   [role="dialog"] *,
   [data-radix-popper-content-wrapper] *
 )):hover svg,
-.app-bg-image :is(button, a)[class*="bg-background"]:not(:where(
+.app-bg-image :is(button, a)[class*="bg-background"]:not([role="tab"]):not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *,

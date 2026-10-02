@@ -155,7 +155,7 @@ export function UnifiedFooter({ variant }: Props) {
   // site_settings.text_overrides, que t() ya aplica.
   const copyright = (adminCopyright && language === 'es')
     ? adminCopyright
-    : tf('mm2.lang.footerCopyright', `${year} Medical Masters.`).replace('{year}', String(year));
+    : tf('mm2.lang.footerCopyright', `© ${year} Medical Masters.`).replace('{year}', String(year));
 
   if (variant === 'app') {
     return (

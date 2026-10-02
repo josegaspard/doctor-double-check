@@ -93,6 +93,11 @@ import { money } from '@/lib/proFormat';
 type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'expired' | null;
 
 interface DoctorProfile {
+  // Estado de credenciales (2-oct): se leen en una consulta aparte para que la
+  // ficha no se rompa si cofepris_has aún no existe en la BD.
+  cedula_status?: 'pending' | 'approved' | 'rejected' | null;
+  cofepris_has?: boolean | null;
+  cofepris_status?: 'pending' | 'approved' | 'rejected' | null;
   specialty: string;
   bio: string | null;
   location: string | null;
@@ -299,6 +304,12 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
             setDoctorProfile(data);
             setEditedBio(data.bio || '');
             setEditedLocation(data.location || '');
+            const { data: cred, error: credErr } = await (supabase as any)
+              .from('doctor_profiles')
+              .select('cedula_status, cofepris_has, cofepris_status')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            if (!credErr && cred) setDoctorProfile(prev => prev ? { ...prev, ...cred } : prev);
           }
         } else if (role === 'resident') {
           const { data } = await supabase
@@ -699,7 +710,19 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
       { done: !!user.avatarUrl, label: t('pro.profile.chkPhoto'), tab: 'identidad' as ProfTab },
       { done: !!doctorProfile.bio, label: t('pro.profile.chkBio'), tab: 'identidad' as ProfTab },
       { done: !!doctorProfile.location, label: t('pro.profile.chkLocation'), tab: 'identidad' as ProfTab },
-      { done: !!cedulaValue, label: t('pro.profile.chkCedula'), tab: 'identidad' as ProfTab },
+      {
+        // ✓ solo con la cédula aprobada (o sin estado en perfiles antiguos ya aprobados).
+        done: !!cedulaValue && (doctorProfile.cedula_status === 'approved'
+          || (!doctorProfile.cedula_status && doctorProfile.status === 'approved')),
+        label: t('pro.profile.chkCedula') + (cedulaValue && doctorProfile.cedula_status === 'pending' ? ` · ${t('mmcorr.chkInReview')}` : ''),
+        tab: 'identidad' as ProfTab,
+      },
+      {
+        // COFEPRIS es opcional: cuenta como hecho si declaró que no tiene o si está aprobado.
+        done: doctorProfile.cofepris_has === false || doctorProfile.cofepris_status === 'approved',
+        label: t('mmcorr.chkCofepris') + (doctorProfile.cofepris_status === 'pending' ? ` · ${t('mmcorr.chkInReview')}` : ''),
+        tab: 'trayectoria' as ProfTab,
+      },
       { done: !!doctorProfile.numero_consejo, label: t(getSpecialistCredentialLabelKey(user.countryCode)), tab: 'identidad' as ProfTab },
       { done: Number(doctorProfile.consultation_fee) > 0, label: t('pro.profile.chkFee'), tab: 'servicios' as ProfTab },
       { done: careerCounts.certifications > 0, label: t('pro.profile.chkCertifications'), tab: 'trayectoria' as ProfTab },

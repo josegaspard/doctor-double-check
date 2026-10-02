@@ -10745,7 +10745,7 @@ export const en = {
     },
     lang: {
       change: 'Change language',
-      footerCopyright: '{year} Medical Masters. All rights reserved.',
+      footerCopyright: '© {year} Medical Masters. All rights reserved.',
       sessionNote: 'Your whole session will be shown in the language you choose.',
       title: 'Language',
     },
@@ -11664,5 +11664,10 @@ export const en = {
       empty: 'No sales pending invoicing.',
       unknownDoctor: 'Doctor',
     },
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'COFEPRIS permit',
+    chkInReview: 'under review',
   },
 };

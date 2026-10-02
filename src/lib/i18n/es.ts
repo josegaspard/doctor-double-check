@@ -561,7 +561,7 @@ export const es = {
     "clAdminDash17": "Validación de Residentes",
     "clAdminDash18": "Gestiona solicitudes de residentes",
     "clAdminDash19": "Verificaciones de Identidad",
-    "clAdminDash2": "Analytics y Reportes",
+    "clAdminDash2": "Analítica y reportes",
     "clAdminDash20": "Revisa solicitudes de pacientes",
     "clAdminDash21": "Credenciales de Doctores",
     "clAdminDash22": "Educación y certificaciones",
@@ -3253,7 +3253,7 @@ export const es = {
       footer: 'Medical Masters · Reporte generado automáticamente · {date}',
     },
     header: {
-      title: 'Analytics y Reportes',
+      title: 'Analítica y reportes',
       subtitle: 'Estadísticas globales de la plataforma',
     },
     doctorFallback: 'Doctor',
@@ -10803,7 +10803,7 @@ export const es = {
     },
     lang: {
       change: 'Cambiar idioma',
-      footerCopyright: '{year} Medical Masters. Todos los derechos reservados.',
+      footerCopyright: '© {year} Medical Masters. Todos los derechos reservados.',
       sessionNote: 'Toda la sesión se muestra en el idioma que elijas.',
       title: 'Idioma',
     },
@@ -11722,5 +11722,10 @@ export const es = {
       empty: 'No hay ventas pendientes de facturar.',
       unknownDoctor: 'Médico',
     },
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'Permiso COFEPRIS',
+    chkInReview: 'en revisión',
   },
 };

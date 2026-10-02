@@ -10561,7 +10561,7 @@ export const de = {
     },
     lang: {
       change: 'Sprache ändern',
-      footerCopyright: '{year} Medical Masters. Alle Rechte vorbehalten.',
+      footerCopyright: '© {year} Medical Masters. Alle Rechte vorbehalten.',
       sessionNote: 'Die gesamte Sitzung wird in der von Ihnen gewählten Sprache angezeigt.',
       title: 'Sprache',
     },
@@ -11454,5 +11454,10 @@ export const de = {
     errNotPublic: 'Nur öffentliche Inhalte können bewertet werden.',
     errNotFound: 'Dieser Beitrag existiert nicht mehr.',
     errGeneric: 'Ihre Bewertung konnte nicht gespeichert werden.',
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'COFEPRIS-Genehmigung',
+    chkInReview: 'in Prüfung',
   },
 };

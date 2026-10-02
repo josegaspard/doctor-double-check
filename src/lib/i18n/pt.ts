@@ -10561,7 +10561,7 @@ export const pt = {
     },
     lang: {
       change: 'Mudar idioma',
-      footerCopyright: '{year} Medical Masters. Todos os direitos reservados.',
+      footerCopyright: '© {year} Medical Masters. Todos os direitos reservados.',
       sessionNote: 'Toda a sessão é mostrada no idioma que você escolher.',
       title: 'Idioma',
     },
@@ -11454,5 +11454,10 @@ export const pt = {
     errNotPublic: 'Só é possível avaliar conteúdo público.',
     errNotFound: 'Essa publicação não existe mais.',
     errGeneric: 'Não foi possível salvar a sua avaliação.',
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'Licença COFEPRIS',
+    chkInReview: 'em análise',
   },
 };

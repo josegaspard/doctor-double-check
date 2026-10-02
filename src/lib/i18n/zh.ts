@@ -9327,7 +9327,7 @@ export const zh = {
     },
     lang: {
       change: '更改语言',
-      footerCopyright: '{year} Medical Masters。保留所有权利。',
+      footerCopyright: '© {year} Medical Masters。保留所有权利。',
       sessionNote: '整个应用界面都将以你选择的语言显示。',
       title: '语言',
     },
@@ -11436,5 +11436,10 @@ export const zh = {
       tierPremium: '高级',
       chatError: '无法打开对话',
     },
+  },
+  // Corrector 2-oct: checklist del perfil del médico
+  mmcorr: {
+    chkCofepris: 'COFEPRIS 许可',
+    chkInReview: '审核中',
   },
 };
