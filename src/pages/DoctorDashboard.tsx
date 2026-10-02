@@ -399,7 +399,7 @@ export default function DoctorDashboard() {
             <button type="button" className="pro-btn pro-btn-white flex-1 sm:flex-none" onClick={() => openNewConsultation()}>
               <Plus /> {t('mm2.dashboard.newConsultation')}
             </button>
-            <Link to="/doctor/go-live" className="pro-btn pro-btn-ghost flex-1 sm:flex-none">
+            <Link to="/doctor/go-live" className="pro-btn pro-btn-live flex-1 sm:flex-none">
               <Video /> {t('mm2.dashboard.startLive')}
             </Link>
           </div>
