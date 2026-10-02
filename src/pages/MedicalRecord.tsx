@@ -22,6 +22,12 @@ import {
   User, Heart, Wine, Syringe, Upload, Calculator,
   Loader2, Save, FileText, Stethoscope, ShieldCheck,
   Check, CloudOff,
+  X,
+  Cigarette,
+  Pill,
+  Footprints,
+  Wind,
+  CloudFog,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -628,7 +634,7 @@ export default function MedicalRecord() {
                                 <div key={i} className="rounded-md border border-border p-2 bg-muted/20 space-y-1.5">
                                   <div className="flex items-center justify-between gap-2">
                                     <Label className="text-[11px] text-muted-foreground">{t('medicalRecordPage.personal.otherChronicCondition')}</Label>
-                                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={() => removeOther(i)}>✕</Button>
+                                    <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={() => removeOther(i)} aria-label={t('common.delete')}><X className="w-4 h-4" aria-hidden="true" /></Button>
                                   </div>
                                   <Input
                                     placeholder={t('medicalRecordPage.personal.otherChronicNamePlaceholder')}
@@ -714,7 +720,7 @@ export default function MedicalRecord() {
                       <Input placeholder={t('medicalRecordPage.personal.medicationNamePlaceholder')} value={med.name} onChange={e => updateMedication(i, 'name', e.target.value)} className="text-sm" />
                       <Input placeholder={t('medicalRecordPage.personal.medicationDosePlaceholder')} value={med.dose} onChange={e => updateMedication(i, 'dose', e.target.value)} className="text-sm w-24" />
                       <Input placeholder={t('medicalRecordPage.personal.medicationFrequencyPlaceholder')} value={med.frequency} onChange={e => updateMedication(i, 'frequency', e.target.value)} className="text-sm w-28" />
-                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeMedication(i)}>✕</Button>
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeMedication(i)} aria-label={t('common.delete')}><X className="w-4 h-4" aria-hidden="true" /></Button>
                     </div>
                   ))}
                   {data.medications.length === 0 && <p className="text-xs text-muted-foreground">{t('medicalRecordPage.personal.noMedications')}</p>}
@@ -729,7 +735,7 @@ export default function MedicalRecord() {
                       <Input placeholder={t('medicalRecordPage.personal.surgeryProcedurePlaceholder')} value={s.procedure} onChange={e => updateSurgery(i, 'procedure', e.target.value)} className="text-sm" />
                       <Input type="date" value={s.date} onChange={e => updateSurgery(i, 'date', e.target.value)} className="text-sm" />
                       <Input placeholder={t('medicalRecordPage.personal.surgeryComplicationsPlaceholder')} value={s.complications || ''} onChange={e => updateSurgery(i, 'complications' as any, e.target.value)} className="text-sm" />
-                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)}>✕</Button>
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive h-9 px-2" onClick={() => removeSurgery(i)} aria-label={t('common.delete')}><X className="w-4 h-4" aria-hidden="true" /></Button>
                     </div>
                   ))}
                   {data.surgeries.length === 0 && <p className="text-xs text-muted-foreground">{t('medicalRecordPage.personal.noSurgeries')}</p>}
@@ -955,7 +961,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🍷</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.alcohol')}</Label></div>
+                        <div className="flex items-center gap-2"><Wine className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><Label className="text-sm font-medium">{t('medicalRecordPage.habits.alcohol')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1010,7 +1016,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🚬</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.smoking')}</Label></div>
+                        <div className="flex items-center gap-2"><Cigarette className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><Label className="text-sm font-medium">{t('medicalRecordPage.habits.smoking')}</Label></div>
                         <Select
                           value={anyPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1031,15 +1037,15 @@ export default function MedicalRecord() {
                       {anyPositive && (
                         <div className="space-y-2 pl-7">
                           {[
-                            { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: t('medicalRecordPage.habits.subtypes.cigarette'), icon: '🚬', placeholder: t('medicalRecordPage.habits.cigarettePlaceholder') },
-                            { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: t('medicalRecordPage.habits.subtypes.vape'), icon: '💨', placeholder: t('medicalRecordPage.habits.vapePlaceholder') },
-                            { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: t('medicalRecordPage.habits.subtypes.hookah'), icon: '🫧', placeholder: t('medicalRecordPage.habits.hookahPlaceholder') },
+                            { key: 'habit_smoking' as const, amountKey: 'habit_smoking_amount' as const, label: t('medicalRecordPage.habits.subtypes.cigarette'), icon: Cigarette, placeholder: t('medicalRecordPage.habits.cigarettePlaceholder') },
+                            { key: 'habit_vaping' as const, amountKey: 'habit_vaping_amount' as const, label: t('medicalRecordPage.habits.subtypes.vape'), icon: Wind, placeholder: t('medicalRecordPage.habits.vapePlaceholder') },
+                            { key: 'habit_hookah' as const, amountKey: 'habit_hookah_amount' as const, label: t('medicalRecordPage.habits.subtypes.hookah'), icon: CloudFog, placeholder: t('medicalRecordPage.habits.hookahPlaceholder') },
                           ].map(sub => {
                             const subActive = data[sub.key] !== 'never' && data[sub.key] !== '';
                             return (
                               <div key={sub.key} className="rounded-md border border-border/60 p-2 space-y-2 bg-muted/20">
                                 <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2"><span>{sub.icon}</span><Label className="text-xs font-medium">{sub.label}</Label></div>
+                                  <div className="flex items-center gap-2"><sub.icon className="w-4 h-4 text-muted-foreground shrink-0" aria-hidden="true" /><Label className="text-xs font-medium">{sub.label}</Label></div>
                                   <Switch checked={subActive} onCheckedChange={v => {
                                     if (!v) { update(sub.key, 'never'); update(sub.amountKey, ''); }
                                     else update(sub.key, 'occasionally');
@@ -1081,7 +1087,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">💊</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.drugs')}</Label></div>
+                        <div className="flex items-center gap-2"><Pill className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><Label className="text-sm font-medium">{t('medicalRecordPage.habits.drugs')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {
@@ -1130,7 +1136,7 @@ export default function MedicalRecord() {
                   return (
                     <div className="rounded-lg border border-border p-3 space-y-3">
                       <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2"><span className="text-lg">🏃</span><Label className="text-sm font-medium">{t('medicalRecordPage.habits.exercise')}</Label></div>
+                        <div className="flex items-center gap-2"><Footprints className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><Label className="text-sm font-medium">{t('medicalRecordPage.habits.exercise')}</Label></div>
                         <Select
                           value={isPositive ? 'positive' : 'negative'}
                           onValueChange={v => {

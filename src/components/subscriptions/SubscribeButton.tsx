@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, BellOff, Check, UserPlus, Settings, Crown, Loader2 } from 'lucide-react';
+import { Bell, BellOff, Check, UserPlus, Settings, Crown, Loader2, Radio, FileText, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -28,6 +28,7 @@ import {
 } from '@/hooks/useDoctorSubscriptionPlans';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
@@ -61,6 +62,7 @@ export function SubscribeButton({
   planTier,
 }: SubscribeButtonProps) {
   const { user, isAuthenticated } = useAuth();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { isSubscribedTo, getSubscription, subscribe, unsubscribe, updateNotificationPrefs, isLoading: subsLoading } =
     useSubscriptions();
   const { t, language } = useLanguage();
@@ -208,6 +210,7 @@ export function SubscribeButton({
       confirmLabel: t('mm2.confirm.subscribeUpgrade.confirmLabel'),
     });
     if (!ok) return;
+    if (!(await ensureBillingProfile())) return;
 
     setIsUpgrading(true);
     try {
@@ -221,6 +224,7 @@ export function SubscribeButton({
         window.location.href = data.url;
       }
     } catch (error: any) {
+      if (await handleBillingError(error)) return;
       toast({
         title: t('common.error'),
         description: error.message || t('paywall.checkoutError'),
@@ -319,7 +323,7 @@ export function SubscribeButton({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notify-live" className="text-sm flex items-center gap-2">
-                    <span className="text-destructive">🔴</span>
+                    <Radio className="w-4 h-4 text-destructive" aria-hidden="true" />
                     {t('subscriptions.notifyLive')}
                   </Label>
                   <Switch
@@ -331,7 +335,7 @@ export function SubscribeButton({
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notify-content" className="text-sm flex items-center gap-2">
-                    <span>📄</span>
+                    <FileText className="w-4 h-4" aria-hidden="true" />
                     {t('subscriptions.notifyContent')}
                   </Label>
                   <Switch
@@ -343,7 +347,7 @@ export function SubscribeButton({
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="notify-availability" className="text-sm flex items-center gap-2">
-                    <span>📅</span>
+                    <CalendarDays className="w-4 h-4" aria-hidden="true" />
                     {t('subscriptions.notifyAvailability')}
                   </Label>
                   <Switch
@@ -467,12 +471,12 @@ export function SubscribeButton({
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
                   {basicPlan.isCustom ? (
-                    basicPlan.perks.map((perk, i) => <li key={`${i}-${perk}`}>✓ {perk}</li>)
+                    basicPlan.perks.map((perk, i) => <li key={`${i}-${perk}`} className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{perk}</li>)
                   ) : (
                     <>
-                      <li>✓ {t('subscriptions.exclusiveContent')}</li>
-                      <li>✓ {t('subscriptions.priorityNotifications')}</li>
-                      <li>✓ {t('subscriptions.subscriberBadge')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.exclusiveContent')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.priorityNotifications')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.subscriberBadge')}</li>
                     </>
                   )}
                 </ul>
@@ -500,13 +504,13 @@ export function SubscribeButton({
                 </div>
                 <ul className="text-sm text-muted-foreground space-y-1 mt-3">
                   {premiumPlan.isCustom ? (
-                    premiumPlan.perks.map((perk, i) => <li key={`${i}-${perk}`}>✓ {perk}</li>)
+                    premiumPlan.perks.map((perk, i) => <li key={`${i}-${perk}`} className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{perk}</li>)
                   ) : (
                     <>
-                      <li>✓ {t('subscriptions.allBasicFeatures')}</li>
-                      <li>✓ {t('subscriptions.recordingDiscount')}</li>
-                      <li>✓ {t('subscriptions.priorityChat')}</li>
-                      <li>✓ {t('subscriptions.earlyAccess')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.allBasicFeatures')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.recordingDiscount')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.priorityChat')}</li>
+                      <li className="flex items-start gap-1.5"><Check className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />{t('subscriptions.earlyAccess')}</li>
                     </>
                   )}
                 </ul>

@@ -104,9 +104,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           if (oldBalance !== null && oldBalance !== newBalance) {
             const diff = newBalance - oldBalance;
             if (diff > 0) {
-              toast.success(`💰 +$${diff.toLocaleString()} recibidos. Saldo: $${newBalance.toLocaleString()}`);
+              toast.success(`+$${diff.toLocaleString()} recibidos. Saldo: $${newBalance.toLocaleString()}`);
             } else if (diff < 0) {
-              toast.info(`💳 -$${Math.abs(diff).toLocaleString()} debitados. Saldo: $${newBalance.toLocaleString()}`);
+              toast.info(`-$${Math.abs(diff).toLocaleString()} debitados. Saldo: $${newBalance.toLocaleString()}`);
             }
           }
           
@@ -121,9 +121,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           const tx = payload.new as { type: string; amount: number; status: string; description: string };
           // Status-specific notifications
           if (tx.status === 'initiated' || tx.status === 'pending') {
-            toast.loading(`⏳ Procesando: ${tx.description}`, { id: `tx-${tx.description}`, duration: 4000 });
+            toast.loading(`Procesando: ${tx.description}`, { id: `tx-${tx.description}`, duration: 4000 });
           } else if (tx.status === 'failed') {
-            toast.error(`❌ Pago fallido: ${tx.description}. Verifica tu método de pago.`, { duration: 6000 });
+            toast.error(`Pago fallido: ${tx.description}. Verifica tu método de pago.`, { duration: 6000 });
           }
           fetchWalletData();
         }
@@ -137,9 +137,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           // Status transitions
           if (oldTx.status !== tx.status) {
             if (tx.status === 'paid') {
-              toast.success(`✅ Confirmado: ${tx.description}`, { duration: 4000 });
+              toast.success(`Confirmado: ${tx.description}`, { duration: 4000 });
             } else if (tx.status === 'failed') {
-              toast.error(`❌ Falló: ${tx.description}. Reintenta o contacta soporte.`, { duration: 6000 });
+              toast.error(`Falló: ${tx.description}. Reintenta o contacta soporte.`, { duration: 6000 });
             }
           }
           fetchWalletData();

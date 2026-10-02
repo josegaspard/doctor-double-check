@@ -44,7 +44,11 @@ const mapRow = (d: any): DoctorCredentials => ({
   doctorUniversity: d.university || undefined,
   // Afiliación hospitalaria: workplaces (nuevo) con fallback a practice_hospital.
   doctorHospital: joinWorkplaces(d.workplaces) || d.practice_hospital || undefined,
-  doctorCofepris: d.cofepris_permit || undefined,
+  // COFEPRIS solo si el equipo lo aprobó. La RPC ya lo filtra (no trae cofepris_status);
+  // en el select directo del propio médico sí viene y se comprueba aquí.
+  doctorCofepris: (d.cofepris_status === undefined || d.cofepris_status === 'approved')
+    ? (d.cofepris_permit || undefined)
+    : undefined,
   doctorSignatureUrl: d.signature_url || undefined,
 });
 
@@ -69,7 +73,7 @@ export const fetchDoctorCredentials = async (userId?: string): Promise<DoctorCre
     try {
       const { data } = await supabase
         .from('doctor_profiles')
-        .select('specialty, secondary_specialties, license, cedula_profesional, cedula_especialidad, numero_consejo, university, workplaces, practice_hospital, cofepris_permit, signature_url')
+        .select('specialty, secondary_specialties, license, cedula_profesional, cedula_especialidad, numero_consejo, university, workplaces, practice_hospital, cofepris_permit, cofepris_status, signature_url')
         .eq('user_id', userId)
         .maybeSingle();
       if (data) creds = { ...mapRow(data), ...creds };

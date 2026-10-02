@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, MapPin, Phone, Copy, Search, ShoppingBag, DollarSign, ArrowRight, ExternalLink, RotateCcw, Star } from 'lucide-react';
+import { Package, Loader2, Truck, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp, MapPin, Phone, Copy, Search, ShoppingBag, DollarSign, ArrowRight, ExternalLink, RotateCcw, Star, CalendarDays, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -385,7 +385,7 @@ export default function MyOrders({ embedded = false }: MyOrdersProps = {}) {
                             </div>
                             {o.estimated_delivery && (
                               <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                📅 {t('autoI18n.myOrders21')} <strong>{new Date(o.estimated_delivery).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</strong>
+                                <CalendarDays className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('autoI18n.myOrders21')} <strong>{new Date(o.estimated_delivery).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</strong>
                               </p>
                             )}
                           </div>
@@ -402,7 +402,7 @@ export default function MyOrders({ embedded = false }: MyOrdersProps = {}) {
                               <p className="text-sm font-medium">{o.shipping_name}</p>
                               {o.shipping_phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {o.shipping_phone}</p>}
                               <p className="text-xs text-muted-foreground">{[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ')}</p>
-                              {o.shipping_notes && <p className="text-xs text-muted-foreground italic mt-1.5 pt-1.5 border-t border-border/50">💬 {o.shipping_notes}</p>}
+                              {o.shipping_notes && <p className="text-xs text-muted-foreground italic mt-1.5 pt-1.5 border-t border-border/50"><MessageSquare className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{o.shipping_notes}</p>}
                             </div>
                           </div>
                         )}
@@ -415,9 +415,9 @@ export default function MyOrders({ embedded = false }: MyOrdersProps = {}) {
                               <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
                               {t('autoI18n.myOrders24')}: {new Date(o.created_at).toLocaleString('es-MX')}
                             </div>
-                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" />✅ {t('autoI18n.myOrders25')}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
-                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary" />📦 {t('autoI18n.myOrders26')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
-                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success" />🎉 {t('autoI18n.myOrders27')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
+                            {o.paid_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-primary" />{t('autoI18n.myOrders25')}: {new Date(o.paid_at).toLocaleString('es-MX')}</div>}
+                            {o.shipped_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-secondary" />{t('autoI18n.myOrders26')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</div>}
+                            {o.delivered_at && <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-success" />{t('autoI18n.myOrders27')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</div>}
                           </div>
                         </div>
 

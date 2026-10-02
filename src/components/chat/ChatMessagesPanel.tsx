@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Lock, ShoppingCart, Loader2, Wallet, CreditCard } from 'lucide-react';
+import { Send, Lock, ShoppingCart, Loader2, Wallet, CreditCard, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useWallet } from '@/contexts/WalletContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { toast } from 'sonner';
 import { ChatMessageBubble } from '@/components/chat/ChatMessageBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -122,6 +123,7 @@ export function ChatMessagesPanel({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { balance, canAfford } = useWallet();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
 
   const otherDoctorId = session
     ? session.participant1Id === userId
@@ -187,6 +189,7 @@ export function ChatMessagesPanel({
 
   const handleWalletPurchase = async () => {
     if (!otherDoctorId || consultationFee <= 0) return;
+    if (!(await ensureBillingProfile())) return;
     setPaywallProcessing(true);
     setPaywallError(null);
     try {
@@ -198,6 +201,7 @@ export function ChatMessagesPanel({
       if (error) throw error;
       const result = data as any;
       if (!result?.success) {
+        if (await handleBillingError(null, result)) return;
         setPaywallError(result?.error || t('chatMessagesPanel.paymentFailed'));
         return;
       }
@@ -207,6 +211,7 @@ export function ChatMessagesPanel({
         setPaywallOpen(false);
       }
     } catch (e: any) {
+      if (await handleBillingError(e)) return;
       setPaywallError(e?.message || t('chatMessagesPanel.unexpectedError'));
     } finally {
       setPaywallProcessing(false);
@@ -215,6 +220,7 @@ export function ChatMessagesPanel({
 
   const handleStripePurchase = async () => {
     if (!otherDoctorId) return;
+    if (!(await ensureBillingProfile())) return;
     setPaywallProcessing(true);
     setPaywallError(null);
     try {
@@ -228,6 +234,7 @@ export function ChatMessagesPanel({
       }
       setPaywallError(t('chatMessagesPanel.checkoutStartFailed'));
     } catch (e: any) {
+      if (await handleBillingError(e)) return;
       setPaywallError(e?.message || t('chatMessagesPanel.checkoutStartError'));
     } finally {
       setPaywallProcessing(false);
@@ -470,7 +477,7 @@ export function ChatMessagesPanel({
                       aria-label={t('chatMessagesPanel.cancelReply')}
                       className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded hover:bg-muted"
                     >
-                      ✕
+                      <X className="w-3.5 h-3.5" aria-hidden="true" />
                     </button>
                   </div>
                 )}

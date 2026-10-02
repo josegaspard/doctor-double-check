@@ -153,7 +153,7 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
   <div class="watermark">${esc(patient.name.toUpperCase())} · MEDICAL MASTERS</div>
   <div class="container">
     <header style="text-align:center;margin-bottom:24px;padding:18px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:12px;color:white;">
-      <h1 style="margin:0 0 4px 0;font-size:22px;">📋 Resumen Clínico</h1>
+      <h1 style="margin:0 0 4px 0;font-size:22px;">Resumen Clínico</h1>
       <p style="margin:0;opacity:0.9;font-size:13px;">Medical Masters · Documento privado</p>
     </header>
 
@@ -173,7 +173,7 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
     ${section('Notas adicionales', notesRows)}
 
     <footer style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:10px;">
-      <p>⚠️ Documento confidencial — Solo para uso personal del paciente</p>
+      <p>Documento confidencial — Solo para uso personal del paciente</p>
       <p>Generado dentro de Medical Masters · No compartir externamente</p>
       <p style="margin-top:6px;">ID: ${now.getTime().toString(36)}</p>
     </footer>
@@ -181,7 +181,7 @@ export const generateClinicalSummaryHTML = (input: ClinicalSummaryInput): string
 
   <div class="no-print" style="position:fixed;bottom:16px;right:16px;display:flex;gap:8px;">
     <button onclick="window.print()" style="background:#0ea5e9;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(14,165,233,0.4);min-height:44px;">
-      📥 Descargar / Imprimir
+      Descargar / Imprimir
     </button>
     <button onclick="window.close()" style="background:#64748b;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;min-height:44px;">
       Cerrar

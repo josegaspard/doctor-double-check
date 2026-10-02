@@ -109,6 +109,7 @@ export default function AdminMarketplaceFee() {
         .select('id, user_id, name, description, website, phone, location, status, legal_name, tax_id, payout_email, notes, terms_accepted_at, created_at')
         .order('created_at', { ascending: false });
       const vendorsWithInfo: VendorRow[] = await Promise.all((vs || []).map(async (v: any) => {
+        if (!v.user_id) return { ...v, profile: undefined, doctor: null };
         const { data: prof } = await sb.from('profiles').select('name, email').eq('id', v.user_id).maybeSingle();
         const { data: doc } = await sb.from('doctor_profiles').select('specialty, cedula_profesional, status').eq('user_id', v.user_id).maybeSingle();
         return { ...v, profile: prof || undefined, doctor: doc || null };

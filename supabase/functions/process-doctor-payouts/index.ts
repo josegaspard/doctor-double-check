@@ -135,24 +135,24 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Check invoice requirement (skip for single-doctor admin-initiated payouts)
+        // Facturas: el médico factura a nombre de cada comprador (doctor_sales), no a la
+        // plataforma. Con require_invoice, no se le paga mientras tenga ventas de hace
+        // más de 72 h sin su CFDI subido (skip for single-doctor admin-initiated payouts).
         let invoiceId: string | null = null;
         if (!singleDoctorId && payoutSettings.require_invoice) {
-          const { data: invoice } = await supabaseAdmin
-            .from("doctor_invoices")
-            .select("id")
+          const cutoff = new Date(Date.now() - 72 * 3600 * 1000).toISOString();
+          const { count: overdue, error: overdueErr } = await supabaseAdmin
+            .from("doctor_sales")
+            .select("id", { count: "exact", head: true })
             .eq("doctor_id", doctor.user_id)
-            .eq("status", "approved")
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
+            .eq("invoice_status", "pending")
+            .lt("created_at", cutoff);
 
-          if (!invoice) {
-            console.log(`Doctor ${doctor.user_id} has no approved invoice, skipping`);
+          if (!overdueErr && (overdue ?? 0) > 0) {
+            console.log(`Doctor ${doctor.user_id} has ${overdue} sales without invoice to the buyer, skipping`);
+            errors.push(`${doctor.user_id}: ${overdue} ventas sin factura al comprador (>72 h)`);
             continue;
           }
-          // FIX #5: Link payout to invoice
-          invoiceId = invoice.id;
         } else if (singleDoctorId) {
           // For single payouts, try to link the latest approved invoice if available
           const { data: invoice } = await supabaseAdmin
@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("notifications").insert({
           user_id: doctor.user_id,
           type: "system",
-          title: "💰 Pago procesado",
+          title: "Pago procesado",
           message: `Se ha iniciado una transferencia de $${payoutAmount.toFixed(2)} MXN a tu cuenta bancaria`,
           data: {
             amount: payoutAmount,

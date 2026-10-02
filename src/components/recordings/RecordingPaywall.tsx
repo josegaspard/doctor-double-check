@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePurchases } from '@/hooks/usePurchases';
+import { BILLING_REQUIRED_CODE } from '@/components/billing/BillingGate';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { money2 } from '@/lib/proFormat';
@@ -103,6 +104,9 @@ export function RecordingPaywall({
       if (res.success) {
         await refresh();
         setTxStatus('paid');
+      } else if (res.error === BILLING_REQUIRED_CODE) {
+        // Faltaban los datos fiscales: el diálogo ya los pide; sin error en pantalla.
+        setTxStatus('idle');
       } else {
         setTxError(res.error || t('recordingPaywall.errors.paymentFailed'));
         setTxStatus('failed');

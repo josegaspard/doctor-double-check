@@ -15,23 +15,20 @@ import { formatDistanceToNow } from 'date-fns';
 import { getDateLocale } from '@/lib/dateLocale';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { formatMessagePreview } from '@/lib/utils';
-
-// Strip leading emojis from text to avoid duplicate icons
-function stripLeadingEmoji(text: string): string {
-  return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F]+\s*/u, '').trim();
-}
+import { stripEmoji } from '@/lib/stripEmoji';
+import { NotificationTypeIcon } from '@/components/notifications/NotificationTypeIcon';
 
 /**
  * Sanitiza el cuerpo de la notificación para evitar mostrar marcadores feos
  * tipo "[Imagen: scan.jpg]" cuando llega una notificación de chat con archivo.
- * Para tipo `chat_message` aplicamos `formatMessagePreview` (📷 Foto / 📎 Archivo / 📋 Receta médica).
+ * Para tipo `chat_message` aplicamos `formatMessagePreview` (Foto / Archivo / Receta médica).
  */
 function getCleanNotificationBody(notification: Notification): string {
   const raw = notification.message || '';
   if (notification.type === 'chat_message') {
-    return formatMessagePreview(raw, 120);
+    return stripEmoji(formatMessagePreview(raw, 120));
   }
-  return raw;
+  return stripEmoji(raw);
 }
 
 function NotificationItem({
@@ -47,33 +44,6 @@ function NotificationItem({
 }) {
   const navigate = useNavigate();
   const { t } = useLanguage();
-
-  const getNotificationIcon = () => {
-    switch (notification.type) {
-      case 'doctor_live':
-        return '🔴';
-      case 'doctor_availability':
-        return '📅';
-      case 'new_content':
-        return '📄';
-      case 'chat_message':
-        return '💬';
-      case 'subscription_update':
-        return '⭐';
-      case 'rating_request':
-        return '⭐';
-      case 'recording_purchase':
-        return '💰';
-      case 'new_subscriber':
-        return '🎉';
-      case 'payment_received':
-        return '💵';
-      case 'video_call':
-        return '📹';
-      default:
-        return '🔔';
-    }
-  };
 
   const handleClick = () => {
     if (!notification.isRead) {
@@ -166,10 +136,10 @@ function NotificationItem({
       onClick={handleClick}
     >
       <div className="flex items-start gap-3">
-        <span className="text-xl">{getNotificationIcon()}</span>
+        <span className="mt-0.5 flex-shrink-0 text-primary"><NotificationTypeIcon type={notification.type} /></span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-sm truncate flex-1 min-w-0">{stripLeadingEmoji(notification.title)}</p>
+            <p className="font-medium text-sm truncate flex-1 min-w-0">{stripEmoji(notification.title)}</p>
             {!notification.isRead && (
               <span
                 className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none"

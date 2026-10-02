@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Users, ArrowLeft, Shield, User, Stethoscope, GraduationCap, Settings2 } from 'lucide-react';
+import { Search, Users, ArrowLeft, Shield, User, Stethoscope, GraduationCap, Settings2, Check } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -115,9 +115,9 @@ export default function AdminUsers() {
     const colors: Record<string, string> = {
       admin: 'bg-secondary text-white border-secondary',
       doctor: 'bg-primary text-white border-primary',
-      resident: 'bg-primary/70 text-white border-primary/70',
-      patient: 'bg-secondary/60 text-white border-secondary/60',
-      visitor: 'bg-warning text-white border-warning',
+      resident: 'bg-light/60 text-light-foreground border-light',
+      patient: 'bg-muted text-secondary border-border',
+      visitor: 'bg-warning text-warning-foreground border-warning',
     };
     return (
       <Badge variant="outline" className={`${colors[role] || colors.patient} font-semibold`}>
@@ -241,7 +241,7 @@ export default function AdminUsers() {
                            {getRoleBadge(userData.role || 'patient')}
                            {userData.is_identity_verified && (
                              <Badge variant="outline" className="bg-primary text-white border-primary text-[10px] h-5 font-semibold">
-                               ✓ {t('admin.verified')}
+                               <Check className="inline w-3 h-3 mr-0.5" aria-hidden="true" />{t('admin.verified')}
                              </Badge>
                            )}
                          </div>

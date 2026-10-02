@@ -21,9 +21,9 @@ export default function Help() {
         <div aria-hidden className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('help.center')}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white">{t('help.center')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               {t('help.title')}

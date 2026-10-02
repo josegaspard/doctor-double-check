@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { requireBillingProfile } from "../_shared/billing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,6 +35,10 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
+
+    // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
+    const billingBlock = await requireBillingProfile(adminClient, user.id, corsHeaders);
+    if (billingBlock) return billingBlock;
 
     const { recordingId } = await req.json();
     if (!recordingId) throw new Error("recordingId is required");

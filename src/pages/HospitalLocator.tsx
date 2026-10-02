@@ -19,7 +19,8 @@ import { useAppDateFormat } from '@/lib/dateFormat';
 import {
   Building2, MapPin, Phone, Globe, Clock, Star, Navigation, Search, Loader2,
   ChevronDown, ChevronUp, MessageSquare, Sparkles, SlidersHorizontal, X, ArrowUpDown,
-  ExternalLink, Heart
+  ExternalLink, Heart,
+  Hotel,
 } from 'lucide-react';
 import HospitalDoctorsList from '@/components/hospitals/HospitalDoctorsList';
 
@@ -219,7 +220,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">{t('autoI18n.hospitalLoc2')}</p>
         <div className="px-3 py-2 rounded-lg bg-primary/10 border border-primary/30 flex items-center gap-2">
-          <span aria-hidden>🏨</span>
+          <Hotel className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
           <span className="text-sm font-medium text-primary">{t('autoI18n.hospitalLoc3')}</span>
         </div>
       </div>
@@ -409,7 +410,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
             )}
             {filterMinRating > 0 && (
               <Badge variant="outline" className="text-[10px] gap-1 flex-shrink-0 cursor-pointer bg-muted/70 text-foreground" onClick={() => setFilterMinRating(0)}>
-                {filterMinRating}+ ⭐ <X className="w-2.5 h-2.5" />
+                {filterMinRating}+ <Star className="w-2.5 h-2.5 fill-current" aria-hidden="true" /> <X className="w-2.5 h-2.5" />
               </Badge>
             )}
             {filterMaxDist < 100 && (

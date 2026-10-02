@@ -66,13 +66,13 @@ import {
 } from 'lucide-react';
 
 const COUNTRY_CODES = [
-  { code: '+52', flag: '🇲🇽', label: 'MX' },
-  { code: '+1', flag: '🇺🇸', label: 'US' },
-  { code: '+57', flag: '🇨🇴', label: 'CO' },
-  { code: '+54', flag: '🇦🇷', label: 'AR' },
-  { code: '+56', flag: '🇨🇱', label: 'CL' },
-  { code: '+51', flag: '🇵🇪', label: 'PE' },
-  { code: '+34', flag: '🇪🇸', label: 'ES' },
+  { code: '+52', label: 'MX' },
+  { code: '+1', label: 'US' },
+  { code: '+57', label: 'CO' },
+  { code: '+54', label: 'AR' },
+  { code: '+56', label: 'CL' },
+  { code: '+51', label: 'PE' },
+  { code: '+34', label: 'ES' },
 ];
 import { ConsultationFeeEditor } from '@/components/doctor/ConsultationFeeEditor';
 import { ServicesEditor } from '@/components/doctor/services/ServicesEditor';
@@ -82,7 +82,7 @@ import { PlansEditor } from '@/components/doctor/subscriptions/PlansEditor';
 import { ResidentBalanceCard } from '@/components/resident/ResidentBalanceCard';
 import { DoctorCredentialsCard } from '@/components/profile/DoctorCredentialsCard';
 import DoctorCredentials from '@/components/doctor/DoctorCredentials';
-import { SenyeraIcon, LanguageOptionsList } from '@/components/settings/LanguageSwitcher';
+import { LanguageOptionsList } from '@/components/settings/LanguageSwitcher';
 import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
 import { generatePlaceholderCedula, getSpecialistCredentialLabelKey } from '@/lib/cedulaVerification';
 import { doctorHref } from '@/lib/doctorSections';
@@ -1046,7 +1046,7 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                                 <SelectTrigger className="w-[92px] h-9 text-sm bg-white"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   {COUNTRY_CODES.map(c => (
-                                    <SelectItem key={c.code} value={c.code}>{c.flag} {c.code}</SelectItem>
+                                    <SelectItem key={c.code} value={c.code}>{c.label} {c.code}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -1529,7 +1529,7 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                                   <SelectContent>
                                     {COUNTRY_CODES.map(c => (
                                       <SelectItem key={c.code} value={c.code}>
-                                        {c.flag} {c.code}
+                                        {c.label} {c.code}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1626,7 +1626,6 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-3 flex-wrap">
                     {user.countryFlag && (
                       <Badge variant="outline" className="gap-1 text-xs">
-                        <span>{user.countryFlag}</span>
                         {user.countryCode || 'MX'}
                       </Badge>
                     )}
@@ -1837,7 +1836,7 @@ export default function UserProfile({ embedded = false }: UserProfileProps = {})
                                 <SelectContent>
                                   {COUNTRY_CODES.map(c => (
                                     <SelectItem key={c.code} value={c.code}>
-                                      {c.flag} {c.code}
+                                      {c.label} {c.code}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

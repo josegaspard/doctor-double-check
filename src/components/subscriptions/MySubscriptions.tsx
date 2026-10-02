@@ -26,7 +26,10 @@ import {
   Loader2,
   XCircle,
   Calendar,
-  Stethoscope
+  Stethoscope,
+  Radio,
+  FileText,
+  CalendarDays,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppDateFormat } from '@/lib/dateFormat';
@@ -213,7 +216,7 @@ export function MySubscriptions() {
                         disabled={updatingPrefs === sub.id}
                       />
                       <span className="flex items-center gap-1">
-                        🔴 {t('mySubscriptions.notifyLives')}
+                        <Radio className="w-4 h-4 text-destructive" aria-hidden="true" />{t('mySubscriptions.notifyLives')}
                       </span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -222,7 +225,7 @@ export function MySubscriptions() {
                         onCheckedChange={(v) => handleUpdateNotification(sub, 'notifyOnContent', v)}
                         disabled={updatingPrefs === sub.id}
                       />
-                      <span>📄 {t('mySubscriptions.notifyContent')}</span>
+                      <span className="flex items-center gap-1"><FileText className="w-4 h-4" aria-hidden="true" />{t('mySubscriptions.notifyContent')}</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <Switch
@@ -230,7 +233,7 @@ export function MySubscriptions() {
                         onCheckedChange={(v) => handleUpdateNotification(sub, 'notifyOnAvailability', v)}
                         disabled={updatingPrefs === sub.id}
                       />
-                      <span>📅 {t('mySubscriptions.notifySchedule')}</span>
+                      <span className="flex items-center gap-1"><CalendarDays className="w-4 h-4" aria-hidden="true" />{t('mySubscriptions.notifySchedule')}</span>
                     </label>
                   </div>
                 </div>

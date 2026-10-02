@@ -82,14 +82,14 @@ export default function ForResidents() {
       <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-secondary via-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <GraduationCap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('forResidentsPage.hero.badge')}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white">{t('forResidentsPage.hero.badge')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               {t('forResidentsPage.hero.titlePart1')} <span className="text-white">{t('forResidentsPage.hero.titlePart2')}</span>
             </h1>
-            <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               {t('forResidentsPage.hero.subtitle')}
             </p>
             <Link
@@ -150,7 +150,7 @@ export default function ForResidents() {
       </section>
 
       {/* Features List */}
-      <section className="py-12 sm:py-24 bg-muted/40">
+      <section className="py-12 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-12 items-center">
@@ -172,10 +172,10 @@ export default function ForResidents() {
               <div className="bg-[#227787] p-5 sm:p-8 rounded-xl sm:rounded-2xl text-white shadow-lg">
                 <Shield className="w-10 h-10 sm:w-12 sm:h-12 mb-3 sm:mb-4 text-white" />
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-white">{t('forResidentsPage.features.academicCard.title')}</h3>
-                <p className="text-white/85 text-xs sm:text-sm mb-4 sm:mb-6">
+                <p className="text-white text-xs sm:text-sm mb-4 sm:mb-6">
                   {t('forResidentsPage.features.academicCard.description')}
                 </p>
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-light">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-white">
                   <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>{t('forResidentsPage.features.academicCard.verification')}</span>
                 </div>
@@ -189,7 +189,7 @@ export default function ForResidents() {
       <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('forResidentsPage.cta.heading')}</h2>
-          <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-white mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             {t('forResidentsPage.cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
@@ -201,7 +201,7 @@ export default function ForResidents() {
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/15 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/5 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
             >
               {t('forResidentsPage.cta.contact')}
             </Link>

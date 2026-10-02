@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Plus, MessageCircle, Eye, Stethoscope, Send, Loader2, Trash2 } from 'lucide-react';
+import { Plus, MessageCircle, Eye, Stethoscope, Send, Loader2, Trash2, Lock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useSpecialties } from '@/hooks/useSpecialties';
@@ -337,7 +337,7 @@ export default function ClinicalCasesSection() {
       </div>
 
       <div className="relative flex items-start gap-3 text-xs rounded-xl pl-3 pr-3.5 py-2.5 bg-card border border-primary/20 border-l-4 border-l-primary shadow-md shadow-[#0b1d45]/15">
-        <span aria-hidden className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white text-[11px] font-bold flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #227787, #839ed5)' }}>🔒</span>
+        <span aria-hidden className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white text-[11px] font-bold flex-shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #227787, #839ed5)' }}><Lock className="w-3.5 h-3.5" aria-hidden="true" /></span>
         <span className="leading-relaxed">
           <strong className="text-secondary font-semibold">{t('medicalEducationPage.professionalSpaceTitle')}</strong>{' '}
           <span className="text-muted-foreground">{t('medicalEducationPage.professionalSpaceBody')}</span>

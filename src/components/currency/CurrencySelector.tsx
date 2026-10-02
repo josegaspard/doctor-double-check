@@ -16,7 +16,7 @@ interface CurrencySelectorProps {
 }
 
 export function CurrencySelector({ className, size = 'md' }: CurrencySelectorProps) {
-  const { userCurrency, userFlag, setPreferredCurrency } = useCurrency();
+  const { userCurrency, setPreferredCurrency } = useCurrency();
   const qc = useQueryClient();
 
   const unique = Array.from(
@@ -34,7 +34,6 @@ export function CurrencySelector({ className, size = 'md' }: CurrencySelectorPro
       <SelectTrigger className={`${size === 'sm' ? 'h-8 text-xs' : 'h-9'} ${className || ''}`}>
         <SelectValue>
           <span className="inline-flex items-center gap-1.5">
-            <span>{userFlag}</span>
             <span>{userCurrency}</span>
           </span>
         </SelectValue>
@@ -43,7 +42,6 @@ export function CurrencySelector({ className, size = 'md' }: CurrencySelectorPro
         {unique.map(c => (
           <SelectItem key={c.currency} value={c.currency}>
             <span className="inline-flex items-center gap-2">
-              <span>{c.flag}</span>
               <span className="font-mono text-xs">{c.currency}</span>
               <span className="text-muted-foreground text-xs">— {c.name}</span>
             </span>

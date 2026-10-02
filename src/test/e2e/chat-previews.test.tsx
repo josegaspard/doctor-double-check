@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { formatMessagePreview } from '@/lib/utils';
 
 describe('Chat preview formatting (lists + notifications)', () => {
-  it('formats image markers as 📷 Foto and never shows raw [Imagen:] token', () => {
+  it('formats image markers as Foto and never shows raw [Imagen:] token', () => {
     const inputs = [
       '📷 [Imagen: scan.jpg]',
       '[Imagen: x.png]',
@@ -13,40 +13,40 @@ describe('Chat preview formatting (lists + notifications)', () => {
     ];
     inputs.forEach((raw) => {
       const out = formatMessagePreview(raw, 60);
-      expect(out).toBe('📷 Foto');
+      expect(out).toBe('Foto');
       expect(out).not.toMatch(/\[Imagen:/i);
       expect(out).not.toMatch(/\[Image:/i);
     });
   });
 
-  it('formats file markers as 📎 <name> with raw token stripped', () => {
-    expect(formatMessagePreview('📎 [Archivo: estudio.pdf]', 60)).toBe('📎 estudio.pdf');
-    expect(formatMessagePreview('[Archivo: lab.pdf]', 60)).toBe('📎 lab.pdf');
-    expect(formatMessagePreview('[File: report.docx]', 60)).toBe('📎 report.docx');
-    // Long names fall back to generic "📎 Archivo"
+  it('formats file markers as <name> with raw token stripped', () => {
+    expect(formatMessagePreview('[Archivo: estudio.pdf]', 60)).toBe('estudio.pdf');
+    expect(formatMessagePreview('[Archivo: lab.pdf]', 60)).toBe('lab.pdf');
+    expect(formatMessagePreview('[File: report.docx]', 60)).toBe('report.docx');
+    // Long names fall back to generic "Archivo"
     expect(formatMessagePreview('[Archivo: a-very-long-file-name-that-exceeds-twenty-eight.pdf]', 60))
-      .toBe('📎 Archivo');
+      .toBe('Archivo');
     // Never leaks the raw bracket
     const out = formatMessagePreview('[Archivo: foo.pdf]', 60);
     expect(out).not.toMatch(/\[Archivo:/i);
   });
 
-  it('formats video markers as 🎥 Video', () => {
-    expect(formatMessagePreview('🎥 [Video: live.mp4]', 60)).toBe('🎥 Video');
-    expect(formatMessagePreview('[Vídeo: x.mov]', 60)).toBe('🎥 Video');
+  it('formats video markers as Video', () => {
+    expect(formatMessagePreview('[Video: live.mp4]', 60)).toBe('Video');
+    expect(formatMessagePreview('[Vídeo: x.mov]', 60)).toBe('Video');
   });
 
-  it('formats audio markers as 🎤 Mensaje de voz', () => {
-    expect(formatMessagePreview('🎤 [Audio: msg.m4a]', 60)).toBe('🎤 Mensaje de voz');
-    expect(formatMessagePreview('[Voice: x.ogg]', 60)).toBe('🎤 Mensaje de voz');
+  it('formats audio markers as Mensaje de voz', () => {
+    expect(formatMessagePreview('[Audio: msg.m4a]', 60)).toBe('Mensaje de voz');
+    expect(formatMessagePreview('[Voice: x.ogg]', 60)).toBe('Mensaje de voz');
   });
 
-  it('formats prescription URLs and markers as 📋 Receta médica', () => {
+  it('formats prescription URLs and markers as Receta médica', () => {
     expect(formatMessagePreview('📋 https://app.example/prescriptions/abc-123', 60))
-      .toBe('📋 Receta médica');
-    expect(formatMessagePreview('[Receta]: ver detalles', 60)).toBe('📋 Receta médica');
+      .toBe('Receta médica');
+    expect(formatMessagePreview('[Receta]: ver detalles', 60)).toBe('Receta médica');
     expect(formatMessagePreview('Mira tu receta: /prescriptions/xyz', 60))
-      .toBe('📋 Receta médica');
+      .toBe('Receta médica');
   });
 
   it('truncates long plain text at the requested max length and adds ellipsis', () => {
@@ -91,9 +91,9 @@ describe('Chat preview formatting (lists + notifications)', () => {
       const el = screen.getByTestId(`msg-${i}`);
       expect(el.textContent).not.toMatch(/\[Imagen:|\[Archivo:|\[Video:|\[File:/i);
     }
-    expect(screen.getByTestId('msg-0').textContent).toBe('📷 Foto');
-    expect(screen.getByTestId('msg-1').textContent).toBe('📎 lab.pdf');
-    expect(screen.getByTestId('msg-2').textContent).toBe('🎥 Video');
-    expect(screen.getByTestId('msg-3').textContent).toBe('📋 Receta médica');
+    expect(screen.getByTestId('msg-0').textContent).toBe('Foto');
+    expect(screen.getByTestId('msg-1').textContent).toBe('lab.pdf');
+    expect(screen.getByTestId('msg-2').textContent).toBe('Video');
+    expect(screen.getByTestId('msg-3').textContent).toBe('Receta médica');
   });
 });

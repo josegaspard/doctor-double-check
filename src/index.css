@@ -29,7 +29,7 @@
        ============================================================ */
 
     /* Primary — Blue Lagoon #227787 (color principal de marca) */
-    --primary: 189 60% 33%;
+    --primary: 189 60% 31%; /* contraste 2-oct-2026: 33 % daba 4,4:1 en text-primary sobre bg-primary/10 */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary — Metallic Blue #163A83 (soporte profundo) */
@@ -53,7 +53,9 @@
 
     /* Accent — Comfort Blue #839ED5 (acento periwinkle del brandbook, suavizado) */
     --accent: 220 36% 72%;
-    --accent-foreground: 0 0% 100%;
+    /* Contraste 2-oct-2026: blanco sobre lavanda daba 2,2:1 (menús, opción
+       seleccionada); navy de marca #163a83 da 4,8:1. */
+    --accent-foreground: 220 71% 30%;
 
     /* Destructive */
     --destructive: 0 72% 51%;
@@ -61,15 +63,17 @@
 
     /* Success — oscurecido 2026-07-02: con texto blanco, 42% de luminosidad
        daba 2.6:1 de contraste (WCAG pide 4.5:1). */
-    --success: 142 72% 29%;
+    /* Contraste 2-oct-2026: 29 % daba 4,3:1 en badges bg-success/10. */
+    --success: 142 72% 25%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning — oscurecido 2026-07-02 por la misma razón (antes 2.2:1). */
-    --warning: 32 95% 38%;
+    /* Warning — oscurecido 2026-07-02 por la misma razón (antes 2.2:1).
+       2026-10-02: 38 % → 32 %: seguía en 4,1:1 (blanco sobre él y él sobre blanco). */
+    --warning: 32 95% 32%;
     --warning-foreground: 0 0% 100%;
 
     /* Info — Blue Lagoon (mismo tono que primary, mensajes informativos) */
-    --info: 189 60% 33%;
+    --info: 189 60% 31%;
     --info-foreground: 0 0% 100%;
 
     /* Premium gold */
@@ -77,11 +81,12 @@
     --premium-foreground: 0 0% 10%;
 
     /* Live indicator */
-    --live: 0 84% 60%;
+    /* Contraste 2-oct-2026: 60 % de luz daba 3,8:1 con texto blanco. */
+    --live: 0 72% 47%;
     --live-foreground: 0 0% 100%;
 
     /* Verified — Blue Lagoon (insignia médico verificado en color marca) */
-    --verified: 189 60% 33%;
+    --verified: 189 60% 31%;
     --verified-foreground: 0 0% 100%;
 
     /* Light — Uranus #AED3D9 (tinte claro de marca, suavizado) */
@@ -115,11 +120,13 @@
 
     /* Primary — Blue Lagoon aclarado */
     --primary: 189 48% 52%;
-    --primary-foreground: 0 0% 100%;
+    /* 2026-10-02: blanco sobre este teal aclarado daba 2,6:1 → navy profundo (≈7:1). */
+    --primary-foreground: 220 71% 10%;
 
     /* Secondary — Metallic Blue aclarado (suavizado) */
-    --secondary: 220 40% 55%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 220 42% 47%; /* contraste 2-oct: 55 % daba 4,1:1 con texto blanco */
+    /* 2026-10-02: blanco daba 4,0:1 en badges → navy profundo (≈4,9:1). */
+    --secondary-foreground: 220 71% 10%;
 
     /* Background — Metallic Blue muy oscurecido */
     --background: 220 71% 10%;
@@ -136,7 +143,7 @@
 
     /* Accent — Comfort Blue (más visible sobre dark, suavizado) */
     --accent: 220 36% 64%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 220 71% 12%;
 
     --destructive: 0 62% 45%;
     --destructive-foreground: 0 0% 100%;
@@ -145,20 +152,22 @@
     --success: 142 60% 30%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 32 85% 38%;
-    --warning-foreground: 0 0% 100%;
+    /* contraste-admin 2-oct-2026: el ámbar al 38 % daba 3,8:1 como texto sobre el
+       navy y 4,35:1 con blanco encima → ámbar claro + texto navy (≈6,8:1 en ambos usos). */
+    --warning: 32 90% 50%;
+    --warning-foreground: 220 71% 10%;
 
     --info: 189 48% 52%;
-    --info-foreground: 0 0% 100%;
+    --info-foreground: 220 71% 10%;
 
     --premium: 45 85% 50%;
     --premium-foreground: 0 0% 10%;
 
-    --live: 0 75% 55%;
+    --live: 0 72% 47%;
     --live-foreground: 0 0% 100%;
 
     --verified: 189 48% 52%;
-    --verified-foreground: 0 0% 100%;
+    --verified-foreground: 220 71% 10%; /* contraste 2-oct: blanco daba 2,6:1 */
 
     --light: 187 30% 35%;
     --light-foreground: 0 0% 100%;
@@ -412,7 +421,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     background-color: hsl(var(--background));
-    color: hsl(var(--dark));
+    color: hsl(var(--foreground)); /* contraste 2-oct: --dark sobre --background en oscuro daba 1,03:1 */
     border: 1px solid hsl(var(--border));
     box-shadow: 0 1px 2px hsl(var(--dark) / 0.08);
   }
@@ -1168,7 +1177,7 @@
   color: #ffffff;
 }
 .app-bg-image > header .text-muted-foreground {
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
 }
 .app-bg-image > header .text-foreground {
   color: #ffffff !important;
@@ -1402,7 +1411,9 @@
   [role="menu"] *,
   [data-radix-popper-content-wrapper] *
 )) {
-  color: rgba(255, 255, 255, 0.85) !important;
+  /* Blanco pleno (2026-10-02): al 85 % daba 3,9-4,5:1 sobre el teal claro del
+     fondo (medido en píxeles); el blanco pleno da 4,7-6,7:1. */
+  color: #ffffff !important;
 }
 
 /* ---------- 6. Texto foreground suelto ---------- */
@@ -1481,7 +1492,11 @@
 }
 
 /* ---------- 9. Links sueltos ---------- */
-.app-bg-image :where(a):not(:where(
+/* 2026-10-02: no repinta enlaces con fondo blanco propio ni con color explícito
+   (text-white / text-[#…]): «Explorar médicos» salía menta sobre blanco (1,6:1). */
+.app-bg-image :where(a):not([class~="bg-white"]):not([class*="text-white"]):not([class*="text-[#"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [class*="bg-background"] *,
@@ -1494,7 +1509,9 @@
 )) {
   color: #AED3D9;
 }
-.app-bg-image :where(a):not(:where(
+.app-bg-image :where(a):not([class~="bg-white"]):not([class*="text-white"]):not([class*="text-[#"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -1513,6 +1530,8 @@
 
 /* 10a. Ghost suelto (transparente → blanco) */
 .app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -1523,6 +1542,8 @@
   color: #ffffff !important;
 }
 .app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -1533,6 +1554,8 @@
   color: #ffffff !important;
 }
 .app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -1544,6 +1567,8 @@
   color: #ffffff !important;
 }
 .app-bg-image button[class*="hover:bg-accent"]:not([class*="bg-primary"]):not([class*="bg-destructive"]):not([class*="bg-success"]):not([class*="bg-warning"]):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   header *,
@@ -1600,7 +1625,7 @@
   color: #163a83 !important;
 }
 
-/* 10c. Link variant suelto */
+/* 10c. Link variant suelto (2026-10-02: menta → blanco; la menta daba 3,2:1 sobre el teal) */
 .app-bg-image button[class*="text-primary"][class*="underline-offset"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
@@ -1609,7 +1634,7 @@
   nav *,
   [role="dialog"] *
 )) {
-  color: #AED3D9 !important;
+  color: #ffffff !important;
 }
 .app-bg-image button[class*="text-primary"][class*="underline-offset"]:not(:where(
   [class*="bg-card"] *,
@@ -1696,7 +1721,9 @@
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  /* Base OSCURA translúcida (2026-10-02): la blanca al 10 % aclaraba el teal y
+     las pestañas inactivas quedaban en ~3:1. */
+  background-color: rgba(6, 30, 48, 0.28) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
 }
 .app-bg-image > main [role="tab"]:not(:where(
@@ -1704,14 +1731,14 @@
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) {
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 .app-bg-image > main [role="tab"]:not(:where(
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
 )) svg {
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 .app-bg-image > main [role="tab"]:not(:where(
   [class*="bg-card"] *,
@@ -1759,7 +1786,12 @@
 }
 
 /* ---------- 15. Badges secondary sueltos ---------- */
+/* 2026-10-02: excluye también tarjetas `bg-white`/`bg-background`/`bg-muted`
+   (Card con className="bg-white"): ahí el badge quedaba blanco sobre blanco. */
 .app-bg-image > main [class*="bg-secondary"]:not(button):not(:where(
+  [class~="bg-white"] *,
+  [class~="bg-background"] *,
+  [class~="bg-muted"] *,
   [class*="bg-card"] *,
   [class*="bg-popover"] *,
   [role="dialog"] *
@@ -2125,17 +2157,21 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   --pro-bg-bot: #0b4453;
   --pro-ink: #17293d;
   --pro-ink-2: #3c4f63;
-  --pro-muted: #6b7a89;
+  /* Contraste 2-oct-2026: muted/ok/info/warn/live oscurecidos para llegar a
+     4,5:1 sobre blanco y sobre sus fondos suaves (antes 3,1-4,4:1). */
+  --pro-muted: #5d6b79;
   --pro-line: #e3ecf0;
   --pro-teal: #227787;
   --pro-teal-2: #1c8a9c;
   --pro-teal-soft: #e6f3f5;
-  --pro-live: #e5322d;
-  --pro-ok: #1f9d5a;
+  /* Teal para TEXTO sobre --pro-teal-soft (el --pro-teal daba 4,4:1). */
+  --pro-teal-ink: #1c6674;
+  --pro-live: #d42f2a;
+  --pro-ok: #157a45;
   --pro-ok-bg: #e7f7ee;
-  --pro-warn: #b7791f;
+  --pro-warn: #94650f;
   --pro-warn-bg: #fff4d9;
-  --pro-info: #2f6fdb;
+  --pro-info: #2560c8;
   --pro-info-bg: #e8f0fd;
   --pro-shadow: 0 10px 30px -12px rgba(3, 32, 42, 0.45), 0 2px 6px rgba(3, 32, 42, 0.10);
   --pro-radius: 18px;
@@ -2273,7 +2309,7 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   align-items: center;
   justify-content: center;
   background: var(--pro-teal-soft);
-  color: var(--pro-teal) !important;
+  color: var(--pro-teal-ink) !important;
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
@@ -2314,7 +2350,7 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   margin: 0;
 }
 .pro-page-title svg { color: #ffffff; flex-shrink: 0; }
-.pro-page-sub { color: rgba(255, 255, 255, 0.84); font-size: 0.9rem; margin-top: 0.25rem; }
+.pro-page-sub { color: #ffffff; font-size: 0.9rem; margin-top: 0.25rem; }
 .pro-live-dot {
   width: 22px; height: 22px; border-radius: 9999px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
@@ -2617,13 +2653,13 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
 .pro-cal-ev span { display: block; color: var(--pro-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pro-cal-ev .st { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 11px; font-weight: 600; }
 .pro-cal-ev .st::before { content: ""; width: 7px; height: 7px; border-radius: 9999px; background: currentColor; }
-.pro-ev-appt { background: #dff6ea; border-left-color: #1f9d5a; }
-.pro-ev-appt .st { color: #1f9d5a; }
+.pro-ev-appt { background: #dff6ea; border-left-color: #157a45; }
+.pro-ev-appt .st { color: #157a45; }
 .pro-ev-appt.is-pending { background: #fff4d9; border-left-color: #e0a63a; }
-.pro-ev-appt.is-pending .st { color: #b7791f; }
+.pro-ev-appt.is-pending .st { color: #94650f; }
 .pro-ev-appt.is-cancelled { background: #f1f3f5; border-left-color: #9aa7b3; opacity: .8; }
 .pro-ev-avail { background: #e3eefc; border-left-color: #7fa7e3; }
-.pro-ev-avail .st { color: #2f6fdb; }
+.pro-ev-avail .st { color: #2560c8; }
 .pro-ev-live { background: #fde8e8; border-left-color: var(--pro-live); }
 .pro-ev-live .st { color: var(--pro-live); }
 .pro-ev-live b { color: var(--pro-ink); }
@@ -2755,8 +2791,8 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
   display: inline-flex; align-items: center; justify-content: center;
   background: #eef2f5; color: var(--pro-muted) !important; font-size: 11.5px; font-weight: 700;
 }
-.pro-lane-item.is-active { background: var(--pro-teal-soft); color: var(--pro-teal) !important; }
-.pro-lane-item.is-active svg { color: var(--pro-teal) !important; }
+.pro-lane-item.is-active { background: var(--pro-teal-soft); color: var(--pro-teal-ink) !important; }
+.pro-lane-item.is-active svg { color: var(--pro-teal-ink) !important; }
 .pro-lane-item.is-active .count { background: var(--pro-teal); color: #fff !important; }
 .pro-lane-sep { height: 1px; background: var(--pro-line); margin: 0.5rem 0.25rem; }
 /* En móvil el carril se convierte en fila de chips desplazable */
@@ -2792,7 +2828,7 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
   font-size: 10.5px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; flex-shrink: 0;
   background: #eef2f5; color: var(--pro-ink-2);
 }
-.pro-tag-patient { background: #e8f0fd; color: #2f6fdb; }
+.pro-tag-patient { background: #e8f0fd; color: #2560c8; }
 .pro-tag-doctor { background: #e9edf8; color: #163a83; }
 .pro-tag-provider { background: #fdf3dd; color: #8a6508; }
 .pro-tag-orientation { background: #f0e9fb; color: #6a3fb5; }
@@ -2968,6 +3004,15 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
 }
 .app-bg-image :is(.pro-card, .pro-tile) :where(.text-muted-foreground) { color: var(--pro-muted) !important; }
 .app-bg-image :is(.pro-card, .pro-tile) :where(.text-foreground) { color: var(--pro-ink) !important; }
+/* Contraste 2-oct-2026: las reglas «7. text-primary suelto», «9. Links sueltos»
+   y «10c» pintan de menta #AED3D9 (1,6:1 sobre blanco) los enlaces y textos
+   primary que no tienen un ancestro `bg-…`; dentro de una tarjeta PRO vuelven
+   al teal de marca. */
+.app-bg-image :is(.pro-card, .pro-tile) :where(.text-primary, button[class*="text-primary"][class*="underline-offset"]) { color: var(--pro-teal) !important; }
+.app-bg-image :is(.pro-card, .pro-tile) :where(a):not([class*="pro-btn"]):not([class*="text-"]):not([class*="bg-"]) { color: var(--pro-teal); }
+/* Dentro de un botón teal relleno (opción seleccionada) todo es blanco, también
+   las etiquetas text-muted-foreground que la regla de .pro-card oscurece. */
+.app-bg-image :is(.pro-card, .pro-tile) .pro-btn-teal .text-muted-foreground { color: #ffffff !important; }
 
 /* La sala por insignia ocupa todo el ancho útil del chat: debajo de xl el
    carril está oculto y no hay columna 2, así que fijarla a `2 / -1` creaba una
@@ -3151,3 +3196,106 @@ a.pro-stat:hover, button.pro-stat:hover { background: #eef5f7; }
 .pro-danger { border-left: 5px solid var(--pro-live); }
 .pro-danger-title { color: var(--pro-live) !important; }
 .pro-danger-title svg { color: var(--pro-live) !important; }
+
+/* ============================================================
+   [contraste-admin 2026-10-02] Opacidades mínimas legibles.
+   text-secondary/60-70, text-foreground/60-70 y text-primary/70-80 daban
+   3,1-4,0:1 sobre blanco/tarjeta (WCAG pide 4,5). Se sube la opacidad lo
+   justo; sin !important para que las reglas del fondo teal sigan mandando.
+   ============================================================ */
+.text-secondary\/60, .text-secondary\/70, .text-secondary\/75 { color: hsl(var(--secondary) / 0.86); }
+.text-foreground\/60, .text-foreground\/70, .text-foreground\/75 { color: hsl(var(--foreground) / 0.86); }
+.text-primary\/70, .text-primary\/80 { color: hsl(var(--primary)); }
+/* [contraste-admin 2026-10-02] Texto de estado sobre SU PROPIO tinte (badges
+   "bg-X/10|15 text-X"): premium daba 1,9:1, success 4,0:1, primary 4,4:1. */
+[class*="bg-premium/"].text-premium { color: hsl(38 92% 26%); }
+[class*="bg-success/"].text-success { color: hsl(142 72% 22%); }
+[class*="bg-warning/"].text-warning { color: hsl(32 95% 26%); }
+[class*="bg-primary/"].text-primary,
+[class*="bg-primary/5"] .text-primary,
+[class*="bg-primary/10"] .text-primary,
+[class*="bg-primary/15"] .text-primary { color: hsl(189 60% 25%); }
+
+/* ==========================================================================
+   CONTRASTE MODO OSCURO — panel médico/residente (2-oct-2026)
+   El panel PRO pinta sus tarjetas (.pro-card/.pro-tile) en blanco también en
+   modo oscuro, pero los componentes shadcn de dentro (bg-card, bg-background,
+   bg-muted, inputs) tomaban los tokens oscuros: columnas navy con texto navy
+   (1,1:1). Dentro de tarjetas PRO, diálogos y cajas bg-white (superficies
+   blancas también en oscuro) se restauran los tokens claros.
+   ========================================================================== */
+:where(.dark) :where([role="dialog"], [role="alertdialog"], .bg-white) { color: hsl(var(--foreground)); }
+.dark :is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) {
+  --secondary: 220 42% 33%;
+  --success: 142 72% 25%;
+  --destructive: 0 72% 45%;
+  --accent: 220 36% 72%;
+  --accent-foreground: 220 71% 30%;
+  --info: 189 60% 31%;
+  --info-foreground: 0 0% 100%;
+  --verified: 189 60% 31%;
+  --verified-foreground: 0 0% 100%;
+  --background: 0 0% 100%;
+  --foreground: 220 42% 33%;
+  --card: 187 40% 98%;
+  --card-foreground: 220 42% 33%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 42% 33%;
+  --muted: 187 30% 95%;
+  --muted-foreground: 220 26% 40%;
+  --border: 187 30% 88%;
+  --input: 187 30% 88%;
+  --primary: 189 60% 31%;
+}
+/* La «regla 15» pinta de blanco el texto sobre bg-primary; con el primary claro
+   del modo oscuro (#4aaebf) daba 2,6:1. En oscuro ese texto va en navy. */
+html.dark body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20),
+html.dark body .bg-primary:not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20) *,
+html.dark body .bg-info:not(.bg-info\/10):not(.bg-info\/20),
+html.dark body .bg-info:not(.bg-info\/10):not(.bg-info\/20) * {
+  color: hsl(220 71% 10%) !important;
+}
+/* La regla 16b pinta en BLANCO los botones outline (filtros/combobox) también en
+   oscuro; su placeholder text-muted-foreground tomaba el gris claro oscuro (2,2:1). */
+html.dark body .app-bg-image :is(button, a):is([class*="border-input"], [class*="bg-background"]):not(:where([class*="bg-card"] *, [class*="bg-popover"] *, [role="dialog"] *, [data-radix-popper-content-wrapper] *)) {
+  --muted-foreground: 220 26% 40%;
+}
+/* text-destructive sobre superficies navy del modo oscuro (2,8:1) */
+html.dark body .text-destructive:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(0 85% 72%); }
+/* Fuera de las tarjetas claras: text-primary/secondary sobre fondos bg-primary/x
+   del modo oscuro (la regla clara de arriba los oscurece a 1,8:1). */
+html.dark body :is([class*="bg-primary/"].text-primary, [class*="bg-primary/"] .text-primary):not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(189 48% 62%); }
+html.dark body .text-success:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(142 55% 55%); }
+html.dark body .text-secondary:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(220 50% 72%); }
+html.dark body :is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) :is(.bg-primary, .bg-info):not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20):not(.bg-info\/10):not(.bg-info\/20),
+html.dark body :is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) :is(.bg-primary, .bg-info):not(.bg-primary\/0):not(.bg-primary\/5):not(.bg-primary\/10):not(.bg-primary\/20):not(.bg-info\/10):not(.bg-info\/20) * {
+  color: #ffffff !important;
+}
+
+/* Opción resaltada de Select/menú (fondo lavanda --accent): el texto muted de
+   dentro quedaba en 2,6:1; toma el color de la opción (navy). 2-oct-2026 */
+:is([role="option"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"])[data-highlighted] .text-muted-foreground {
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* ==========================================================================
+   [contraste-admin 2026-10-02] Ámbar (warning) en modo oscuro.
+   En oscuro --warning es ámbar claro con texto navy (ver tokens .dark).
+   - La «regla nuclear» pinta blanco el texto sobre bg-warning sólido: en
+     oscuro va en navy (blanco daba 2,5:1).
+   - Dentro de superficies blancas (tarjetas PRO, diálogos, .bg-white) vuelve
+     el ámbar oscuro del modo claro con texto blanco.
+   - El badge tintado «bg-warning/x text-warning» usa un ámbar oscuro fijo
+     pensado para el claro (1,9:1 sobre navy): fuera de esas superficies toma
+     el ámbar claro del token.
+   ========================================================================== */
+.dark :is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) {
+  --warning: 32 95% 32%;
+  --warning-foreground: 0 0% 100%;
+}
+html.dark body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20):not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *),
+html.dark body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20):not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) * {
+  color: hsl(220 71% 10%) !important;
+}
+html.dark body [class*="bg-warning/"].text-warning:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(var(--warning)); }
+html.dark body [class*="bg-premium/"].text-premium:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(var(--premium)); }

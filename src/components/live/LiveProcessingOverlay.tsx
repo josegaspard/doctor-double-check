@@ -79,7 +79,7 @@ export function LiveProcessingOverlay({
   useEffect(() => {
     if (status !== 'recording_ready' || !recordingId || !autoRedirect || redirectCancelled) return;
     toast({
-      title: '🎬 Replay disponible',
+      title: 'Replay disponible',
       description: 'Te llevamos a la grabación en 3 segundos…',
     });
     const t = setTimeout(() => {

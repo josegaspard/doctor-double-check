@@ -125,7 +125,7 @@ export const zh = {
     "hospitalLoc24": "搜索医院、地址或专科...",
     "hospitalLoc25": "筛选与排序",
     "hospitalLoc26": "查看 {count} 条结果",
-    "hospitalLoc27": "🏥 私立医院 · 墨西哥",
+    "hospitalLoc27": "私立医院 · 墨西哥",
     "hospitalLoc28": "距离",
     "hospitalLoc29": "评分",
     "hospitalLoc3": "墨西哥私立医院",
@@ -136,13 +136,13 @@ export const zh = {
     "hospitalLoc34": "正在加载医院...",
     "hospitalLoc35": "未找到医院",
     "hospitalLoc36": "清除筛选",
-    "hospitalLoc37": "🏥 公立",
-    "hospitalLoc38": "🏨 私立",
-    "hospitalLoc39": "🩺 诊所",
+    "hospitalLoc37": "公立",
+    "hospitalLoc38": "私立",
+    "hospitalLoc39": "诊所",
     "hospitalLoc4": "专科",
-    "hospitalLoc40": "🏥 公立",
-    "hospitalLoc41": "🏨 私立",
-    "hospitalLoc42": "🩺 诊所",
+    "hospitalLoc40": "公立",
+    "hospitalLoc41": "私立",
+    "hospitalLoc42": "诊所",
     "hospitalLoc43": "条评价",
     "hospitalLoc44": "更多",
     "hospitalLoc45": "等级：",
@@ -259,7 +259,7 @@ export const zh = {
     "prescForm3": "开具处方前，请在个人资料中配置您的专业签名。",
     "prescForm30": "创建处方并发送给患者",
     "prescForm4": "文件上传出错：{message}",
-    "prescForm5": "📋 新医疗处方",
+    "prescForm5": "新医疗处方",
     "prescForm6": "{name} 已向您发送处方",
     "prescForm7": "您的医生",
     "prescForm8": "处方已创建并发送给患者",
@@ -517,10 +517,10 @@ export const zh = {
     "clAdminAds7": "基本信息",
     "clAdminAds8": "我的广告活动",
     "clAdminAds9": "取消",
-    "clAdminDash1": "💰 财务",
+    "clAdminDash1": "财务",
     "clAdminDash10": "退款",
     "clAdminDash11": "申请与手动退款",
-    "clAdminDash12": "👥 用户",
+    "clAdminDash12": "用户",
     "clAdminDash13": "用户管理",
     "clAdminDash14": "管理所有用户",
     "clAdminDash15": "医生资质审核",
@@ -532,7 +532,7 @@ export const zh = {
     "clAdminDash20": "审核患者申请",
     "clAdminDash21": "医生执业资质",
     "clAdminDash22": "教育与认证",
-    "clAdminDash23": "📰 内容",
+    "clAdminDash23": "内容",
     "clAdminDash24": "医疗新闻与博客",
     "clAdminDash25": "创建并发布文章",
     "clAdminDash26": "活动与公告",
@@ -544,12 +544,12 @@ export const zh = {
     "clAdminDash31": "广告活动、投放位置与指标",
     "clAdminDash32": "网站配置",
     "clAdminDash33": "社交媒体、服务条款与隐私",
-    "clAdminDash34": "🛡️ 支持",
+    "clAdminDash34": "支持",
     "clAdminDash35": "举报与投诉",
     "clAdminDash36": "管理用户举报",
     "clAdminDash37": "QA E2E 检查清单",
     "clAdminDash38": "按角色追踪的端到端测试",
-    "clAdminDash39": "🏥 目录与市场",
+    "clAdminDash39": "目录与市场",
     "clAdminDash4": "医生付款",
     "clAdminDash40": "医院与诊所",
     "clAdminDash41": "管理医院目录",
@@ -683,21 +683,21 @@ export const zh = {
     "admFee6": "平台现在收取",
     "admFee7": "作为中介费。",
     "admFee8": "无法保存",
-    "admFee9": "✅ 供应商已批准",
+    "admFee9": "供应商已批准",
     "admFee10": "供应商已拒绝",
     "admFee11": "供应商审核中",
     "admFee12": "现在可以发布商品了。",
     "admFee13": "已收到拒绝通知。",
     "admFee14": "已恢复为待处理。",
     "admFee15": "供应商",
-    "admFee16": "🎉 您已成为获批供应商！",
+    "admFee16": "您已成为获批供应商！",
     "admFee17": "您的商家",
     "admFee18": "已获批准。您现在可以通过供应商门户在市场中发布商品。",
     "admFee19": "您的供应商申请已被拒绝",
     "admFee20": "原因：",
     "admFee21": "您可以更正您的信息，然后从供应商门户重新申请。",
     "admFee22": "拒绝原因（将显示给供应商）：",
-    "admFee23": "✅ 商品已批准",
+    "admFee23": "商品已批准",
     "admFee24": "商品已拒绝",
     "admFee25": "现已在市场中显示。",
     "admFee26": "— 已通知供应商。",
@@ -708,7 +708,7 @@ export const zh = {
     "admFee31": "已批准",
     "admFee32": "已拒绝",
     "admFee33": "待处理",
-    "admFee34": "🤝 交易完成",
+    "admFee34": "交易完成",
     "admFee35": "已通知买家和卖家；费用待收取。",
     "admFee36": "订单已取消",
     "admFee37": "已通知双方。",
@@ -766,7 +766,7 @@ export const zh = {
     "admFee89": "取消",
     vendorDashSentReview: '商品已提交审核。管理员批准后才会发布。',
     vendorDashNoPayLink: '未收到付款链接',
-    vendorDashSaleDone: '🤝 销售已成交。请记得支付平台佣金。',
+    vendorDashSaleDone: '销售已成交。请记得支付平台佣金。',
     vendorDashOrderCancelled: '订单已取消。',
     vendorDashError: '错误',
   },
@@ -1498,17 +1498,17 @@ export const zh = {
     "pendingEarnings": "待结算收益",
     "totalEarned": "总收益",
     "bankAccount": "银行账户",
-    "configured": "已配置 ✓",
+    "configured": "已配置",
     "setUp": "配置",
     "pendingEarningsBanner": "您有 {amount} 的待结算收益",
     "pendingEarningsBannerDesc": "请上传该金额的发票以处理付款。发票审批通过后将自动处理付款。",
     "howToInvoice": "如何为我的收益开具发票？",
     "twoOptions": "您有两种灵活的开票方式：",
-    "singleInvoice": "📄 综合发票",
+    "singleInvoice": "综合发票",
     "singleInvoiceDesc": "上传一张涵盖全部待结算收益的发票。",
-    "perTypeInvoices": "📑 按类型分开开票",
+    "perTypeInvoices": "按类型分开开票",
     "perTypeInvoicesDesc": "按服务类型分别上传发票。",
-    "accountantTip": "💡 建议：咨询您的会计师，了解哪种方式更适合您的税务情况。",
+    "accountantTip": "建议：咨询您的会计师，了解哪种方式更适合您的税务情况。",
     "invoices": "发票",
     "paymentHistory": "支付记录",
     "noInvoices": "暂无发票",
@@ -1838,7 +1838,7 @@ export const zh = {
     "onlyDoctorsClose": "仅医生可关闭问诊",
     "noPermissionClose": "您无权关闭此问诊",
     "sessionCloseError": "关闭问诊失败",
-    "rateOrientation": "⭐ 为您的问诊评分",
+    "rateOrientation": "为您的问诊评分",
     "rateOrientationMsg": "您的问诊已结束，请为本次体验评分！",
     "liveNotFound": "未找到直播",
     "streamUidMissing": "未找到此直播的推流 UID",
@@ -2337,9 +2337,9 @@ export const zh = {
     "subtitle": "您的举报将由我们的团队审核",
     "typeLabel": "举报类型 *",
     "typePlaceholder": "请选择类型",
-    "bugOption": "🐛 技术故障 / Bug",
-    "abuseOption": "⚠️ 滥用 / 不当行为",
-    "otherOption": "📝 其他",
+    "bugOption": "技术故障 / Bug",
+    "abuseOption": "滥用 / 不当行为",
+    "otherOption": "其他",
     "subjectLabel": "主题 *",
     "subjectPlaceholder": "请简要描述问题",
     "descriptionLabel": "详细描述 *",
@@ -2855,7 +2855,7 @@ export const zh = {
     "failedTitle": "无法处理录制内容",
     "failedDescription": "保存回放时出错，请稍后重试。",
     "backToLives": "返回直播",
-    "replayAvailableToast": "🎬 回放已就绪",
+    "replayAvailableToast": "回放已就绪",
     "replayAvailableDescription": "3 秒后跳转至录制内容…"
   },
   "walletLedger": {
@@ -3034,7 +3034,7 @@ export const zh = {
     "notesPlaceholder": "初步诊断、观察记录…",
     "cancel": "取消",
     "savePatient": "保存患者",
-    "notificationTitle": "🩺 一位医生申请访问您的病历",
+    "notificationTitle": "一位医生申请访问您的病历",
     "notificationMessage": "如需开始随访，请在您的病历中授权访问。",
     "invitationSentTo": "邀请已发送至",
     "patientFallback": "患者",
@@ -3057,7 +3057,7 @@ export const zh = {
     },
     "pdf": {
       "title": "数据分析报告 - Medical Masters",
-      "heading": "📊 数据分析报告",
+      "heading": "数据分析报告",
       "subtitle": "Medical Masters · 周期：{period} · 生成时间：{date}",
       "keyIndicators": "核心指标",
       "grossRevenue": "总收入",
@@ -3272,8 +3272,8 @@ export const zh = {
       "noInvoices": "此分类下暂无发票"
     },
     "dialog": {
-      "approveTitle": "✅ 批准发票",
-      "rejectTitle": "❌ 拒绝发票",
+      "approveTitle": "批准发票",
+      "rejectTitle": "拒绝发票",
       "invoiceLabel": "发票",
       "doctorLabel": "医生",
       "amountLabel": "金额",
@@ -3298,8 +3298,8 @@ export const zh = {
       "deleteSuffix": "张发票？"
     },
     "notifications": {
-      "approvedTitle": "✅ 发票已批准",
-      "rejectedTitle": "❌ 发票已拒绝",
+      "approvedTitle": "发票已批准",
+      "rejectedTitle": "发票已拒绝",
       "approvedMessagePrefix": "您的发票",
       "approvedMessageSuffix": "已获批准",
       "rejectedMessagePrefix": "您的发票",
@@ -3319,7 +3319,7 @@ export const zh = {
     },
     "pdf": {
       "title": "发票报告 - 财务",
-      "heading": "📋 发票报告 - 财务",
+      "heading": "发票报告 - 财务",
       "periodLabel": "周期",
       "generatedLabel": "生成时间",
       "totalInvoices": "发票总数",
@@ -3354,7 +3354,7 @@ export const zh = {
       "permissionToggleError": "更改权限失败"
     },
     "notification": {
-      "title": "📰 发布权限已授予",
+      "title": "发布权限已授予",
       "message": "您已获得在医学博客中创建和发布文章的权限。请前往新闻板块开始使用！"
     },
     "back": "返回",
@@ -3606,10 +3606,10 @@ export const zh = {
       rejectReasonRequired: '请填写拒绝原因',
     },
     "notification": {
-      "rejectedTitle": "❌ 退款申请已被拒绝",
+      "rejectedTitle": "退款申请已被拒绝",
       "rejectedMessage": "您的退款申请已被拒绝。",
       "reasonPrefix": "原因",
-      "transferDoneTitle": "🏦 转账已完成",
+      "transferDoneTitle": "转账已完成",
       "transferDoneMessagePrefix": "您的退款金额",
       "transferDoneMessageSuffix": "MXN 已转账至您的银行账户。参考号："
     },
@@ -3628,12 +3628,12 @@ export const zh = {
     },
     "pdf": {
       "title": "退款报告",
-      "header": "📊 退款报告",
+      "header": "退款报告",
       "generated": "生成时间",
       "totalRefunds": "退款总额",
       "detailTitle": "退款明细",
       "reference": "参考号",
-      "pendingBankTitle": "⚠️ 待处理银行退款",
+      "pendingBankTitle": "待处理银行退款",
       "estimatedDate": "预计日期"
     }
   },
@@ -3657,9 +3657,9 @@ export const zh = {
       "platformReport": "平台报告"
     },
     "reason": {
-      "bug": "🐛 技术故障",
-      "abuse": "⚠️ 滥用 / 不当行为",
-      "other": "📝 其他"
+      "bug": "技术故障",
+      "abuse": "滥用 / 不当行为",
+      "other": "其他"
     },
     "filter": {
       "placeholder": "筛选状态",
@@ -3683,7 +3683,7 @@ export const zh = {
       "updateError": "更新报告时出错"
     },
     "notification": {
-      "responseTitle": "📋 您的报告回复"
+      "responseTitle": "您的报告回复"
     },
     "dialog": {
       "title": "审核报告",
@@ -3854,11 +3854,11 @@ export const zh = {
   },
   "doctorCredentialsComponent": {
     "cardTitle": "学术与专业资料",
-    "ownerHint": "💡 请添加您的教育经历、认证资质和从业经验，并上传相关文件（执业证书、委员会认证、文凭），以便患者了解您的专业背景。每条信息均须经管理员审核批准后方可公开显示。",
+    "ownerHint": "请添加您的教育经历、认证资质和从业经验，并上传相关文件（执业证书、委员会认证、文凭），以便患者了解您的专业背景。每条信息均须经管理员审核批准后方可公开显示。",
     "documentLabel": "文件（执业证书、委员会认证、文凭……）",
     "documentHint": "PDF、JPG 或 PNG，将由 Medical Masters 团队审核。",
     "documentAttached": "已附文件",
-    "privacyNote": "🔒 请在此上传您的学位证书、执业证书、协会注册证明或委员会认证。这些文件为私密文件，仅您本人及 Medical Masters 团队可查看。",
+    "privacyNote": "请在此上传您的学位证书、执业证书、协会注册证明或委员会认证。这些文件为私密文件，仅您本人及 Medical Masters 团队可查看。",
     "viewDocument": "查看文件",
     "hideDocument": "隐藏文件",
     "statusApproved": "已审批",
@@ -4896,7 +4896,7 @@ export const zh = {
     "confirmCancelDescriptionSuffix": "，且不再收到其直播、内容及在线状态的通知。",
     "paidActiveUntil": "您的付费订阅将保持有效至",
     "afterDateNoChargesPrefix": "此日期之后将不再扣费，您将失去当前套餐的权益",
-    "paidCancelEndOfPeriod": "⚠️ 您的付费订阅将在当前计费周期结束时取消，此后不再扣费。",
+    "paidCancelEndOfPeriod": "您的付费订阅将在当前计费周期结束时取消，此后不再扣费。",
     "keepSubscription": "保留订阅",
     "cancelSubscription": "取消订阅"
   },
@@ -4983,7 +4983,7 @@ export const zh = {
   "onboardingPage": {
     "headerAccountSetup": "账户设置",
     "footerCopyright": "© 2026 Medical Masters. 保留所有权利。",
-    "welcomeWalletTipTitle": "💰 提示：为您的钱包充值",
+    "welcomeWalletTipTitle": "提示：为您的钱包充值",
     "welcomeWalletTipBody": "要访问高级内容、订阅和医疗咨询，您需要在钱包中有余额。请前往钱包页面使用信用卡或借记卡充值。",
     "welcomeWalletTipBodyPrefix": "要访问高级内容、订阅和医疗咨询，您需要在钱包中有余额。请前往",
     "welcomeWalletTipWalletWord": "钱包",
@@ -5004,7 +5004,7 @@ export const zh = {
     "phoneCodeSentSms": "验证码已通过短信发送",
     "phoneCodeSentNotif": "验证码已发送至通知",
     "phoneSendError": "发送验证码失败",
-    "phoneVerifySuccess": "✅ 手机号验证成功",
+    "phoneVerifySuccess": "手机号验证成功",
     "phoneVerifyInvalid": "验证码无效或已过期",
     "phoneVerifyError": "验证出错",
     "phoneOtpPrompt": "请输入6位验证码：",
@@ -5091,7 +5091,7 @@ export const zh = {
     "errorLoadFile": "文件加载失败",
     "retry": "重试",
     "previewNotAvailable": "此类型文件不支持预览",
-    "readOnlyOtp": "🔒 只读 — OTP 临时访问",
+    "readOnlyOtp": "只读 — OTP 临时访问",
     "close": "关闭"
   },
   "vaultUploadSimulator": {
@@ -5179,8 +5179,8 @@ export const zh = {
     "toasts": {
       "noCedulaTitle": "无执业证书",
       "noCedulaDescription": "该医生未注册执业证书编号",
-      "cedulaVerifiedTitle": "✅ 执业证书已验证",
-      "cedulaNotVerifiedTitle": "⚠️ 未验证",
+      "cedulaVerifiedTitle": "执业证书已验证",
+      "cedulaNotVerifiedTitle": "未验证",
       "cedulaNotVerifiedFallback": "在SEP中未找到相关结果",
       "cedulaErrorTitle": "错误",
       "cedulaErrorDescription": "无法验证执业证书，请手动验证。",
@@ -5190,8 +5190,8 @@ export const zh = {
       "permissionRevokedDescription": "已取消发布资讯权限",
       "errorTogglePermission": "更改权限失败",
       "badgeUpdatedTitle": "徽章已更新",
-      "badgeProLabel": "专业医生 ⭐",
-      "badgeNewLabel": "新医生 🔵",
+      "badgeProLabel": "专业医生",
+      "badgeNewLabel": "新医生",
       "badgeAutoLabel": "自动",
       "errorUpdateBadge": "更改徽章失败"
     },
@@ -5210,8 +5210,8 @@ export const zh = {
     "rank": {
       "label": "级别",
       "auto": "自动",
-      "pro": "⭐ 专业医生",
-      "new": "🔵 新医生"
+      "pro": "专业医生",
+      "new": "新医生"
     },
     "news": {
       "canPublishLabel": "可以发布资讯"
@@ -5698,7 +5698,7 @@ export const zh = {
     "toggles": {
       "title": "功能开关",
       "description": "无需修改代码即可启用或禁用平台模块",
-      "backgroundTitle": "🎨 应用背景",
+      "backgroundTitle": "应用背景",
       "backgroundDescription": "在图片背景（Medical Masters 蓝色）与经典白色装饰圆圈背景之间切换。",
       "backgroundWhite": "白色（经典）",
       "backgroundImage": "图片（蓝色）",
@@ -6473,10 +6473,10 @@ export const zh = {
       "cofepris": "COFEPRIS 许可"
     },
     "notification": {
-      "approvedTitle": "✅ 凭证已通过",
-      "rejectedTitle": "❌ 凭证已被拒",
-      "approvedMessage": "您的 {{credLabel}} 已通过 Medical Masters 团队审核。\n\n📝 核验备注：\n{{reason}}",
-      "rejectedMessage": "您的 {{credLabel}} 未获通过。\n\n❌ 原因：\n{{reason}}\n\n您可以修改后在个人资料页重新提交相关文件。"
+      "approvedTitle": "凭证已通过",
+      "rejectedTitle": "凭证已被拒",
+      "approvedMessage": "您的 {{credLabel}} 已通过 Medical Masters 团队审核。\n\n核验备注：\n{{reason}}",
+      "rejectedMessage": "您的 {{credLabel}} 未获通过。\n\n原因：\n{{reason}}\n\n您可以修改后在个人资料页重新提交相关文件。"
     },
     "header": {
       "title": "医疗资质",
@@ -6520,7 +6520,7 @@ export const zh = {
         "approveBadge": "通过",
         "rejectBadge": "拒绝"
       },
-      "confirmWarning": "⚠️ 此操作将立即通知医生，并记录备案。确认执行？",
+      "confirmWarning": "此操作将立即通知医生，并记录备案。确认执行？",
       "cancel": "取消",
       "backToEdit": "返回编辑",
       "confirmSend": "是，确认并提交"
@@ -6851,12 +6851,12 @@ export const zh = {
     "liveTranslatorDescription": "自动字幕，翻译为与会者所选语言。",
     "liveTranslatorToggleAria": "实时翻译",
     "targetLangLabel": "首选目标语言",
-    "langSpanish": "🇲🇽 西班牙语",
-    "langEnglish": "🇺🇸 英语",
-    "langPortuguese": "🇵🇹 葡萄牙语",
-    "langFrench": "🇫🇷 法语",
-    "langItalian": "🇮🇹 意大利语",
-    "langGerman": "🇩🇪 德语",
+    "langSpanish": "西班牙语",
+    "langEnglish": "英语",
+    "langPortuguese": "葡萄牙语",
+    "langFrench": "法语",
+    "langItalian": "意大利语",
+    "langGerman": "德语",
     "inviteParticipantsLabel": "邀请参与者",
     "inviteOptionalPublic": "（公开会议时为可选）",
     "searchPlaceholderDoctor": "按姓名搜索医生、住院医师或患者……",
@@ -7044,7 +7044,7 @@ export const zh = {
   "recordingChatReplay": {
     "loading": "加载聊天中……",
     "chatTitle": "直播聊天",
-    "featuredBadge": "⭐ 精选"
+    "featuredBadge": "精选"
   },
   "recordingPaywall": {
     "title": "高级权限",
@@ -7148,7 +7148,7 @@ export const zh = {
       "dateMustBeFuture": "日期必须为未来时间"
     },
     "notification": {
-      "title": "📅 新直播已安排"
+      "title": "新直播已安排"
     },
     "toast": {
       "success": "直播已成功安排",
@@ -7193,7 +7193,7 @@ export const zh = {
     "proSubscriptionCta": "Pro 订阅",
     "cancelSubscriptionTitle": "确认取消订阅？",
     "cancelPaidIntro": "取消您对以下对象的付费订阅时：",
-    "cancelPaidWarning": "⚠️ 您的订阅将在当前付费周期结束前保持有效。",
+    "cancelPaidWarning": "您的订阅将在当前付费周期结束前保持有效。",
     "cancelPaidNoMoreCharges": "此日期后将不再产生任何费用。",
     "cancelFreeMessagePrefix": "您将取消关注",
     "cancelFreeMessageSuffix": "且您将不再收到相关通知。",
@@ -7584,7 +7584,7 @@ export const zh = {
       "description": "与 {doctorName} 医生的第二诊断意见"
     },
     "notification": {
-      "title": "🔄 新的第二诊断意见申请",
+      "title": "新的第二诊断意见申请",
       "messageWithName": "{patientName} 已申请第二诊断意见",
       "messageDefault": "一位患者已申请第二诊断意见"
     },
@@ -10146,7 +10146,7 @@ export const zh = {
       resident: '快速教程，帮助你作为住院医师充分用好 Medical Masters。',
       default: '快速教程，教你如何使用 Medical Masters。',
     },
-    comingSoonTitle: '视频即将上线 🎬',
+    comingSoonTitle: '视频即将上线',
     comingSoonDesc: '教程视频很快就会在这里上线。我们正在为你准备！',
   },
   adminVideos: {
@@ -10617,24 +10617,24 @@ export const zh = {
     feeNoteB: '。买家在此无需支付任何费用。',
     reviewNote: '商品需经管理员审核后才会发布显示。',
     publish: '发布',
-    toastOrderSentTitle: '📋 采购订单已发送',
+    toastOrderSentTitle: '采购订单已发送',
     toastOrderSentDesc: '已通知卖家。我们为你打开聊天，以便商定细节。',
     toastOrderFailTitle: '无法发送订单',
     err: '错误',
-    toastSaleTitle: '🤝 已成交',
+    toastSaleTitle: '已成交',
     toastSaleDesc: '已通知买家和管理员。请记得支付平台佣金。',
     toastCancelTitle: '订单已取消',
     toastCancelDesc: '已通知对方。',
     toastCompleteFailTitle: '无法完成',
     toastFeeFailTitle: '无法发起佣金支付',
     errNoPaymentLink: '未收到付款链接',
-    toastFeePaidTitle: '✅ 佣金已支付',
+    toastFeePaidTitle: '佣金已支付',
     toastFeePaidDesc: '谢谢。付款可能需要几秒钟才会显示。',
     toastFeeCanceledTitle: '佣金支付已取消',
     toastFeeCanceledDesc: '你可以在订单中重试。',
     toastInvalidTitle: '数据无效',
     toastInvalidDesc: '必须填写名称和有效价格。',
-    toastPubSentTitle: '📦 商品已提交审核',
+    toastPubSentTitle: '商品已提交审核',
     toastPubSentDesc: '管理员批准后，商品才会显示在交易市场中。',
     toastPubFailTitle: '无法发布',
     toastMustAcceptTerms: '你必须接受条款和平台佣金。',
@@ -10705,7 +10705,7 @@ export const zh = {
     credsLoadError: '加载认证信息时出错',
     defaultName: '医生',
     specialty: '专科',
-    approved: '✓ 已批准',
+    approved: '已批准',
     pending: '待审核',
     followers: '位关注者',
     credentialsError: '认证信息出错',

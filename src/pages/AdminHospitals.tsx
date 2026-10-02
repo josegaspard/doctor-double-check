@@ -249,10 +249,10 @@ export default function AdminHospitals() {
         ) : (
           <div className="space-y-3">
             {filtered.map(h => (
-              <Card key={h.id} className={`${!h.is_active ? 'opacity-50' : ''}`}>
+              <Card key={h.id} className={`${!h.is_active ? 'border-2 border-dashed' : ''}`}>
                 <CardContent className="p-4 flex items-start gap-4">
                   {h.image_url && (
-                    <img src={h.image_url} alt={h.name} className="w-16 h-16 rounded-lg object-cover flex-shrink-0 hidden sm:block" />
+                    <img src={h.image_url} alt={h.name} className={`w-16 h-16 rounded-lg object-cover flex-shrink-0 hidden sm:block ${!h.is_active ? 'grayscale opacity-60' : ''}`} />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">

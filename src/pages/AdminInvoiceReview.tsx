@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, startOfQuarter, endOfQuarter } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
+import { AdminSalesInvoicing } from '@/components/billing/AdminSalesInvoicing';
 
 interface Invoice {
   id: string; doctor_id: string; doctor_name?: string; doctor_rfc?: string;
@@ -311,6 +312,9 @@ export default function AdminInvoiceReview() {
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('adminInvoiceReview.header.subtitle')}</p>
         </div>
+
+        {/* Facturación a compradores por médico (el médico factura a nombre del comprador) */}
+        <AdminSalesInvoicing />
 
         {/* Period Summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">

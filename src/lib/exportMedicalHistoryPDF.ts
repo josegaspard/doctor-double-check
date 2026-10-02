@@ -44,14 +44,18 @@ const esc = (value: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+// Iconos SVG (trazos de lucide) en lugar de emojis (cliente 2026-10-01).
+const svgIcon = (paths: string): string =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#227787" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle">${paths}</svg>`;
+
 const getFileIcon = (type: string): string => {
   switch (type) {
     case 'pdf':
-      return '📄';
+      return svgIcon('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>');
     case 'image':
-      return '🖼️';
+      return svgIcon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>');
     default:
-      return '📁';
+      return svgIcon('<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>');
   }
 };
 
@@ -99,7 +103,7 @@ export const generateMedicalHistoryHTML = (
       return `
       <div style="margin-bottom: 32px;">
         <h3 style="color: #227787; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #227787;">
-          📂 ${esc(category)} (${categoryItems.length})
+          ${esc(category)} (${categoryItems.length})
         </h3>
         <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <thead>
@@ -176,13 +180,13 @@ export const generateMedicalHistoryHTML = (
   <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 12px;">
     <p>Este documento fue generado automáticamente por Medical Masters</p>
     <p>Fecha: ${now.toISOString()}</p>
-    <p style="margin-top: 16px;">⚠️ Documento confidencial - Solo para uso personal</p>
+    <p style="margin-top: 16px;">Documento confidencial - Solo para uso personal</p>
   </div>
 
   <!-- Print Button (hidden when printing) -->
   <div class="no-print" style="position: fixed; bottom: 24px; right: 24px;">
     <button onclick="window.print()" style="background: #227787; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(34, 119, 135, 0.4);">
-      📥 Descargar PDF
+      Descargar PDF
     </button>
   </div>
 </body>

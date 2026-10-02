@@ -309,7 +309,7 @@ function KpiCard({ label, value, icon: Icon, tone }: { label: string; value: str
   const toneClasses: Record<string, string> = {
     primary: 'bg-primary text-white',
     success: 'bg-success text-white',
-    warning: 'bg-warning text-white',
+    warning: 'bg-warning text-warning-foreground',
     destructive: 'bg-destructive text-white',
     muted: 'bg-muted text-foreground',
   };

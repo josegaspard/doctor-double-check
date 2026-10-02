@@ -72,7 +72,7 @@
 /* ---------- Rejilla horaria ---------- */
 /* Cabeceras de día cortas «Lun 7 sep»: sin elipsis nunca */
 .dz-agenda .pro-cal-day { overflow: visible; text-overflow: clip; font-size: 12.5px; }
-.dz-agenda .pro-cal-day.is-today { color: #2f6fdb; }
+.dz-agenda .pro-cal-day.is-today { color: #2560c8; }
 /* Los eventos de una hora muestran sus tres líneas (hora · nombre · estado) */
 .dz-agenda .pro-cal-ev { padding: 5px 8px; line-height: 1.2; }
 .dz-agenda .pro-cal-ev .st { margin-top: 3px; }

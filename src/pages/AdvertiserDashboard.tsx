@@ -24,6 +24,7 @@ import {
   Upload, Image as ImageIcon, TrendingUp, FileDown, CreditCard,
   Trash2, ExternalLink, Wallet, Lightbulb, Target,
   Monitor, Smartphone, Layout, Play, PanelLeft, Percent,
+  Maximize2,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
@@ -103,7 +104,7 @@ function PlacementMockup({ width, height, format: fmt }: { width: number; height
       className="rounded border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-[9px] text-primary/60 font-mono"
       style={{ width: maxW, height: maxH }}
     >
-      {fmt === 'preroll' ? '▶' : fmt === 'interstitial' ? '📱' : 'AD'}
+      {fmt === 'preroll' ? <Play className="w-3 h-3" aria-hidden="true" /> : fmt === 'interstitial' ? <Maximize2 className="w-3 h-3" aria-hidden="true" /> : 'AD'}
     </div>
   );
 }
@@ -611,16 +612,16 @@ export default function AdvertiserDashboard() {
             </CardHeader>
             <CardContent className="space-y-2">
               {stats.impressions > 0 && stats.clicks === 0 && (
-                <p className="text-xs text-muted-foreground">💡 {t('advertiserDashboardPage.recImpressionsNoClicks')}</p>
+                <p className="text-xs text-muted-foreground"><Lightbulb className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('advertiserDashboardPage.recImpressionsNoClicks')}</p>
               )}
               {stats.impressions > 0 && Number(ctr) < 1 && stats.clicks > 0 && (
-                <p className="text-xs text-muted-foreground">📊 {t('advertiserDashboardPage.recLowCtr')}</p>
+                <p className="text-xs text-muted-foreground"><BarChart3 className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('advertiserDashboardPage.recLowCtr')}</p>
               )}
               {Number(ctr) >= 1 && (
-                <p className="text-xs text-muted-foreground">🎯 {t('advertiserDashboardPage.recGoodCtr')}</p>
+                <p className="text-xs text-muted-foreground"><Target className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('advertiserDashboardPage.recGoodCtr')}</p>
               )}
               {creatives.length === 0 && (
-                <p className="text-xs text-muted-foreground">🖼️ {t('advertiserDashboardPage.recNoCreatives')}</p>
+                <p className="text-xs text-muted-foreground"><ImageIcon className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('advertiserDashboardPage.recNoCreatives')}</p>
               )}
             </CardContent>
           </Card>

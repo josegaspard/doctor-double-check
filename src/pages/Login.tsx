@@ -434,7 +434,7 @@ export default function Login() {
               <RoleBadgeIcon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-white/75">{t('login.accessAs')}</p>
+              <p className="text-[11px] font-medium uppercase tracking-wide text-white">{t('login.accessAs')}</p>
               <p className="text-base font-bold leading-tight truncate">{t(roleMeta.labelKey)}</p>
             </div>
           </div>

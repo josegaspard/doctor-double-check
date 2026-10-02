@@ -96,9 +96,9 @@ export function useCloudflareWebRTC() {
           });
           const bytesPerSecond = totalBytesSent - lastBytesSent;
           if (bytesPerSecond > 0) {
-            console.log(`[Cloudflare] 📊 Data flowing: ${(bytesPerSecond / 1024).toFixed(1)} KB/s sent (total: ${(totalBytesSent / 1024 / 1024).toFixed(2)} MB)`);
+            console.log(`[Cloudflare] Data flowing: ${(bytesPerSecond / 1024).toFixed(1)} KB/s sent (total: ${(totalBytesSent / 1024 / 1024).toFixed(2)} MB)`);
           } else if (pc.connectionState === 'connected') {
-            console.warn('[Cloudflare] ⚠️ Connection says connected but NO DATA being sent!');
+            console.warn('[Cloudflare] Connection says connected but NO DATA being sent!');
           }
           lastBytesSent = totalBytesSent;
         } catch (e) {
@@ -113,10 +113,10 @@ export function useCloudflareWebRTC() {
         
         if (pc.connectionState === 'failed') {
           if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
-          console.error('[Cloudflare] ❌ Connection FAILED! Media never reached Cloudflare.');
+          console.error('[Cloudflare] Connection FAILED! Media never reached Cloudflare.');
           toast.error('La conexión con el servidor de streaming falló');
         } else if (pc.connectionState === 'connected') {
-          console.log('[Cloudflare] ✅ Connected! Now verifying data is flowing...');
+          console.log('[Cloudflare] Connected! Now verifying data is flowing...');
         } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
           if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
         }
@@ -126,10 +126,10 @@ export function useCloudflareWebRTC() {
         console.log('[Cloudflare] ICE connection state:', pc.iceConnectionState);
         
         if (pc.iceConnectionState === 'failed') {
-          console.error('[Cloudflare] ❌ ICE connection failed - network issue');
+          console.error('[Cloudflare] ICE connection failed - network issue');
           pc.restartIce();
         } else if (pc.iceConnectionState === 'disconnected') {
-          console.warn('[Cloudflare] ⚠️ ICE disconnected - may reconnect...');
+          console.warn('[Cloudflare] ICE disconnected - may reconnect...');
         }
       };
 
@@ -230,16 +230,16 @@ export function useCloudflareWebRTC() {
       // Log negotiated video codec from answer SDP
       const codec = getNegotiatedCodec(answerSdp);
       setNegotiatedCodec(codec);
-      console.log('[Cloudflare] 🎥 Negotiated video codec:', codec);
+      console.log('[Cloudflare] Negotiated video codec:', codec);
       
       if (codec !== 'H264') {
-        console.warn('[Cloudflare] ⚠️ WARNING: Cloudflare VOD requires H.264! Current codec:', codec);
+        console.warn('[Cloudflare] WARNING: Cloudflare VOD requires H.264! Current codec:', codec);
         toast.warning(`Códec negociado: ${codec}. La grabación puede no funcionar.`, {
           description: 'Cloudflare requiere H.264. Considera usar OBS con RTMPS.',
           duration: 10000,
         });
       } else {
-        console.log('[Cloudflare] ✅ H.264 codec confirmed - recording should work!');
+        console.log('[Cloudflare] H.264 codec confirmed - recording should work!');
       }
       
       await pc.setRemoteDescription({
@@ -247,7 +247,7 @@ export function useCloudflareWebRTC() {
         sdp: answerSdp,
       });
 
-      console.log('[Cloudflare] ✅ WebRTC broadcast setup complete!');
+      console.log('[Cloudflare] WebRTC broadcast setup complete!');
       console.log('[Cloudflare] Current connection state:', pc.connectionState);
       console.log('[Cloudflare] Current ICE state:', pc.iceConnectionState);
       

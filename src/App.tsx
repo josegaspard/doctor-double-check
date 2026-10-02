@@ -20,6 +20,7 @@ import { OtpProvider } from "@/contexts/OtpContext";
 import { PostConsultationRatingProvider } from "@/components/ratings/PostConsultationRatingProvider";
 import { IncomingCallProvider } from "@/components/videocall/IncomingCallProvider";
 import { ActiveLiveProvider } from "@/contexts/ActiveLiveContext";
+import { BillingGateProvider } from "@/components/billing/BillingGate";
 import React, { Suspense, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -39,6 +40,7 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
       <VaultProvider>
         <ChatProvider>
           <OtpProvider>
+            <BillingGateProvider>
             <PostConsultationRatingProvider>
               {toggles.enable_video_calls ? (
                 <IncomingCallProvider>
@@ -48,6 +50,7 @@ function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
                 children
               )}
             </PostConsultationRatingProvider>
+            </BillingGateProvider>
           </OtpProvider>
         </ChatProvider>
       </VaultProvider>

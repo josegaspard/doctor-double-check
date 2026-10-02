@@ -7,21 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANGUAGE_AUTONYMS, SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/lib/i18n';
-
-// Bandera de Cataluña (Senyera) como SVG: el emoji 🏴󠁥󠁳󠁣󠁴󠁿 (bandera de
-// subdivisión) NO se renderiza en la mayoría de navegadores/SO (Windows,
-// muchos Android) → salía vacío. Con SVG se ve siempre. Cliente 2026-06-16.
-export const SenyeraIcon = () => (
-  <svg viewBox="0 0 9 6" className="inline-block w-5 h-[0.85rem] rounded-[2px] ring-1 ring-black/15 align-[-2px]" aria-hidden="true">
-    <rect width="9" height="6" fill="#FCDD09" />
-    <g fill="#DA121A">
-      <rect y="0.667" width="9" height="0.667" />
-      <rect y="2" width="9" height="0.667" />
-      <rect y="3.333" width="9" height="0.667" />
-      <rect y="4.667" width="9" height="0.667" />
-    </g>
-  </svg>
-);
+import { CountryTag } from '@/components/common/CountryTag';
 
 const LanguageOption = forwardRef<
   HTMLButtonElement,
@@ -37,7 +23,7 @@ const LanguageOption = forwardRef<
     {...props}
   >
     <span className="flex items-center gap-2 text-base">
-      <span className="inline-flex items-center justify-center w-5">{flag}</span>
+      <span className="inline-flex items-center justify-center w-7">{flag}</span>
       {text}
     </span>
     {selected && <Check className="h-4 w-4" />}
@@ -45,9 +31,8 @@ const LanguageOption = forwardRef<
 ));
 LanguageOption.displayName = 'LanguageOption';
 
-const FLAGS: Record<SupportedLanguage, string> = {
-  es: '🇪🇸', en: '🇺🇸', pt: '🇵🇹', fr: '🇫🇷', it: '🇮🇹', de: '🇩🇪', ca: '🏴󠁥󠁳󠁣󠁴󠁿', zh: '🇨🇳',
-};
+// Sin banderas emoji (en Windows salen como letras; cliente 2026-10-01): código del idioma
+// en una etiqueta (<CountryTag />) junto al nombre en su propio idioma.
 
 /**
  * Lista de idiomas. Es la ÚNICA lista de la app: la usa el globo de la cabecera
@@ -91,7 +76,7 @@ export function LanguageOptionsList({
           <LanguageOption
             key={code}
             selected={language === code}
-            flag={code === 'ca' ? <SenyeraIcon /> : <span>{FLAGS[code]}</span>}
+            flag={<CountryTag code={code} />}
             text={LANGUAGE_AUTONYMS[code]}
             onClick={() => handleSelect(code)}
           />

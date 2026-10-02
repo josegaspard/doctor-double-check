@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle, Award } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, User, Stethoscope, ArrowLeft, Newspaper, Loader2, Star, Shield, MapPin, GraduationCap, Building, Calendar, FileText, ShieldCheck, ExternalLink, AlertTriangle, Award, Medal, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -32,6 +32,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DoctorDocumentsDialog } from '@/components/admin/DoctorDocumentsDialog';
+import { CategoryMarkIcon } from '@/components/profile/ProfileCategoryMark';
+import type { CategoryMark } from '@/hooks/useProfileCategory';
 
 interface DoctorRequest {
   id: string;
@@ -519,7 +521,7 @@ export default function AdminDoctors() {
                             {t('adminDoctorsPage.signatures.label')} {doctor.document_signatures_count || 0} {t('adminDoctorsPage.signatures.documentsSuffix')}
                           </span>
                           {(doctor.document_signatures_count || 0) >= 2 && (
-                            <Badge variant="success" className="text-[10px] ml-1 px-1.5 py-0">✓</Badge>
+                            <Badge variant="success" className="text-[10px] ml-1 px-1.5 py-0"><Check className="w-3 h-3" aria-hidden="true" /></Badge>
                           )}
                         </div>
 
@@ -640,8 +642,8 @@ export default function AdminDoctors() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
-                                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
-                                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                                    <SelectItem value="gold"><span className="inline-flex items-center gap-2"><Medal className="w-4 h-4 text-premium" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.gold')}</span></SelectItem>
+                                    <SelectItem value="verified"><span className="inline-flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.verified')}</span></SelectItem>
                                   </SelectContent>
                                 </Select>
                               )}
@@ -664,7 +666,7 @@ export default function AdminDoctors() {
                                     <SelectItem value="none">Sin categoría</SelectItem>
                                     {profileCats.map(c => (
                                       <SelectItem key={c.key} value={c.key}>
-                                        {c.mark === 'star' ? '⭐' : c.mark === 'purple_dot' ? '🟣' : '🟢'} {c.display_name}
+                                        <span className="inline-flex items-center gap-2"><CategoryMarkIcon mark={c.mark as CategoryMark} size="sm" />{c.display_name}</span>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -756,8 +758,8 @@ export default function AdminDoctors() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
-                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
-                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                    <SelectItem value="gold"><span className="inline-flex items-center gap-2"><Medal className="w-4 h-4 text-premium" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.gold')}</span></SelectItem>
+                    <SelectItem value="verified"><span className="inline-flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.verified')}</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>

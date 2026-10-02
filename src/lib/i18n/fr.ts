@@ -7,7 +7,7 @@ export const fr = {
       resident: "Tutoriel rapide pour tirer le meilleur parti de Medical Masters en tant qu'interne.",
       default: "Tutoriel rapide pour apprendre à utiliser Medical Masters."
     },
-    comingSoonTitle: "Vidéo à venir 🎬",
+    comingSoonTitle: "Vidéo à venir",
     comingSoonDesc: "Vous trouverez très bientôt ici la vidéo tutoriel. Nous la préparons pour vous !"
   },
   adminVideos: {
@@ -171,7 +171,7 @@ export const fr = {
     hospitalLoc24: "Rechercher un hôpital, une adresse ou une spécialité...",
     hospitalLoc25: "Filtres et tri",
     hospitalLoc26: "Afficher {count} résultats",
-    hospitalLoc27: "🏥 Hôpitaux privés · Mexique",
+    hospitalLoc27: "Hôpitaux privés · Mexique",
     hospitalLoc28: "Proximité",
     hospitalLoc29: "Note",
     hospitalLoc3: "Hôpitaux privés au Mexique",
@@ -182,13 +182,13 @@ export const fr = {
     hospitalLoc34: "Chargement des hôpitaux...",
     hospitalLoc35: "Aucun hôpital trouvé",
     hospitalLoc36: "Effacer les filtres",
-    hospitalLoc37: "🏥 Public",
-    hospitalLoc38: "🏨 Privé",
-    hospitalLoc39: "🩺 Clinique",
+    hospitalLoc37: "Public",
+    hospitalLoc38: "Privé",
+    hospitalLoc39: "Clinique",
     hospitalLoc4: "Spécialité",
-    hospitalLoc40: "🏥 Public",
-    hospitalLoc41: "🏨 Privé",
-    hospitalLoc42: "🩺 Clinique",
+    hospitalLoc40: "Public",
+    hospitalLoc41: "Privé",
+    hospitalLoc42: "Clinique",
     hospitalLoc43: "avis",
     hospitalLoc44: "Plus",
     hospitalLoc45: "Niveau : ",
@@ -305,7 +305,7 @@ export const fr = {
     prescForm3: "Configurez votre signature professionnelle dans votre profil avant d'émettre des ordonnances.",
     prescForm30: "Créer l'ordonnance et l'envoyer au patient",
     prescForm4: "Erreur lors du téléversement du fichier : {message}",
-    prescForm5: "📋 Nouvelle ordonnance médicale",
+    prescForm5: "Nouvelle ordonnance médicale",
     prescForm6: "{name} vous a envoyé une ordonnance",
     prescForm7: "Votre médecin",
     prescForm8: "Ordonnance créée et envoyée",
@@ -439,7 +439,7 @@ export const fr = {
     vendorDash47: "Enregistré",
     "vendorDashSentReview": "Produit envoyé pour révision. L’administrateur l’approuvera avant sa publication.",
     "vendorDashNoPayLink": "Aucun lien de paiement reçu",
-    "vendorDashSaleDone": "🤝 Vente conclue. N’oubliez pas de payer les frais de la plateforme.",
+    "vendorDashSaleDone": "Vente conclue. N’oubliez pas de payer les frais de la plateforme.",
     "vendorDashOrderCancelled": "Commande annulée.",
     "vendorDashError": "Erreur",
     vendorDash48: "Supprimer ce produit ?",
@@ -568,10 +568,10 @@ export const fr = {
     clAdminAds7: "Informations de base",
     clAdminAds8: "Ma campagne",
     clAdminAds9: "Annuler",
-    clAdminDash1: "💰 Financier",
+    clAdminDash1: "Financier",
     clAdminDash10: "Remboursements",
     clAdminDash11: "Demandes et remboursements manuels",
-    clAdminDash12: "👥 Utilisateurs",
+    clAdminDash12: "Utilisateurs",
     clAdminDash13: "Gestion des utilisateurs",
     clAdminDash14: "Gérez tous les utilisateurs",
     clAdminDash15: "Validation des médecins",
@@ -583,7 +583,7 @@ export const fr = {
     clAdminDash20: "Examinez les demandes des patients",
     clAdminDash21: "Diplômes des médecins",
     clAdminDash22: "Formation et certifications",
-    clAdminDash23: "📰 Contenu",
+    clAdminDash23: "Contenu",
     clAdminDash24: "Actualités et blog médical",
     clAdminDash25: "Créez et publiez des articles",
     clAdminDash26: "Événements et appels",
@@ -595,12 +595,12 @@ export const fr = {
     clAdminDash31: "Campagnes, emplacements et métriques",
     clAdminDash32: "Paramètres du site",
     clAdminDash33: "Réseaux sociaux, conditions et confidentialité",
-    clAdminDash34: "🛡️ Assistance",
+    clAdminDash34: "Assistance",
     clAdminDash35: "Signalements et réclamations",
     clAdminDash36: "Gérez les signalements des utilisateurs",
     clAdminDash37: "Liste de contrôle QA E2E",
     clAdminDash38: "Tests de bout en bout par rôle avec suivi",
-    clAdminDash39: "🏥 Annuaire et marketplace",
+    clAdminDash39: "Annuaire et marketplace",
     clAdminDash4: "Paiements aux médecins",
     clAdminDash40: "Hôpitaux et cliniques",
     clAdminDash41: "Gérez l'annuaire des hôpitaux",
@@ -734,21 +734,21 @@ export const fr = {
     admFee6: "La plateforme facture désormais",
     admFee7: "pour l'intermédiation.",
     admFee8: "Impossible d'enregistrer",
-    admFee9: "✅ Fournisseur approuvé",
+    admFee9: "Fournisseur approuvé",
     admFee10: "Fournisseur refusé",
     admFee11: "Fournisseur en cours d'examen",
     admFee12: "peut désormais publier des produits.",
     admFee13: "a été informé du refus.",
     admFee14: "remis en attente.",
     admFee15: "Fournisseur",
-    admFee16: "🎉 Vous êtes un fournisseur approuvé !",
+    admFee16: "Vous êtes un fournisseur approuvé !",
     admFee17: "Votre entreprise",
     admFee18: "a été approuvée. Vous pouvez désormais publier des produits sur la marketplace depuis votre portail fournisseur.",
     admFee19: "Votre demande de fournisseur a été refusée",
     admFee20: "Motif :",
     admFee21: "Vous pouvez corriger vos informations et postuler à nouveau depuis le portail des fournisseurs.",
     admFee22: "Motif du refus (il sera montré au fournisseur) :",
-    admFee23: "✅ Produit approuvé",
+    admFee23: "Produit approuvé",
     admFee24: "Produit refusé",
     admFee25: "est désormais visible sur la marketplace.",
     admFee26: "— le fournisseur a été informé.",
@@ -759,7 +759,7 @@ export const fr = {
     admFee31: "Approuvé",
     admFee32: "Refusé",
     admFee33: "En attente",
-    admFee34: "🤝 Vente conclue",
+    admFee34: "Vente conclue",
     admFee35: "L'acheteur et le vendeur ont été informés ; les frais restent à percevoir.",
     admFee36: "Commande annulée",
     admFee37: "Les deux parties ont été informées.",
@@ -1544,17 +1544,17 @@ export const fr = {
     pendingEarnings: "Gains en attente",
     totalEarned: "Total gagné",
     bankAccount: "Compte bancaire",
-    configured: "Configuré ✓",
+    configured: "Configuré",
     setUp: "Configurer",
     pendingEarningsBanner: "Vous avez {amount} de gains en attente",
     pendingEarningsBannerDesc: "Téléversez une facture de ce montant pour traiter votre paiement. Les paiements sont traités automatiquement une fois la facture approuvée.",
     howToInvoice: "Comment facturer mes gains ?",
     twoOptions: "Vous avez deux options de facturation flexibles :",
-    singleInvoice: "📄 Facture globale",
+    singleInvoice: "Facture globale",
     singleInvoiceDesc: "Téléversez une seule facture pour le total de vos gains en attente.",
-    perTypeInvoices: "📑 Factures par type",
+    perTypeInvoices: "Factures par type",
     perTypeInvoicesDesc: "Téléversez des factures séparées par type de service.",
-    accountantTip: "💡 Conseil : consultez votre comptable pour l'option la mieux adaptée à votre régime fiscal.",
+    accountantTip: "Conseil : consultez votre comptable pour l'option la mieux adaptée à votre régime fiscal.",
     invoices: "Factures",
     paymentHistory: "Historique des paiements",
     noInvoices: "Aucune facture",
@@ -1884,7 +1884,7 @@ export const fr = {
     onlyDoctorsClose: "Seuls les médecins peuvent clore les consultations",
     noPermissionClose: "Vous n'avez pas les permissions pour clore cette consultation",
     sessionCloseError: "Erreur lors de la clôture de la consultation",
-    rateOrientation: "⭐ Évaluez votre consultation",
+    rateOrientation: "Évaluez votre consultation",
     rateOrientationMsg: "a clôturé votre consultation. Évaluez votre expérience !",
     liveNotFound: "Live introuvable",
     streamUidMissing: "Le stream UID de ce live est introuvable",
@@ -2387,9 +2387,9 @@ export const fr = {
     subtitle: "Votre signalement sera examiné par notre équipe",
     typeLabel: "Type de signalement *",
     typePlaceholder: "Sélectionnez le type",
-    bugOption: "🐛 Bug technique",
-    abuseOption: "⚠️ Abus / Comportement inapproprié",
-    otherOption: "📝 Autre",
+    bugOption: "Bug technique",
+    abuseOption: "Abus / Comportement inapproprié",
+    otherOption: "Autre",
     subjectLabel: "Objet *",
     subjectPlaceholder: "Décrivez brièvement le problème",
     descriptionLabel: "Description détaillée *",
@@ -2961,7 +2961,7 @@ export const fr = {
     failedTitle: "Impossible de traiter l'enregistrement",
     failedDescription: "Une erreur est survenue lors de la sauvegarde du replay. Réessayez plus tard.",
     backToLives: "Retour aux lives",
-    replayAvailableToast: "🎬 Replay disponible",
+    replayAvailableToast: "Replay disponible",
     replayAvailableDescription: "Nous vous emmenons à l'enregistrement dans 3 secondes…"
   },
   walletLedger: {
@@ -3140,7 +3140,7 @@ export const fr = {
     notesPlaceholder: "Diagnostic initial, observations...",
     cancel: "Annuler",
     savePatient: "Enregistrer le patient",
-    notificationTitle: "🩺 Un médecin demande l'accès à votre dossier",
+    notificationTitle: "Un médecin demande l'accès à votre dossier",
     notificationMessage: "Pour commencer votre suivi, autorisez l'accès depuis votre Vault.",
     invitationSentTo: "Invitation envoyée à",
     patientFallback: "patient",
@@ -3163,7 +3163,7 @@ export const fr = {
     },
     pdf: {
       title: "Rapport d'analyses - Medical Masters",
-      heading: "📊 Rapport d'analyses",
+      heading: "Rapport d'analyses",
       subtitle: "Medical Masters · Période : {period} · Généré le : {date}",
       keyIndicators: "Indicateurs clés",
       grossRevenue: "Revenus bruts",
@@ -3378,8 +3378,8 @@ export const fr = {
       noInvoices: "Aucune facture dans cette catégorie"
     },
     dialog: {
-      approveTitle: "✅ Approuver la facture",
-      rejectTitle: "❌ Refuser la facture",
+      approveTitle: "Approuver la facture",
+      rejectTitle: "Refuser la facture",
       invoiceLabel: "Facture",
       doctorLabel: "Médecin",
       amountLabel: "Montant",
@@ -3404,8 +3404,8 @@ export const fr = {
       deleteSuffix: "facture(s) ?"
     },
     notifications: {
-      approvedTitle: "✅ Facture approuvée",
-      rejectedTitle: "❌ Facture refusée",
+      approvedTitle: "Facture approuvée",
+      rejectedTitle: "Facture refusée",
       approvedMessagePrefix: "Votre facture",
       approvedMessageSuffix: "a été approuvée",
       rejectedMessagePrefix: "Votre facture",
@@ -3425,7 +3425,7 @@ export const fr = {
     },
     pdf: {
       title: "Rapport factures - Comptabilité",
-      heading: "📋 Rapport de factures - Comptabilité",
+      heading: "Rapport de factures - Comptabilité",
       periodLabel: "Période",
       generatedLabel: "Généré le",
       totalInvoices: "Total factures",
@@ -3460,7 +3460,7 @@ export const fr = {
       permissionToggleError: "Erreur lors du changement d'autorisation"
     },
     notification: {
-      title: "📰 Autorisation de publication accordée",
+      title: "Autorisation de publication accordée",
       message: "L'autorisation de créer et publier des articles sur le blog médical vous a été accordée. Rendez-vous dans la section actualités pour commencer !"
     },
     back: "Retour",
@@ -3712,10 +3712,10 @@ export const fr = {
       recordsExported: "enregistrements exportés"
     },
     notification: {
-      rejectedTitle: "❌ Demande de remboursement refusée",
+      rejectedTitle: "Demande de remboursement refusée",
       rejectedMessage: "Votre demande de remboursement a été refusée.",
       reasonPrefix: "Motif",
-      transferDoneTitle: "🏦 Virement effectué",
+      transferDoneTitle: "Virement effectué",
       transferDoneMessagePrefix: "Votre remboursement de",
       transferDoneMessageSuffix: "MXN a été viré sur votre compte bancaire. Réf :"
     },
@@ -3734,12 +3734,12 @@ export const fr = {
     },
     pdf: {
       title: "Rapport des remboursements",
-      header: "📊 Rapport des remboursements",
+      header: "Rapport des remboursements",
       generated: "Généré le",
       totalRefunds: "Total remboursements",
       detailTitle: "Détail des remboursements",
       reference: "Référence",
-      pendingBankTitle: "⚠️ Remboursements bancaires en attente",
+      pendingBankTitle: "Remboursements bancaires en attente",
       estimatedDate: "Date estimée"
     }
   },
@@ -3763,9 +3763,9 @@ export const fr = {
       platformReport: "Signalement de plateforme"
     },
     reason: {
-      bug: "🐛 Panne technique",
-      abuse: "⚠️ Abus / Conduite inappropriée",
-      other: "📝 Autre"
+      bug: "Panne technique",
+      abuse: "Abus / Conduite inappropriée",
+      other: "Autre"
     },
     filter: {
       placeholder: "Filtrer par statut",
@@ -3789,7 +3789,7 @@ export const fr = {
       updateError: "Erreur lors de la mise à jour du signalement"
     },
     notification: {
-      responseTitle: "📋 Réponse à votre signalement"
+      responseTitle: "Réponse à votre signalement"
     },
     dialog: {
       title: "Examiner le signalement",
@@ -3960,11 +3960,11 @@ export const fr = {
   },
   doctorCredentialsComponent: {
     cardTitle: "Profil académique et professionnel",
-    ownerHint: "💡 Ajoutez votre formation, vos certifications et votre expérience pour que les patients connaissent votre parcours professionnel. Chaque entrée sera examinée et approuvée par un administrateur avant d'être visible publiquement.",
+    ownerHint: "Ajoutez votre formation, vos certifications et votre expérience pour que les patients connaissent votre parcours professionnel. Chaque entrée sera examinée et approuvée par un administrateur avant d'être visible publiquement.",
     documentLabel: "Document (carte professionnelle, board, diplôme…)",
     documentHint: "PDF, JPG ou PNG. Il sera examiné par l'équipe de Medical Masters.",
     documentAttached: "Document joint",
-    privacyNote: "🔒 Déposez ici votre titre, carte professionnelle, numéro d'ordre ou board. Ces documents sont privés : seuls vous et l'équipe de Medical Masters peuvent les consulter.",
+    privacyNote: "Déposez ici votre titre, carte professionnelle, numéro d'ordre ou board. Ces documents sont privés : seuls vous et l'équipe de Medical Masters peuvent les consulter.",
     viewDocument: "Voir le document",
     hideDocument: "Masquer le document",
     statusApproved: "Approuvé",
@@ -5037,7 +5037,7 @@ export const fr = {
     confirmCancelDescriptionSuffix: "et ne recevrez plus de notifications de ses lives, contenu ou disponibilités.",
     paidActiveUntil: "Votre abonnement payant restera actif jusqu'au",
     afterDateNoChargesPrefix: "Après cette date, aucun prélèvement ne sera effectué et vous perdrez les avantages de votre formule",
-    paidCancelEndOfPeriod: "⚠️ Votre abonnement payant sera annulé à la fin de la période de facturation en cours. Aucun prélèvement supplémentaire ne sera effectué.",
+    paidCancelEndOfPeriod: "Votre abonnement payant sera annulé à la fin de la période de facturation en cours. Aucun prélèvement supplémentaire ne sera effectué.",
     keepSubscription: "Conserver l'abonnement",
     cancelSubscription: "Annuler l'abonnement"
   },
@@ -5124,7 +5124,7 @@ export const fr = {
   onboardingPage: {
     headerAccountSetup: "Configuration du compte",
     footerCopyright: "© 2026 Medical Masters. Tous droits réservés.",
-    welcomeWalletTipTitle: "💰 Astuce : rechargez votre Wallet",
+    welcomeWalletTipTitle: "Astuce : rechargez votre Wallet",
     welcomeWalletTipBody: "Pour accéder au contenu premium, aux abonnements et aux consultations médicales, vous aurez besoin de solde sur votre Wallet. Rendez-vous dans Wallet pour ajouter des fonds par carte de crédit ou de débit.",
     welcomeWalletTipBodyPrefix: "Pour accéder au contenu premium, aux abonnements et aux consultations médicales, vous aurez besoin de solde sur votre Wallet. Rendez-vous dans ",
     welcomeWalletTipWalletWord: "Wallet",
@@ -5145,7 +5145,7 @@ export const fr = {
     phoneCodeSentSms: "Code envoyé par SMS",
     phoneCodeSentNotif: "Code envoyé aux notifications",
     phoneSendError: "Erreur lors de l'envoi du code",
-    phoneVerifySuccess: "✅ Téléphone vérifié avec succès",
+    phoneVerifySuccess: "Téléphone vérifié avec succès",
     phoneVerifyInvalid: "Code invalide ou expiré",
     phoneVerifyError: "Erreur lors de la vérification",
     phoneOtpPrompt: "Saisissez le code à 6 chiffres :",
@@ -5232,7 +5232,7 @@ export const fr = {
     errorLoadFile: "Impossible de charger le fichier",
     retry: "Réessayer",
     previewNotAvailable: "Aperçu non disponible pour ce type de fichier",
-    readOnlyOtp: "🔒 Lecture seule — accès temporaire par OTP",
+    readOnlyOtp: "Lecture seule — accès temporaire par OTP",
     close: "Fermer"
   },
   vaultUploadSimulator: {
@@ -5320,8 +5320,8 @@ export const fr = {
     toasts: {
       noCedulaTitle: "Sans Numéro Professionnel",
       noCedulaDescription: "Ce médecin n'a pas de Numéro Professionnel enregistré",
-      cedulaVerifiedTitle: "✅ Numéro Professionnel vérifié",
-      cedulaNotVerifiedTitle: "⚠️ Non vérifiée",
+      cedulaVerifiedTitle: "Numéro Professionnel vérifié",
+      cedulaNotVerifiedTitle: "Non vérifiée",
       cedulaNotVerifiedFallback: "Aucun résultat trouvé auprès de la SEP",
       cedulaErrorTitle: "Erreur",
       cedulaErrorDescription: "Impossible de vérifier le Numéro Professionnel. Essayez manuellement.",
@@ -5331,8 +5331,8 @@ export const fr = {
       permissionRevokedDescription: "ne peut plus publier d'actualités",
       errorTogglePermission: "Erreur lors du changement d'autorisation",
       badgeUpdatedTitle: "Badge mis à jour",
-      badgeProLabel: "Médecin Pro ⭐",
-      badgeNewLabel: "Nouveau médecin 🔵",
+      badgeProLabel: "Médecin Pro",
+      badgeNewLabel: "Nouveau médecin",
       badgeAutoLabel: "Automatique",
       errorUpdateBadge: "Erreur lors du changement de badge"
     },
@@ -5351,8 +5351,8 @@ export const fr = {
     rank: {
       label: "Niveau",
       auto: "Automatique",
-      pro: "⭐ Médecin Pro",
-      new: "🔵 Nouveau"
+      pro: "Médecin Pro",
+      new: "Nouveau"
     },
     manualBadge: {
       label: "Badge",
@@ -5848,7 +5848,7 @@ export const fr = {
     toggles: {
       title: "Feature Toggles",
       description: "Activez ou désactivez des sections de la plateforme sans modifier le code",
-      backgroundTitle: "🎨 Arrière-plan de l'application",
+      backgroundTitle: "Arrière-plan de l'application",
       backgroundDescription: "Basculez entre l'arrière-plan avec image (bleu Medical Masters) et le fond blanc classique avec cercles décoratifs.",
       backgroundWhite: "Blanc (classique)",
       backgroundImage: "Image (bleu)",
@@ -6732,10 +6732,10 @@ export const fr = {
       cofepris: "Autorisation COFEPRIS"
     },
     notification: {
-      approvedTitle: "✅ Certification approuvée",
-      rejectedTitle: "❌ Certification rejetée",
-      approvedMessage: "Votre {{credLabel}} a été approuvée par l'équipe Medical Masters.\n\n📝 Notes de vérification :\n{{reason}}",
-      rejectedMessage: "Votre {{credLabel}} n'a pas été approuvée.\n\n❌ Motif :\n{{reason}}\n\nVous pouvez corriger et renvoyer les documents depuis votre profil."
+      approvedTitle: "Certification approuvée",
+      rejectedTitle: "Certification rejetée",
+      approvedMessage: "Votre {{credLabel}} a été approuvée par l'équipe Medical Masters.\n\nNotes de vérification :\n{{reason}}",
+      rejectedMessage: "Votre {{credLabel}} n'a pas été approuvée.\n\nMotif :\n{{reason}}\n\nVous pouvez corriger et renvoyer les documents depuis votre profil."
     },
     header: {
       title: "Titres médicaux",
@@ -6779,7 +6779,7 @@ export const fr = {
         approveBadge: "APPROUVER",
         rejectBadge: "REJETER"
       },
-      confirmWarning: "⚠️ Cette action notifiera immédiatement le médecin et sera consignée dans l'audit. Confirmez-vous ?",
+      confirmWarning: "Cette action notifiera immédiatement le médecin et sera consignée dans l'audit. Confirmez-vous ?",
       cancel: "Annuler",
       backToEdit: "Revenir à l'édition",
       confirmSend: "Oui, confirmer et envoyer"
@@ -7110,12 +7110,12 @@ export const fr = {
     liveTranslatorDescription: "Sous-titres automatiques traduits dans la langue du participant.",
     liveTranslatorToggleAria: "Traducteur en direct",
     targetLangLabel: "Langue cible préférée",
-    langSpanish: "🇲🇽 Español",
-    langEnglish: "🇺🇸 Anglais",
-    langPortuguese: "🇵🇹 Portugais",
-    langFrench: "🇫🇷 Français",
-    langItalian: "🇮🇹 Italien",
-    langGerman: "🇩🇪 Allemand",
+    langSpanish: "Español",
+    langEnglish: "Anglais",
+    langPortuguese: "Portugais",
+    langFrench: "Français",
+    langItalian: "Italien",
+    langGerman: "Allemand",
     inviteParticipantsLabel: "Inviter des participants",
     inviteOptionalPublic: "(facultatif lorsque public)",
     searchPlaceholderDoctor: "Rechercher un médecin, un interne ou un patient par nom…",
@@ -7415,7 +7415,7 @@ export const fr = {
   recordingChatReplay: {
     loading: "Chargement du chat…",
     chatTitle: "Chat de la diffusion",
-    featuredBadge: "⭐ En vedette"
+    featuredBadge: "En vedette"
   },
   recordingPaywall: {
     title: "Accès premium",
@@ -7519,7 +7519,7 @@ export const fr = {
       dateMustBeFuture: "La date doit être dans le futur"
     },
     notification: {
-      title: "📅 Nouveau Live programmé"
+      title: "Nouveau Live programmé"
     },
     toast: {
       success: "Live programmé avec succès",
@@ -7564,7 +7564,7 @@ export const fr = {
     proSubscriptionCta: "Abonnement Pro",
     cancelSubscriptionTitle: "Annuler l'abonnement ?",
     cancelPaidIntro: "En annulant votre abonnement payant avec",
-    cancelPaidWarning: "⚠️ Votre abonnement restera actif jusqu'à la fin de la période payée.",
+    cancelPaidWarning: "Votre abonnement restera actif jusqu'à la fin de la période payée.",
     cancelPaidNoMoreCharges: "Aucun prélèvement ne sera effectué après cette date.",
     cancelFreeMessagePrefix: "Vous cesserez de suivre",
     cancelFreeMessageSuffix: "et vous ne recevrez plus de notifications.",
@@ -7955,7 +7955,7 @@ export const fr = {
       description: "Deuxième avis avec {doctorName}"
     },
     notification: {
-      title: "🔄 Nouvelle demande de Deuxième avis",
+      title: "Nouvelle demande de Deuxième avis",
       messageWithName: "{patientName} a demandé un deuxième avis",
       messageDefault: "Un patient a demandé un deuxième avis"
     },
@@ -8689,24 +8689,24 @@ export const fr = {
     feeNoteB: '. L\'acheteur ne paie rien ici.',
     reviewNote: 'Le produit est examiné par l\'administrateur avant d\'être publié.',
     publish: 'Publier',
-    toastOrderSentTitle: '📋 Bon de commande envoyé',
+    toastOrderSentTitle: 'Bon de commande envoyé',
     toastOrderSentDesc: 'Le fournisseur a été notifié. Nous ouvrons le chat pour convenir des détails.',
     toastOrderFailTitle: 'Impossible d\'envoyer la commande',
     err: 'Erreur',
-    toastSaleTitle: '🤝 Vente finalisée',
+    toastSaleTitle: 'Vente finalisée',
     toastSaleDesc: 'L\'acheteur et l\'administrateur ont été notifiés. Pensez à payer la commission de la plateforme.',
     toastCancelTitle: 'Commande annulée',
     toastCancelDesc: 'L\'autre partie a été notifiée.',
     toastCompleteFailTitle: 'Impossible de finaliser',
     toastFeeFailTitle: 'Impossible de lancer le paiement de la commission',
     errNoPaymentLink: 'Aucun lien de paiement reçu',
-    toastFeePaidTitle: '✅ Commission payée',
+    toastFeePaidTitle: 'Commission payée',
     toastFeePaidDesc: 'Merci. Le paiement peut prendre quelques secondes à s\'afficher.',
     toastFeeCanceledTitle: 'Paiement de la commission annulé',
     toastFeeCanceledDesc: 'Vous pouvez réessayer depuis vos commandes.',
     toastInvalidTitle: 'Données invalides',
     toastInvalidDesc: 'Un nom et un prix valides sont obligatoires.',
-    toastPubSentTitle: '📦 Produit envoyé pour examen',
+    toastPubSentTitle: 'Produit envoyé pour examen',
     toastPubSentDesc: 'L\'administrateur l\'approuvera avant qu\'il n\'apparaisse sur le marketplace.',
     toastPubFailTitle: 'Impossible de publier',
     toastMustAcceptTerms: 'Vous devez accepter les conditions et la commission de la plateforme.',
@@ -8777,7 +8777,7 @@ export const fr = {
     credsLoadError: 'Erreur lors du chargement des identifiants',
     defaultName: 'Médecin',
     specialty: 'Spécialité',
-    approved: '✓ Approuvé',
+    approved: 'Approuvé',
     pending: 'En attente',
     followers: 'abonnés',
     credentialsError: 'Erreur identifiants',

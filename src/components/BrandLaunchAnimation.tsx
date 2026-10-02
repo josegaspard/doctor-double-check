@@ -76,7 +76,7 @@ export function BrandLaunchAnimation({ onFinish, title = 'Medical Masters', subt
         </h1>
         {subtitle && (
           <p
-            className="text-sm text-slate-300/80 mb-8"
+            className="text-sm text-white mb-8"
             style={{ animation: 'splash-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both' }}
           >
             {subtitle}

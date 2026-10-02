@@ -477,7 +477,7 @@ export default function Landing() {
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
-                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
                       <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                     </span>
                   </div>
@@ -550,7 +550,7 @@ export default function Landing() {
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                 </span>
               </div>
@@ -739,12 +739,12 @@ export default function Landing() {
         <div className="flex w-max animate-scroll">
           {[1, 2].map((i) => (
             <div key={i} className="flex shrink-0 items-center gap-8 sm:gap-14 pr-8 sm:pr-14">
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.licenseValidated')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.biometricId')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.doctorLives')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
-              <span className="text-xs sm:text-xl font-bold text-gray-400 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.licenseValidated')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><UserRound className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.biometricId')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Video className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.doctorLives')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><PlayCircle className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.premiumContent')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Lock className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.clinicalVault')}</span>
+              <span className="text-xs sm:text-xl font-bold text-gray-500 flex shrink-0 items-center gap-1.5 sm:gap-2 grayscale hover:grayscale-0 transition-all whitespace-nowrap"><Check className="w-3 h-3 sm:w-4 sm:h-4" /> {t('landing.ticker.digitalPrescriptions')}</span>
             </div>
           ))}
         </div>

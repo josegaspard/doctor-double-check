@@ -114,7 +114,7 @@ export const preferH264InSdp = (sdp: string): string => {
     }
 
     if (h264Pts.size === 0) {
-      console.warn('[Cloudflare] ⚠️ No H.264 codec found in SDP! Recording may not work.');
+      console.warn('[Cloudflare] No H.264 codec found in SDP! Recording may not work.');
       return sdp;
     }
 

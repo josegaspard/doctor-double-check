@@ -50,3 +50,4 @@ android/keystore.properties
 
 # scratch scripts de prueba
 mm*.mjs
+.env*

@@ -39,6 +39,8 @@ import {
   User,
   Bell,
   MessageSquare,
+  MapPin,
+  Star,
 } from 'lucide-react';
 import { SearchableFilter } from '@/components/filters/SearchableFilter';
 import { useDoctorFilterFields } from '@/hooks/useDoctorFilterFields';
@@ -152,7 +154,7 @@ function LiveCardPro({ live, isPremiumSub, t }: { live: any; isPremiumSub: boole
             </>
           )}
         </div>
-        {live.location && <div className="pro-live-loc">📍 {live.location}</div>}
+        {live.location && <div className="pro-live-loc"><MapPin className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{live.location}</div>}
         <ContentRating targetType="live" targetId={live.id} ownerId={live.doctorId} compact className="mt-1.5" />
         <CredentialRow live={live} />
       </div>
@@ -357,7 +359,7 @@ export default function LivesGrid({ embedded = false }: { embedded?: boolean } =
               {allCities.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {allCities.map(city => (
-                    <button key={city} type="button" onClick={() => setSelectedCity(selectedCity === city ? null : city)} className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selectedCity === city ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border'}`}>📍 {city}</button>
+                    <button key={city} type="button" onClick={() => setSelectedCity(selectedCity === city ? null : city)} className={`px-2.5 py-1 rounded-full text-xs font-medium border ${selectedCity === city ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/50 text-muted-foreground border-border'}`}><MapPin className="inline w-3 h-3 mr-0.5 align-[-2px]" aria-hidden="true" />{city}</button>
                   ))}
                 </div>
               )}
@@ -450,11 +452,11 @@ export default function LivesGrid({ embedded = false }: { embedded?: boolean } =
           <button key={a.id} type="button" className="pro-upcoming pro-upcoming-btn" onClick={() => setSelectedUpcoming(a)}>
             <span className="icon"><UpcomingIcon type={a.type} /></span>
             <span className="min-w-0 flex-1">
-              <b>{a.title}{premiumDoctorIds.has(a.doctorId) && a.type === 'live' ? <span className="star">⭐</span> : null}</b>
+              <b>{a.title}{premiumDoctorIds.has(a.doctorId) && a.type === 'live' ? <span className="star"><Star className="inline w-4 h-4 ml-1 fill-current align-[-2px]" aria-hidden="true" /></span> : null}</b>
               {a.doctorName && <span className="inline-flex items-center gap-1 max-w-full"><span className="truncate">{a.doctorName}</span><DoctorBadgeIcon userId={a.doctorId} size="sm" className="flex-shrink-0" /></span>}
               <span>
                 <i className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: a.status === 'confirmed' ? '#4ade80' : 'rgba(255,255,255,.55)' }} aria-hidden="true" />
-                {upcomingTypeLabel(a)} · 📅 {whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''} · {formatDistanceToNow(a.scheduledAt, { addSuffix: true, locale: dateLocale })}
+                {upcomingTypeLabel(a)} · <CalendarDays className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{whenLabel(a.scheduledAt, language, t)}{tz ? ` (${tz})` : ''} · {formatDistanceToNow(a.scheduledAt, { addSuffix: true, locale: dateLocale })}
               </span>
             </span>
           </button>
@@ -488,7 +490,7 @@ export default function LivesGrid({ embedded = false }: { embedded?: boolean } =
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`pro-pill pro-pill-plain ${selectedUpcoming.status === 'confirmed' ? 'pro-pill-ok' : 'pro-pill-muted'}`}>{upcomingTypeLabel(selectedUpcoming)}</span>
                 {premiumDoctorIds.has(selectedUpcoming.doctorId) && selectedUpcoming.type === 'live' && (
-                  <span className="pro-pill pro-pill-plain pro-pill-warn">⭐ {t('lives.earlyAccess')}</span>
+                  <span className="pro-pill pro-pill-plain pro-pill-warn"><Star className="inline w-3.5 h-3.5 mr-1 align-[-2px] fill-current" aria-hidden="true" />{t('lives.earlyAccess')}</span>
                 )}
               </div>
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">

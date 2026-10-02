@@ -21,22 +21,9 @@ import {
 import { ArrowLeft, Bell, Check, Trash2, Loader2, CheckSquare, X } from 'lucide-react';
 import { formatDistanceToNow, isToday, isYesterday, isThisWeek } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
+import { stripEmoji } from '@/lib/stripEmoji';
+import { NotificationTypeIcon } from '@/components/notifications/NotificationTypeIcon';
 
-function stripLeadingEmoji(text: string): string {
-  return text.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\uFE0F]+\s*/u, '').trim();
-}
-function getNotificationIcon(type: string) {
-  switch (type) {
-    case 'doctor_live': return '🔴';
-    case 'doctor_availability': return '📅';
-    case 'new_content': return '📄';
-    case 'chat_message': return '💬';
-    case 'subscription_update': return '⭐';
-    case 'rating_request': return '⭐';
-    case 'system': return '🔔';
-    default: return '🔔';
-  }
-}
 
 function navigateByType(notification: Notification, navigate: ReturnType<typeof useNavigate>) {
   const data = notification.data || {};
@@ -78,7 +65,7 @@ export default function Notifications() {
       title: t('mm2.confirm.notificationDelete.title'),
       description: t('mm2.confirm.notificationDelete.description'),
       tone: 'destructive',
-      details: [{ label: t('mm2.confirm.notificationDelete.itemLabel'), value: stripLeadingEmoji(notification.title) }],
+      details: [{ label: t('mm2.confirm.notificationDelete.itemLabel'), value: stripEmoji(notification.title) }],
       confirmLabel: t('mm2.confirm.notificationDelete.confirmLabel'),
     });
     if (!ok) return;
@@ -269,10 +256,10 @@ export default function Notifications() {
                               />
                             </div>
                           )}
-                          <span className="text-xl mt-0.5 flex-shrink-0">{getNotificationIcon(notification.type)}</span>
+                          <span className="mt-1 flex-shrink-0 text-primary"><NotificationTypeIcon type={notification.type} /></span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium text-sm flex-1 min-w-0">{stripLeadingEmoji(notification.title)}</p>
+                              <p className="font-medium text-sm flex-1 min-w-0">{stripEmoji(notification.title)}</p>
                               {!notification.isRead && (
                                 <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
                                   {t('notificationsPage.new')}
@@ -280,7 +267,7 @@ export default function Notifications() {
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
-                              {notification.message}
+                              {stripEmoji(notification.message)}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {formatDistanceToNow(notification.createdAt, {

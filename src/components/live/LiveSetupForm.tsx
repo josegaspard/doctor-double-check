@@ -247,7 +247,7 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
         <section className="space-y-4">
           <SectionHeader number={2} icon={Mic} title={t('liveSetupForm.sectionAboutTitle')} subtitle={t('liveSetupForm.sectionAboutSubtitle')} />
 
-          {/* ★ THUMBNAIL — now prominent and always visible */}
+          {/* THUMBNAIL — now prominent and always visible */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2 text-sm font-semibold">
               <Camera className="w-4 h-4" />
@@ -511,12 +511,12 @@ export function LiveSetupForm({ onStartLive, isCreating }: LiveSetupFormProps) {
                 onChange={(e) => setTranslateTargetLang(e.target.value)}
                 className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
-                <option value="es">🇪🇸 {t('liveSetupForm.translatorLangEs')}</option>
-                <option value="en">🇺🇸 {t('liveSetupForm.translatorLangEn')}</option>
-                <option value="pt">🇵🇹 {t('liveSetupForm.translatorLangPt')}</option>
-                <option value="fr">🇫🇷 {t('liveSetupForm.translatorLangFr')}</option>
-                <option value="it">🇮🇹 {t('liveSetupForm.translatorLangIt')}</option>
-                <option value="de">🇩🇪 {t('liveSetupForm.translatorLangDe')}</option>
+                <option value="es">{t('liveSetupForm.translatorLangEs')}</option>
+                <option value="en">{t('liveSetupForm.translatorLangEn')}</option>
+                <option value="pt">{t('liveSetupForm.translatorLangPt')}</option>
+                <option value="fr">{t('liveSetupForm.translatorLangFr')}</option>
+                <option value="it">{t('liveSetupForm.translatorLangIt')}</option>
+                <option value="de">{t('liveSetupForm.translatorLangDe')}</option>
               </select>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {t('liveSetupForm.translatorOverrideHelp')}

@@ -373,13 +373,13 @@ async function handleRecordingPurchase(db: ReturnType<typeof supabaseAdmin>, ses
 
   const { data: recording } = await db
     .from("recordings")
-    .select("doctor_id")
+    .select("doctor_id, title")
     .eq("id", recordingId)
     .single();
 
   if (recording?.doctor_id) {
     // FIX #1: Use atomic credit function
-    await creditDoctorEarningsAtomic(db, recording.doctor_id, amount, "recording", recordingId);
+    await creditDoctorEarningsAtomic(db, recording.doctor_id, amount, "recording", recordingId, { buyerId: userId, concept: `Grabación: ${recording.title ?? ""}`.trim() });
 
     // Notificar al doctor: "te compraron contenido" — el frontend usa
     // notification.type + data.recording_id para llevarlo a la grabación.
@@ -447,7 +447,7 @@ async function handleContentPurchase(db: ReturnType<typeof supabaseAdmin>, sessi
     .single();
 
   if (content?.creator_id) {
-    await creditDoctorEarningsAtomic(db, content.creator_id, amount, "content", contentId);
+    await creditDoctorEarningsAtomic(db, content.creator_id, amount, "content", contentId, { buyerId: userId, concept: `Libro/curso: ${content.title ?? ""}`.trim() });
 
     try {
       const { data: buyerProfile } = await db
@@ -549,7 +549,7 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
     });
 
   // FIX #1: Use atomic credit function
-  await creditDoctorEarningsAtomic(db, creatorId, tierPrice, "subscription", null);
+  await creditDoctorEarningsAtomic(db, creatorId, tierPrice, "subscription", null, { buyerId: userId, concept: "Suscripción mensual" });
 }
 
 async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session, isDoubleCheck = false, isLive = false) {
@@ -673,7 +673,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
       await db.from("chat_messages").insert({
         session_id: chatSessionId,
         sender_id: userId,
-        content: `📋 Mensaje desde el live: ${liveMessage}`,
+        content: `Mensaje desde el live: ${liveMessage}`,
       });
     }
     await db.from("live_consultation_requests").insert({
@@ -697,14 +697,17 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     await db.from("notifications").insert({
       user_id: doctorId,
       type: "chat_message",
-      title: "🎯 Nueva orientación desde tu Live",
+      title: "Nueva orientación desde tu Live",
       message: "Un paciente reservó una orientación desde tu transmisión en vivo",
       data: { patient_id: userId, url: "/chat", session_id: chatSessionId, source: "live", live_id: liveId },
     });
   }
 
   // FIX #1: Use atomic credit function
-  await creditDoctorEarningsAtomic(db, doctorId, finalFee, "consultation", null);
+  await creditDoctorEarningsAtomic(db, doctorId, finalFee, "consultation", consultation?.id ?? null, {
+    buyerId: userId,
+    concept: isDoubleCheck ? "Segunda opinión médica" : (isLive ? "Orientación médica desde live" : "Consulta médica por chat"),
+  });
 
   await db
     .from("wallet_transactions")
@@ -738,7 +741,7 @@ async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, s
     .insert({
       user_id: doctorId,
       type: "chat_message",
-      title: "💬 Nueva consulta pagada",
+      title: "Nueva consulta pagada",
       message: `${patientProfile?.name || "Un paciente"} ha pagado una consulta contigo`,
       data: { 
         patient_id: userId, 
@@ -756,7 +759,9 @@ async function creditDoctorEarningsAtomic(
   doctorId: string,
   amount: number,
   source: string,
-  referenceId: string | null
+  referenceId: string | null,
+  // Comprador y concepto: alimentan doctor_sales (el médico factura a nombre del comprador).
+  sale: { buyerId?: string | null; concept?: string } = {}
 ) {
   logStep("Crediting doctor earnings (atomic)", { doctorId, amount, source });
 
@@ -786,7 +791,7 @@ async function creditDoctorEarningsAtomic(
       amount: amount,
       description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : source === "content" ? "venta de libro/curso" : "suscripción"}`,
       status: "paid",
-      metadata: { source, reference_id: referenceId },
+      metadata: { source, reference_id: referenceId, buyer_id: sale.buyerId ?? null, ...(sale.concept ? { concept: sale.concept } : {}) },
     });
 }
 
@@ -894,7 +899,7 @@ async function handleAccountUpdated(db: ReturnType<typeof supabaseAdmin>, accoun
       await db.from("notifications").insert({
         user_id: bankAccount.doctor_id,
         type: "system",
-        title: "⚠️ Cuenta de cobros restringida",
+        title: "Cuenta de cobros restringida",
         message: `Stripe ha restringido tus pagos: ${disabledReason}.${currentlyDue ? ` Faltan: ${currentlyDue}.` : ""} Completa la verificación en Configuración para reactivar tus payouts.`,
         data: {
           stripe_account_id: account.id,
@@ -1108,14 +1113,14 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     // Safe under Stripe replay: the invoice.id idempotency guard at the top of
     // this handler returns early if this invoice already produced a renewal
     // earning, so we never reach this credit twice for the same invoice.
-    await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", invoice.id || null);
+    await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", invoice.id || null, { buyerId: sub.subscriber_id, concept: "Renovación de suscripción mensual" });
 
     await db
       .from("notifications")
       .insert({
         user_id: sub.creator_id,
         type: "subscription_update",
-        title: "🔄 Suscripción renovada",
+        title: "Suscripción renovada",
         message: `Un suscriptor ha renovado su suscripción ${sub.tier}`,
         data: { subscriber_id: userId, tier: sub.tier, invoice_id: invoice.id },
       });
@@ -1189,7 +1194,7 @@ async function handleSubscriptionDeleted(
         .insert({
           user_id: sub.creator_id,
           type: "subscription_update",
-          title: "❌ Suscripción cancelada",
+          title: "Suscripción cancelada",
           message: `Un suscriptor ha cancelado su suscripción ${sub.tier}`,
           data: { subscriber_id: profile.id, tier: sub.tier },
         });
@@ -1263,7 +1268,7 @@ async function handleLiveChatHighlight(db: ReturnType<typeof supabaseAdmin>, ses
   if (live?.doctor_id) {
     const amount = Number(live.chat_price) || parseFloat(session.metadata!.amount || "0");
     if (amount > 0) {
-      await creditDoctorEarningsAtomic(db, live.doctor_id, amount, "live_chat_highlight", liveId);
+      await creditDoctorEarningsAtomic(db, live.doctor_id, amount, "live_chat_highlight", liveId, { buyerId: userId, concept: "Mensaje destacado en transmisión en vivo" });
     }
   }
 
@@ -1327,7 +1332,7 @@ async function handleMarketplacePurchase(db: ReturnType<typeof supabaseAdmin>, s
       await db.from("notifications").insert({
         user_id: admin.user_id,
         type: "system",
-        title: "🛒 Nueva compra en Marketplace",
+        title: "Nueva compra en Marketplace",
         message: `${buyer?.name || "Usuario"} compró ${product?.name || "un producto"} por $${totalAmount}`,
         data: { order_id: order?.id, url: "/admin/marketplace" },
       });
@@ -1473,7 +1478,7 @@ async function handleMarketplaceInterestFee(db: ReturnType<typeof supabaseAdmin>
     await db.from("notifications").insert({
       user_id: vendor.user_id,
       type: "system",
-      title: "🤝 Nuevo interesado en tu producto",
+      title: "Nuevo interesado en tu producto",
       message: `${buyer?.name || "Un colega"} apartó "${product?.name || "tu producto"}". Abre el chat para cerrar la venta.`,
       data: { url: "/chat", interest_id: interestId },
     });
@@ -1481,7 +1486,7 @@ async function handleMarketplaceInterestFee(db: ReturnType<typeof supabaseAdmin>
   await db.from("notifications").insert({
     user_id: buyerId,
     type: "system",
-    title: "✅ Producto apartado",
+    title: "Producto apartado",
     message: `Apartaste "${product?.name || "el producto"}". Ya puedes chatear con ${vendor?.name || "el proveedor"}.`,
     data: { url: "/chat", interest_id: interestId },
   });
@@ -1523,7 +1528,7 @@ async function handleMarketplaceSaleFee(db: ReturnType<typeof supabaseAdmin>, se
     await db.from("notifications").insert({
       user_id: vendorUserId,
       type: "system",
-      title: "✅ Fee de venta pagado",
+      title: "Fee de venta pagado",
       message: `Pagaste el fee (${feeTxt}) por la venta de "${productName}". ¡Gracias!`,
       data: { url: "/marketplace", interest_id: interestId },
     });
@@ -1532,7 +1537,7 @@ async function handleMarketplaceSaleFee(db: ReturnType<typeof supabaseAdmin>, se
   const adminNotifs = (adminRows || []).map((r: { user_id: string }) => ({
     user_id: r.user_id,
     type: "system",
-    title: "💵 Marketplace: fee cobrado",
+    title: "Marketplace: fee cobrado",
     message: `${vendorName} pagó el fee (${feeTxt}) por la venta de "${productName}".`,
     data: { url: "/admin/marketplace-fee", interest_id: interestId },
   }));

@@ -29,6 +29,7 @@ import {
   AlertTriangle, Info,
 } from 'lucide-react';
 import { fill, initialsOf, norm, fmtDate, fmtDayShort, fmtTime } from '@/lib/proFormat';
+import { CountryTag } from '@/components/common/CountryTag';
 import '@/styles/diseno-pacientes.css';
 import '@/styles/funciones-importar.css';
 
@@ -400,7 +401,7 @@ export default function DoctorPatients() {
                   <div className="top">
                     <span className="pro-initials">{p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : initialsOf(nameOf(p))}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="name">{p.countryFlag ? `${p.countryFlag} ` : ''}{nameOf(p)}</div>
+                      <div className="name">{p.countryFlag && <CountryTag flag={p.countryFlag} className="mr-1" />}{nameOf(p)}</div>
                       <div className="mail" title={p.email || undefined}>{p.email || '—'}</div>
                       <span className={`pro-pill mt-1.5 ${statusClass(p)}`}>{statusLabel(p)}</span>
                     </div>

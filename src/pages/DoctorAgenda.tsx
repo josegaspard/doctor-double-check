@@ -705,7 +705,7 @@ export default function DoctorAgenda() {
               </div>
               <p className="text-sm text-slate-600 mb-3">{t('mm2.agenda.blocks.hint')}</p>
               {upcomingBlocks.length === 0 ? (
-                <p className="text-sm text-slate-500">{t('mm2.agenda.blocks.empty')}</p>
+                <p className="text-sm text-slate-600">{t('mm2.agenda.blocks.empty')}</p>
               ) : (
                 <ul className="space-y-1.5">
                   {upcomingBlocks.map(b => (

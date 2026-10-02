@@ -8,7 +8,7 @@ import {
 import { es, enUS } from 'date-fns/locale';
 import { DoctorAvailability } from '@/hooks/useDoctorAvailability';
 import { cn } from '@/lib/utils';
-import { Video, MessageSquare, Clock } from 'lucide-react';
+import { Video, MessageSquare, Clock, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type ViewMode = 'month' | 'week' | 'day';
@@ -109,7 +109,7 @@ function EventChip({
           'w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[8px]',
           isSelected ? 'bg-white text-primary border-white' : 'border-white/60',
         )}>
-          {isSelected && '✓'}
+          {isSelected && <Check className="w-2.5 h-2.5" aria-hidden="true" />}
         </span>
       )}
       <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />

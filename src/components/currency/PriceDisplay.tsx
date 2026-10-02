@@ -10,7 +10,7 @@ interface PriceDisplayProps {
 }
 
 export function PriceDisplay({ amount, className, showBoth = false, size = 'md' }: PriceDisplayProps) {
-  const { userCurrency, userFlag, convertFromMXN, rates } = useCurrency();
+  const { userCurrency, convertFromMXN, rates } = useCurrency();
 
   const isLocal = userCurrency === 'MXN' || !rates || !rates[userCurrency];
   const displayAmount = isLocal ? amount : convertFromMXN(amount);
@@ -24,9 +24,8 @@ export function PriceDisplay({ amount, className, showBoth = false, size = 'md' 
 
   return (
     <span className={cn('inline-flex items-center gap-1', sizeClasses[size], className)}>
-      {!isLocal && <span>{userFlag}</span>}
       <span>${displayAmount.toFixed(2)}</span>
-      <span className="text-current opacity-70">{displayCurrency}</span>
+      <span className="text-current">{displayCurrency}</span>
       {showBoth && !isLocal && (
         <span className="text-muted-foreground/60 text-[0.85em]">
           (${amount.toFixed(2)} MXN)

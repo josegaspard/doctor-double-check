@@ -5,6 +5,7 @@ import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useVault } from '@/contexts/VaultContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -52,6 +53,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
   const { files, grantAccess } = useVault();
   const { createSession } = useChat();
   const { balance, canAfford, getEffectivePrice, refreshWallet } = useWallet();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { t } = useLanguage();
 
   const [step, setStep] = useState<'files' | 'confirm' | 'processing'>('files');
@@ -79,6 +81,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       toast.error(t('bookAppointment.toastMexicoOnly'));
       return;
     }
+    if (!(await ensureBillingProfile())) return;
 
     setStep('processing');
     setIsProcessing(true);
@@ -190,6 +193,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
 
     } catch (error: any) {
       console.error('Segunda Opinión error:', error);
+      if (await handleBillingError(error)) { setStep('confirm'); return; }
       toast.error(error.message || t('doubleCheckFlow.errors.consultationError'));
       setStep('confirm');
     } finally {
@@ -198,6 +202,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
   };
 
   const handleStripePayment = async () => {
+    if (!(await ensureBillingProfile())) return;
     setIsStripeProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
@@ -221,6 +226,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       }
     } catch (error: any) {
       console.error('Stripe checkout error:', error);
+      if (await handleBillingError(error)) return;
       toast.error(error.message || t('doubleCheckFlow.errors.stripeError'));
     } finally {
       setIsStripeProcessing(false);

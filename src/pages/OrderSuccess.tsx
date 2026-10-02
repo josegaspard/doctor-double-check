@@ -7,7 +7,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Package, ArrowRight, ShoppingBag, Loader2, PartyPopper } from 'lucide-react';
+import { CheckCircle2, Package, ArrowRight, ShoppingBag, Loader2, PartyPopper, MapPin } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function OrderSuccess() {
@@ -96,7 +96,7 @@ export default function OrderSuccess() {
                 </Badge>
                 {order.shipping_city && (
                   <p className="text-xs text-muted-foreground mt-2">
-                    📍 {t('autoI18n.orderSuccess7')}: {order.shipping_city}{order.shipping_state ? `, ${order.shipping_state}` : ''}
+                    <MapPin className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />{t('autoI18n.orderSuccess7')}: {order.shipping_city}{order.shipping_state ? `, ${order.shipping_state}` : ''}
                   </p>
                 )}
               </div>

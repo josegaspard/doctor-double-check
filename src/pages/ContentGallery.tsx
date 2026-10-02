@@ -465,7 +465,7 @@ export default function ContentGallery({ embedded = false }: { embedded?: boolea
       <div className={embedded ? '' : 'container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl'}>
         {/* Header — se oculta incrustado: la pestaña "Explorar" del hub ya lo dice */}
         {!embedded ? (
-          <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20">
+          <div className="mb-4 sm:mb-6 p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-[#163a83]/55 via-[#00768b]/75 to-[#00768b]/75 border border-primary/20">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
@@ -593,7 +593,7 @@ export default function ContentGallery({ embedded = false }: { embedded?: boolea
                         key={chip.value}
                         variant={active ? 'default' : 'outline'}
                         size="sm"
-                        className={`gap-1.5 rounded-full shrink-0 text-xs h-8 px-3.5 ${active ? '' : 'bg-muted/50 border-border/60 hover:bg-muted'}`}
+                        className={`gap-1.5 rounded-full shrink-0 text-xs h-8 px-3.5 ${active ? '' : 'border-border/60 hover:bg-muted'}`}
                         onClick={() => setTypeFilter(chip.value)}
                       >
                         <chip.icon className="w-3.5 h-3.5" />

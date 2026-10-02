@@ -36,6 +36,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { InlineFileViewer } from '@/components/content/InlineFileViewer';
+import { cofeprisErrorMessage } from '@/components/doctor/CofeprisCredential';
 import { toast } from 'sonner';
 import { fill } from '@/lib/proFormat';
 import { setCredentialVisibility, type CredentialTable } from '@/hooks/useDoctorPublicCredentials';
@@ -117,8 +118,6 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
   // de rechazo con motivo y permitir resubir documento al propio doctor.
   const [credCedulaStatus, setCredCedulaStatus] = useState<string | null>(null);
   const [credCedulaReason, setCredCedulaReason] = useState<string | null>(null);
-  const [credCofeprisStatus, setCredCofeprisStatus] = useState<string | null>(null);
-  const [credCofeprisReason, setCredCofeprisReason] = useState<string | null>(null);
   const [resubmitting, setResubmitting] = useState<'cedula' | 'cofepris' | null>(null);
   const credFileInputRef = React.useRef<HTMLInputElement>(null);
   const [resubmitTarget, setResubmitTarget] = useState<'cedula' | 'cofepris' | null>(null);
@@ -153,16 +152,15 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
 
   const fetchOfficialCredentials = async () => {
     try {
+      // COFEPRIS se gestiona en la tarjeta de credenciales (CofeprisStatusPanel), no aquí.
       const { data } = await supabase
         .from('doctor_profiles')
-        .select('cedula_status, cedula_rejection_reason, cofepris_status, cofepris_rejection_reason')
+        .select('cedula_status, cedula_rejection_reason')
         .eq('user_id', doctorId)
         .maybeSingle();
       if (data) {
         setCredCedulaStatus(data.cedula_status ?? null);
         setCredCedulaReason(data.cedula_rejection_reason ?? null);
-        setCredCofeprisStatus(data.cofepris_status ?? null);
-        setCredCofeprisReason(data.cofepris_rejection_reason ?? null);
       }
     } catch (err) {
       console.warn('[DoctorCredentials] official creds fetch failed', err);
@@ -175,23 +173,26 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
     if (!file || !target) return;
     setResubmitting(target);
     try {
-      const ext = file.name.split('.').pop();
-      const path = `${doctorId}/${target}_${Date.now()}.${ext}`;
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${doctorId}/${target === 'cedula' ? 'cedula-foto' : 'cofepris'}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('doctor-credentials')
-        .upload(path, file, { upsert: true });
+        .upload(path, file, { upsert: true, contentType: file.type || undefined });
       if (upErr) throw upErr;
 
-      // Marcamos status=pending y limpiamos motivo de rechazo para que admin lo revise.
-      const updatePayload =
-        target === 'cedula'
-          ? { cedula_status: 'pending' as const, cedula_rejection_reason: null }
-          : { cofepris_status: 'pending' as const, cofepris_rejection_reason: null };
-      const { error: updErr } = await supabase
-        .from('doctor_profiles')
-        .update(updatePayload)
-        .eq('user_id', doctorId);
-      if (updErr) throw updErr;
+      // Antes se subía el archivo SIN guardar su ruta y se ponía status='pending' a mano,
+      // que el trigger de protección revertía en silencio. Ahora: el documento nuevo queda
+      // ligado al perfil y el estado lo cambian las RPC (que validan).
+      if (target === 'cedula') {
+        const { error: updErr } = await (supabase as any)
+          .from('doctor_profiles')
+          .update({ cedula_photo_url: path })
+          .eq('user_id', doctorId);
+        if (updErr) throw updErr;
+        const { data: rs, error: rsErr } = await (supabase as any).rpc('resubmit_credential', { p_kind: 'cedula' });
+        if (rsErr) throw rsErr;
+        if (!rs?.success) throw new Error(cofeprisErrorMessage(rs?.error, t));
+      }
 
       toast.success(
         target === 'cedula'
@@ -456,7 +457,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
         )}
 
         {/* Alerta visible sólo al propio doctor cuando alguna credencial oficial fue rechazada */}
-        {isOwner && (credCedulaStatus === 'rejected' || credCofeprisStatus === 'rejected') && (
+        {isOwner && credCedulaStatus === 'rejected' && (
           <div className="mb-4 space-y-2">
             {credCedulaStatus === 'rejected' && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
@@ -477,34 +478,6 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                     onClick={() => triggerResubmit('cedula')}
                   >
                     {resubmitting === 'cedula' ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="w-3.5 h-3.5" />
-                    )}
-                    {t('doctorCredentialsComponent.uploadNewDocument')}
-                  </Button>
-                </div>
-              </div>
-            )}
-            {credCofeprisStatus === 'rejected' && (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 flex items-start gap-3">
-                <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm font-semibold text-destructive">{t('doctorCredentialsComponent.cofeprisRejectedTitle')}</p>
-                  <p className="text-xs text-muted-foreground break-words">
-                    {credCofeprisReason?.trim()
-                      ? `${t('doctorCredentialsComponent.reasonLabel')}: ${credCofeprisReason}`
-                      : t('doctorCredentialsComponent.cofeprisRejectedDefault')}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 mt-1 gap-1"
-                    disabled={resubmitting === 'cofepris'}
-                    onClick={() => triggerResubmit('cofepris')}
-                  >
-                    {resubmitting === 'cofepris' ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Upload className="w-3.5 h-3.5" />
@@ -545,7 +518,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <GraduationCap className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
                     <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.educationEmptyTitle')}</p>
-                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.educationEmptyHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.educationEmptyHint')}</p>
                   </div>
                 )}
               </div>
@@ -608,7 +581,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <Award className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
                     <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.certificationsEmptyTitle')}</p>
-                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.certificationsEmptyHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.certificationsEmptyHint')}</p>
                   </div>
                 )}
               </div>
@@ -671,7 +644,7 @@ export default function DoctorCredentials({ doctorId, isOwner }: DoctorCredentia
                   <div className="text-center py-4 border border-dashed rounded-lg">
                     <Briefcase className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
                     <p className="text-sm font-medium text-muted-foreground">{t('doctorCredentialsComponent.experienceEmptyTitle')}</p>
-                    <p className="text-xs text-muted-foreground/70">{t('doctorCredentialsComponent.experienceEmptyHint')}</p>
+                    <p className="text-xs text-muted-foreground">{t('doctorCredentialsComponent.experienceEmptyHint')}</p>
                   </div>
                 )}
               </div>

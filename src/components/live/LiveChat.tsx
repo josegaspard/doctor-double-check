@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,6 +47,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
   // Pagar un mensaje destacado pasa por el resumen (importe y saldo resultante).
   const { confirm, dialog } = useConfirmAction();
   const { balance, refreshWallet } = useWallet();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const [messages, setMessages] = useState<LiveChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -246,6 +248,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       toast.error(`${t('liveChat.insufficientBalance')} $${chatPrice} MXN`);
       return false;
     }
+    if (!(await ensureBillingProfile())) return false;
 
     try {
       const { data, error } = await supabase.rpc('process_wallet_purchase', {
@@ -259,6 +262,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       await refreshWallet();
       return true;
     } catch (err: any) {
+      if (await handleBillingError(err)) return false;
       toast.error(err.message || t('liveChat.paymentError'));
       return false;
     }
@@ -266,6 +270,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
 
   const processStripePayment = async (): Promise<boolean> => {
     if (!user) return false;
+    if (!(await ensureBillingProfile())) return false;
     try {
       // Save draft so it's visible when the user returns from Stripe
       sessionStorage.setItem(`chat_draft_${liveId}`, newMessage.trim());
@@ -286,6 +291,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       throw new Error('No checkout URL');
     } catch (err: any) {
       sessionStorage.removeItem(`chat_draft_${liveId}`);
+      if (await handleBillingError(err)) return false;
       toast.error(err.message || t('liveChat.checkoutError'));
       return false;
     }
@@ -586,7 +592,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                       )}
                       {highlighted && !msg.isDoctor && (
                         <Badge className="text-[8px] px-1 py-0 h-3.5 bg-primary/10 text-primary border-0">
-                          ✨ {t('liveChat.featured')}
+                          <Sparkles className="inline w-2 h-2 mr-0.5" aria-hidden="true" />{t('liveChat.featured')}
                         </Badge>
                       )}
                       <span className="text-[9px] sm:text-[10px] text-muted-foreground">

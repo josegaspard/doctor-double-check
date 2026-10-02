@@ -28,6 +28,7 @@ import {
   Receipt,
   Eye,
   EyeOff,
+  GraduationCap,
 } from 'lucide-react';
 import { TransactionHistory } from '@/components/wallet/TransactionHistory';
 import { UserBankAccountForm } from '@/components/wallet/UserBankAccountForm';
@@ -243,7 +244,7 @@ export default function Wallet({ embedded = false }: WalletProps = {}) {
             <p className="text-primary-foreground/60 text-xs sm:text-sm mt-2 truncate">{user?.name}</p>
             {role === 'resident' && (
               <div className="mt-3 px-2.5 py-1 bg-white/20 rounded-full text-xs inline-flex items-center gap-1">
-                🎓 {t('wallet.residentDiscount')}
+                <GraduationCap className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />{t('wallet.residentDiscount')}
               </div>
             )}
             <AnimatePresence>

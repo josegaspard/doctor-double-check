@@ -40,6 +40,8 @@ import {
   Link2,
   ToggleLeft,
   Film,
+  AlertTriangle,
+  Star,
 } from 'lucide-react';
 import { AdminVideoManager } from '@/components/admin/AdminVideoManager';
 import { AdminLiveBackgroundsManager } from '@/components/admin/AdminLiveBackgroundsManager';
@@ -1324,7 +1326,7 @@ export default function AdminSiteSettings() {
                       maxLength={3}
                     />
                     <p className="text-xs text-amber-600 dark:text-amber-500">
-                      ⚠️ Solo cambia el código de moneda en los cobros. NO convierte los montos:
+                      <AlertTriangle className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />Solo cambia el código de moneda en los cobros. NO convierte los montos:
                       si cambias a otra divisa sin ajustar los precios, se cobrará el mismo número en esa moneda.
                     </p>
                   </div>
@@ -1737,7 +1739,7 @@ export default function AdminSiteSettings() {
                     <div key={cat.key} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg border border-border">
                       <div className="flex items-center gap-2 sm:w-40 shrink-0">
                         {cat.mark === 'star' ? (
-                          <span className="text-premium text-lg leading-none" aria-hidden="true">★</span>
+                          <Star className="w-5 h-5 text-premium fill-premium shrink-0" aria-hidden="true" />
                         ) : (
                           <span
                             className={'inline-block w-3.5 h-3.5 rounded-full ' + (cat.mark === 'purple_dot' ? 'bg-[#7c3aed]' : 'bg-[#16a34a]')}

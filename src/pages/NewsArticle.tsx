@@ -19,7 +19,8 @@ import {
   ArrowLeft, Clock, Share2, MessageCircle, Send, Loader2,
   Trash2, Stethoscope, User, GraduationCap, Facebook, Twitter, Link as LinkIcon,
   Globe, Instagram, Linkedin, Pencil, ChevronDown,
-  Star, MapPin, Users, Edit, LogIn, Eye, Heart, Languages
+  Star, MapPin, Users, Edit, LogIn, Eye, Heart, Languages,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -702,8 +703,9 @@ export default function NewsArticle() {
                   <button
                     className="text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => { setReplyTo(null); setNewComment(''); }}
+                    aria-label={t('common.delete')}
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 </div>
               )}

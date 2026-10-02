@@ -280,14 +280,14 @@ export function DoctorAnalytics() {
                         <Cell key={`cell-${index}`} fill={COLORS[entry.rating - 1]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value, name) => [`${value} ${t('doctorAnalytics.ratings.votes')}`, `${name} ⭐`]} />
+                    <Tooltip formatter={(value, name) => [`${value} ${t('doctorAnalytics.ratings.votes')}`, `${name}/5`]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="space-y-1 ml-3">
                   {[...data.ratingDistribution].reverse().map((r) => (
                     <div key={r.rating} className="flex items-center gap-1.5 text-xs sm:text-sm">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[r.rating - 1] }} />
-                      <span>{r.rating}⭐</span>
+                      <span className="inline-flex items-center gap-0.5">{r.rating}<Star className="w-3 h-3 text-premium fill-premium" aria-hidden="true" /></span>
                       <span className="text-muted-foreground">({r.count})</span>
                     </div>
                   ))}
@@ -342,7 +342,7 @@ export function DoctorAnalytics() {
             </div>
             <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
               <span className="text-xs sm:text-sm">{t('doctorAnalytics.consultations.avgRating')}</span>
-              <Badge variant="secondary" className="text-xs">{data.avgRating.toFixed(1)} ⭐</Badge>
+              <Badge variant="secondary" className="text-xs">{data.avgRating.toFixed(1)} <Star className="inline w-3 h-3 ml-0.5 fill-current" aria-hidden="true" /></Badge>
             </div>
             <div className="flex items-center justify-between p-2.5 bg-success/10 rounded-lg">
               <span className="text-xs sm:text-sm text-success">{t('doctorAnalytics.consultations.satisfactionRate')}</span>

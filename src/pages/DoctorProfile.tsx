@@ -44,7 +44,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useChat } from '@/contexts/ChatContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
+import { CountryTag } from '@/components/common/CountryTag';
 import { money2, fill, initialsOf } from '@/lib/proFormat';
 import { doctorHref } from '@/lib/doctorSections';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -92,6 +94,7 @@ export default function DoctorProfile() {
   const { user, role, isAuthenticated } = useAuth();
   const { createSession } = useChat();
   const { balance, purchase, canAfford } = useWallet(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { t, language } = useLanguage();
   const { toggles } = useSiteToggles();
   // Pagar, abrir chat y pedir conexión pasan por la revisión: el primer clic no ejecuta.
@@ -428,6 +431,7 @@ export default function DoctorProfile() {
       confirmLabel: t('mm2.confirm.payCommon.confirmLabel'),
     });
     if (!ok) return;
+    if (!(await ensureBillingProfile())) return;
 
     setIsProcessingPayment(true);
     try {
@@ -439,6 +443,7 @@ export default function DoctorProfile() {
 
       if (error) {
         console.error('Consultation purchase error:', error);
+        if (await handleBillingError(error)) return;
         toast.error(error.message || t('doctorProfile.paymentError'));
         return;
       }
@@ -455,7 +460,7 @@ export default function DoctorProfile() {
         setShowPaymentModal(false);
         toast.success(t('doctorProfile.paymentSuccess'));
         navigate(`/chat?session=${result.session_id}`);
-      } else {
+      } else if (!(await handleBillingError(null, result))) {
         toast.error(result.error || t('doctorProfile.paymentError'));
       }
     } catch (error) {
@@ -475,6 +480,7 @@ export default function DoctorProfile() {
       toast.error(t('featureUnavailable.title') || 'Esta función no está disponible en este momento.');
       return;
     }
+    if (!(await ensureBillingProfile())) return;
 
     setIsProcessingPayment(true);
     try {
@@ -495,6 +501,7 @@ export default function DoctorProfile() {
       }
     } catch (error) {
       console.error('Stripe checkout error:', error);
+      if (await handleBillingError(error)) return;
       toast.error(t('doctorProfile.paymentError'));
     } finally {
       setIsProcessingPayment(false);
@@ -715,7 +722,8 @@ export default function DoctorProfile() {
             </div>
             <div className="pp-id">
               <div className="pp-name-row">
-                <h1 className="pp-name">{doctor.countryFlag ? `${doctor.countryFlag} ` : ''}{doctor.name}</h1>
+                <h1 className="pp-name">{doctor.name}</h1>
+                {doctor.countryFlag && <CountryTag flag={doctor.countryFlag} className="self-center" />}
                 {doctor.isIdentityVerified && (
                   <BadgeCheck className="pp-verified" role="img" aria-label={t('doctorProfile.verified')} />
                 )}

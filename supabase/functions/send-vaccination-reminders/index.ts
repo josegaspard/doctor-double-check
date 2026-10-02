@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       await supabase.from('notifications').insert({
         user_id: p.id,
         type: 'system',
-        title: `💉 ${titlePrefix}`,
+        title: `${titlePrefix}`,
         message: `${namesList}${more}. Revisa tu cartilla de vacunación.`,
         data: { url: '/profile', vaccines: pending.map(({ v, d }) => ({ key: v.key, dose: d.doseNumber })) },
       });

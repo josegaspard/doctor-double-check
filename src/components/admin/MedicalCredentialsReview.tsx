@@ -40,7 +40,18 @@ interface DoctorRow {
   cofepris_permit: string | null;
   cofepris_status: CredStatus | null;
   cofepris_rejection_reason: string | null;
+  // Cédula escrita en el onboarding (columna license) cuando no hay cedula_profesional.
+  license: string | null;
+  // COFEPRIS declarado en la verificación (cliente 2026-10-01).
+  cofepris_has: boolean | null;
+  cofepris_doc_type: string | null;
+  cofepris_doc_url: string | null;
+  cofepris_submitted_at: string | null;
 }
+
+// Una credencial COFEPRIS solo entra en la revisión si el médico la envió (tiene estado).
+// Antes 'null' contaba como pendiente y TODOS los médicos salían «pendientes de COFEPRIS».
+const hasCofeprisToReview = (d: DoctorRow) => !!d.cofepris_status || !!d.cofepris_doc_url || !!(d.cofepris_permit && d.cofepris_permit.trim());
 
 export function MedicalCredentialsReview() {
   const { t } = useLanguage();
@@ -68,10 +79,18 @@ export function MedicalCredentialsReview() {
     setIsLoading(true);
     try {
       // cedula_photo_url es columna nueva (2026-07-08), aún no está en los tipos generados
-      const { data: profiles, error } = await (supabase as any)
+      const base = 'user_id, license, cedula_profesional, cedula_status, cedula_rejection_reason, cedula_photo_url, cofepris_permit, cofepris_status, cofepris_rejection_reason';
+      let { data: profiles, error } = await (supabase as any)
         .from('doctor_profiles')
-        .select('user_id, cedula_profesional, cedula_status, cedula_rejection_reason, cedula_photo_url, cofepris_permit, cofepris_status, cofepris_rejection_reason')
+        .select(`${base}, cofepris_has, cofepris_doc_type, cofepris_doc_url, cofepris_submitted_at`)
         .order('updated_at', { ascending: false });
+      // Columnas COFEPRIS nuevas (20261001) aún sin aplicar: la revisión sigue funcionando.
+      if (error && /cofepris_/.test(error.message || '')) {
+        ({ data: profiles, error } = await (supabase as any)
+          .from('doctor_profiles')
+          .select(base)
+          .order('updated_at', { ascending: false }));
+      }
       if (error) throw error;
 
       const userIds = (profiles || []).map((p: any) => p.user_id);
@@ -93,10 +112,15 @@ export function MedicalCredentialsReview() {
         cofepris_permit: dp.cofepris_permit,
         cofepris_status: (dp.cofepris_status as CredStatus) || null,
         cofepris_rejection_reason: dp.cofepris_rejection_reason,
+        license: dp.license || null,
+        cofepris_has: dp.cofepris_has ?? null,
+        cofepris_doc_type: dp.cofepris_doc_type || null,
+        cofepris_doc_url: dp.cofepris_doc_url || null,
+        cofepris_submitted_at: dp.cofepris_submitted_at || null,
       }));
 
       const filtered = merged.filter(
-        (d) => (d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url || (d.cofepris_permit && d.cofepris_permit.trim())
+        (d) => (d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url || (d.license && d.license.trim()) || hasCofeprisToReview(d)
       );
       setDoctors(filtered);
     } catch (err: any) {
@@ -199,14 +223,14 @@ export function MedicalCredentialsReview() {
   const matchesTab = (d: DoctorRow): boolean => {
     if (activeTab === 'all') return true;
     const cedulaState = d.cedula_status || 'pending';
-    const cofeprisState = d.cofepris_status || 'pending';
+    const cofeprisState = hasCofeprisToReview(d) ? (d.cofepris_status || 'pending') : null;
     return cedulaState === activeTab || cofeprisState === activeTab;
   };
 
   const filtered = doctors.filter(matchesTab);
 
   const counts = {
-    pending: doctors.filter((d) => (d.cedula_status || 'pending') === 'pending' || (d.cofepris_status || 'pending') === 'pending').length,
+    pending: doctors.filter((d) => (d.cedula_status || 'pending') === 'pending' || (hasCofeprisToReview(d) && (d.cofepris_status || 'pending') === 'pending')).length,
     approved: doctors.filter((d) => d.cedula_status === 'approved' || d.cofepris_status === 'approved').length,
     rejected: doctors.filter((d) => d.cedula_status === 'rejected' || d.cofepris_status === 'rejected').length,
   };
@@ -294,7 +318,7 @@ export function MedicalCredentialsReview() {
                       </div>
                     </div>
 
-                    {((d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url) && (
+                    {((d.cedula_profesional && d.cedula_profesional.trim()) || d.cedula_photo_url || (d.license && d.license.trim())) && (
                       <div className="rounded-lg border border-border/60 p-3 mb-2 bg-muted/20">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="min-w-0 flex-1">
@@ -302,7 +326,9 @@ export function MedicalCredentialsReview() {
                               <span className="text-xs font-semibold text-foreground">{t('medicalCredentialsReview.credential.cedula')}</span>
                               {renderStatusBadge(d.cedula_status)}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 break-all">{d.cedula_profesional}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 break-all">
+                              {d.cedula_profesional || (d.license ? `${t('cofepris.admin.licenseFallback')}: ${d.license}` : '')}
+                            </p>
                             {d.cedula_status === 'rejected' && d.cedula_rejection_reason && (
                               <p className="text-[11px] text-destructive mt-1">
                                 {t('medicalCredentialsReview.reasonPrefix')} {d.cedula_rejection_reason}
@@ -333,7 +359,11 @@ export function MedicalCredentialsReview() {
                       </div>
                     )}
 
-                    {d.cofepris_permit && d.cofepris_permit.trim() && (
+                    {d.cofepris_has === false && !d.cofepris_status && (
+                      <p className="text-xs text-muted-foreground px-1">{t('cofepris.admin.declaredNo')}</p>
+                    )}
+
+                    {hasCofeprisToReview(d) && (
                       <div className="rounded-lg border border-border/60 p-3 bg-muted/20">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <div className="min-w-0 flex-1">
@@ -341,11 +371,37 @@ export function MedicalCredentialsReview() {
                               <span className="text-xs font-semibold text-foreground">{t('medicalCredentialsReview.credential.cofepris')}</span>
                               {renderStatusBadge(d.cofepris_status)}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5 break-all">{d.cofepris_permit}</p>
+                            <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                              {d.cofepris_doc_type && (
+                                <>
+                                  <dt className="text-muted-foreground">{t('cofepris.admin.typeLabel')}</dt>
+                                  <dd className="text-foreground">{t(`cofepris.types.${d.cofepris_doc_type}`)}</dd>
+                                </>
+                              )}
+                              <dt className="text-muted-foreground">{t('cofepris.admin.permitLabel')}</dt>
+                              <dd className="text-foreground font-medium break-all">{d.cofepris_permit || '—'}</dd>
+                              {d.cofepris_submitted_at && (
+                                <>
+                                  <dt className="text-muted-foreground">{t('cofepris.admin.submittedAt')}</dt>
+                                  <dd className="text-foreground">{new Date(d.cofepris_submitted_at).toLocaleDateString()}</dd>
+                                </>
+                              )}
+                            </dl>
                             {d.cofepris_status === 'rejected' && d.cofepris_rejection_reason && (
                               <p className="text-[11px] text-destructive mt-1">
                                 {t('medicalCredentialsReview.reasonPrefix')} {d.cofepris_rejection_reason}
                               </p>
+                            )}
+                            {d.cofepris_doc_url ? (
+                              <div className="mt-2 max-w-sm">
+                                <InlineFileViewer
+                                  fileUrl={d.cofepris_doc_url}
+                                  bucket="doctor-credentials"
+                                  className="rounded-md overflow-hidden"
+                                />
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground mt-1">{t('cofepris.admin.noDoc')}</p>
                             )}
                           </div>
                           <div className="flex gap-1.5 flex-shrink-0">

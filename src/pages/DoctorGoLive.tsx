@@ -18,7 +18,7 @@ import { ScheduleCourseForm } from '@/components/live/ScheduleCourseForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Video, Loader2, Radio, CalendarClock, X, ArrowLeft } from 'lucide-react';
+import { Video, Loader2, Radio, CalendarClock, X, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import Daily from '@daily-co/daily-js';
 
@@ -579,7 +579,7 @@ export default function DoctorGoLive() {
     const recDiag = enableRecording && localRecording.lastError ? (
       <div className="fixed top-3 right-3 z-[60] rounded-lg bg-black/85 backdrop-blur-md border border-destructive/30 text-white text-[11px] font-mono px-3 py-2 shadow-2xl pointer-events-none select-none">
         <div className="text-destructive max-w-[200px] whitespace-normal">
-          ⚠ {localRecording.lastError}
+          <AlertTriangle className="inline w-3 h-3 mr-1 align-[-2px]" aria-hidden="true" />{localRecording.lastError}
         </div>
       </div>
     ) : null;

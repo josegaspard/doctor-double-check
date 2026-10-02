@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { BillingProfileCard, BuyerInvoicesCard } from '@/components/billing/BuyerBillingSection';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import MainLayout from '@/components/layout/MainLayout';
@@ -24,7 +25,7 @@ import { MySubscriptions } from '@/components/subscriptions/MySubscriptions';
 import { MySubscribedDoctorsCard } from '@/components/subscriptions/MySubscribedDoctorsCard';
 import { ReferralProgram } from '@/components/referrals/ReferralProgram';
 import { MfaSettings } from '@/components/settings/MfaSettings';
-import { SenyeraIcon } from '@/components/settings/LanguageSwitcher';
+import { CountryTag } from '@/components/common/CountryTag';
 import { CurrencySelector } from '@/components/currency/CurrencySelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ import {
   Gift, Palette, KeyRound, Pencil, Circle, LifeBuoy, Headphones, ChevronRight, BadgeCheck,
   Stethoscope, Wallet as WalletIcon, TrendingUp, Percent, Landmark, Receipt, ListOrdered,
   Users, ShoppingCart, ShoppingBag, Megaphone, Rss, HeartPulse, Eye, BookOpen, ArrowRight, Banknote,
+  Radio, FileText, MessageCircle,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -341,7 +343,7 @@ export default function Settings() {
           <div className="row">
             <span className="box">
               <MapPin />
-              <span>{user?.countryFlag || ''} {user?.countryCode || '—'}</span>
+              <span>{user?.countryCode ? <CountryTag code={user.countryCode} /> : '—'}</span>
             </span>
           </div>
         </div>
@@ -449,7 +451,7 @@ export default function Settings() {
           <>
             <div className="pro-setrow">
               <Label htmlFor="email-live" className="lbl cursor-pointer">
-                <b>🔴 {t('settings.livesEmail')}</b>
+                <b><Radio className="w-4 h-4 inline-block mr-1.5 align-[-3px]" aria-hidden="true" />{t('settings.livesEmail')}</b>
                 <span>{t('settings.livesEmailDescription')}</span>
               </Label>
               <Switch
@@ -460,7 +462,7 @@ export default function Settings() {
             </div>
             <div className="pro-setrow">
               <Label htmlFor="email-content" className="lbl cursor-pointer">
-                <b>📄 {t('settings.contentEmail')}</b>
+                <b><FileText className="w-4 h-4 inline-block mr-1.5 align-[-3px]" aria-hidden="true" />{t('settings.contentEmail')}</b>
                 <span>{t('settings.contentEmailDescription')}</span>
               </Label>
               <Switch
@@ -471,7 +473,7 @@ export default function Settings() {
             </div>
             <div className="pro-setrow">
               <Label htmlFor="email-chat" className="lbl cursor-pointer">
-                <b>💬 {t('settings.chatEmail')}</b>
+                <b><MessageCircle className="w-4 h-4 inline-block mr-1.5 align-[-3px]" aria-hidden="true" />{t('settings.chatEmail')}</b>
                 <span>{t('settings.chatEmailDescription')}</span>
               </Label>
               <Switch
@@ -535,6 +537,10 @@ export default function Settings() {
 
   const billingSection = (
     <>
+      {/* Datos fiscales y facturas de los médicos (el médico factura a nombre del comprador) */}
+      <BillingProfileCard />
+      <BuyerInvoicesCard />
+
       <section className="pro-card pro-card-pad">
         <div className="pro-card-head">
           <h2 className="pro-card-title"><CreditCard /> {t('settings.managePayments')}</h2>
@@ -567,14 +573,14 @@ export default function Settings() {
       <p className="pro-row-sub mb-3">{t('settings.selectAppLanguage')}</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {([
-          { code: 'es', flag: '🇪🇸', key: 'settings.spanish' },
-          { code: 'en', flag: '🇺🇸', key: 'settings.english' },
-          { code: 'pt', flag: '🇵🇹', key: 'settings.portuguese' },
-          { code: 'fr', flag: '🇫🇷', key: 'settings.french' },
-          { code: 'it', flag: '🇮🇹', key: 'settings.italian' },
-          { code: 'de', flag: '🇩🇪', key: 'settings.german' },
-          { code: 'ca', flag: '', key: 'settings.catalan' },
-          { code: 'zh', flag: '🇨🇳', key: 'settings.chinese' },
+          { code: 'es', key: 'settings.spanish' },
+          { code: 'en', key: 'settings.english' },
+          { code: 'pt', key: 'settings.portuguese' },
+          { code: 'fr', key: 'settings.french' },
+          { code: 'it', key: 'settings.italian' },
+          { code: 'de', key: 'settings.german' },
+          { code: 'ca', key: 'settings.catalan' },
+          { code: 'zh', key: 'settings.chinese' },
         ] as const).map((l) => (
           <button
             key={l.code}
@@ -583,7 +589,7 @@ export default function Settings() {
             aria-pressed={language === l.code}
             onClick={() => setLanguage(l.code)}
           >
-            {l.code === 'ca' ? <SenyeraIcon /> : <span>{l.flag}</span>} {t(l.key)}
+            <CountryTag code={l.code} className={language === l.code ? 'border-white/60 bg-transparent' : undefined} /> {t(l.key)}
           </button>
         ))}
       </div>
@@ -743,6 +749,8 @@ export default function Settings() {
       case 'compras':
         return (
           <>
+            <BillingProfileCard />
+            <BuyerInvoicesCard />
             <section className="pro-card pro-card-pad">
               <div className="pro-card-head">
                 <h2 className="pro-card-title"><BookOpen /> {t('mm2.finance.purchasesBooksTitle')}</h2>

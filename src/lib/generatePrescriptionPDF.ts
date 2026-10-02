@@ -71,7 +71,7 @@ const doctorCredentialsHTML = (
   const muted = '#6b7fa3';
   const accent = '#227787';
   const sepBadge = rx.cedulaVerified
-    ? ` <span style="color:#166534; font-weight:600;">· ✓ Cédula verificada ante SEP</span>`
+    ? ` <span style="color:#166534; font-weight:600;">· Cédula verificada ante SEP</span>`
     : '';
 
   const lines: string[] = [];
@@ -110,7 +110,7 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.frequency)}</td>
       <td style="padding: 10px 12px; border-bottom: 1px solid #d1d9e6; color: #374a6d;">${esc(med.duration)}</td>
     </tr>
-    ${med.notes ? `<tr><td colspan="5" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">📝 ${esc(med.notes)}</td></tr>` : ''}
+    ${med.notes ? `<tr><td colspan="5" style="padding: 4px 12px 10px; border-bottom: 1px solid #d1d9e6; color: #6b7fa3; font-size: 12px; font-style: italic;">Nota: ${esc(med.notes)}</td></tr>` : ''}
   `).join('');
 
   const folio = prescriptionFolio(rx.id);
@@ -243,13 +243,13 @@ export const generatePrescriptionHTML = (rx: PrescriptionData): string => {
     <!-- Footer -->
     <div style="background: #f0f4fa; padding: 16px; text-align: center; color: #839ed5; font-size: 11px;">
       <p style="margin: 0;">Este documento es una receta médica electrónica generada por Medical Masters</p>
-      <p style="margin: 4px 0 0;">⚠️ Documento válido solo con la información del médico tratante verificado</p>
+      <p style="margin: 4px 0 0;">Documento válido solo con la información del médico tratante verificado</p>
     </div>
   </div>
 
   <div class="no-print" style="position: fixed; bottom: 24px; right: 24px;">
     <button onclick="window.print()" style="background: linear-gradient(135deg, #163a83, #227787); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(22, 58, 131, 0.4);">
-      📥 Descargar PDF
+      Descargar PDF
     </button>
   </div>
 </body>

@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, CreditCard, Loader2, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CreditCard, Loader2, ExternalLink, CheckCircle2, AlertCircle, Check } from 'lucide-react';
 
 export default function VendorStripeSetup() {
   const navigate = useNavigate();
@@ -110,15 +110,15 @@ export default function VendorStripeSetup() {
                 <div className="grid grid-cols-3 gap-2">
                   <Card className="bg-muted/30"><CardContent className="p-3 text-center">
                     <p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorStripe12')}</p>
-                    <Badge variant={status?.detailsSubmitted ? 'verified' : 'secondary'} className="mt-1">{status?.detailsSubmitted ? '✓' : 'pendiente'}</Badge>
+                    <Badge variant={status?.detailsSubmitted ? 'verified' : 'secondary'} className="mt-1">{status?.detailsSubmitted ? <><Check className="w-3 h-3" aria-hidden="true" /><span className="sr-only">OK</span></> : 'pendiente'}</Badge>
                   </CardContent></Card>
                   <Card className="bg-muted/30"><CardContent className="p-3 text-center">
                     <p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorStripe13')}</p>
-                    <Badge variant={status?.chargesEnabled ? 'verified' : 'secondary'} className="mt-1">{status?.chargesEnabled ? '✓' : 'pendiente'}</Badge>
+                    <Badge variant={status?.chargesEnabled ? 'verified' : 'secondary'} className="mt-1">{status?.chargesEnabled ? <><Check className="w-3 h-3" aria-hidden="true" /><span className="sr-only">OK</span></> : 'pendiente'}</Badge>
                   </CardContent></Card>
                   <Card className="bg-muted/30"><CardContent className="p-3 text-center">
                     <p className="text-[10px] text-muted-foreground">{t('autoI18n.vendorStripe14')}</p>
-                    <Badge variant={status?.payoutsEnabled ? 'verified' : 'secondary'} className="mt-1">{status?.payoutsEnabled ? '✓' : 'pendiente'}</Badge>
+                    <Badge variant={status?.payoutsEnabled ? 'verified' : 'secondary'} className="mt-1">{status?.payoutsEnabled ? <><Check className="w-3 h-3" aria-hidden="true" /><span className="sr-only">OK</span></> : 'pendiente'}</Badge>
                   </CardContent></Card>
                 </div>
                 <Button onClick={startOnboarding} disabled={busy} variant="outline" className="w-full">

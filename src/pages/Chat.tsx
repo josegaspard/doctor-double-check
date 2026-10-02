@@ -340,11 +340,11 @@ export default function Chat() {
     if (!selectedSession || isSessionClosed) return;
     // Mantenemos el marcador "[Imagen: ...]" / "[Archivo: ...]" en el cuerpo crudo del
     // mensaje (necesario para que la burbuja del chat detecte el adjunto y lo renderice
-    // como imagen/enlace), pero `formatMessagePreview` lo convierte a "📷 Foto" /
-    // "📎 nombre" en listas, notificaciones y sesiones para verse estilo redes sociales.
+    // como imagen/enlace), pero `formatMessagePreview` lo convierte a "Foto" /
+    // "nombre" en listas, notificaciones y sesiones. Sin emoji delante (cliente 2026-10-01).
     const fileMessage = fileType.startsWith('image/')
-      ? `📷 [Imagen: ${fileName}]\n${fileUrl}`
-      : `📎 [Archivo: ${fileName}]\n${fileUrl}`;
+      ? `[Imagen: ${fileName}]\n${fileUrl}`
+      : `[Archivo: ${fileName}]\n${fileUrl}`;
     await ensureConsultationForSession(selectedSession);
     await sendMessage(selectedSession, fileMessage);
   };

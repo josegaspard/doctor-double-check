@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { maskEmail } from "../_shared/log-redact.ts";
 import { getSubscriptionPricing } from "../_shared/pricing.ts";
 import { getAppConfig } from "../_shared/appconfig.ts";
+import { requireBillingProfile } from "../_shared/billing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -110,6 +111,10 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
+
+    // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
+    const billingBlock = await requireBillingProfile(supabaseClient, user.id, corsHeaders);
+    if (billingBlock) return billingBlock;
 
     const { creatorId, tier } = await req.json();
     if (!creatorId) throw new Error("creatorId is required");

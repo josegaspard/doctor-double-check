@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useWallet } from '@/contexts/WalletContext';
+import { useBillingGate } from '@/components/billing/BillingGate';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -59,6 +60,7 @@ export function LiveConsultationBooking({
   const navigate = useNavigate();
   const { user } = useAuth();
   const { balance, refreshWallet } = useWallet();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { t } = useLanguage();
   const [message, setMessage] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'stripe'>('wallet');
@@ -78,6 +80,7 @@ export function LiveConsultationBooking({
       toast.error(t('liveBooking.limitReached'));
       return;
     }
+    if (!(await ensureBillingProfile())) return;
 
     setIsProcessing(true);
     try {
@@ -102,6 +105,7 @@ export function LiveConsultationBooking({
         if (error) throw error;
         const result = data as any;
         if (!result.success) {
+          if (await handleBillingError(null, result)) { setIsProcessing(false); return; }
           toast.error(result.error || t('liveBooking.paymentError'));
           setIsProcessing(false);
           return;
@@ -112,7 +116,7 @@ export function LiveConsultationBooking({
           await supabase.from('chat_messages').insert({
             session_id: result.session_id,
             sender_id: user.id,
-            content: `📋 Mensaje desde el live: ${message.trim()}`,
+            content: `Mensaje desde el live: ${message.trim()}`,
           });
         }
 
@@ -135,7 +139,7 @@ export function LiveConsultationBooking({
         await supabase.from('notifications').insert({
           user_id: doctorId,
           type: 'chat_message' as any,
-          title: '🎯 Nueva orientación desde tu Live',
+          title: 'Nueva orientación desde tu Live',
           message: `${user.name || 'Paciente'} ha reservado una orientación desde tu transmisión en vivo`,
           data: {
             patient_id: user.id,
@@ -169,6 +173,7 @@ export function LiveConsultationBooking({
       }
     } catch (err: any) {
       console.error('Booking error:', err);
+      if (await handleBillingError(err)) return;
       toast.error(t('liveBooking.bookingError'));
     } finally {
       setIsProcessing(false);

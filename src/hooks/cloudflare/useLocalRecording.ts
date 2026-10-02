@@ -168,7 +168,7 @@ export function useLocalRecording() {
         lastError: null,
       }));
 
-      console.log('[LocalRecording] ✅ Recording started (direct stream)');
+      console.log('[LocalRecording] Recording started (direct stream)');
       return true;
     } catch (error: any) {
       console.error('[LocalRecording] Failed to start:', error);
@@ -393,7 +393,7 @@ export function useLocalRecording() {
 
       setState(prev => ({ ...prev, uploadProgress: 100, isUploading: false }));
 
-      console.log('[LocalRecording] ✅ Upload complete, recording ID:', saveData.recordingId);
+      console.log('[LocalRecording] Upload complete, recording ID:', saveData.recordingId);
 
       return { success: true, recordingId: saveData.recordingId };
     } catch (error: any) {

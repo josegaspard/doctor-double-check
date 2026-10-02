@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, User, Users, Activity, Syringe, FileText, Phone, Heart, Pill, AlertTriangle } from 'lucide-react';
+import { Loader2, User, Users, Activity, Syringe, FileText, Phone, Heart, Pill, AlertTriangle, Check, Paperclip } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Props {
@@ -232,7 +232,7 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
                     <span className="font-medium">{v.vaccine_key} · D{v.dose_number}</span>
                     {v.applied ? (
                       <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">
-                        ✓ {v.application_date || t('patientRecordPanel.vax.applied')}
+                        <Check className="inline w-3 h-3 mr-0.5" aria-hidden="true" />{v.application_date || t('patientRecordPanel.vax.applied')}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/20">
@@ -256,7 +256,7 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
                     rel="noopener noreferrer"
                     className="block text-xs p-2 rounded bg-muted/30 hover:bg-muted/60 transition truncate"
                   >
-                    📎 {f.name}
+                    <Paperclip className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{f.name}
                   </a>
                 ))
               )}

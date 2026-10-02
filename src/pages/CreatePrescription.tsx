@@ -32,10 +32,10 @@ export default function CreatePrescription() {
         await supabase.from('chat_messages').insert({
           session_id: sessionId,
           sender_id: user.id,
-          content: `📋 Se te ha generado tu receta médica. Haz clic aquí para verla: /prescriptions/${prescriptionId}`,
+          content: `Se te ha generado tu receta médica. Haz clic aquí para verla: /prescriptions/${prescriptionId}`,
         });
         await supabase.from('chat_sessions').update({
-          last_message: '📋 Se te ha generado tu receta médica',
+          last_message: 'Se te ha generado tu receta médica',
           last_message_at: new Date().toISOString(),
         }).eq('id', sessionId);
       } catch (err) {

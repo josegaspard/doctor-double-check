@@ -73,14 +73,14 @@ export default function ForPatients() {
                 <p className="mt-1 text-xs leading-snug opacity-85">{t('roleSelector.comingSoonPatient')}</p>
               </div>
             )}
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('forPatientsPage.hero.badge')}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white">{t('forPatientsPage.hero.badge')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               {t('forPatientsPage.hero.titlePart1')} <span className="text-white">{t('forPatientsPage.hero.titlePart2')}</span>
             </h1>
-            <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               {t('forPatientsPage.hero.subtitle')}
             </p>
             <Link
@@ -145,26 +145,26 @@ export default function ForPatients() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
-              <div className="bg-white/10 backdrop-blur-sm p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-lg border border-white/15 order-2 md:order-1">
+              <div className="bg-white/5 backdrop-blur-sm p-5 sm:p-8 rounded-xl sm:rounded-2xl shadow-lg border border-white/15 order-2 md:order-1">
                 <Users className="w-10 h-10 sm:w-12 sm:h-12 text-white mb-3 sm:mb-4" />
                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">{t('forPatientsPage.trust.networkTitle')}</h3>
-                <p className="text-white/85 mb-3 sm:mb-4 text-sm sm:text-base">
+                <p className="text-white mb-3 sm:mb-4 text-sm sm:text-base">
                   {t('forPatientsPage.trust.networkDescription')}
                 </p>
                 <ul className="space-y-2">
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     {t('forPatientsPage.trust.specialtyCardiologists')}
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     {t('forPatientsPage.trust.specialtyNeurologists')}
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     {t('forPatientsPage.trust.specialtyOncologists')}
                   </li>
-                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white/90">
+                  <li className="flex items-center gap-2 text-xs sm:text-sm text-white">
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white flex-shrink-0" />
                     {t('forPatientsPage.trust.specialtyMore')}
                   </li>
@@ -174,7 +174,7 @@ export default function ForPatients() {
                 <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
                   {t('forPatientsPage.trust.heading')}
                 </h2>
-                <p className="text-white/85 mb-4 sm:mb-6 text-sm sm:text-base">
+                <p className="text-white mb-4 sm:mb-6 text-sm sm:text-base">
                   {t('forPatientsPage.trust.description')}
                 </p>
                 <Link
@@ -193,7 +193,7 @@ export default function ForPatients() {
       <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('forPatientsPage.cta.heading')}</h2>
-          <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-white mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             {t('forPatientsPage.cta.description')}
           </p>
           <Link

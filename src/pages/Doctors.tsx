@@ -48,6 +48,7 @@ import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
+import { CountryTag } from '@/components/common/CountryTag';
 import '@/styles/diseno-comunidad.css';
 
 // DIRECTORIO DE MÉDICOS (Comunidad > Descubrir > Médicos, 11-sep-2026).
@@ -822,7 +823,7 @@ export default function Doctors({
                     {(CONTINENTS[selectedContinent] || []).map(code => {
                       const info = COUNTRY_CURRENCIES[code];
                       return info ? (
-                        <option key={code} value={code}>{info.flag} {info.name}</option>
+                        <option key={code} value={code}>{info.name}</option>
                       ) : null;
                     })}
                   </select>
@@ -1130,7 +1131,7 @@ export default function Doctors({
                       {(doctor.location || doctor.country_flag) && (
                         <span className="flex items-center gap-1 ml-auto truncate max-w-[140px]">
                           {doctor.country_flag ? (
-                            <span className="flex-shrink-0">{doctor.country_flag}</span>
+                            <CountryTag flag={doctor.country_flag} className="flex-shrink-0" />
                           ) : (
                             <MapPin className="w-3 h-3 flex-shrink-0" />
                           )}

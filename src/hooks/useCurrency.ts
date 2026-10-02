@@ -1,33 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { codeToFlagEmoji } from '@/lib/countryFlag';
 
 // Country → currency mapping
 export const COUNTRY_CURRENCIES: Record<string, { currency: string; flag: string; name: string }> = {
-  MX: { currency: 'MXN', flag: '🇲🇽', name: 'México' },
-  US: { currency: 'USD', flag: '🇺🇸', name: 'Estados Unidos' },
-  PE: { currency: 'PEN', flag: '🇵🇪', name: 'Perú' },
-  CO: { currency: 'COP', flag: '🇨🇴', name: 'Colombia' },
-  AR: { currency: 'ARS', flag: '🇦🇷', name: 'Argentina' },
-  CL: { currency: 'CLP', flag: '🇨🇱', name: 'Chile' },
-  BR: { currency: 'BRL', flag: '🇧🇷', name: 'Brasil' },
-  EC: { currency: 'USD', flag: '🇪🇨', name: 'Ecuador' },
-  UY: { currency: 'UYU', flag: '🇺🇾', name: 'Uruguay' },
-  PY: { currency: 'PYG', flag: '🇵🇾', name: 'Paraguay' },
-  BO: { currency: 'BOB', flag: '🇧🇴', name: 'Bolivia' },
-  VE: { currency: 'USD', flag: '🇻🇪', name: 'Venezuela' },
-  CR: { currency: 'CRC', flag: '🇨🇷', name: 'Costa Rica' },
-  PA: { currency: 'PAB', flag: '🇵🇦', name: 'Panamá' },
-  GT: { currency: 'GTQ', flag: '🇬🇹', name: 'Guatemala' },
-  HN: { currency: 'HNL', flag: '🇭🇳', name: 'Honduras' },
-  SV: { currency: 'USD', flag: '🇸🇻', name: 'El Salvador' },
-  NI: { currency: 'NIO', flag: '🇳🇮', name: 'Nicaragua' },
-  DO: { currency: 'DOP', flag: '🇩🇴', name: 'Rep. Dominicana' },
-  CU: { currency: 'CUP', flag: '🇨🇺', name: 'Cuba' },
-  ES: { currency: 'EUR', flag: '🇪🇸', name: 'España' },
-  CA: { currency: 'CAD', flag: '🇨🇦', name: 'Canadá' },
-  GB: { currency: 'GBP', flag: '🇬🇧', name: 'Reino Unido' },
+  MX: { currency: 'MXN', flag: '', name: 'México' },
+  US: { currency: 'USD', flag: '', name: 'Estados Unidos' },
+  PE: { currency: 'PEN', flag: '', name: 'Perú' },
+  CO: { currency: 'COP', flag: '', name: 'Colombia' },
+  AR: { currency: 'ARS', flag: '', name: 'Argentina' },
+  CL: { currency: 'CLP', flag: '', name: 'Chile' },
+  BR: { currency: 'BRL', flag: '', name: 'Brasil' },
+  EC: { currency: 'USD', flag: '', name: 'Ecuador' },
+  UY: { currency: 'UYU', flag: '', name: 'Uruguay' },
+  PY: { currency: 'PYG', flag: '', name: 'Paraguay' },
+  BO: { currency: 'BOB', flag: '', name: 'Bolivia' },
+  VE: { currency: 'USD', flag: '', name: 'Venezuela' },
+  CR: { currency: 'CRC', flag: '', name: 'Costa Rica' },
+  PA: { currency: 'PAB', flag: '', name: 'Panamá' },
+  GT: { currency: 'GTQ', flag: '', name: 'Guatemala' },
+  HN: { currency: 'HNL', flag: '', name: 'Honduras' },
+  SV: { currency: 'USD', flag: '', name: 'El Salvador' },
+  NI: { currency: 'NIO', flag: '', name: 'Nicaragua' },
+  DO: { currency: 'DOP', flag: '', name: 'Rep. Dominicana' },
+  CU: { currency: 'CUP', flag: '', name: 'Cuba' },
+  ES: { currency: 'EUR', flag: '', name: 'España' },
+  CA: { currency: 'CAD', flag: '', name: 'Canadá' },
+  GB: { currency: 'GBP', flag: '', name: 'Reino Unido' },
 };
+// `flag` se genera desde el código (sin emojis en el código fuente). Solo se guarda en BD
+// (profiles.country_flag); en pantalla se pinta <CountryTag /> con el código.
+for (const [code, info] of Object.entries(COUNTRY_CURRENCIES)) info.flag = codeToFlagEmoji(code);
 
 // Detect country from browser locale
 export function detectCountry(): string {
@@ -56,9 +60,6 @@ export function useCurrency() {
 
   const userCurrency = preferred || (user as any)?.currencyCode || 'MXN';
   const userCountry = (user as any)?.countryCode || 'MX';
-  // Flag follows manual currency selection when overridden
-  const flagFromCurrency = Object.values(COUNTRY_CURRENCIES).find(c => c.currency === userCurrency)?.flag;
-  const userFlag = (preferred && flagFromCurrency) || (user as any)?.countryFlag || '🇲🇽';
 
   const setPreferredCurrency = async (currency: string) => {
     if (!(user as any)?.id) return;
@@ -91,14 +92,13 @@ export function useCurrency() {
     const mxnFormatted = `$${amountMXN.toFixed(2)} MXN`;
     if (userCurrency === 'MXN' || !rates || !rates[userCurrency]) return mxnFormatted;
     const converted = convertFromMXN(amountMXN);
-    const localFormatted = `${userFlag} $${converted.toFixed(2)} ${userCurrency}`;
+    const localFormatted = `$${converted.toFixed(2)} ${userCurrency}`;
     return showBoth ? `${localFormatted} (${mxnFormatted})` : localFormatted;
   };
 
   return {
     userCurrency,
     userCountry,
-    userFlag,
     rates,
     convertFromMXN,
     formatPrice,

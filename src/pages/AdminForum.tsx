@@ -20,7 +20,7 @@ import { getIntlLocale } from '@/lib/dateLocale';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import {
   CalendarDays, Stethoscope, AlertTriangle, Gem, Lightbulb, Trophy, Plus, Pencil, Trash2, Loader2,
-  Sparkles, ArrowLeft, ShieldCheck, MessagesSquare,
+  Sparkles, ArrowLeft, ShieldCheck, MessagesSquare, ChevronUp, ChevronDown,
 } from 'lucide-react';
 
 // PANEL «DÍA A DÍA» DE LA COMUNIDAD (solo súper admin) — módulo diario 22-ago-2026.
@@ -251,7 +251,7 @@ export default function AdminForum() {
       {days.map((d) => (
         <div key={d} className={`rounded-lg border p-3 ${d === today ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               <CalendarDays className="w-4 h-4 text-primary" />{labelDay(d)}
               {d === today && <Badge className="text-[10px] h-4 px-1.5">{t('forum.today')}</Badge>}
             </span>
@@ -330,8 +330,8 @@ export default function AdminForum() {
               <p className="text-sm text-muted-foreground">{t('forumAdmin.promptsHint')}</p>
               <h2 className="text-sm font-semibold">{t('forumAdmin.nextDays')}</h2>
               <PromptGrid days={nextDays} />
-              <button type="button" className="text-sm text-primary underline" onClick={() => setShowPast((v) => !v)}>
-                {t('forumAdmin.pastDays')} {showPast ? '▲' : '▼'}
+              <button type="button" className="text-sm text-foreground font-medium underline" onClick={() => setShowPast((v) => !v)}>
+                {t('forumAdmin.pastDays')} {showPast ? <ChevronUp className="inline w-4 h-4 align-text-bottom" aria-hidden="true" /> : <ChevronDown className="inline w-4 h-4 align-text-bottom" aria-hidden="true" />}
               </button>
               {showPast && <PromptGrid days={pastDays} readOnly />}
             </TabsContent>

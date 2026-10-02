@@ -92,9 +92,9 @@ export default function MaterialsLibrary() {
       <section className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-start gap-3 text-xs rounded-xl px-3.5 py-2.5 bg-card border border-primary/20 border-l-4 border-l-primary shadow-md shadow-[#0b1d45]/15 flex-1">
-            <span aria-hidden className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white text-[11px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #227787, #839ed5)' }}>📄</span>
+            <span aria-hidden className="inline-flex items-center justify-center w-6 h-6 rounded-lg text-white text-[11px] font-bold flex-shrink-0" style={{ background: 'linear-gradient(135deg, #227787, #839ed5)' }}><FileText className="w-3.5 h-3.5" aria-hidden="true" /></span>
             <span className="leading-relaxed">
-              <strong className="text-secondary font-semibold">{t('mm2.learning.materials.calloutTitle')}</strong>{' '}
+              <strong className="text-secondary dark:text-accent font-semibold">{t('mm2.learning.materials.calloutTitle')}</strong>{' '}
               <span className="text-muted-foreground">{t('mm2.learning.materials.calloutBody')}</span>
             </span>
           </div>

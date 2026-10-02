@@ -564,7 +564,7 @@ export function ScheduleEditor({
                       {special && <span className="h-2 w-2 rounded-full bg-[#227787]" aria-hidden="true" />}
                     </div>
                     {list.length === 0 ? (
-                      <span className="mt-1 block text-[10px] text-slate-400">{t('mm2.schedule.closed')}</span>
+                      <span className="mt-1 block text-[10px] text-slate-500">{t('mm2.schedule.closed')}</span>
                     ) : (
                       <>
                         {list.slice(0, 3).map(r => (

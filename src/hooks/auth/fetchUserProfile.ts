@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { ExtendedUser, UserRole, DoctorStatus } from './types';
+import { codeToFlagEmoji } from '@/lib/countryFlag';
 
 export async function fetchUserProfile(userId: string): Promise<ExtendedUser | null> {
   try {
@@ -26,7 +27,7 @@ export async function fetchUserProfile(userId: string): Promise<ExtendedUser | n
       onboardingCompleted: profile.onboarding_completed ?? false,
       countryCode: profile.country_code || 'MX',
       currencyCode: profile.currency_code || 'MXN',
-      countryFlag: profile.country_flag || '🇲🇽',
+      countryFlag: profile.country_flag || codeToFlagEmoji(profile.country_code || 'MX'),
     };
 
     // Fetch role-specific data (only one branch needed)

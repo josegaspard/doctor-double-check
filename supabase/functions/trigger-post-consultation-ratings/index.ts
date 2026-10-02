@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         .insert({
           user_id: consultation.patient_id,
           type: "rating_request",
-          title: "⭐ Califica tu consulta",
+          title: "Califica tu consulta",
           message: `¿Cómo fue tu experiencia con ${doctorProfile?.name || "tu médico"}? Tu opinión nos ayuda a mejorar.`,
           data: {
             consultation_id: consultation.id,

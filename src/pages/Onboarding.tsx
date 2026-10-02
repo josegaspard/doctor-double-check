@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe, Phone, MessageSquare } from 'lucide-react';
+import { Shield, ShieldCheck, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe, Phone, MessageSquare } from 'lucide-react';
 import { COUNTRY_CURRENCIES, detectCountry } from '@/hooks/useCurrency';
+import { CountryTag } from '@/components/common/CountryTag';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
@@ -20,6 +21,7 @@ import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
 import { CedulaPhotoUpload } from '@/components/onboarding/CedulaPhotoUpload';
 import { CedulaVerificationStatus, useCedulaStatus } from '@/components/onboarding/CedulaVerificationStatus';
 import { CedulaAutoVerify } from '@/components/onboarding/CedulaAutoVerify';
+import { CofeprisFields, EMPTY_COFEPRIS, validateCofepris, submitCofepris, type CofeprisDraft } from '@/components/doctor/CofeprisCredential';
 import { ClinicalHistoryForm, ClinicalHistoryData } from '@/components/onboarding/ClinicalHistoryForm';
 import { DocumentSignature } from '@/components/onboarding/DocumentSignature';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -76,6 +78,10 @@ interface ValidationErrors {
   specialty?: string;
   license?: string;
   cedulaPhoto?: string;
+  cofeprisHas?: string;
+  cofeprisType?: string;
+  cofeprisPermit?: string;
+  cofeprisDoc?: string;
   institution?: string;
   year?: string;
   signerName?: string;
@@ -222,8 +228,10 @@ export default function Onboarding() {
   // Foto de la cédula profesional (obligatoria) para checar identidad — solo doctor (cliente 2026-07-08).
   // Guarda el PATH dentro del bucket privado 'doctor-credentials'.
   const [cedulaPhotoUrl, setCedulaPhotoUrl] = useState<string | null>(null);
+  // Permiso COFEPRIS (cliente 2026-10-01): el médico responde Sí/No; si Sí, tipo + folio + documento.
+  const [cofepris, setCofepris] = useState<CofeprisDraft>(EMPTY_COFEPRIS);
   // Distintivo que el médico elige al verificarse (cliente 2026-06-29):
-  // 'gold' = 🥇 medalla dorada, 'verified' = ✔️ palomita, null = ninguno.
+  // 'gold' = medalla dorada, 'verified' = palomita, null = ninguno.
   const [year, setYear] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
@@ -307,6 +315,15 @@ export default function Onboarding() {
       if (!cedulaPhotoUrl) {
         errors.cedulaPhoto = t('onboarding.validationCedulaPhoto');
       }
+
+      // COFEPRIS: se contesta en el paso 2, junto a la cédula.
+      if (step === 2) {
+        const ce = validateCofepris(cofepris, t);
+        if (ce.has) errors.cofeprisHas = ce.has;
+        if (ce.docType) errors.cofeprisType = ce.docType;
+        if (ce.permit) errors.cofeprisPermit = ce.permit;
+        if (ce.doc) errors.cofeprisDoc = ce.doc;
+      }
     }
 
     if (selectedRole === 'resident') {
@@ -342,7 +359,7 @@ export default function Onboarding() {
     }
 
     return errors;
-  }, [selectedRole, specialty, license, cedulaPhotoUrl, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted, codeOfEthicsAccepted]);
+  }, [selectedRole, specialty, license, cedulaPhotoUrl, cofepris, institution, year, step, clinicalHistory, signerName, termsAccepted, privacyAccepted, doctorContractAccepted, codeOfEthicsAccepted]);
 
   const isFormValid = Object.keys(validateForm).length === 0;
 
@@ -370,12 +387,20 @@ export default function Onboarding() {
         avatar_url: avatarUrl,
         cedula_photo_url: cedulaPhotoUrl,
         phone: phoneNumber ? `${phoneCountryCode}${phoneNumber}` : null,
+        cofepris: selectedRole === 'doctor' && cofepris.has !== null ? cofepris : null,
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('onboarding_progress')
         .upsert(progressData, { onConflict: 'user_id' });
+      // Columna 'cofepris' nueva (20261001): si aún no existe, guardar el resto igual.
+      if (error && /cofepris/.test(error.message || '')) {
+        delete progressData.cofepris;
+        ({ error } = await supabase
+          .from('onboarding_progress')
+          .upsert(progressData, { onConflict: 'user_id' }));
+      }
 
       if (error) {
         console.error('Error saving progress:', error);
@@ -385,7 +410,7 @@ export default function Onboarding() {
     } finally {
       setIsSavingProgress(false);
     }
-  }, [supabaseUser, step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, phoneNumber, phoneCountryCode]);
+  }, [supabaseUser, step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, phoneNumber, phoneCountryCode, cofepris]);
 
   // Debounced save - saves 1 second after last change
   const debouncedSave = useCallback(() => {
@@ -407,7 +432,7 @@ export default function Onboarding() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, debouncedSave, supabaseUser]);
+  }, [step, selectedRole, specialty, license, institution, year, avatarUrl, cedulaPhotoUrl, cofepris, debouncedSave, supabaseUser]);
 
   // Load saved progress and check onboarding status
   useEffect(() => {
@@ -495,11 +520,12 @@ export default function Onboarding() {
         if (savedProgress.avatar_url) setAvatarUrl(savedProgress.avatar_url);
         // Columna nueva (2026-07-08), aún no está en los tipos generados
         if ((savedProgress as any).cedula_photo_url) setCedulaPhotoUrl((savedProgress as any).cedula_photo_url);
+        const savedCof = (savedProgress as any).cofepris;
+        if (savedCof && typeof savedCof === 'object') setCofepris({ ...EMPTY_COFEPRIS, ...savedCof });
         
         // Show toast when restoring previous session
         toast.success(t('onboarding.restoringSession'), {
           duration: 3000,
-          icon: '🔄'
         });
       }
 
@@ -603,6 +629,16 @@ export default function Onboarding() {
         
         if (doctorError) {
           throw doctorError;
+        }
+
+        // COFEPRIS va por RPC (valida y deja 'pending' para el admin). No bloquea el alta:
+        // si falla, el médico lo reenvía desde su perfil.
+        if (cofepris.has !== null) {
+          const res = await submitCofepris(cofepris);
+          if (!res.ok) {
+            console.error('[Onboarding] submit_cofepris', res.error);
+            toast.warning(t('cofepris.toastOnboardingFailed'));
+          }
         }
       }
 
@@ -1141,7 +1177,7 @@ export default function Onboarding() {
                             {Object.entries(COUNTRY_CURRENCIES).map(([code, info]) => (
                               <SelectItem key={code} value={code}>
                                 <span className="flex items-center gap-2">
-                                  <span>{info.flag}</span>
+                                  <CountryTag code={code} />
                                   <span>{info.name}</span>
                                   <span className="text-muted-foreground text-xs">({info.currency})</span>
                                 </span>
@@ -1166,14 +1202,14 @@ export default function Onboarding() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="+52">🇲🇽 +52</SelectItem>
-                              <SelectItem value="+1">🇺🇸 +1</SelectItem>
-                              <SelectItem value="+57">🇨🇴 +57</SelectItem>
-                              <SelectItem value="+56">🇨🇱 +56</SelectItem>
-                              <SelectItem value="+54">🇦🇷 +54</SelectItem>
-                              <SelectItem value="+34">🇪🇸 +34</SelectItem>
-                              <SelectItem value="+51">🇵🇪 +51</SelectItem>
-                              <SelectItem value="+593">🇪🇨 +593</SelectItem>
+                              <SelectItem value="+52">MX +52</SelectItem>
+                              <SelectItem value="+1">US +1</SelectItem>
+                              <SelectItem value="+57">CO +57</SelectItem>
+                              <SelectItem value="+56">CL +56</SelectItem>
+                              <SelectItem value="+54">AR +54</SelectItem>
+                              <SelectItem value="+34">ES +34</SelectItem>
+                              <SelectItem value="+51">PE +51</SelectItem>
+                              <SelectItem value="+593">EC +593</SelectItem>
                             </SelectContent>
                           </Select>
                           <Input
@@ -1523,6 +1559,27 @@ export default function Onboarding() {
                             value={cedulaEspecialidad}
                             onChange={(e) => setCedulaEspecialidad(e.target.value.slice(0, 50))}
                             maxLength={50}
+                          />
+                        </motion.div>
+                      )}
+
+                      {/* Permiso COFEPRIS (cliente 2026-10-01): Sí/No; si Sí, tipo + folio + documento → revisión del admin */}
+                      {selectedRole === 'doctor' && supabaseUser && (
+                        <motion.div className="space-y-2 rounded-lg border border-border p-4" variants={itemVariants} id="cofepris-section">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-primary" />
+                            {t('cofepris.sectionTitle')}
+                          </p>
+                          <CofeprisFields
+                            userId={supabaseUser.id}
+                            value={cofepris}
+                            onChange={setCofepris}
+                            errors={{
+                              has: validationErrors.cofeprisHas,
+                              docType: validationErrors.cofeprisType,
+                              permit: validationErrors.cofeprisPermit,
+                              doc: validationErrors.cofeprisDoc,
+                            }}
                           />
                         </motion.div>
                       )}

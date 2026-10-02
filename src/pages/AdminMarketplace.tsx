@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse, Star, EyeOff, Eye as EyeIcon, Percent } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Package, Store, Tag, ShoppingCart, Loader2, Check, X, Download, TrendingUp, DollarSign, Users, BarChart3, ChevronDown, ChevronUp, Truck, MapPin, Phone, Mail, ArrowLeft, FileText, Send, Clock, RotateCcw, AlertTriangle, CreditCard, ClipboardList, AlertCircle, Warehouse, Star, EyeOff, Eye as EyeIcon, Percent, StickyNote, CheckCircle2, PackageCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
@@ -382,7 +382,7 @@ function VendorsTab({ es: _es }: { es: boolean }) {
     const v = vendors.find(x => x.id === id);
     if (v?.user_id) {
       const notif = status === 'approved'
-        ? { title: '🎉 ¡Eres proveedor aprobado!', message: `Tu negocio "${v.name}" fue aprobado. Ya puedes publicar productos desde tu portal de proveedor.` }
+        ? { title: '¡Eres proveedor aprobado!', message: `Tu negocio "${v.name}" fue aprobado. Ya puedes publicar productos desde tu portal de proveedor.` }
         : { title: 'Tu solicitud de proveedor fue rechazada', message: `${note ? `Motivo: ${note}. ` : ''}Puedes corregir tus datos y volver a postular desde el portal de proveedores.` };
       await (supabase as any).from('notifications').insert({ user_id: v.user_id, type: 'system', ...notif, data: { url: '/vendor/dashboard' } });
     }
@@ -721,7 +721,7 @@ function OrdersTab({ es }: { es: boolean }) {
         await supabase.from('notifications').insert({
           user_id: order.buyer_id,
           type: 'system' as any,
-          title: '📦 Tu pedido fue enviado',
+          title: 'Tu pedido fue enviado',
           message: `Tu pedido "${order.marketplace_products?.name || 'producto'}" salió. Llegada estimada: ${eta.toLocaleDateString('es-MX')}${dispatchDialog.tracking ? ` · Tracking: ${dispatchDialog.tracking}` : ''}.`,
           data: { order_id: id, type: 'order_shipped', tracking: dispatchDialog.tracking || null, eta: etaISO },
         });
@@ -789,7 +789,7 @@ function OrdersTab({ es }: { es: boolean }) {
     <div><strong>${(o.shipping_name || '—').replace(/</g,'&lt;')}</strong></div>
     <div class="muted">${(o.shipping_phone || '').replace(/</g,'&lt;')}</div>
     <div>${[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ').replace(/</g,'&lt;') || '—'}</div>
-    ${o.shipping_notes ? `<div class="muted" style="margin-top:6px">📝 ${String(o.shipping_notes).replace(/</g,'&lt;')}</div>` : ''}
+    ${o.shipping_notes ? `<div class="muted" style="margin-top:6px">Nota: ${String(o.shipping_notes).replace(/</g,'&lt;')}</div>` : ''}
   </div>
   <div class="box">
     <h2>Producto</h2>
@@ -932,11 +932,11 @@ function OrdersTab({ es }: { es: boolean }) {
                             {o.shipping_name && <p className="text-sm text-secondary font-medium">{o.shipping_name}</p>}
                             {o.shipping_phone && <p className="text-xs text-secondary/70 flex items-center gap-1"><Phone className="w-3 h-3" /> {o.shipping_phone}</p>}
                             <p className="text-xs text-secondary/70">{[o.shipping_city, o.shipping_state, o.shipping_zip].filter(Boolean).join(', ') || '—'}</p>
-                            {o.shipping_notes && <p className="text-xs text-secondary/60 italic">📝 {o.shipping_notes}</p>}
+                            {o.shipping_notes && <p className="text-xs text-secondary/60 italic"><StickyNote className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{o.shipping_notes}</p>}
                           </div>
                         ) : (
                           <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
-                            ⚠ {t('adminMarketplacePage.orders.noShippingAddress')}
+                            <AlertTriangle className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.noShippingAddress')}
                           </div>
                         )}
                       </div>
@@ -1017,11 +1017,11 @@ function OrdersTab({ es }: { es: boolean }) {
 
                       {/* Timestamps */}
                       <div className="text-[10px] text-secondary/60 space-y-0.5 pt-2 border-t border-primary/15">
-                        <p>🕒 {t('adminMarketplacePage.orders.created')}: {new Date(o.created_at).toLocaleString('es-MX')}</p>
-                        {o.paid_at && <p>✅ {t('adminMarketplacePage.orders.paid')}: {new Date(o.paid_at).toLocaleString('es-MX')}</p>}
-                        {o.shipped_at && <p>📦 {t('adminMarketplacePage.orders.shipped')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</p>}
-                        {o.estimated_delivery && <p>🚚 {t('adminMarketplacePage.orders.eta')}: {new Date(o.estimated_delivery).toLocaleDateString('es-MX')}</p>}
-                        {o.delivered_at && <p>🎉 {t('adminMarketplacePage.orders.delivered')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</p>}
+                        <p><Clock className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.created')}: {new Date(o.created_at).toLocaleString('es-MX')}</p>
+                        {o.paid_at && <p><CheckCircle2 className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.paid')}: {new Date(o.paid_at).toLocaleString('es-MX')}</p>}
+                        {o.shipped_at && <p><Package className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.shipped')}: {new Date(o.shipped_at).toLocaleString('es-MX')}</p>}
+                        {o.estimated_delivery && <p><Truck className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.eta')}: {new Date(o.estimated_delivery).toLocaleDateString('es-MX')}</p>}
+                        {o.delivered_at && <p><PackageCheck className="inline w-3.5 h-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('adminMarketplacePage.orders.delivered')}: {new Date(o.delivered_at).toLocaleString('es-MX')}</p>}
                       </div>
                     </div>
                   )}
@@ -1766,7 +1766,7 @@ function ReviewsTab({ es: _es }: { es: boolean }) {
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
-                      {r.verified_purchase && <Badge variant="verified" className="text-[10px]">✓ {t('adminMarketplacePage.reviews.verifiedPurchase')}</Badge>}
+                      {r.verified_purchase && <Badge variant="verified" className="text-[10px]"><Check className="inline w-3 h-3 mr-0.5" aria-hidden="true" />{t('adminMarketplacePage.reviews.verifiedPurchase')}</Badge>}
                       {r.is_hidden && <Badge variant="destructive" className="text-[10px]">{t('adminMarketplacePage.reviews.hiddenBadge')}</Badge>}
                     </div>
                     {r.title && <p className="text-sm font-semibold">{r.title}</p>}

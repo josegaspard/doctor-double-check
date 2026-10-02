@@ -2,6 +2,7 @@ import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
 import { getAppConfig } from "../_shared/appconfig.ts";
+import { requireBillingProfile } from "../_shared/billing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,6 +44,10 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
+
+    // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
+    const billingBlock = await requireBillingProfile(supabaseClient, user.id, corsHeaders);
+    if (billingBlock) return billingBlock;
 
     const { contentId } = await req.json();
     if (!contentId) throw new Error("Content ID is required");

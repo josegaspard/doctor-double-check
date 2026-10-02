@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { useBillingGate, BILLING_REQUIRED_CODE } from '@/components/billing/BillingGate';
 
 export interface Purchase {
   id: string;
@@ -16,6 +17,7 @@ export interface Purchase {
 export function usePurchases() {
   const { supabaseUser, role } = useAuth();
   const { refreshWallet } = useWallet();
+  const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { t } = useLanguage();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +73,7 @@ export function usePurchases() {
     if (!supabaseUser?.id) {
       return { success: false, error: t('authErrors.notAuthenticated') };
     }
+    if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     setIsPurchasing(true);
     try {
@@ -95,6 +98,7 @@ export function usePurchases() {
       
       return { success: true };
     } catch (error: any) {
+      if (await handleBillingError(error)) return { success: false, error: BILLING_REQUIRED_CODE };
       const errorMsg = error.message || t('purchaseMessages.processingError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
@@ -107,6 +111,7 @@ export function usePurchases() {
     if (!supabaseUser?.id) {
       return { success: false, error: t('authErrors.notAuthenticated') };
     }
+    if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     try {
       const { data, error } = await supabase.functions.invoke('create-recording-checkout', {
@@ -121,6 +126,7 @@ export function usePurchases() {
 
       throw new Error(t('purchaseMessages.paymentSessionError'));
     } catch (error: any) {
+      if (await handleBillingError(error)) return { success: false, error: BILLING_REQUIRED_CODE };
       const errorMsg = error.message || t('purchaseMessages.paymentError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
@@ -132,6 +138,7 @@ export function usePurchases() {
     if (!supabaseUser?.id) {
       return { success: false, error: t('authErrors.notAuthenticated') };
     }
+    if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     setIsPurchasing(true);
     try {
@@ -156,6 +163,7 @@ export function usePurchases() {
 
       return { success: true };
     } catch (error: any) {
+      if (await handleBillingError(error)) return { success: false, error: BILLING_REQUIRED_CODE };
       const errorMsg = error.message || t('purchaseMessages.processingError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
@@ -168,6 +176,7 @@ export function usePurchases() {
     if (!supabaseUser?.id) {
       return { success: false, error: t('authErrors.notAuthenticated') };
     }
+    if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     try {
       const { data, error } = await supabase.functions.invoke('create-content-checkout', {
@@ -182,6 +191,7 @@ export function usePurchases() {
 
       throw new Error(t('purchaseMessages.paymentSessionError'));
     } catch (error: any) {
+      if (await handleBillingError(error)) return { success: false, error: BILLING_REQUIRED_CODE };
       const errorMsg = error.message || t('purchaseMessages.paymentError');
       toast.error(errorMsg);
       return { success: false, error: errorMsg };

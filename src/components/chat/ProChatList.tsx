@@ -208,8 +208,8 @@ export function ProChatList({
                     </span>
                   </span>
                   {info.specialty && <span className="sub block">{info.specialty}</span>}
-                  {/* `formatMessagePreview` convierte «📷 [Imagen: x.jpg] https://…»
-                      en «📷 Foto» (y «📋 Receta médica»), como en la campana. */}
+                  {/* `formatMessagePreview` convierte «[Imagen: x.jpg] https://…»
+                      en «Foto» (y «Receta médica»), como en la campana. */}
                   <span className="prev block">
                     {s.lastMessage ? formatMessagePreview(s.lastMessage, 80) : t('chat.noConversations')}
                   </span>

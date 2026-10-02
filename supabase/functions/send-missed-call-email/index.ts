@@ -107,7 +107,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     await admin.from("notifications").insert({
       user_id: consultation.patient_id,
       type: "missed_call" as any,
-      title: "📞 Llamada perdida",
+      title: "Llamada perdida",
       message: `El Dr. ${doctor?.name || "tu médico"} intentó llamarte`,
       data: { consultationId, doctorId: consultation.doctor_id },
     });

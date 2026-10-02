@@ -169,8 +169,8 @@ serve(async (req) => {
 
             if (pushSubs && pushSubs.length > 0) {
               const pushTitle = dbStatus === "verified"
-                ? "✅ Identidad verificada"
-                : "❌ Verificación fallida";
+                ? "Identidad verificada"
+                : "Verificación fallida";
               const pushBody = dbStatus === "verified"
                 ? "Tu identidad ha sido verificada exitosamente"
                 : "Tu verificación de identidad no fue aprobada. Puedes intentarlo de nuevo.";

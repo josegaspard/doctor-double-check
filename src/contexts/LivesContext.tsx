@@ -675,7 +675,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       const { data: notifyResult } = await supabase.rpc('notify_subscribers', {
         p_doctor_id: user.id,
         p_notification_type: 'doctor_live',
-        p_title: `🔴 ${user.name} está en vivo`,
+        p_title: `${user.name} está en vivo`,
         p_message: data.title || 'Nueva transmisión en vivo',
         p_data: { live_id: newLive.id, specialty: data.specialty || 'General' },
       });

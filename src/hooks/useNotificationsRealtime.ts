@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { stripEmoji } from '@/lib/stripEmoji';
 
 export function useNotificationsRealtime() {
   const { supabaseUser } = useAuth();
@@ -11,7 +12,12 @@ export function useNotificationsRealtime() {
   const navigate = useNavigate();
 
   const handleNewNotification = useCallback((payload: any) => {
-    const notification = payload.new;
+    // Los títulos/mensajes vienen de la BD con emoji delante: se pintan sin él.
+    const notification = {
+      ...payload.new,
+      title: stripEmoji(payload.new?.title),
+      message: stripEmoji(payload.new?.message),
+    };
     
     switch (notification.type) {
       case 'doctor_live':
@@ -60,7 +66,7 @@ export function useNotificationsRealtime() {
         toast.info(notification.title, {
           description: notification.message,
           action: {
-            label: '⭐ Calificar',
+            label: 'Calificar',
             onClick: () => {
               window.dispatchEvent(new CustomEvent('trigger-rating-check'));
             },
@@ -75,7 +81,7 @@ export function useNotificationsRealtime() {
         toast.info(notification.title, {
           description: notification.message,
           action: {
-            label: '📹 Unirse',
+            label: 'Unirse',
             onClick: () => {
               const cId = notification.data?.consultationId;
               if (cId) navigate(`/video-call?consultation=${cId}`);

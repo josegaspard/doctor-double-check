@@ -46,7 +46,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   }, []);
 
   const doCleanup = useCallback(async () => {
-    console.log('[Daily] 🧹 Cleanup');
+    console.log('[Daily] Cleanup');
     isCleanedUpRef.current = true;
     if (remoteLeftTimerRef.current) {
       clearTimeout(remoteLeftTimerRef.current);
@@ -90,12 +90,12 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
     // Guard against concurrent calls
     if (isInitializingRef.current) {
-      console.warn('[Daily] ⚠️ Already initializing, skipping duplicate call');
+      console.warn('[Daily] Already initializing, skipping duplicate call');
       return;
     }
     isInitializingRef.current = true;
 
-    console.log('[Daily] 🚀 Starting call, isDoctor:', isDoctor);
+    console.log('[Daily] Starting call, isDoctor:', isDoctor);
     isCleanedUpRef.current = false;
     setCallState('connecting');
 
@@ -103,7 +103,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       // Destroy any existing call object before creating a new one
       const existingCo = callObjectRef.current;
       if (existingCo) {
-        console.log('[Daily] 🧹 Destroying previous call object before re-init');
+        console.log('[Daily] Destroying previous call object before re-init');
         try {
           await existingCo.leave();
           existingCo.destroy();
@@ -159,14 +159,14 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
       // Listen to events
       co.on('joined-meeting', () => {
-        console.log('[Daily] ✅ Joined meeting!');
+        console.log('[Daily] Joined meeting!');
         if (!isCleanedUpRef.current) {
           setCallState('connected');
         }
       });
 
       co.on('participant-joined', (event: any) => {
-        console.log('[Daily] 👤 Participant joined');
+        console.log('[Daily] Participant joined');
         // If a remote rejoined while a grace timer was pending, cancel the
         // pending teardown — this was just a brief wifi blip.
         if (event?.participant && !event.participant.local && remoteLeftTimerRef.current) {
@@ -177,7 +177,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       });
 
       co.on('participant-left', (event: any) => {
-        console.log('[Daily] 👤 Participant left');
+        console.log('[Daily] Participant left');
         if (!event?.participant || event.participant.local) return;
         if (isCleanedUpRef.current) return;
         // Grace window: tolerate brief reconnects (network flap, app
@@ -199,7 +199,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
       });
 
       co.on('error', (event) => {
-        console.error('[Daily] ❌ Error:', event);
+        console.error('[Daily] Error:', event);
         if (!isCleanedUpRef.current) {
           setCallState('error');
         }
@@ -207,9 +207,9 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
 
       // Join the room
       await co.join({ url: roomUrl, token });
-      console.log('[Daily] ✅ Join successful');
+      console.log('[Daily] Join successful');
     } catch (err: any) {
-      console.error('[Daily] ❌ Error:', err);
+      console.error('[Daily] Error:', err);
       if (!isCleanedUpRef.current) {
         setCallState('error');
       }
@@ -227,7 +227,7 @@ export function useWebRTCCall(consultationId: string | null, userId: string | nu
   }, [initDailyCall]);
 
   const endCall = useCallback(async () => {
-    console.log('[Daily] 📞 Ending call');
+    console.log('[Daily] Ending call');
     setCallState('ended');
 
     if (consultationId) {

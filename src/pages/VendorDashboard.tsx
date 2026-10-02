@@ -23,6 +23,7 @@ import {
   Building2, Phone, Globe, MapPin, FileCheck, ChevronRight, CheckCircle2,
   Clock, TrendingUp, DollarSign, Eye, EyeOff, ArrowRight, XCircle,
   MessageCircle, BadgeDollarSign, ClipboardList, ShieldAlert,
+  Check,
 } from 'lucide-react';
 
 // ─── Sub-components ──────────────────────────────────────────
@@ -136,7 +137,7 @@ function RegistrationStepper({ es, user, feeRate, existing, onComplete }: { es: 
                 i + 1 < step ? 'bg-primary text-primary-foreground border-primary' :
                 i + 1 === step ? 'border-primary text-primary bg-primary/10' :
                 'border-muted text-muted-foreground'
-              }`}>{i + 1 < step ? '✓' : i + 1}</div>
+              }`}>{i + 1 < step ? <Check className="w-4 h-4" aria-hidden="true" /> : i + 1}</div>
               {i < steps.length - 1 && <div className={`hidden sm:block w-12 lg:w-20 h-0.5 ${i + 1 < step ? 'bg-primary' : 'bg-muted'}`} />}
             </div>
           ))}
@@ -239,7 +240,7 @@ function PendingState({ es }: { es: boolean }) {
             {timeline.map((t, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  {i === 0 ? '✓' : i + 1}
+                  {i === 0 ? <Check className="w-4 h-4" aria-hidden="true" /> : i + 1}
                 </div>
                 <span className={`text-sm ${i === 0 ? 'font-medium' : 'text-muted-foreground'}`}>{t}</span>
               </div>

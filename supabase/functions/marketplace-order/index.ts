@@ -213,15 +213,15 @@ serve(async (req) => {
       // param fuerza el salto al filtro correcto).
       const chatUrl = chatSessionId ? `/chat?session=${chatSessionId}` : "/chat";
       if (vendorUserId) {
-        await notifyUsers(db, [vendorUserId], "📋 Nueva orden de compra",
+        await notifyUsers(db, [vendorUserId], "Nueva orden de compra",
           `${callerName} está interesado en "${product.name}" (${money(price, currency)}). Abre el chat para acordar los pormenores.`,
           { url: chatUrl, interest_id: interest.id });
       }
-      await notifyUsers(db, [user.id], "✅ Orden de compra enviada",
+      await notifyUsers(db, [user.id], "Orden de compra enviada",
         `Tu orden por "${product.name}" llegó a ${vendorName || "el proveedor"}. Ya puedes chatear con él para acordar los detalles.`,
         { url: chatUrl, interest_id: interest.id });
       const admins = await adminIds(db);
-      await notifyUsers(db, admins, "🛒 Marketplace: nueva orden de compra",
+      await notifyUsers(db, admins, "Marketplace: nueva orden de compra",
         `${callerName} ordenó "${product.name}" de ${vendorName || "un proveedor"} (${money(price, currency)}).`,
         { url: "/admin/marketplace-fee", interest_id: interest.id });
       await emailAdmins(db, `Marketplace: nueva orden de compra — ${product.name}`, {
@@ -294,22 +294,22 @@ serve(async (req) => {
           .neq("id", order.id);
         for (const o of others || []) {
           await db.from("product_interests").update({ status: "cancelled", cancelled_at: now }).eq("id", o.id);
-          await notifyUsers(db, [o.buyer_id], "😔 Producto ya no disponible",
+          await notifyUsers(db, [o.buyer_id], "Producto ya no disponible",
             `"${productName || "El producto"}" se vendió a otro comprador y tu orden fue cancelada.`,
             { url: "/marketplace" });
         }
       }
 
       const feeTxt = money(Number(order.fee_amount), order.currency);
-      await notifyUsers(db, [order.buyer_id], "🎉 Venta concretada",
+      await notifyUsers(db, [order.buyer_id], "Venta concretada",
         `${vendorName || "El proveedor"} concretó tu compra de "${productName || "el producto"}". Coordina la entrega por el chat.`,
         { url: order.chat_session_id ? `/chat?session=${order.chat_session_id}` : "/chat", interest_id: order.id });
       if (vendorUserId) {
-        await notifyUsers(db, [vendorUserId], "🤝 Venta concretada — fee pendiente",
+        await notifyUsers(db, [vendorUserId], "Venta concretada — fee pendiente",
           `Concretaste la venta de "${productName || "tu producto"}" a ${buyerName}. Recuerda pagar el fee de la plataforma (${feeTxt}) desde el marketplace.`,
           { url: "/marketplace", interest_id: order.id });
       }
-      await notifyUsers(db, admins, "💰 Marketplace: venta concretada",
+      await notifyUsers(db, admins, "Marketplace: venta concretada",
         `${vendorName || "Un proveedor"} concretó la venta de "${productName || "un producto"}" a ${buyerName}. Fee por cobrar: ${feeTxt}.`,
         { url: "/admin/marketplace-fee", interest_id: order.id });
       await emailAdmins(db, `Marketplace: venta concretada — ${productName || "producto"}`, {
@@ -343,11 +343,11 @@ serve(async (req) => {
       const who = isBuyer ? buyerName : (vendorName || "el proveedor");
       const counterpart = isBuyer ? vendorUserId : order.buyer_id;
       if (counterpart) {
-        await notifyUsers(db, [counterpart], "❌ Orden de compra cancelada",
+        await notifyUsers(db, [counterpart], "Orden de compra cancelada",
           `${who} canceló la orden por "${productName || "el producto"}".`,
           { url: "/marketplace", interest_id: order.id });
       }
-      await notifyUsers(db, admins, "❌ Marketplace: orden cancelada",
+      await notifyUsers(db, admins, "Marketplace: orden cancelada",
         `${who} canceló la orden por "${productName || "un producto"}" (${vendorName || "proveedor"} ↔ ${buyerName}).`,
         { url: "/admin/marketplace-fee", interest_id: order.id });
 

@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Calendar, Clock, Video, MessageSquare, ChevronRight, Bell, User } from 'lucide-react';
+import { Calendar, Clock, Video, MessageSquare, ChevronRight, Bell, User, Star } from 'lucide-react';
 import { useDoctorAvailability, DoctorAvailability } from '@/hooks/useDoctorAvailability';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -78,7 +78,7 @@ function AvailabilityCard({
                 </Badge>
                 {isPremium && isLive && (
                   <Badge className="text-[10px] bg-warning/10 text-warning border-warning px-1.5 py-0 h-5">
-                    ⭐
+                    <Star className="w-3 h-3 fill-current" aria-hidden="true" />
                   </Badge>
                 )}
               </div>
@@ -159,7 +159,7 @@ function AvailabilityDetailDialog({
             </Badge>
             {isPremium && isLive && (
               <Badge className="bg-warning/10 text-warning border-warning gap-1">
-                ⭐ {t('autoI18n.upcomingAvail4')}
+                <Star className="inline w-3.5 h-3.5 mr-1 align-[-2px] fill-current" aria-hidden="true" />{t('autoI18n.upcomingAvail4')}
               </Badge>
             )}
           </div>

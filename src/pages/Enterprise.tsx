@@ -68,14 +68,14 @@ export default function Enterprise() {
       <header className="relative pt-20 sm:pt-32 pb-12 sm:pb-24 bg-gradient-to-br from-secondary via-primary to-secondary">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/5 border border-white/20 backdrop-blur-sm mb-4 sm:mb-6">
               <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-light">{t('enterprisePage.hero.badge')}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white">{t('enterprisePage.hero.badge')}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6">
               {t('enterprisePage.hero.titleStart')} <span className="text-white">{t('enterprisePage.hero.titleEnd')}</span>
             </h1>
-            <p className="text-sm sm:text-lg text-white/85 max-w-xl mx-auto mb-6 sm:mb-8 px-4">
+            <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               {t('enterprisePage.hero.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
@@ -87,7 +87,7 @@ export default function Enterprise() {
               </Link>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/15 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-white bg-white/5 backdrop-blur-sm border-2 border-white/60 rounded-xl hover:bg-white/25 hover:border-white shadow-md transition-all"
               >
                 {t('enterprisePage.hero.ctaSales')}
               </Link>
@@ -97,7 +97,7 @@ export default function Enterprise() {
       </header>
 
       {/* Stats */}
-      <section className="py-8 sm:py-12 bg-white border-b border-gray-100">
+      <section className="py-8 sm:py-12 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
             {stats.map((stat, index) => (
@@ -140,21 +140,21 @@ export default function Enterprise() {
           <h2 className="text-lg sm:text-2xl font-bold text-center text-white mb-2 sm:mb-3">
             {t('enterprisePage.trustedBySection.title')}
           </h2>
-          <p className="text-xs sm:text-sm text-white/80 text-center max-w-xl mx-auto mb-6 sm:mb-10">
+          <p className="text-xs sm:text-sm text-white text-center max-w-xl mx-auto mb-6 sm:mb-10">
             {t('enterprisePage.trustedBySection.subtitle')}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 max-w-5xl mx-auto">
             {trustedBy.map((item, index) => (
               <div
                 key={index}
-                className="flex flex-col items-center text-center gap-2 p-4 sm:p-5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 shadow-sm hover:bg-white/15 hover:border-white/30 transition-all"
+                className="flex flex-col items-center text-center gap-2 p-4 sm:p-5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/15 shadow-sm hover:bg-white/10 hover:border-white/30 transition-all"
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0 ring-1 ring-white/20">
                   <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm font-bold text-white leading-tight">{item.label}</p>
-                  <p className="text-[10px] sm:text-[11px] text-white/80 mt-0.5 leading-tight">{item.sector}</p>
+                  <p className="text-[10px] sm:text-[11px] text-white mt-0.5 leading-tight">{item.sector}</p>
                 </div>
               </div>
             ))}
@@ -171,7 +171,7 @@ export default function Enterprise() {
 
           <div className="grid md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {/* Starter */}
-            <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
+            <div className="bg-card text-card-foreground p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-border">
               <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">{t('enterprisePage.plansSection.starter.name')}</h3>
               <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{t('enterprisePage.plansSection.starter.description')}</p>
               <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">{t('enterprisePage.plansSection.starter.priceFrom')}<span className="text-xs sm:text-sm font-normal text-muted-foreground">{t('enterprisePage.plansSection.starter.priceSuffix')}</span></p>
@@ -180,19 +180,19 @@ export default function Enterprise() {
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.starter.feature2')}</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.starter.feature3')}</li>
               </ul>
-              <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
+              <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-border rounded-xl font-semibold text-foreground hover:bg-muted transition-colors text-sm">
                 {t('enterprisePage.plansSection.starter.cta')}
               </Link>
             </div>
 
             {/* Pro */}
             <div className="bg-[#227787] p-4 sm:p-8 rounded-xl sm:rounded-2xl text-white relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-secondary text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 sm:px-4 py-0.5 sm:py-1 bg-light text-light-foreground text-[10px] sm:text-xs font-bold rounded-full whitespace-nowrap">
                 {t('enterprisePage.plansSection.pro.badge')}
               </div>
               <h3 className="text-base sm:text-lg font-bold mb-1 sm:mb-2 mt-2 sm:mt-0">{t('enterprisePage.plansSection.pro.name')}</h3>
-              <p className="text-xs sm:text-sm text-white/85 mb-3 sm:mb-4">{t('enterprisePage.plansSection.pro.description')}</p>
-              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{t('enterprisePage.plansSection.pro.priceFrom')}<span className="text-xs sm:text-sm font-normal text-white/85">{t('enterprisePage.plansSection.pro.priceSuffix')}</span></p>
+              <p className="text-xs sm:text-sm text-white mb-3 sm:mb-4">{t('enterprisePage.plansSection.pro.description')}</p>
+              <p className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{t('enterprisePage.plansSection.pro.priceFrom')}<span className="text-xs sm:text-sm font-normal text-white">{t('enterprisePage.plansSection.pro.priceSuffix')}</span></p>
               <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature1')}</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-light flex-shrink-0" />{t('enterprisePage.plansSection.pro.feature2')}</li>
@@ -205,7 +205,7 @@ export default function Enterprise() {
             </div>
 
             {/* Enterprise */}
-            <div className="bg-gray-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-gray-200">
+            <div className="bg-card text-card-foreground p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-border">
               <h3 className="text-base sm:text-lg font-bold text-foreground mb-1 sm:mb-2">{t('enterprisePage.plansSection.enterprise.name')}</h3>
               <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{t('enterprisePage.plansSection.enterprise.description')}</p>
               <p className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6">{t('enterprisePage.plansSection.enterprise.price')}</p>
@@ -215,7 +215,7 @@ export default function Enterprise() {
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature3')}</li>
                 <li className="flex items-center gap-2 text-xs sm:text-sm"><CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />{t('enterprisePage.plansSection.enterprise.feature4')}</li>
               </ul>
-              <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-gray-300 rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm">
+              <Link to="/contact" className="block text-center py-2.5 sm:py-3 border border-border rounded-xl font-semibold text-foreground hover:bg-muted transition-colors text-sm">
                 {t('enterprisePage.plansSection.enterprise.cta')}
               </Link>
             </div>
@@ -227,7 +227,7 @@ export default function Enterprise() {
       <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('enterprisePage.cta.title')}</h2>
-          <p className="text-white/85 mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
+          <p className="text-white mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             {t('enterprisePage.cta.subtitle')}
           </p>
           <Link

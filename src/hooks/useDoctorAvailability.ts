@@ -148,7 +148,7 @@ export function useDoctorAvailability() {
       const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
         p_doctor_id: supabaseUser.id,
         p_notification_type: data.type === 'live' ? 'doctor_live' : 'doctor_availability',
-        p_title: `📅 Nueva disponibilidad: ${data.title}`,
+        p_title: `Nueva disponibilidad: ${data.title}`,
         p_message: `Programado para ${data.scheduledAt.toLocaleDateString()} a las ${data.scheduledAt.toLocaleTimeString()}`,
         p_data: { availability_id: newAvail?.id, type: data.type },
       });
@@ -239,7 +239,7 @@ export function useDoctorAvailability() {
     const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
       p_doctor_id: supabaseUser.id,
       p_notification_type: target.type === 'live' ? 'doctor_live' : 'doctor_availability',
-      p_title: `📅 Cambio de fecha: ${target.title}`,
+      p_title: `Cambio de fecha: ${target.title}`,
       p_message: message,
       p_data: { availability_id: id, type: target.type, action: 'moved' },
     });

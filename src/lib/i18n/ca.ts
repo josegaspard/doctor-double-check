@@ -124,7 +124,7 @@ export const ca = {
     "hospitalLoc24": "Cerca hospital, adreça o especialitat...",
     "hospitalLoc25": "Filtres i ordenar",
     "hospitalLoc26": "Veure {count} resultats",
-    "hospitalLoc27": "🏥 Hospitals privats · Mèxic",
+    "hospitalLoc27": "Hospitals privats · Mèxic",
     "hospitalLoc28": "Proximitat",
     "hospitalLoc29": "Qualificació",
     "hospitalLoc3": "Hospitals privats de Mèxic",
@@ -135,13 +135,13 @@ export const ca = {
     "hospitalLoc34": "Carregant hospitals...",
     "hospitalLoc35": "No s'han trobat hospitals",
     "hospitalLoc36": "Esborrar filtres",
-    "hospitalLoc37": "🏥 Públic",
-    "hospitalLoc38": "🏨 Privat",
-    "hospitalLoc39": "🩺 Clínica",
+    "hospitalLoc37": "Públic",
+    "hospitalLoc38": "Privat",
+    "hospitalLoc39": "Clínica",
     "hospitalLoc4": "Especialitat",
-    "hospitalLoc40": "🏥 Públic",
-    "hospitalLoc41": "🏨 Privat",
-    "hospitalLoc42": "🩺 Clínica",
+    "hospitalLoc40": "Públic",
+    "hospitalLoc41": "Privat",
+    "hospitalLoc42": "Clínica",
     "hospitalLoc43": "ressenyes",
     "hospitalLoc44": "Més",
     "hospitalLoc45": "Nivell: ",
@@ -258,7 +258,7 @@ export const ca = {
     "prescForm3": "Configura la teva signatura professional al teu perfil abans d'emetre receptes.",
     "prescForm30": "Crear recepta i enviar al pacient",
     "prescForm4": "Error en pujar el fitxer: {message}",
-    "prescForm5": "📋 Nova recepta mèdica",
+    "prescForm5": "Nova recepta mèdica",
     "prescForm6": "{name} t'ha enviat una recepta",
     "prescForm7": "El teu doctor",
     "prescForm8": "Recepta creada i enviada al pacient",
@@ -516,10 +516,10 @@ export const ca = {
     "clAdminAds7": "Informació bàsica",
     "clAdminAds8": "La meva campanya",
     "clAdminAds9": "Cancel·lar",
-    "clAdminDash1": "💰 Financer",
+    "clAdminDash1": "Financer",
     "clAdminDash10": "Reemborsaments",
     "clAdminDash11": "Sol·licituds i reemborsaments manuals",
-    "clAdminDash12": "👥 Usuaris",
+    "clAdminDash12": "Usuaris",
     "clAdminDash13": "Gestió d'usuaris",
     "clAdminDash14": "Administra tots els usuaris",
     "clAdminDash15": "Validació de metges",
@@ -531,7 +531,7 @@ export const ca = {
     "clAdminDash20": "Revisa sol·licituds de pacients",
     "clAdminDash21": "Credencials de doctors",
     "clAdminDash22": "Educació i certificacions",
-    "clAdminDash23": "📰 Contingut",
+    "clAdminDash23": "Contingut",
     "clAdminDash24": "Notícies i blog mèdic",
     "clAdminDash25": "Crea i publica articles",
     "clAdminDash26": "Esdeveniments i convocatòries",
@@ -543,12 +543,12 @@ export const ca = {
     "clAdminDash31": "Campanyes, ubicacions i mètriques",
     "clAdminDash32": "Config. del lloc",
     "clAdminDash33": "Xarxes socials, termes i privacitat",
-    "clAdminDash34": "🛡️ Suport",
+    "clAdminDash34": "Suport",
     "clAdminDash35": "Informes i reclamacions",
     "clAdminDash36": "Gestiona informes d'usuaris",
     "clAdminDash37": "Checklist QA E2E",
     "clAdminDash38": "Proves d'extrem a extrem per rol amb seguiment",
-    "clAdminDash39": "🏥 Directori i Marketplace",
+    "clAdminDash39": "Directori i Marketplace",
     "clAdminDash4": "Pagaments a doctors",
     "clAdminDash40": "Hospitals i clíniques",
     "clAdminDash41": "Administra el directori d'hospitals",
@@ -682,21 +682,21 @@ export const ca = {
     "admFee6": "Ara la plataforma cobra",
     "admFee7": "per intermediació.",
     "admFee8": "No s'ha pogut desar",
-    "admFee9": "✅ Proveïdor aprovat",
+    "admFee9": "Proveïdor aprovat",
     "admFee10": "Proveïdor rebutjat",
     "admFee11": "Proveïdor en revisió",
     "admFee12": "ja pot publicar productes.",
     "admFee13": "se li ha notificat el rebuig.",
     "admFee14": "tornat a pendent.",
     "admFee15": "Proveïdor",
-    "admFee16": "🎉 Ets un proveïdor aprovat!",
+    "admFee16": "Ets un proveïdor aprovat!",
     "admFee17": "El teu negoci",
     "admFee18": "s'ha aprovat. Ja pots publicar productes al marketplace des del teu portal de proveïdor.",
     "admFee19": "La teva sol·licitud de proveïdor ha estat rebutjada",
     "admFee20": "Motiu:",
     "admFee21": "Pots corregir les teves dades i tornar a postular des del portal de proveïdors.",
     "admFee22": "Motiu del rebuig (es mostrarà al proveïdor):",
-    "admFee23": "✅ Producte aprovat",
+    "admFee23": "Producte aprovat",
     "admFee24": "Producte rebutjat",
     "admFee25": "ja és visible al marketplace.",
     "admFee26": "— s'ha notificat al proveïdor.",
@@ -707,7 +707,7 @@ export const ca = {
     "admFee31": "Aprovat",
     "admFee32": "Rebutjat",
     "admFee33": "Pendent",
-    "admFee34": "🤝 Venda concretada",
+    "admFee34": "Venda concretada",
     "admFee35": "S'ha notificat comprador i venedor; la comissió queda per cobrar.",
     "admFee36": "Comanda cancel·lada",
     "admFee37": "S'ha notificat ambdues parts.",
@@ -765,7 +765,7 @@ export const ca = {
     "admFee89": "Cancel·lar",
     vendorDashSentReview: 'Producte enviat a revisió. L\'administrador l\'aprovarà abans de publicar-lo.',
     vendorDashNoPayLink: 'No s\'ha rebut l\'enllaç de pagament',
-    vendorDashSaleDone: '🤝 Venda tancada. Recorda pagar la comissió de la plataforma.',
+    vendorDashSaleDone: 'Venda tancada. Recorda pagar la comissió de la plataforma.',
     vendorDashOrderCancelled: 'Comanda cancel·lada.',
     vendorDashError: 'Error',
   },
@@ -1497,17 +1497,17 @@ export const ca = {
     "pendingEarnings": "Guanys pendents",
     "totalEarned": "Total guanyat",
     "bankAccount": "Compte bancari",
-    "configured": "Configurada ✓",
+    "configured": "Configurada",
     "setUp": "Configurar",
     "pendingEarningsBanner": "Tens {amount} en guanys pendents",
     "pendingEarningsBannerDesc": "Puja una factura per aquest import per processar el teu pagament. Els pagaments es processen automàticament un cop aprovada la factura.",
     "howToInvoice": "Com facturar els meus guanys?",
     "twoOptions": "Tens dues opcions flexibles per facturar:",
-    "singleInvoice": "📄 Factura global",
+    "singleInvoice": "Factura global",
     "singleInvoiceDesc": "Puja una sola factura pel total dels teus guanys pendents.",
-    "perTypeInvoices": "📑 Factures per tipus",
+    "perTypeInvoices": "Factures per tipus",
     "perTypeInvoicesDesc": "Puja factures separades per tipus de servei.",
-    "accountantTip": "💡 Consell: Consulta amb el teu comptable quina opció s'adapta millor al teu règim fiscal.",
+    "accountantTip": "Consell: Consulta amb el teu comptable quina opció s'adapta millor al teu règim fiscal.",
     "invoices": "Factures",
     "paymentHistory": "Historial de pagaments",
     "noInvoices": "No hi ha factures",
@@ -1837,7 +1837,7 @@ export const ca = {
     "onlyDoctorsClose": "Només els metges poden tancar orientacions",
     "noPermissionClose": "No tens permisos per tancar aquesta orientació",
     "sessionCloseError": "Error en tancar l'orientació",
-    "rateOrientation": "⭐ Valora la teva orientació",
+    "rateOrientation": "Valora la teva orientació",
     "rateOrientationMsg": "ha finalitzat la teva orientació. Valora la teva experiència!",
     "liveNotFound": "Directe no trobat",
     "streamUidMissing": "No s'ha trobat l'UID de l'stream per a aquest directe",
@@ -2336,9 +2336,9 @@ export const ca = {
     "subtitle": "El teu informe serà revisat pel nostre equip",
     "typeLabel": "Tipus d'informe *",
     "typePlaceholder": "Selecciona el tipus",
-    "bugOption": "🐛 Fallada tècnica / Bug",
-    "abuseOption": "⚠️ Abús / Conducta inadequada",
-    "otherOption": "📝 Altre",
+    "bugOption": "Fallada tècnica / Bug",
+    "abuseOption": "Abús / Conducta inadequada",
+    "otherOption": "Altre",
     "subjectLabel": "Assumpte *",
     "subjectPlaceholder": "Descriu breument el problema",
     "descriptionLabel": "Descripció detallada *",
@@ -2854,7 +2854,7 @@ export const ca = {
     "failedTitle": "No hem pogut processar la gravació",
     "failedDescription": "S'ha produït un error en desar la reproducció. Torna-ho a provar més tard.",
     "backToLives": "Tornar als directes",
-    "replayAvailableToast": "🎬 Reproducció disponible",
+    "replayAvailableToast": "Reproducció disponible",
     "replayAvailableDescription": "Et portem a la gravació en 3 segons…"
   },
   "walletLedger": {
@@ -3033,7 +3033,7 @@ export const ca = {
     "notesPlaceholder": "Diagnòstic inicial, observacions...",
     "cancel": "Cancel·lar",
     "savePatient": "Desar pacient",
-    "notificationTitle": "🩺 Un metge sol·licita accés al teu expedient",
+    "notificationTitle": "Un metge sol·licita accés al teu expedient",
     "notificationMessage": "Per iniciar el teu seguiment, autoritza l'accés des del teu Vault.",
     "invitationSentTo": "Invitació enviada a",
     "patientFallback": "pacient",
@@ -3056,7 +3056,7 @@ export const ca = {
     },
     "pdf": {
       "title": "Informe d'Analítiques - Medical Masters",
-      "heading": "📊 Informe d'Analítiques",
+      "heading": "Informe d'Analítiques",
       "subtitle": "Medical Masters · Període: {period} · Generat: {date}",
       "keyIndicators": "Indicadors Clau",
       "grossRevenue": "Ingressos Bruts",
@@ -3253,8 +3253,8 @@ export const ca = {
       "noInvoices": "No hi ha factures en aquesta categoria"
     },
     "dialog": {
-      "approveTitle": "✅ Aprovar Factura",
-      "rejectTitle": "❌ Rebutjar Factura",
+      "approveTitle": "Aprovar Factura",
+      "rejectTitle": "Rebutjar Factura",
       "invoiceLabel": "Factura",
       "doctorLabel": "Doctor",
       "amountLabel": "Import",
@@ -3279,8 +3279,8 @@ export const ca = {
       "deleteSuffix": "factura(es)?"
     },
     "notifications": {
-      "approvedTitle": "✅ Factura aprovada",
-      "rejectedTitle": "❌ Factura rebutjada",
+      "approvedTitle": "Factura aprovada",
+      "rejectedTitle": "Factura rebutjada",
       "approvedMessagePrefix": "La teva factura",
       "approvedMessageSuffix": "ha estat aprovada",
       "rejectedMessagePrefix": "La teva factura",
@@ -3300,7 +3300,7 @@ export const ca = {
     },
     "pdf": {
       "title": "Informe de Factures - Comptabilitat",
-      "heading": "📋 Informe de Factures - Comptabilitat",
+      "heading": "Informe de Factures - Comptabilitat",
       "periodLabel": "Període",
       "generatedLabel": "Generat",
       "totalInvoices": "Total factures",
@@ -3335,7 +3335,7 @@ export const ca = {
       "permissionToggleError": "Error en canviar el permís"
     },
     "notification": {
-      "title": "📰 Permís de publicació concedit",
+      "title": "Permís de publicació concedit",
       "message": "Se t'ha concedit permís per crear i publicar articles al blog mèdic. Ves a la secció de notícies per començar!"
     },
     "back": "Tornar",
@@ -3587,10 +3587,10 @@ export const ca = {
       rejectReasonRequired: 'Indica el motiu del rebuig',
     },
     "notification": {
-      "rejectedTitle": "❌ Sol·licitud de reemborsament rebutjada",
+      "rejectedTitle": "Sol·licitud de reemborsament rebutjada",
       "rejectedMessage": "La teva sol·licitud de reemborsament ha estat rebutjada.",
       "reasonPrefix": "Motiu",
-      "transferDoneTitle": "🏦 Transferència realitzada",
+      "transferDoneTitle": "Transferència realitzada",
       "transferDoneMessagePrefix": "El teu reemborsament de",
       "transferDoneMessageSuffix": "MXN s'ha transferit al teu compte bancari. Ref:"
     },
@@ -3609,12 +3609,12 @@ export const ca = {
     },
     "pdf": {
       "title": "Informe de reemborsaments",
-      "header": "📊 Informe de reemborsaments",
+      "header": "Informe de reemborsaments",
       "generated": "Generat",
       "totalRefunds": "Total reemborsaments",
       "detailTitle": "Detall de reemborsaments",
       "reference": "Referència",
-      "pendingBankTitle": "⚠️ Reemborsaments bancaris pendents",
+      "pendingBankTitle": "Reemborsaments bancaris pendents",
       "estimatedDate": "Data estimada"
     }
   },
@@ -3638,9 +3638,9 @@ export const ca = {
       "platformReport": "Informe de plataforma"
     },
     "reason": {
-      "bug": "🐛 Errada tècnica",
-      "abuse": "⚠️ Abús / Conducta inadequada",
-      "other": "📝 Altre"
+      "bug": "Errada tècnica",
+      "abuse": "Abús / Conducta inadequada",
+      "other": "Altre"
     },
     "filter": {
       "placeholder": "Filtrar estat",
@@ -3664,7 +3664,7 @@ export const ca = {
       "updateError": "Error en actualitzar l'informe"
     },
     "notification": {
-      "responseTitle": "📋 Resposta al teu informe"
+      "responseTitle": "Resposta al teu informe"
     },
     "dialog": {
       "title": "Revisar informe",
@@ -3835,7 +3835,7 @@ export const ca = {
   },
   "doctorCredentialsComponent": {
     "cardTitle": "Perfil acadèmic i professional",
-    "ownerHint": "💡 Afegeix la teva formació, certificacions i experiència perquè els pacients coneguin la teva trajectòria professional. Cada entrada serà revisada i aprovada per un administrador abans de ser visible públicament.",
+    "ownerHint": "Afegeix la teva formació, certificacions i experiència perquè els pacients coneguin la teva trajectòria professional. Cada entrada serà revisada i aprovada per un administrador abans de ser visible públicament.",
     "statusApproved": "Aprovat",
     "statusRejected": "Rebutjat",
     "statusPending": "Pendent",
@@ -3908,7 +3908,7 @@ export const ca = {
     "documentHint": "PDF, JPG o PNG. Ho revisarà l'equip de Medical Masters.",
     "documentLabel": "Document (cèdula, board, diploma…)",
     "hideDocument": "Amaga el document",
-    "privacyNote": "🔒 Puja aquí el teu títol, cèdula, col·legiat o board. Aquests documents són privats: només tu i l'equip de Medical Masters els podeu veure.",
+    "privacyNote": "Puja aquí el teu títol, cèdula, col·legiat o board. Aquests documents són privats: només tu i l'equip de Medical Masters els podeu veure.",
     "viewDocument": "Veure el document"
   },
   "doctorCredentialsCard": {
@@ -4877,7 +4877,7 @@ export const ca = {
     "confirmCancelDescriptionSuffix": "i no rebràs més notificacions dels seus lives, contingut ni disponibilitat.",
     "paidActiveUntil": "La teva subscripció de pagament es mantindrà activa fins al",
     "afterDateNoChargesPrefix": "Després d'aquesta data no es faran més cobraments i perdràs els beneficis del teu pla",
-    "paidCancelEndOfPeriod": "⚠️ La teva subscripció de pagament es cancel·larà al final del període de facturació actual. No es faran més cobraments.",
+    "paidCancelEndOfPeriod": "La teva subscripció de pagament es cancel·larà al final del període de facturació actual. No es faran més cobraments.",
     "keepSubscription": "Mantenir subscripció",
     "cancelSubscription": "Cancel·lar subscripció"
   },
@@ -4964,7 +4964,7 @@ export const ca = {
   "onboardingPage": {
     "headerAccountSetup": "Configuració del compte",
     "footerCopyright": "© 2026 Medical Masters. Tots els drets reservats.",
-    "welcomeWalletTipTitle": "💰 Consell: Recarrega el teu wallet",
+    "welcomeWalletTipTitle": "Consell: Recarrega el teu wallet",
     "welcomeWalletTipBody": "Per accedir a contingut premium, subscripcions i consultes mèdiques necessitaràs saldo al teu wallet. Vés a Wallet per afegir-hi fons amb targeta de crèdit o dèbit.",
     "welcomeWalletTipBodyPrefix": "Per accedir a contingut premium, subscripcions i consultes mèdiques necessitaràs saldo al teu wallet. Vés a ",
     "welcomeWalletTipWalletWord": "Wallet",
@@ -4985,7 +4985,7 @@ export const ca = {
     "phoneCodeSentSms": "Codi enviat per SMS",
     "phoneCodeSentNotif": "Codi enviat a notificacions",
     "phoneSendError": "Error en enviar el codi",
-    "phoneVerifySuccess": "✅ Telèfon verificat correctament",
+    "phoneVerifySuccess": "Telèfon verificat correctament",
     "phoneVerifyInvalid": "Codi no vàlid o caducat",
     "phoneVerifyError": "Error en verificar",
     "phoneOtpPrompt": "Introdueix el codi de 6 dígits:",
@@ -5072,7 +5072,7 @@ export const ca = {
     "errorLoadFile": "No s'ha pogut carregar el fitxer",
     "retry": "Torna-ho a provar",
     "previewNotAvailable": "Vista prèvia no disponible per a aquest tipus de fitxer",
-    "readOnlyOtp": "🔒 Només lectura — accés temporal per OTP",
+    "readOnlyOtp": "Només lectura — accés temporal per OTP",
     "close": "Tancar"
   },
   "vaultUploadSimulator": {
@@ -5160,8 +5160,8 @@ export const ca = {
     "toasts": {
       "noCedulaTitle": "Sense cèdula",
       "noCedulaDescription": "Aquest metge no té cap número de cèdula registrat",
-      "cedulaVerifiedTitle": "✅ Cèdula verificada",
-      "cedulaNotVerifiedTitle": "⚠️ No verificada",
+      "cedulaVerifiedTitle": "Cèdula verificada",
+      "cedulaNotVerifiedTitle": "No verificada",
       "cedulaNotVerifiedFallback": "No s'han trobat resultats a la SEP",
       "cedulaErrorTitle": "Error",
       "cedulaErrorDescription": "No s'ha pogut verificar la cèdula. Intenta-ho manualment.",
@@ -5171,8 +5171,8 @@ export const ca = {
       "permissionRevokedDescription": "ja no pot publicar notícies",
       "errorTogglePermission": "Error en canviar el permís",
       "badgeUpdatedTitle": "Distintiu actualitzat",
-      "badgeProLabel": "Doctor Pro ⭐",
-      "badgeNewLabel": "Doctor Nou 🔵",
+      "badgeProLabel": "Doctor Pro",
+      "badgeNewLabel": "Doctor Nou",
       "badgeAutoLabel": "Automàtic",
       "errorUpdateBadge": "Error en canviar el distintiu"
     },
@@ -5191,8 +5191,8 @@ export const ca = {
     "rank": {
       "label": "Rang",
       "auto": "Automàtic",
-      "pro": "⭐ Doctor Pro",
-      "new": "🔵 Nou"
+      "pro": "Doctor Pro",
+      "new": "Nou"
     },
     "news": {
       "canPublishLabel": "Pot publicar notícies"
@@ -5679,7 +5679,7 @@ export const ca = {
     "toggles": {
       "title": "Commutadors de funcions",
       "description": "Activa o desactiva seccions de la plataforma sense modificar el codi",
-      "backgroundTitle": "🎨 Fons de l'aplicació",
+      "backgroundTitle": "Fons de l'aplicació",
       "backgroundDescription": "Alterna entre el fons amb imatge (blau Medical Masters) i el fons blanc clàssic amb cercles decoratius.",
       "backgroundWhite": "Blanc (clàssic)",
       "backgroundImage": "Imatge (blau)",
@@ -6454,10 +6454,10 @@ export const ca = {
       "cofepris": "Permís COFEPRIS"
     },
     "notification": {
-      "approvedTitle": "✅ Credencial aprovada",
-      "rejectedTitle": "❌ Credencial rebutjada",
-      "approvedMessage": "La teva {{credLabel}} ha estat aprovada per l'equip de Medical Masters.\n\n📝 Notes de verificació:\n{{reason}}",
-      "rejectedMessage": "La teva {{credLabel}} no ha estat aprovada.\n\n❌ Motiu:\n{{reason}}\n\nPots corregir-la i tornar a enviar la documentació des del teu perfil."
+      "approvedTitle": "Credencial aprovada",
+      "rejectedTitle": "Credencial rebutjada",
+      "approvedMessage": "La teva {{credLabel}} ha estat aprovada per l'equip de Medical Masters.\n\nNotes de verificació:\n{{reason}}",
+      "rejectedMessage": "La teva {{credLabel}} no ha estat aprovada.\n\nMotiu:\n{{reason}}\n\nPots corregir-la i tornar a enviar la documentació des del teu perfil."
     },
     "header": {
       "title": "Credencials Mèdiques",
@@ -6501,7 +6501,7 @@ export const ca = {
         "approveBadge": "APROVAR",
         "rejectBadge": "REBUTJAR"
       },
-      "confirmWarning": "⚠️ Aquesta acció notificarà el doctor immediatament i queda registrada a l'auditoria. Confirmes?",
+      "confirmWarning": "Aquesta acció notificarà el doctor immediatament i queda registrada a l'auditoria. Confirmes?",
       "cancel": "Cancel·lar",
       "backToEdit": "Tornar a editar",
       "confirmSend": "Sí, confirmar i enviar"
@@ -6832,12 +6832,12 @@ export const ca = {
     "liveTranslatorDescription": "Subtítols automàtics traduïts a l'idioma de l'assistent.",
     "liveTranslatorToggleAria": "Traductor en directe",
     "targetLangLabel": "Idioma de destinació preferit",
-    "langSpanish": "🇲🇽 Español",
-    "langEnglish": "🇺🇸 Anglès",
-    "langPortuguese": "🇵🇹 Portuguès",
-    "langFrench": "🇫🇷 Francès",
-    "langItalian": "🇮🇹 Italià",
-    "langGerman": "🇩🇪 Alemany",
+    "langSpanish": "Español",
+    "langEnglish": "Anglès",
+    "langPortuguese": "Portuguès",
+    "langFrench": "Francès",
+    "langItalian": "Italià",
+    "langGerman": "Alemany",
     "inviteParticipantsLabel": "Convidar participants",
     "inviteOptionalPublic": "(opcional quan és pública)",
     "searchPlaceholderDoctor": "Cercar doctor, resident o pacient pel nom...",
@@ -7025,7 +7025,7 @@ export const ca = {
   "recordingChatReplay": {
     "loading": "S'està carregant el xat...",
     "chatTitle": "Xat de la transmissió",
-    "featuredBadge": "⭐ Destacat"
+    "featuredBadge": "Destacat"
   },
   "recordingPaywall": {
     "title": "Accés premium",
@@ -7129,7 +7129,7 @@ export const ca = {
       "dateMustBeFuture": "La data ha de ser futura"
     },
     "notification": {
-      "title": "📅 Nou Live programat"
+      "title": "Nou Live programat"
     },
     "toast": {
       "success": "Live programat correctament",
@@ -7174,7 +7174,7 @@ export const ca = {
     "proSubscriptionCta": "Subscripció Pro",
     "cancelSubscriptionTitle": "Voleu cancel·lar la subscripció?",
     "cancelPaidIntro": "En cancel·lar la teva subscripció de pagament amb",
-    "cancelPaidWarning": "⚠️ La teva subscripció es mantindrà activa fins al final del període pagat.",
+    "cancelPaidWarning": "La teva subscripció es mantindrà activa fins al final del període pagat.",
     "cancelPaidNoMoreCharges": "No es faran més cobraments després d'aquesta data.",
     "cancelFreeMessagePrefix": "Deixaràs de seguir",
     "cancelFreeMessageSuffix": "i no rebràs més notificacions.",
@@ -7565,7 +7565,7 @@ export const ca = {
       "description": "Segona Opinió amb {doctorName}"
     },
     "notification": {
-      "title": "🔄 Nova sol·licitud de Segona Opinió",
+      "title": "Nova sol·licitud de Segona Opinió",
       "messageWithName": "{patientName} ha sol·licitat una segona opinió",
       "messageDefault": "Un pacient ha sol·licitat una segona opinió"
     },
@@ -10019,7 +10019,7 @@ export const ca = {
       resident: 'Tutorial ràpid per treure el màxim profit de Medical Masters com a resident.',
       default: 'Tutorial ràpid per aprendre a fer servir Medical Masters.',
     },
-    comingSoonTitle: 'Vídeo en camí 🎬',
+    comingSoonTitle: 'Vídeo en camí',
     comingSoonDesc: 'Molt aviat trobaràs aquí el vídeo tutorial. L\'estem preparant per a tu!',
   },
   adminVideos: {
@@ -10616,24 +10616,24 @@ export const ca = {
     feeNoteB: '. El comprador no paga res aquí.',
     reviewNote: 'El producte passa per la revisió de l\'administrador abans d\'aparèixer publicat.',
     publish: 'Publicar',
-    toastOrderSentTitle: '📋 Comanda enviada',
+    toastOrderSentTitle: 'Comanda enviada',
     toastOrderSentDesc: 'Ja s\'ha avisat el proveïdor. T\'obrim el xat per acordar els detalls.',
     toastOrderFailTitle: 'No s\'ha pogut enviar la comanda',
     err: 'Error',
-    toastSaleTitle: '🤝 Venda tancada',
+    toastSaleTitle: 'Venda tancada',
     toastSaleDesc: 'S\'ha avisat el comprador i l\'administrador. Recorda pagar la comissió de la plataforma.',
     toastCancelTitle: 'Comanda cancel·lada',
     toastCancelDesc: 'S\'ha avisat l\'altra part.',
     toastCompleteFailTitle: 'No s\'ha pogut completar',
     toastFeeFailTitle: 'No s\'ha pogut iniciar el pagament de la comissió',
     errNoPaymentLink: 'No s\'ha rebut l\'enllaç de pagament',
-    toastFeePaidTitle: '✅ Comissió pagada',
+    toastFeePaidTitle: 'Comissió pagada',
     toastFeePaidDesc: 'Gràcies. El pagament pot trigar uns segons a reflectir-se.',
     toastFeeCanceledTitle: 'Pagament de la comissió cancel·lat',
     toastFeeCanceledDesc: 'Pots tornar-ho a provar des de les teves comandes.',
     toastInvalidTitle: 'Dades no vàlides',
     toastInvalidDesc: 'El nom i un preu vàlid són obligatoris.',
-    toastPubSentTitle: '📦 Producte enviat a revisió',
+    toastPubSentTitle: 'Producte enviat a revisió',
     toastPubSentDesc: 'L\'administrador l\'aprovarà abans que aparegui al marketplace.',
     toastPubFailTitle: 'No s\'ha pogut publicar',
     toastMustAcceptTerms: 'Has d\'acceptar els termes i la comissió de la plataforma.',
@@ -10704,7 +10704,7 @@ export const ca = {
     credsLoadError: 'Error en carregar les credencials',
     defaultName: 'Metge',
     specialty: 'Especialitat',
-    approved: '✓ Aprovat',
+    approved: 'Aprovat',
     pending: 'Pendent',
     followers: 'seguidors',
     credentialsError: 'Error de credencials',

@@ -121,7 +121,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     await admin.from("notifications").insert({
       user_id: appt.patient_id,
       type: "appointment_confirmed" as any,
-      title: "✅ Cita confirmada",
+      title: "Cita confirmada",
       message: `El Dr. ${doctorName} confirmó tu cita para ${when}`,
       data: { appointmentId: appt.id, doctorId: appt.doctor_id, scheduledAt: appt.scheduled_at },
     });

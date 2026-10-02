@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Award, GraduationCap, Building2, FileCheck, Plus, X, Loader2, Pencil, Check, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { CofeprisStatusPanel } from '@/components/doctor/CofeprisCredential';
 
 interface Workplace { name: string; type?: string }
 
@@ -23,6 +24,8 @@ interface CredentialData {
   cedula_especialidad_status: string | null;
   cedula_especialidad_rejection_reason: string | null;
   cofepris_permit: string | null;
+  cedula_status: 'pending' | 'approved' | 'rejected' | null;
+  cedula_rejection_reason: string | null;
   license: string | null;
   specialty: string;
 }
@@ -40,7 +43,6 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
   const [practiceHospital, setPracticeHospital] = useState('');
   const [country, setCountry] = useState('');
   const [cedulaEsp, setCedulaEsp] = useState('');
-  const [cofepris, setCofepris] = useState('');
   const [secondarySpecialties, setSecondarySpecialties] = useState<string[]>([]);
   const [newSpecialty, setNewSpecialty] = useState('');
   const [workplaces, setWorkplaces] = useState<Workplace[]>([]);
@@ -51,7 +53,7 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
       setLoading(true);
       const { data: row } = await supabase
         .from('doctor_profiles')
-        .select('university, practice_hospital, country, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, cofepris_permit, license, specialty')
+        .select('university, practice_hospital, country, secondary_specialties, workplaces, cedula_especialidad, cedula_especialidad_status, cedula_especialidad_rejection_reason, cofepris_permit, cedula_status, cedula_rejection_reason, license, specialty')
         .eq('user_id', userId)
         .maybeSingle();
       if (row) {
@@ -61,7 +63,6 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
         setPracticeHospital(d.practice_hospital || '');
         setCountry(d.country || '');
         setCedulaEsp(d.cedula_especialidad || '');
-        setCofepris(d.cofepris_permit || '');
         setSecondarySpecialties(d.secondary_specialties || []);
         setWorkplaces(Array.isArray(d.workplaces) ? d.workplaces : []);
       }
@@ -83,7 +84,6 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
         country: country.trim().slice(0, 100) || null,
         secondary_specialties: cleanSpecs,
         workplaces: cleanWorkplaces,
-        cofepris_permit: cofepris.trim().slice(0, 50) || null,
       };
       // Only update cedula if changed (resets status to pending)
       if (trimmedCedula !== (data?.cedula_especialidad || '')) {
@@ -233,13 +233,23 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
           </div>
           <Separator />
 
-          {/* Cedula profesional (read-only - validated by SEP) */}
+          {/* Cédula profesional (solo lectura). El distintivo refleja la revisión REAL
+              (cedula_status); antes salía «verificada» con solo escribir el número. */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.licenseLabel')}</Label>
-            <div className="ml-6 flex items-center gap-2">
-              <span className="text-sm font-mono">{data.license || <span className="text-muted-foreground italic font-sans">{t('doctorCredentialsCard.licenseEmpty')}</span>}</span>
-              {data.license && <Badge variant="verified" className="text-[10px]">{t('doctorCredentialsCard.sepBadge')}</Badge>}
+            <div className="ml-6 flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium tabular-nums">{data.license || <span className="text-muted-foreground font-normal">{t('doctorCredentialsCard.licenseEmpty')}</span>}</span>
+              {data.license && data.cedula_status === 'approved' && <Badge variant="verified" className="text-[10px]">{t('doctorCredentialsCard.statusVerified')}</Badge>}
+              {data.license && data.cedula_status === 'pending' && <Badge variant="warning" className="text-[10px]">{t('doctorCredentialsCard.statusPending')}</Badge>}
+              {data.license && data.cedula_status === 'rejected' && <Badge variant="destructive" className="text-[10px]">{t('doctorCredentialsCard.statusRejected')}</Badge>}
             </div>
+            {data.cedula_status === 'rejected' && (
+              <p className="ml-6 text-xs text-destructive">
+                {data.cedula_rejection_reason?.trim()
+                  ? `${t('doctorCredentialsCard.rejectionReason')}: ${data.cedula_rejection_reason}`
+                  : t('cofepris.rejectedDefault')}
+              </p>
+            )}
           </div>
           <Separator />
 
@@ -266,20 +276,11 @@ export function DoctorCredentialsCard({ userId }: { userId: string }) {
 
           <Separator />
 
-          {/* Permiso COFEPRIS — antes NO tenía UI para capturarse (solo lectura),
-              por lo que nunca aparecía en el membrete de la receta. */}
+          {/* Permiso COFEPRIS (cliente 2026-10-01): tipo + folio + documento, con estado
+              de revisión. Se envía por RPC (submit_cofepris); ya no se edita a mano. */}
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('doctorCredentialsCard.cofeprisLabel')}</Label>
-            {editing ? (
-              <div className="ml-6 space-y-1">
-                <Input value={cofepris} onChange={e => setCofepris(e.target.value)} placeholder={t('doctorCredentialsCard.cofeprisPlaceholder')} maxLength={50} />
-                <p className="text-xs text-muted-foreground">{t('doctorCredentialsCard.cofeprisHint')}</p>
-              </div>
-            ) : (
-              <div className="ml-6">
-                <span className="text-sm font-mono">{data.cofepris_permit || <span className="text-muted-foreground italic font-sans">{t('doctorCredentialsCard.cofeprisEmpty')}</span>}</span>
-              </div>
-            )}
+            <Label className="flex items-center gap-2 text-sm"><FileCheck className="w-4 h-4 text-muted-foreground" /> {t('cofepris.sectionTitle')}</Label>
+            <CofeprisStatusPanel userId={userId} />
           </div>
         </CardContent>
       </Card>

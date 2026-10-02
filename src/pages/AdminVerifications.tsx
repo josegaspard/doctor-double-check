@@ -36,6 +36,9 @@ import {
   ArrowLeft,
   RefreshCw,
   ShieldCheck,
+  Lock,
+  FileText,
+  Medal,
 } from 'lucide-react';
 import { MedicalCredentialsReview } from '@/components/admin/MedicalCredentialsReview';
 
@@ -382,7 +385,7 @@ export default function AdminVerifications() {
                                 {new Date(verification.created_at).toLocaleDateString()}
                               </span>
                               <Badge variant="outline" className="text-[9px] h-4 px-1">
-                                {verification.provider === 'veriff' ? '🔐 Veriff' : '📄 Manual'}
+                                {verification.provider === 'veriff' ? <><Lock className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />Veriff</> : <><FileText className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />Manual</>}
                               </Badge>
                             </div>
                           </div>
@@ -598,8 +601,8 @@ export default function AdminVerifications() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t('adminDoctorsPage.manualBadge.none')}</SelectItem>
-                    <SelectItem value="gold">🥇 {t('adminDoctorsPage.manualBadge.gold')}</SelectItem>
-                    <SelectItem value="verified">✔️ {t('adminDoctorsPage.manualBadge.verified')}</SelectItem>
+                    <SelectItem value="gold"><span className="inline-flex items-center gap-2"><Medal className="w-4 h-4 text-premium" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.gold')}</span></SelectItem>
+                    <SelectItem value="verified"><span className="inline-flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" aria-hidden="true" />{t('adminDoctorsPage.manualBadge.verified')}</span></SelectItem>
                   </SelectContent>
                 </Select>
               </div>

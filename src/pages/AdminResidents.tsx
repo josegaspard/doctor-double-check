@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { CategoryMarkIcon } from '@/components/profile/ProfileCategoryMark';
+import type { CategoryMark } from '@/hooks/useProfileCategory';
 
 interface ResidentRequest {
   id: string;
@@ -314,7 +316,7 @@ export default function AdminResidents() {
                                   <SelectItem value="none">Sin categoría</SelectItem>
                                   {profileCats.map(c => (
                                     <SelectItem key={c.key} value={c.key}>
-                                      {c.mark === 'star' ? '⭐' : c.mark === 'purple_dot' ? '🟣' : '🟢'} {c.display_name}
+                                      <span className="inline-flex items-center gap-2"><CategoryMarkIcon mark={c.mark as CategoryMark} size="sm" />{c.display_name}</span>
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

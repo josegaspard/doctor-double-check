@@ -2094,7 +2094,7 @@ export default function DoctorRecordings({ embedded = false, initialTab: initial
                   <p className="text-sm font-medium">
                     {isDraggingThumbnail ? t('recordings.dragActive') : t('recordings.dragOrClick')}
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">{t('recordings.maxSize')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('recordings.maxSize')}</p>
                 </div>
               </div>
             )}

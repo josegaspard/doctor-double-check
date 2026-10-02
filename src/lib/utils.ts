@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { stripEmoji } from "./stripEmoji";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,8 +24,9 @@ export function sanitizeCredential(value?: string | null): string | null {
 
 /**
  * Genera un preview limpio del último mensaje de un chat para listas/notificaciones.
- * Reemplaza marcadores feos como `[Imagen: archivo.jpg]` por iconos amigables tipo
- * "📷 Foto" o "📎 Archivo" como hacen WhatsApp/Instagram.
+ * Reemplaza marcadores feos como `[Imagen: archivo.jpg]` por etiquetas limpias tipo
+ * "Foto" o "Archivo" (sin emojis: cliente 2026-10-01). Los mensajes antiguos llevan
+ * un emoji delante del marcador; por eso el prefijo pictográfico es opcional.
  */
 export function formatMessagePreview(content: string | null | undefined, maxLength: number = 100): string {
   if (!content) return "";
@@ -32,35 +34,36 @@ export function formatMessagePreview(content: string | null | undefined, maxLeng
   if (!raw) return "";
 
   // 1) Imagen: variantes con o sin emoji y con o sin texto
-  //    Ejemplos: "📷 [Imagen: 1 post sev marzo.jpg]", "[Imagen: scan.png]", "[Image: x.jpg]"
-  if (/^(?:📷\s*)?\[(?:Imagen|Image|Photo|Foto):/i.test(raw)) {
-    return "📷 Foto";
+  //    Ejemplos: "[Imagen: 1 post sev marzo.jpg]" (con o sin emoji delante), "[Image: x.jpg]"
+  if (/^(?:\p{Extended_Pictographic}\uFE0F?\s*)?\[(?:Imagen|Image|Photo|Foto):/iu.test(raw)) {
+    return "Foto";
   }
 
   // 2) Receta médica: enlaces a /prescriptions o marcadores
-  if (/^(?:📋\s*)?\[(?:Receta|Prescription)/i.test(raw) || /\/prescriptions\//i.test(raw)) {
-    return "📋 Receta médica";
+  if (/^(?:\p{Extended_Pictographic}\uFE0F?\s*)?\[(?:Receta|Prescription)/iu.test(raw) || /\/prescriptions\//i.test(raw)) {
+    return "Receta médica";
   }
 
   // 3) Audio
-  if (/^(?:🎤\s*)?\[(?:Audio|Voice|Voz)/i.test(raw)) {
-    return "🎤 Mensaje de voz";
+  if (/^(?:\p{Extended_Pictographic}\uFE0F?\s*)?\[(?:Audio|Voice|Voz)/iu.test(raw)) {
+    return "Mensaje de voz";
   }
 
   // 4) Video
-  if (/^(?:🎥\s*)?\[(?:Video|Vídeo)/i.test(raw)) {
-    return "🎥 Video";
+  if (/^(?:\p{Extended_Pictographic}\uFE0F?\s*)?\[(?:Video|Vídeo)/iu.test(raw)) {
+    return "Video";
   }
 
   // 5) Archivo genérico
-  const fileMatch = raw.match(/^(?:📎\s*)?\[(?:Archivo|File|Document|Documento):\s*([^\]]+)\]/i);
+  const fileMatch = raw.match(/^(?:\p{Extended_Pictographic}\uFE0F?\s*)?\[(?:Archivo|File|Document|Documento):\s*([^\]]+)\]/iu);
   if (fileMatch) {
     const name = fileMatch[1].trim();
-    if (name && name.length <= 28) return `📎 ${name}`;
-    return "📎 Archivo";
+    if (name && name.length <= 28) return name;
+    return "Archivo";
   }
 
-  // 6) Texto normal: truncar
-  if (raw.length > maxLength) return raw.substring(0, maxLength) + "...";
-  return raw;
+  // 6) Texto normal: sin emojis (cliente 2026-10-01) y truncado
+  const text = stripEmoji(raw);
+  if (text.length > maxLength) return text.substring(0, maxLength) + "...";
+  return text;
 }

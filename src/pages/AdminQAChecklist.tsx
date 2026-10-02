@@ -25,7 +25,7 @@ const SCENARIOS: Record<Role, TestStep[]> = {
   ],
   patient: [
     { id: 'p1', title: 'Recargar wallet $100 MXN', expected: 'Stripe checkout → toast +$100 → balance actualizado', guard: 'wallet' },
-    { id: 'p2', title: 'Comprar grabación con saldo', expected: 'Toast "✅ Confirmado" + redirect al player', guard: 'Saldo suficiente' },
+    { id: 'p2', title: 'Comprar grabación con saldo', expected: 'Toast "Confirmado" + redirect al player', guard: 'Saldo suficiente' },
     { id: 'p3', title: 'Comprar sin saldo', expected: 'PaywallModal sugiere recargar wallet', guard: 'Saldo insuficiente' },
     { id: 'p4', title: 'Iniciar orientación con doctor', expected: 'Chat session creada, entitlement chat 30 días', guard: 'Pago confirmado' },
     { id: 'p5', title: 'Descargar resumen clínico', expected: 'Ventana print con marca de agua + watermark', guard: 'Expediente guardado' },

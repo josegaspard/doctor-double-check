@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { ArrowLeft, Calendar as CalendarIcon, Clock, Stethoscope, Loader2, CheckCircle2, Tag, Monitor, MapPin, Info } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Clock, Stethoscope, Loader2, CheckCircle2, Tag, Monitor, MapPin, Info, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { isConsultationCountryAllowed } from '@/lib/consultationRegions';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -536,7 +536,7 @@ export default function BookAppointment() {
                 {/* div y no CardDescription (<p>): las Badge son <div> y dentro de un <p> React avisaba de HTML inválido. */}
                 <div className="text-sm text-muted-foreground flex items-center gap-3 flex-wrap mt-1">
                   <span className="inline-flex items-center gap-1"><Stethoscope className="w-3.5 h-3.5" />{doctor.specialty}</span>
-                  {doctor.rating > 0 && <Badge variant="secondary" className="text-[10px]">★ {doctor.rating.toFixed(1)} · {doctor.total_consultations} {t('bookAppointment.header.consultationsSuffix')}</Badge>}
+                  {doctor.rating > 0 && <Badge variant="secondary" className="text-[10px]"><Star className="inline w-3 h-3 mr-0.5 fill-current align-[-2px]" aria-hidden="true" />{doctor.rating.toFixed(1)} · {doctor.total_consultations} {t('bookAppointment.header.consultationsSuffix')}</Badge>}
                   {fromPrice !== null ? (
                     <Badge variant="outline" className="text-[10px] gap-1">
                       {t('mm2.servicios.booking.from')} {priceNode(fromPrice)}

@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   FileText, 
   Upload, 
@@ -34,8 +33,6 @@ import {
   CreditCard,
   ArrowRight,
   ArrowLeft,
-  Info,
-  ChevronDown,
 } from 'lucide-react';
 import { InvoicePreviewModal } from '@/components/invoices/InvoicePreviewModal';
 import { toast } from 'sonner';
@@ -43,6 +40,7 @@ import { useAppDateFormat } from '@/lib/dateFormat';
 import { money2 } from '@/lib/proFormat';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { doctorHref } from '@/lib/doctorSections';
+import { DoctorSalesInvoices } from '@/components/billing/DoctorSalesInvoices';
 
 interface Invoice {
   id: string;
@@ -320,10 +318,13 @@ export default function DoctorInvoices({ embedded = false }: DoctorInvoicesProps
               {t('doctorInvoices.pageSubtitle')}
             </p>
           </div>
+          {/* Factura a la plataforma (modelo anterior): solo para quien ya la usaba. */}
+          {invoices.length > 0 && (
           <Button onClick={() => { prefillWithPendingEarnings(); setIsDialogOpen(true); }} className="gap-2 w-full sm:w-auto" size="sm">
             <Upload className="w-4 h-4" />
             {t('doctorInvoices.uploadInvoice')}
           </Button>
+          )}
         </div>
 
         {/* Resumen de ganancias — dentro de Finanzas ya está en la pestaña
@@ -396,71 +397,15 @@ export default function DoctorInvoices({ embedded = false }: DoctorInvoicesProps
         </div>
         )}
 
-        {/* Info Banner */}
-        {(earnings?.pending_earnings || 0) > 0 && (
-          <Card className="mb-6 border-info/30 bg-info/5">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {t('doctorInvoices.pendingEarningsBanner').replace('{amount}', formatCurrency(earnings?.pending_earnings || 0))}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('doctorInvoices.pendingEarningsBannerDesc')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Ventas por facturar: el médico factura a nombre y RFC de cada comprador. */}
+        <DoctorSalesInvoices />
 
-        {/* Invoicing Guide - Collapsible on mobile */}
-        <Collapsible>
-          <Card className="mb-6 border-muted">
-            <CardContent className="p-3 sm:p-4">
-              <CollapsibleTrigger className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary flex-shrink-0" />
-                  <p className="text-sm font-semibold">
-                    {t('doctorInvoices.howToInvoice')}
-                  </p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3">
-                <div className="space-y-2 text-xs text-muted-foreground">
-                  <p>
-                    {t('doctorInvoices.twoOptions')}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                      <p className="font-medium text-foreground text-sm mb-1">
-                        {t('doctorInvoices.singleInvoice')}
-                      </p>
-                      <p>
-                        {t('doctorInvoices.singleInvoiceDesc')}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                      <p className="font-medium text-foreground text-sm mb-1">
-                        {t('doctorInvoices.perTypeInvoices')}
-                      </p>
-                      <p>
-                        {t('doctorInvoices.perTypeInvoicesDesc')}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-muted-foreground">
-                    {t('doctorInvoices.accountantTip')}
-                  </p>
-                </div>
-              </CollapsibleContent>
-            </CardContent>
-          </Card>
-        </Collapsible>
+        {/* El aviso «sube una factura por tus ganancias» y la guía de factura global a la
+            plataforma se retiraron el 1-oct-2026: ahora se factura a cada comprador (arriba). */}
 
-        {/* Tabs */}
+        {/* Tabs — historial de facturas a la plataforma y pagos; sin historial no se pinta
+            (la facturación de ahora es «Ventas por facturar», arriba). */}
+        {(invoices.length > 0 || (!embedded && payouts.length > 0)) && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="invoices" className="gap-2">
@@ -639,6 +584,7 @@ export default function DoctorInvoices({ embedded = false }: DoctorInvoicesProps
             )}
           </TabsContent>
         </Tabs>
+        )}
 
         {/* Upload Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

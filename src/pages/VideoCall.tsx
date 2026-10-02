@@ -449,7 +449,7 @@ export default function VideoCall() {
         await supabase.from('notifications').insert({
           user_id: consultation.patient_id,
           type: 'video_call' as any,
-          title: '📹 ' + t('videoCall.title'),
+          title: t('videoCall.title'),
           message: `${user.name} ${t('videoCall.withParticipant')}`,
           data: {
             consultationId,

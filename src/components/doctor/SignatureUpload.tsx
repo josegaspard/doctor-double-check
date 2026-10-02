@@ -193,7 +193,7 @@ export function SignatureUpload() {
             <p className="text-sm text-muted-foreground">
               {t('signatureUpload.uploadPrompt')}
             </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">{t('signatureUpload.fileHint')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('signatureUpload.fileHint')}</p>
           </div>
         )}
         <input 

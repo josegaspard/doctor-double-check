@@ -17,6 +17,10 @@ import {
 } from '@/components/ui/select';
 import {
   Settings, Loader2, Save, DollarSign, Calendar, Percent, FileText, Play, ArrowLeft, Info, CreditCard, Building, AlertTriangle,
+  Stethoscope,
+  Video,
+  Radio,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -192,14 +196,14 @@ export default function AdminPayoutSettings() {
                   <p className="text-xs text-muted-foreground mb-4">{t('adminPayoutSettings.commissions.byTypeHint').replace('{{percent}}', String(settings.commission_percentage))}</p>
                   <div className="space-y-3">
                     {[
-                      { key: 'commission_consultation' as const, label: t('adminPayoutSettings.commissions.items.consultation'), icon: '💬' },
-                      { key: 'commission_recording' as const, label: t('adminPayoutSettings.commissions.items.recording'), icon: '🎥' },
-                      { key: 'commission_live' as const, label: t('adminPayoutSettings.commissions.items.live'), icon: '📡' },
-                      { key: 'commission_chat' as const, label: t('adminPayoutSettings.commissions.items.chat'), icon: '💬' },
-                      { key: 'commission_content' as const, label: t('adminPayoutSettings.commissions.items.content'), icon: '📄' },
+                      { key: 'commission_consultation' as const, label: t('adminPayoutSettings.commissions.items.consultation'), icon: Stethoscope },
+                      { key: 'commission_recording' as const, label: t('adminPayoutSettings.commissions.items.recording'), icon: Video },
+                      { key: 'commission_live' as const, label: t('adminPayoutSettings.commissions.items.live'), icon: Radio },
+                      { key: 'commission_chat' as const, label: t('adminPayoutSettings.commissions.items.chat'), icon: MessageCircle },
+                      { key: 'commission_content' as const, label: t('adminPayoutSettings.commissions.items.content'), icon: FileText },
                     ].map(item => (
                       <div key={item.key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-                        <span className="text-lg w-6">{item.icon}</span>
+                        <item.icon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                         <Label className="text-xs flex-1">{item.label}</Label>
                         <div className="w-20">
                           <Input type="number" min={0} max={100} placeholder={`${settings.commission_percentage}%`}

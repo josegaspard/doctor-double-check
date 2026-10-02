@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { getAppConfig } from "../_shared/appconfig.ts";
+import { requireBillingProfile } from "../_shared/billing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +26,10 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !user) throw new Error("Unauthorized");
+
+    // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
+    const billingBlock = await requireBillingProfile(supabase, user.id, corsHeaders);
+    if (billingBlock) return billingBlock;
 
     const { liveId, messageContent, userName } = await req.json();
     if (!liveId || !messageContent) throw new Error("Missing required fields");

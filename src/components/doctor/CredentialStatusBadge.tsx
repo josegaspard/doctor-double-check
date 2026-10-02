@@ -37,17 +37,22 @@ export function CredentialStatusBadge({
   // barra "Profesional verificado" debe ser visible aunque la credencial aún
   // no esté cargada). Si no hay value, mostramos "Pendiente" en vez de ocultar.
   const hasValue = !!(value && String(value).trim());
-  const effectiveStatus: CredentialStatus = status || (hasValue ? 'approved' : 'pending');
+  // COFEPRIS sin estado NUNCA se da por aprobado: solo cuenta lo que revisó el equipo
+  // (cliente 2026-10-01). La cédula conserva el criterio anterior.
+  const effectiveStatus: CredentialStatus =
+    status || (type === 'cedula' && hasValue ? 'approved' : 'pending');
 
   const labels = {
-    cedula: 'Céd. Prof.',
-    cofepris: 'COFEPRIS',
+    cedula: t('cofepris.badge.cedulaShort'),
+    cofepris: t('cofepris.badge.cofeprisShort'),
   };
 
   const fullLabels = {
-    cedula: 'Cédula Profesional',
-    cofepris: 'Permiso COFEPRIS',
+    cedula: t('cofepris.badge.cedulaFull'),
+    cofepris: t('cofepris.badge.cofeprisFull'),
   };
+  const tip = (key: string, reason = '') =>
+    t(`cofepris.badge.${key}`).replace('{label}', fullLabels[type]).replace('{reason}', reason);
 
   const config = (() => {
     switch (effectiveStatus) {
@@ -55,13 +60,13 @@ export function CredentialStatusBadge({
         return {
           variant: type === 'cedula' ? 'success' : 'info',
           icon: ShieldCheck,
-          tooltip: `${fullLabels[type]} verificada por el equipo de Medical Masters.`,
+          tooltip: tip('approvedTip'),
         } as const;
       case 'pending':
         return {
           variant: 'warning',
           icon: Clock,
-          tooltip: `${fullLabels[type]} en revisión. El equipo está validando este documento con la autoridad correspondiente.`,
+          tooltip: tip('pendingTip'),
         } as const;
       case 'rejected':
         return {
@@ -69,14 +74,14 @@ export function CredentialStatusBadge({
           icon: XCircle,
           tooltip:
             rejectionReason && rejectionReason.trim()
-              ? `${fullLabels[type]} rechazada: ${rejectionReason}`
-              : `${fullLabels[type]} no fue aprobada. Contacta al equipo de Medical Masters para más detalles.`,
+              ? tip('rejectedTipReason', rejectionReason.trim())
+              : tip('rejectedTip'),
         } as const;
       default:
         return {
           variant: 'secondary',
           icon: Info,
-          tooltip: `${fullLabels[type]} sin información.`,
+          tooltip: tip('noneTip'),
         } as const;
     }
   })();
@@ -102,7 +107,7 @@ export function CredentialStatusBadge({
             <Icon className={size === 'xs' ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
             <span className="font-medium">{labels[type]}</span>
             <span className="opacity-90 ml-0.5 truncate max-w-[80px]">
-              {hasValue ? String(value).slice(0, 12) : 'Pendiente'}
+              {hasValue ? String(value).slice(0, 12) : t('cofepris.badge.pendingValue')}
             </span>
           </Badge>
         </button>
@@ -120,7 +125,7 @@ export function CredentialStatusBadge({
             )}
             {effectiveStatus === 'pending' && (
               <p className="text-warning text-[11px] mt-1">
-                Pendiente de revisión — generalmente toma 24–48h hábiles.
+                {t('cofepris.badge.pendingEta')}
               </p>
             )}
           </div>

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Image, Reply, CornerDownRight } from 'lucide-react';
+import { stripEmoji } from '@/lib/stripEmoji';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChatMessage } from '@/contexts/ChatContext';
@@ -32,10 +33,11 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
   // Render message content (with file support)
   const renderMessageContent = (content: string) => {
     // Check if it's a prescription message
-    const prescriptionMatch = content.match(/📋.*\/prescriptions\/([a-f0-9-]+)/);
+    // Antes el aviso de receta llevaba un emoji delante; ahora basta el enlace /prescriptions/{id}.
+    const prescriptionMatch = content.match(/\/prescriptions\/([a-f0-9-]+)/);
     if (prescriptionMatch) {
       const prescriptionId = prescriptionMatch[1];
-      const textPart = content.split('/prescriptions/')[0].trim();
+      const textPart = stripEmoji(content.split('/prescriptions/')[0]);
       return (
         <div 
           className="cursor-pointer"
@@ -51,9 +53,10 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
     }
 
     // Check if it's a file message
-    const imageMatch = content.match(/📷 \[Imagen: (.+?)\]\n(https?:\/\/.+)/);
-    const videoMatch = content.match(/🎥 \[Video: (.+?)\]\n(https?:\/\/.+)/);
-    const fileMatch = content.match(/📎 \[Archivo: (.+?)\]\n(https?:\/\/.+)/);
+    // Mensajes antiguos: «📷 [Imagen: …]»; nuevos: «[Imagen: …]» sin emoji. Ambos casan.
+    const imageMatch = content.match(/\[Imagen: (.+?)\]\n(https?:\/\/.+)/);
+    const videoMatch = content.match(/\[Video: (.+?)\]\n(https?:\/\/.+)/);
+    const fileMatch = content.match(/\[Archivo: (.+?)\]\n(https?:\/\/.+)/);
 
     if (videoMatch) {
       const [, fileName, url] = videoMatch;
