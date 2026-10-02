@@ -6720,6 +6720,7 @@ export const en = {
       fetchError: "Error loading credentials",
       updateError: "Could not update credential",
       cedulaApproved: "License credential approved",
+      cedulaApprovedDoctorActivated: "License approved: the doctor is now active",
       cedulaRejected: "License credential rejected",
       cofeprisApproved: "COFEPRIS credential approved",
       cofeprisRejected: "COFEPRIS credential rejected"
@@ -6778,6 +6779,7 @@ export const en = {
         rejectBadge: "REJECT"
       },
       confirmWarning: "This action will notify the doctor immediately and is logged in the audit trail. Confirm?",
+      activationNotice: "Approving the license activates the doctor on the platform. COFEPRIS is optional.",
       cancel: "Cancel",
       backToEdit: "Back to edit",
       confirmSend: "Yes, confirm and send"

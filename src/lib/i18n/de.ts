@@ -6722,6 +6722,7 @@ export const de = {
       fetchError: "Fehler beim Laden der Nachweise",
       updateError: "Nachweis konnte nicht aktualisiert werden",
       cedulaApproved: "Berufsausweis-Nachweis genehmigt",
+      cedulaApprovedDoctorActivated: "Berufsausweis genehmigt: der Arzt ist jetzt freigeschaltet",
       cedulaRejected: "Berufsausweis-Nachweis abgelehnt",
       cofeprisApproved: "COFEPRIS-Nachweis genehmigt",
       cofeprisRejected: "COFEPRIS-Nachweis abgelehnt"
@@ -6780,6 +6781,7 @@ export const de = {
         rejectBadge: "ABLEHNEN"
       },
       confirmWarning: "Diese Aktion benachrichtigt den Arzt sofort und wird im Audit protokolliert. Bestätigen?",
+      activationNotice: "Mit der Genehmigung des Berufsausweises wird der Arzt auf der Plattform freigeschaltet. COFEPRIS ist optional.",
       cancel: "Abbrechen",
       backToEdit: "Zurück zur Bearbeitung",
       confirmSend: "Ja, bestätigen und senden"

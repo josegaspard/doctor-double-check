@@ -6722,6 +6722,7 @@ export const it = {
       fetchError: "Errore nel caricamento delle credenziali",
       updateError: "Impossibile aggiornare la credenziale",
       cedulaApproved: "Credenziale iscrizione Albo approvata",
+      cedulaApprovedDoctorActivated: "Iscrizione approvata: il medico è ora attivo",
       cedulaRejected: "Credenziale iscrizione Albo rifiutata",
       cofeprisApproved: "Credenziale COFEPRIS approvata",
       cofeprisRejected: "Credenziale COFEPRIS rifiutata"
@@ -6780,6 +6781,7 @@ export const it = {
         rejectBadge: "RIFIUTA"
       },
       confirmWarning: "Questa azione notificherà il medico immediatamente e verrà registrata per audit. Confermi?",
+      activationNotice: "Approvando l'iscrizione, il medico viene attivato sulla piattaforma. COFEPRIS è facoltativo.",
       cancel: "Annulla",
       backToEdit: "Torna a modificare",
       confirmSend: "Sì, conferma e invia"

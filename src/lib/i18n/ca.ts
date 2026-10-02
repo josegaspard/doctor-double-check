@@ -6444,6 +6444,7 @@ export const ca = {
       "fetchError": "Error en carregar les credencials",
       "updateError": "No s'ha pogut actualitzar la credencial",
       "cedulaApproved": "Credencial de Cèdula aprovada",
+      "cedulaApprovedDoctorActivated": "Cèdula aprovada: el metge ha quedat donat d'alta",
       "cedulaRejected": "Credencial de Cèdula rebutjada",
       "cofeprisApproved": "Credencial COFEPRIS aprovada",
       "cofeprisRejected": "Credencial COFEPRIS rebutjada"
@@ -6502,6 +6503,7 @@ export const ca = {
         "rejectBadge": "REBUTJAR"
       },
       "confirmWarning": "Aquesta acció notificarà el doctor immediatament i queda registrada a l'auditoria. Confirmes?",
+      "activationNotice": "En aprovar la cèdula, el metge queda donat d'alta a la plataforma. COFEPRIS és opcional.",
       "cancel": "Cancel·lar",
       "backToEdit": "Tornar a editar",
       "confirmSend": "Sí, confirmar i enviar"

@@ -6463,6 +6463,7 @@ export const zh = {
       "fetchError": "加载凭证时出错",
       "updateError": "无法更新凭证",
       "cedulaApproved": "执业证书已审核通过",
+      "cedulaApprovedDoctorActivated": "执业证书已通过：医生已开通",
       "cedulaRejected": "执业证书审核被拒",
       "cofeprisApproved": "COFEPRIS 许可已审核通过",
       "cofeprisRejected": "COFEPRIS 许可审核被拒"
@@ -6521,6 +6522,7 @@ export const zh = {
         "rejectBadge": "拒绝"
       },
       "confirmWarning": "此操作将立即通知医生，并记录备案。确认执行？",
+      "activationNotice": "通过执业证书后，医生即在平台开通。COFEPRIS 为可选项。",
       "cancel": "取消",
       "backToEdit": "返回编辑",
       "confirmSend": "是，确认并提交"

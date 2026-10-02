@@ -6722,6 +6722,7 @@ export const fr = {
       fetchError: "Erreur lors du chargement des certifications",
       updateError: "Impossible de mettre à jour la certification",
       cedulaApproved: "Numéro Professionnel approuvé",
+      cedulaApprovedDoctorActivated: "Numéro professionnel approuvé : le médecin est maintenant activé",
       cedulaRejected: "Numéro Professionnel rejeté",
       cofeprisApproved: "Certification COFEPRIS approuvée",
       cofeprisRejected: "Certification COFEPRIS rejetée"
@@ -6780,6 +6781,7 @@ export const fr = {
         rejectBadge: "REJETER"
       },
       confirmWarning: "Cette action notifiera immédiatement le médecin et sera consignée dans l'audit. Confirmez-vous ?",
+      activationNotice: "En approuvant le numéro professionnel, le médecin est activé sur la plateforme. COFEPRIS est facultatif.",
       cancel: "Annuler",
       backToEdit: "Revenir à l'édition",
       confirmSend: "Oui, confirmer et envoyer"

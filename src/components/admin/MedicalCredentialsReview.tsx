@@ -30,6 +30,7 @@ type CredKind = 'cedula' | 'cofepris';
 
 interface DoctorRow {
   user_id: string;
+  status: string | null;
   name: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -79,7 +80,7 @@ export function MedicalCredentialsReview() {
     setIsLoading(true);
     try {
       // cedula_photo_url es columna nueva (2026-07-08), aún no está en los tipos generados
-      const base = 'user_id, license, cedula_profesional, cedula_status, cedula_rejection_reason, cedula_photo_url, cofepris_permit, cofepris_status, cofepris_rejection_reason';
+      const base = 'user_id, status, license, cedula_profesional, cedula_status, cedula_rejection_reason, cedula_photo_url, cofepris_permit, cofepris_status, cofepris_rejection_reason';
       let { data: profiles, error } = await (supabase as any)
         .from('doctor_profiles')
         .select(`${base}, cofepris_has, cofepris_doc_type, cofepris_doc_url, cofepris_submitted_at`)
@@ -102,6 +103,7 @@ export function MedicalCredentialsReview() {
 
       const merged: DoctorRow[] = (profiles || []).map((dp: any) => ({
         user_id: dp.user_id,
+        status: dp.status ?? null,
         name: profileMap.get(dp.user_id)?.name || t('medicalCredentialsReview.doctorFallback'),
         email: profileMap.get(dp.user_id)?.email || null,
         avatar_url: profileMap.get(dp.user_id)?.avatar_url || null,
@@ -153,9 +155,12 @@ export function MedicalCredentialsReview() {
     try {
       const newStatus: CredStatus = action === 'approve' ? 'approved' : 'rejected';
       const update: Record<string, any> = {};
+      // Aprobar la cédula da de alta al médico (COFEPRIS es opcional y no bloquea el alta).
+      const activatesDoctor = kind === 'cedula' && action === 'approve' && doctor.status !== 'approved';
       if (kind === 'cedula') {
         update.cedula_status = newStatus;
         update.cedula_rejection_reason = action === 'reject' ? reason.trim() : null;
+        if (activatesDoctor) update.status = 'approved';
       } else {
         update.cofepris_status = newStatus;
         update.cofepris_rejection_reason = action === 'reject' ? reason.trim() : null;
@@ -190,10 +195,36 @@ export function MedicalCredentialsReview() {
         data: { kind, status: newStatus, admin_notes: trimmedReason },
       });
 
+      // Mismos efectos que el alta manual de AdminDoctors: correo de aprobación + aviso en la app.
+      if (activatesDoctor) {
+        if (doctor.email) {
+          try {
+            await supabase.functions.invoke('send-approval-email', {
+              body: {
+                email: doctor.email,
+                name: doctor.name || t('adminDoctorsPage.defaults.doctorName'),
+                role: 'doctor',
+              },
+            });
+          } catch (emailErr) {
+            console.error('Approval email error:', emailErr);
+          }
+        }
+        await supabase.from('notifications').insert({
+          user_id: doctor.user_id,
+          type: 'system' as any,
+          title: t('adminDoctorsPage.notifications.accountApprovedTitle'),
+          message: t('adminDoctorsPage.notifications.accountApprovedMessage'),
+          data: { action_url: '/doctor' },
+        });
+      }
+
       toast.success(
         action === 'approve'
           ? (kind === 'cedula'
-              ? t('medicalCredentialsReview.toast.cedulaApproved')
+              ? (activatesDoctor
+                  ? t('medicalCredentialsReview.toast.cedulaApprovedDoctorActivated')
+                  : t('medicalCredentialsReview.toast.cedulaApproved'))
               : t('medicalCredentialsReview.toast.cofeprisApproved'))
           : (kind === 'cedula'
               ? t('medicalCredentialsReview.toast.cedulaRejected')
@@ -513,6 +544,11 @@ export function MedicalCredentialsReview() {
                   </p>
                 </div>
               </div>
+              {actionDialog.kind === 'cedula' && actionDialog.action === 'approve' && actionDialog.doctor?.status !== 'approved' && (
+                <p className="text-xs text-success bg-success/10 border border-success/30 rounded-md p-2">
+                  {t('medicalCredentialsReview.dialog.activationNotice')}
+                </p>
+              )}
               <p className="text-xs text-warning bg-warning/10 border border-warning/30 rounded-md p-2">
                 {t('medicalCredentialsReview.dialog.confirmWarning')}
               </p>

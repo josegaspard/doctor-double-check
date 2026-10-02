@@ -254,6 +254,8 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       const { data, error } = await supabase.rpc('process_wallet_purchase', {
         p_amount: chatPrice,
         p_description: t('liveChat.highlightedChatDescription'),
+        // El servidor toma el médico del live y le acredita la ganancia (neta de comisión).
+        p_metadata: { type: 'live_chat_highlight', live_id: liveId },
       });
       if (error) throw error;
       if (data && typeof data === 'object' && 'error' in (data as any)) {
