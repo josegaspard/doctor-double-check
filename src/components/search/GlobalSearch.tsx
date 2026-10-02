@@ -245,27 +245,18 @@ export function GlobalSearch() {
         <Search className="w-4 h-4" />
       </Button>
       
-      {/* Trigger: Tablet/Desktop icon (md to 2xl) */}
+      {/* Trigger: Tablet/Desktop icon. La barra «Buscar ⌘K» se quitó porque le quitaba
+          el sitio al «Más» del menú (Edmundo, 2-oct-2026); el atajo ⌘K sigue activo. */}
       <Button
         variant="ghost"
         size="icon"
-        className="app-header-control hidden md:flex 2xl:hidden"
+        className="app-header-control hidden md:flex"
         onClick={() => setOpen(true)}
+        aria-label={t('common.search')}
+        title={`${t('common.search')} (⌘K)`}
       >
         <Search className="w-4 h-4" />
       </Button>
-      
-      {/* Trigger: Desktop search bar (2xl+ only) */}
-      <button
-        onClick={() => setOpen(true)}
-        className="app-header-control hidden 2xl:flex gap-1.5 px-2.5 w-[116px] text-xs font-semibold"
-      >
-        <Search className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="truncate">{t('common.search')}</span>
-        <kbd className="ml-auto inline-flex items-center rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">
-          ⌘K
-        </kbd>
-      </button>
 
       {/* Search Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

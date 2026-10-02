@@ -402,7 +402,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
             {/* Navegación en píldora (tablet y escritorio) */}
             <nav className="hidden sm:flex flex-1 min-w-0 justify-center" aria-label={t('mainLayout.sectionNavigation')}>
+              {/* Solo las pestañas se desplazan; «Más» queda fijo al final y siempre a la
+                  vista (Edmundo, 2-oct-2026: escondido tras deslizar no se encontraba). */}
               <div className="pro-navpill">
+                <div className="pro-navpill-links">
                 {primaryNav.map((item) => {
                   const active = isActiveItem(item as DoctorNavItem);
                   const label = t(item.labelKey);
@@ -419,6 +422,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   );
                 })}
+                </div>
                 {moreNav.length > 0 && renderMoreDropdown('center')}
               </div>
             </nav>

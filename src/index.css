@@ -2235,12 +2235,19 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   max-width: 100%;
+}
+/* Las pestañas se desplazan dentro; el botón «Más» (hijo directo) queda fijo y visible. */
+.pro-navpill-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
   overflow-x: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.pro-navpill::-webkit-scrollbar { display: none; }
-.pro-navpill > a,
+.pro-navpill-links::-webkit-scrollbar { display: none; }
+.pro-navpill-links > a,
 .pro-navpill > button {
   flex: 0 0 auto;
   display: inline-flex;
@@ -2258,29 +2265,29 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
   border: 0;
   transition: background-color 150ms ease, color 150ms ease;
 }
-@media (max-width: 1279px) { .pro-navpill > a, .pro-navpill > button { padding: 0 11px; font-size: 12.5px; } }
-.pro-navpill > a svg,
+@media (max-width: 1279px) { .pro-navpill-links > a, .pro-navpill > button { padding: 0 11px; font-size: 12.5px; } }
+.pro-navpill-links > a svg,
 .pro-navpill > button svg { color: currentColor !important; }
-.pro-navpill > a:hover,
+.pro-navpill-links > a:hover,
 .pro-navpill > button:hover { background: rgba(255, 255, 255, 0.14); color: #ffffff !important; }
-.pro-navpill > a.is-active,
+.pro-navpill-links > a.is-active,
 .pro-navpill > button.is-active {
   background: #ffffff !important;
   color: var(--pro-ink) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
 }
-.pro-navpill > a.is-active *,
+.pro-navpill-links > a.is-active *,
 .pro-navpill > button.is-active * { color: var(--pro-ink) !important; }
 
 /* Modo claro (toggle admin app_background = white): la píldora se invierte */
 .pro-topbar-light .pro-navpill { background: #eef4f7; border-color: #dbe6ec; }
-.pro-topbar-light .pro-navpill > a,
+.pro-topbar-light .pro-navpill-links > a,
 .pro-topbar-light .pro-navpill > button { color: var(--pro-ink-2) !important; }
-.pro-topbar-light .pro-navpill > a:hover,
+.pro-topbar-light .pro-navpill-links > a:hover,
 .pro-topbar-light .pro-navpill > button:hover { background: #e2ecf1; color: var(--pro-ink) !important; }
-.pro-topbar-light .pro-navpill > a.is-active,
+.pro-topbar-light .pro-navpill-links > a.is-active,
 .pro-topbar-light .pro-navpill > button.is-active { background: var(--pro-teal) !important; color: #ffffff !important; }
-.pro-topbar-light .pro-navpill > a.is-active *,
+.pro-topbar-light .pro-navpill-links > a.is-active *,
 .pro-topbar-light .pro-navpill > button.is-active * { color: #ffffff !important; }
 .pro-topbar-light .app-header-control { border: 1px solid #dbe6ec !important; box-shadow: none !important; }
 .pro-topbar-light .pro-page-title { color: var(--pro-ink); }
