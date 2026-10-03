@@ -7,12 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -21,7 +23,7 @@ Deno.serve(async (req) => {
     );
     const token = authHeader.replace("Bearer ", "");
     const { data: userData } = await supabaseClient.auth.getUser(token);
-    if (!userData.user) throw new Error("Usuario no autenticado");
+    if (!userData.user) throw httpError(401, "Usuario no autenticado");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -30,16 +32,16 @@ Deno.serve(async (req) => {
 
     const { data: roleRow } = await supabaseAdmin
       .from("user_roles").select("role").eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
-    if (!roleRow) throw new Error("Solo admin");
+    if (!roleRow) throw httpError(403, "Solo admin");
 
     const body = await req.json();
     const { refundId, action, adminNotes, rejectionReason } = body;
-    if (!refundId || !action) throw new Error("refundId y action requeridos");
+    if (!refundId || !action) throw httpError(400, "refundId y action requeridos");
 
     const { data: refund } = await supabaseAdmin
       .from("order_refunds").select("*").eq("id", refundId).single();
-    if (!refund) throw new Error("Refund no encontrado");
-    if (refund.status !== "requested") throw new Error("Refund no está en estado requested");
+    if (!refund) throw httpError(404, "Refund no encontrado");
+    if (refund.status !== "requested") throw httpError(409, "Refund no está en estado requested");
 
     if (action === "reject") {
       await supabaseAdmin
@@ -77,7 +79,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, status: "rejected" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    if (action !== "approve") throw new Error("action debe ser 'approve' o 'reject'");
+    if (action !== "approve") throw httpError(400, "action debe ser 'approve' o 'reject'");
 
     // Claim ATÓMICO: mueve requested→processing en una sola sentencia condicionada
     // por el estado actual. Dos aprobaciones admin concurrentes: solo UNA gana el
@@ -90,7 +92,7 @@ Deno.serve(async (req) => {
       .select("id")
       .maybeSingle();
     if (claimErr) throw new Error(`No se pudo reclamar el refund: ${claimErr.message}`);
-    if (!claimed) throw new Error("El refund ya está siendo procesado por otra operación");
+    if (!claimed) throw httpError(409, "El refund ya está siendo procesado por otra operación");
 
     // Si algo falla DESPUÉS del claim pero ANTES de mover dinero, revertimos el
     // refund a 'requested' para que el admin pueda reintentarlo (si no, quedaría
@@ -210,7 +212,7 @@ Deno.serve(async (req) => {
     console.error("process-marketplace-refund error:", error);
     return new Response(
       JSON.stringify({ ok: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: error?.status ?? 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

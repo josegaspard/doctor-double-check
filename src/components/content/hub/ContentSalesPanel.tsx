@@ -65,8 +65,11 @@ export default function ContentSalesPanel() {
     const own = b === 'content' ? rateContent : rateLive;
     return (own != null ? Number(own) : commissionRate) / 100;
   };
-  const grossOf = (tx: Tx) => Number(tx.amount) || 0;
+  // Las ganancias nuevas guardan el neto en amount y el bruto en metadata.gross_amount;
+  // las antiguas guardan el bruto y el neto se calcula aquí.
+  const grossOf = (tx: Tx) => Number((tx.metadata as any)?.gross_amount ?? tx.amount) || 0;
   const netOf = (tx: Tx) => {
+    if ((tx.metadata as any)?.gross_amount != null) return Number(tx.amount) || 0;
     const b = bucketOf((tx.metadata as any)?.source) as Bucket;
     return grossOf(tx) * (1 - rateOf(b));
   };

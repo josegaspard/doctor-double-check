@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { assertStripeMinimum } from "../_shared/stripe-minimum.ts";
 
 // ============================================================================
 // "Estoy interesado" — cobro del FEE de intermediación (cliente 2026-07-01)
@@ -80,6 +81,7 @@ serve(async (req) => {
     const feeAmount = Math.round(price * feeRate * 100) / 100;
     if (!(feeAmount > 0)) throw new Error("El fee calculado es inválido");
     const currency = (product.currency || cfg?.currency || "MXN").toLowerCase();
+    assertStripeMinimum(Math.round(feeAmount * 100), currency);
 
     // Registro del interés en estado pendiente de pago.
     const { data: interest, error: intErr } = await serviceClient
@@ -150,7 +152,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: (error as any)?.status ?? 500,
     });
   }
 });

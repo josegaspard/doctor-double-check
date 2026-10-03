@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, User, Users, Activity, Syringe, FileText, Phone, Heart, Pill, AlertTriangle, Check, Paperclip } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   patientId: string | null;
@@ -45,6 +46,7 @@ interface VaxRow {
 
 export function PatientRecordPanel({ patientId, enabled = true }: Props) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [history, setHistory] = useState<History | null>(null);
@@ -66,14 +68,43 @@ export function PatientRecordPanel({ patientId, enabled = true }: Props) {
         supabase.rpc('get_doctor_accessible_files'),
       ]);
       if (cancelled) return;
-      if (p.data) setProfile(p.data as Profile);
+      let prof: Profile | null = (p.data as Profile) || null;
+      // 3-oct-2026: la RLS de profiles solo deja al médico leer pacientes con cita, no con
+      // consulta, y el panel salía con «Paciente». Se completa con profiles_public y, si
+      // aún falta, con el chat de la consulta (get_chat_sessions_details_bulk), como VideoCall.
+      if (!prof?.name) {
+        let name: string | null = null;
+        let avatar: string | null = prof?.avatar_url ?? null;
+        try {
+          const { data: pub } = await supabase.from('profiles_public').select('name, avatar_url').eq('id', patientId).maybeSingle();
+          name = (pub as any)?.name || null;
+          avatar = avatar || (pub as any)?.avatar_url || null;
+          if (!name && user?.id) {
+            const pair = `and(participant1_id.eq.${user.id},participant2_id.eq.${patientId}),and(participant1_id.eq.${patientId},participant2_id.eq.${user.id})`;
+            const { data: sess } = await supabase.from('chat_sessions').select('id').or(pair).order('created_at', { ascending: false }).limit(1).maybeSingle();
+            if (sess?.id) {
+              const { data: details } = await supabase.rpc('get_chat_sessions_details_bulk' as any, { p_session_ids: [sess.id] });
+              const d: any = Array.isArray(details) ? details[0] : details;
+              if (d) {
+                name = d.participant1_id === patientId ? d.participant1_name : d.participant2_id === patientId ? d.participant2_name : null;
+                if (!avatar) avatar = d.participant1_id === patientId ? d.participant1_avatar ?? null : d.participant2_avatar ?? null;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('[PatientRecordPanel] nombre del paciente no disponible:', e);
+        }
+        if (cancelled) return;
+        if (name) prof = { name, email: prof?.email ?? null, avatar_url: avatar, phone: prof?.phone ?? null };
+      }
+      if (prof) setProfile(prof);
       if (h.data) setHistory({ ...(h.data as any), extended_data: (h.data as any).extended_data || {} });
       if (v.data) setVaccinations(v.data as VaxRow[]);
       if (f.data) setFiles((f.data as any[]).filter(x => x.patient_id === patientId));
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [patientId, enabled]);
+  }, [patientId, enabled, user?.id]);
 
   if (!enabled) return null;
 

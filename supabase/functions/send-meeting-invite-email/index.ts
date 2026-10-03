@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/auth-guards.ts";
 import { renderEmail } from "../_shared/email-template.ts";
+import { getDoctorTimezone, formatInTimezone } from "../_shared/doctor-timezone.ts";
 
 const APP_URL = "https://medical-masters.com";
 const FROM = "Medical Masters <noreply@notify.medical-masters.com>";
@@ -12,14 +13,6 @@ interface MeetingInvitePayload {
   invitee_ids?: string[];
 }
 
-const fmt = (iso?: string | null) => {
-  if (!iso) return "Por confirmar";
-  const d = new Date(iso);
-  return d.toLocaleString("es-MX", {
-    weekday: "long", year: "numeric", month: "long", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-};
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -49,6 +42,10 @@ Deno.serve(async (req: Request) => {
       .eq("organizer_id", userData.user.id)
       .single();
     if (sErr || !session) throw new Error("Meeting not found or not yours");
+
+    // Hora en la zona del organizador (el servidor corre en UTC).
+    const tz = await getDoctorTimezone(admin, session.organizer_id);
+    const fmt = (iso?: string | null) => (iso ? formatInTimezone(iso, tz) : "Por confirmar");
 
     // Resolver los user_ids a notificar.
     let ids = invitee_ids ?? [];

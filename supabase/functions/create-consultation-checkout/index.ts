@@ -4,11 +4,14 @@ import { maskEmail } from "../_shared/log-redact.ts";
 import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
 import { getAppConfig } from "../_shared/appconfig.ts";
 import { requireBillingProfile } from "../_shared/billing.ts";
+import { assertStripeMinimum } from "../_shared/stripe-minimum.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -40,10 +43,10 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) throw httpError(401, `Authentication error: ${userError.message}`);
 
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) throw httpError(401, "User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
@@ -64,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     const { doctorId, doctorName, isDoubleCheck = false, fileIds = [], liveId, message } = await req.json();
-    if (!doctorId) throw new Error("doctorId is required");
+    if (!doctorId) throw httpError(400, "doctorId is required");
 
     // Segunda opinión pagada con tarjeta: los ids de los estudios a compartir viajan
     // en metadata (Stripe limita cada valor a 500 chars → capamos a ~12 UUIDs, que
@@ -102,10 +105,10 @@ Deno.serve(async (req) => {
       .select("consultation_fee, status")
       .eq("user_id", doctorId)
       .maybeSingle();
-    if (!docProfile) throw new Error("Doctor not found");
-    if (docProfile.status !== "approved") throw new Error("Doctor is not available for consultations");
+    if (!docProfile) throw httpError(404, "Doctor not found");
+    if (docProfile.status !== "approved") throw httpError(409, "Doctor is not available for consultations");
     const consultationFee = Number(docProfile.consultation_fee);
-    if (!consultationFee || consultationFee <= 0) throw new Error("Consultation fee not configured");
+    if (!consultationFee || consultationFee <= 0) throw httpError(409, "Consultation fee not configured");
 
     logStep("Consultation request", { doctorId, consultationFee, doctorName });
 
@@ -132,6 +135,8 @@ Deno.serve(async (req) => {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
     }
+
+    assertStripeMinimum(finalPrice, appCfg.currency);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -176,7 +181,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: (error as any)?.status ?? 500,
     });
   }
 });

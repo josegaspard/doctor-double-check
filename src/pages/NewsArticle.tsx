@@ -253,6 +253,8 @@ export default function NewsArticle() {
       });
 
       if (error) throw error;
+      // Cuota de la IA agotada: la función devuelve el original; no se guarda como traducción.
+      if (data?.untranslated) throw new Error('Translation unavailable');
       if (data?.title && data?.content) {
         setTranslatedContent({ title: data.title, content: data.content });
         setShowTranslated(true);

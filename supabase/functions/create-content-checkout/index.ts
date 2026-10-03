@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getSubscriptionPricing, residentMultiplier } from "../_shared/pricing.ts";
 import { getAppConfig } from "../_shared/appconfig.ts";
 import { requireBillingProfile } from "../_shared/billing.ts";
+import { assertStripeMinimum } from "../_shared/stripe-minimum.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,6 +109,8 @@ Deno.serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    assertStripeMinimum(Math.round(finalPrice * 100), appCfg.currency);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -146,7 +149,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: (error as any)?.status ?? 500,
     });
   }
 });

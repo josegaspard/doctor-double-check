@@ -7,21 +7,11 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guards.ts";
 import { renderEmail, detailTable } from "../_shared/email-template.ts";
+import { getDoctorTimezone, formatInTimezone } from "../_shared/doctor-timezone.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>";
 const APP_URL = "https://medical-masters.com";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleString("es-MX", {
-      weekday: "long", year: "numeric", month: "long", day: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 Deno.serve(async (req: Request): Promise<Response> => {
   const corsHeaders = corsHeadersFor(req);
@@ -84,7 +74,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       admin.from("profiles").select("name").eq("id", appt.doctor_id).single(),
     ]);
 
-    const when = formatDate(appt.scheduled_at);
+    // Hora en la zona del médico (el servidor corre en UTC).
+    const when = formatInTimezone(appt.scheduled_at, await getDoctorTimezone(admin, appt.doctor_id));
     const doctorName = doctor?.name || "tu médico";
 
     if (patient?.email) {
@@ -120,7 +111,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     await admin.from("notifications").insert({
       user_id: appt.patient_id,
-      type: "appointment_confirmed" as any,
+      // "appointment_confirmed" no existe en el enum notification_type: el insert fallaba.
+      type: "system",
       title: "Cita confirmada",
       message: `El Dr. ${doctorName} confirmó tu cita para ${when}`,
       data: { appointmentId: appt.id, doctorId: appt.doctor_id, scheduledAt: appt.scheduled_at },

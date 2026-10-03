@@ -116,12 +116,17 @@ export function requireCronSecret(req: Request): void {
   if (!timingSafeEqual(got, expected)) throw new AuthError(401, 'Invalid cron secret')
 }
 
-/** Verify caller is either an admin (JWT) OR a cron caller (shared secret). */
+/** Verify caller is either an admin (JWT), a cron caller (shared secret) OR
+ *  another edge function using the service-role key (e.g. admin-refund →
+ *  send-refund-email, stripe-webhook → send-purchase-email). */
 export async function requireAdminOrCron(req: Request): Promise<void> {
   if (req.headers.get('x-cron-secret')) {
     requireCronSecret(req)
     return
   }
+  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (token && serviceKey && timingSafeEqual(token, serviceKey)) return
   await requireAdminJWT(req)
 }
 

@@ -246,7 +246,38 @@ export default function BookAppointment() {
     appointmentId: string;
     serviceName: string | null;
     price: number | null;
+    rescheduledFrom: string | null;
   } | null>(null);
+
+  // Reprogramar (3-oct-2026): «Mis citas» abre /book/:doctorId?reschedule=<id>. Al reservar
+  // la nueva cita se cancela la antigua; solo vale para una cita futura del propio paciente
+  // con este médico y en estado requested/confirmed (lo único que el paciente puede cancelar).
+  const rescheduleParam = searchParams.get('reschedule');
+  const [rescheduleFrom, setRescheduleFrom] = useState<{ id: string; scheduled_at: string } | null>(null);
+  useEffect(() => {
+    if (!rescheduleParam || !user || !doctorId) { setRescheduleFrom(null); return; }
+    let active = true;
+    (async () => {
+      const { data: old } = await supabase
+        .from('appointments')
+        .select('id, patient_id, doctor_id, status, scheduled_at, reason')
+        .eq('id', rescheduleParam)
+        .maybeSingle();
+      if (!active) return;
+      const o = old as any;
+      if (o && o.patient_id === user.id && o.doctor_id === doctorId
+        && ['requested', 'confirmed'].includes(o.status)
+        && new Date(o.scheduled_at).getTime() > Date.now()) {
+        setRescheduleFrom({ id: o.id, scheduled_at: o.scheduled_at });
+        if (o.reason) setReason((r) => r || o.reason);
+      } else {
+        setRescheduleFrom(null);
+        toast.error(t('bookAppointment.rescheduleInvalid'));
+      }
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rescheduleParam, user?.id, doctorId]);
 
   // Catálogo del médico (F1 servicios). Vacío —sin servicios o sin migración— = flujo de siempre.
   const { services, loading: servicesLoading, reload: reloadServices } = usePublicDoctorServices(doctorId);
@@ -494,9 +525,16 @@ export default function BookAppointment() {
       }) + ` (${doctorTz})`;
       const title = t('bookAppointment.notifyDoctorTitle');
       const baseMessage = t('bookAppointment.notifyDoctorMessage').replace('{when}', when);
-      const message = service
+      const withService = service
         ? `${baseMessage} ${fill(t('mm2.servicios.booking.notifyService'), { service: service.name })}`
         : baseMessage;
+      const message = rescheduleFrom
+        ? `${withService} ${fill(t('bookAppointment.rescheduleNotifyDoctor'), {
+          when: new Date(rescheduleFrom.scheduled_at).toLocaleString(LOCALE_MAP[language] || 'es-MX', {
+            timeZone: doctorTz, dateStyle: 'medium', timeStyle: 'short',
+          }),
+        })}`
+        : withService;
       await supabase.from('notifications').insert({
         user_id: doctorId,
         type: 'system',
@@ -505,6 +543,7 @@ export default function BookAppointment() {
         data: {
           kind: 'appointment_request',
           appointment_id: apptId,
+          ...(rescheduleFrom ? { rescheduled_from: rescheduleFrom.id } : {}),
           deeplink: '/my-appointments',
           ...(service ? { service_id: service.id, service_name: service.name } : {}),
         },
@@ -516,11 +555,29 @@ export default function BookAppointment() {
       console.error('notify doctor (appointment) failed:', e);
     }
 
+    // Reprogramación: la nueva ya existe; ahora se cancela la antigua. Si no se puede, la
+    // nueva se queda y se avisa al paciente para que cancele la antigua desde «Mis citas».
+    let rescheduledFrom: string | null = null;
+    if (rescheduleFrom) {
+      const { data: cancelled, error: cancelError } = await supabase
+        .from('appointments')
+        .update({ status: 'cancelled', cancellation_reason: t('bookAppointment.rescheduleCancellationReason') } as any)
+        .eq('id', rescheduleFrom.id)
+        .in('status', ['requested', 'confirmed'])
+        .select('id');
+      if (cancelError || !cancelled || (cancelled as any[]).length === 0) {
+        toast.error(t('bookAppointment.rescheduleCancelOldFailed'));
+      } else {
+        rescheduledFrom = rescheduleFrom.scheduled_at;
+      }
+    }
+
     setConfirmation({
       scheduled_at: selected.scheduled_at,
       appointmentId: (data as any).id,
       serviceName: service ? service.name : null,
       price: service ? service.price : null,
+      rescheduledFrom,
     });
     setSubmitting(false);
   };
@@ -553,7 +610,7 @@ export default function BookAppointment() {
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
-              <h2 className="text-xl font-bold mb-2">{t('bookAppointment.confirmation.title')}</h2>
+              <h2 className="text-xl font-bold mb-2">{confirmation.rescheduledFrom ? t('bookAppointment.rescheduleConfirmationTitle') : t('bookAppointment.confirmation.title')}</h2>
               <p className="text-muted-foreground text-sm mb-6">
                 {t('bookAppointment.confirmation.sentToPrefix')} Dr. {doctor.name}. {t('bookAppointment.confirmation.sentToSuffix')}
               </p>
@@ -567,6 +624,9 @@ export default function BookAppointment() {
                   <p className="flex items-center gap-1 flex-wrap">
                     <strong>{t('mm2.servicios.booking.confirmationPriceLabel')}</strong> {priceNode(confirmation.price)}
                   </p>
+                )}
+                {confirmation.rescheduledFrom && (
+                  <p><strong>{t('bookAppointment.reschedulePreviousLabel')}</strong> <s>{formatDate(confirmation.rescheduledFrom, language)} · {formatTime(confirmation.rescheduledFrom, language)}</s> {t('bookAppointment.reschedulePreviousCancelled')}</p>
                 )}
                 <p><strong>{t('bookAppointment.confirmation.dateLabel')}</strong> {formatDate(confirmation.scheduled_at, language)} · {formatTime(confirmation.scheduled_at, language)}{PATIENT_TZ ? ` ${PATIENT_TZ}` : ''}</p>
                 <p className="text-xs text-muted-foreground mt-2">{t('bookAppointment.confirmation.idLabel')} <code>{confirmation.appointmentId}</code></p>
@@ -588,6 +648,13 @@ export default function BookAppointment() {
         <Button variant="back" size="sm" className="gap-1.5 mb-3" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4" /> {t('bookAppointment.back')}
         </Button>
+
+        {rescheduleFrom && (
+          <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm flex items-start gap-2" role="status">
+            <CalendarIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" aria-hidden="true" />
+            <span>{fill(t('bookAppointment.rescheduleBanner'), { when: `${formatDate(rescheduleFrom.scheduled_at, language)} · ${formatTime(rescheduleFrom.scheduled_at, language)}` })}</span>
+          </div>
+        )}
 
         {!isConsultationCountryAllowed(user?.countryCode) && (
           <div className="mb-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground flex items-start gap-2">

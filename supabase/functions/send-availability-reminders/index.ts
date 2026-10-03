@@ -4,6 +4,7 @@ import { requireCronSecret, AuthError, corsHeaders } from "../_shared/auth-guard
 import { renderEmail } from "../_shared/email-template.ts";
 import { maskEmail } from "../_shared/log-redact.ts";
 import { generateUnsubscribeToken } from "../_shared/unsubscribe-token.ts";
+import { getDoctorTimezone, formatInTimezone } from "../_shared/doctor-timezone.ts";
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[SEND-AVAILABILITY-REMINDERS] ${step}${detailsStr}`);
@@ -45,20 +46,14 @@ Deno.serve(async (req: Request) => {
       throw availError;
     }
 
-    if (!upcomingAvailabilities || upcomingAvailabilities.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "No upcoming availabilities to remind" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    logStep("Found upcoming availabilities", { count: upcomingAvailabilities.length });
+    // Sin lives/consultas no se sale: más abajo van los recordatorios de citas.
+    logStep("Found upcoming availabilities", { count: upcomingAvailabilities?.length ?? 0 });
 
     let totalEmailsSent = 0;
     const baseUrl = supabaseUrl.replace('.supabase.co', '.functions.supabase.co');
     const appUrl = "https://medical-masters.com";
 
-    for (const availability of upcomingAvailabilities) {
+    for (const availability of upcomingAvailabilities ?? []) {
       const { data: doctorProfile } = await supabase
         .from("profiles")
         .select("name")
@@ -66,16 +61,17 @@ Deno.serve(async (req: Request) => {
         .single();
 
       const doctorName = doctorProfile?.name || "Un doctor";
-      const scheduledTime = new Date(availability.scheduled_at);
-      const timeString = scheduledTime.toLocaleTimeString("es-MX", {
+      // Hora en la zona del médico (el servidor corre en UTC).
+      const doctorTz = await getDoctorTimezone(supabase, availability.doctor_id);
+      const timeString = formatInTimezone(availability.scheduled_at, doctorTz, {
         hour: "2-digit",
         minute: "2-digit",
       });
-      const dateString = scheduledTime.toLocaleDateString("es-MX", {
+      const dateString = formatInTimezone(availability.scheduled_at, doctorTz, {
         weekday: "long",
         day: "numeric",
         month: "long",
-      });
+      }).replace(/,?\s+(hora de|GMT).*$/, "");
 
       const { data: subscribers } = await supabase
         .from("subscriptions")
@@ -207,11 +203,117 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // ── Citas confirmadas: recordatorio a paciente y médico 1 h antes ──────────────
+    // appointments no tiene marca de enviado: se deduplica con email_history
+    // (email_type 'appointment_reminder', content_id = cita, mismo destinatario).
+    let appointmentEmailsSent = 0;
+    const { data: upcomingAppointments, error: apptError } = await supabase
+      .from("appointments")
+      .select("id, patient_id, doctor_id, scheduled_at, modality, service_name")
+      .eq("status", "confirmed")
+      .gte("scheduled_at", now.toISOString())
+      .lte("scheduled_at", oneHourFromNow.toISOString());
+    if (apptError) logStep("Error fetching appointments", { error: apptError.message });
+
+    for (const appt of upcomingAppointments ?? []) {
+      const [{ data: patientProfile }, { data: doctorProf }, { data: already }] = await Promise.all([
+        supabase.from("profiles").select("id, email, name").eq("id", appt.patient_id).maybeSingle(),
+        supabase.from("profiles").select("id, email, name").eq("id", appt.doctor_id).maybeSingle(),
+        supabase.from("email_history").select("recipient_email")
+          .eq("email_type", "appointment_reminder").eq("content_id", appt.id).eq("status", "sent"),
+      ]);
+      const sentTo = new Set((already ?? []).map((r: { recipient_email: string }) => r.recipient_email));
+      const tz = await getDoctorTimezone(supabase, appt.doctor_id);
+      const when = formatInTimezone(appt.scheduled_at, tz);
+      const doctorName = doctorProf?.name || "tu médico";
+      const patientName = patientProfile?.name || "Paciente";
+      const modalityText = appt.modality === "in_person"
+        ? "La cita es presencial."
+        : "La cita es por videollamada: entra unos minutos antes desde la plataforma.";
+
+      const targets = [
+        {
+          profile: patientProfile, ctaUrl: `${appUrl}/my-appointments`,
+          subject: `Recordatorio: tu cita con el Dr. ${doctorName} en menos de 1 hora`,
+          title: "Tu cita es en menos de 1 hora",
+          subtitle: `Dr. ${doctorName} · ${when}`,
+        },
+        {
+          profile: doctorProf, ctaUrl: `${appUrl}/doctor/agenda`,
+          subject: `Recordatorio: cita con ${patientName} en menos de 1 hora`,
+          title: "Tienes una cita en menos de 1 hora",
+          subtitle: `${patientName} · ${when}`,
+        },
+      ];
+
+      for (const t of targets) {
+        if (!t.profile?.email || sentTo.has(t.profile.email)) continue;
+        const html = renderEmail({
+          preheader: t.subtitle,
+          accent: "warning",
+          eyebrow: "Cita · En menos de 1 hora",
+          title: t.title,
+          subtitle: t.subtitle,
+          greeting: `Hola, ${t.profile.name || ""}`,
+          bodyHtml: `
+            ${appt.service_name ? `<p style="margin:0 0 14px;color:#475569;">${String(appt.service_name).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string))}</p>` : ""}
+            <p style="margin:0;color:#475569;">${modalityText}</p>
+          `,
+          ctaText: "Ver mis citas",
+          ctaUrl: t.ctaUrl,
+          appUrl,
+        });
+        let status = "sent";
+        let errorMessage: string | null = null;
+        try {
+          const emailResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: Deno.env.get('FROM_EMAIL') ?? 'Medical Masters <no-reply@notify.medical-masters.com>',
+              to: [t.profile.email],
+              subject: t.subject,
+              html,
+            }),
+          });
+          if (!emailResponse.ok) throw new Error(`Resend API error: ${await emailResponse.text()}`);
+          appointmentEmailsSent++;
+          logStep("Appointment reminder sent", { appointmentId: appt.id, to: maskEmail(t.profile.email) });
+        } catch (emailError: any) {
+          status = "failed";
+          errorMessage = emailError.message;
+          logStep("Failed to send appointment reminder", { appointmentId: appt.id, to: maskEmail(t.profile.email), error: emailError.message });
+        }
+        await supabase.from('email_history').insert({
+          doctor_id: appt.doctor_id,
+          recipient_email: t.profile.email,
+          recipient_name: t.profile.name,
+          email_type: 'appointment_reminder',
+          subject: t.subject,
+          content_id: appt.id,
+          content_title: appt.service_name,
+          status,
+          error_message: errorMessage,
+        });
+        if (status === "sent") {
+          await supabase.from("notifications").insert({
+            user_id: t.profile.id,
+            type: "system",
+            title: "Cita en menos de 1 hora",
+            message: t.subtitle,
+            data: { appointmentId: appt.id, scheduledAt: appt.scheduled_at },
+          });
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        processedAvailabilities: upcomingAvailabilities.length,
+        processedAvailabilities: upcomingAvailabilities?.length ?? 0,
         emailsSent: totalEmailsSent,
+        processedAppointments: upcomingAppointments?.length ?? 0,
+        appointmentEmailsSent,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

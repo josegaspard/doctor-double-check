@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { getAppConfig } from "../_shared/appconfig.ts";
 import { requireBillingProfile } from "../_shared/billing.ts";
+import { assertStripeMinimum } from "../_shared/stripe-minimum.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,6 +72,8 @@ Deno.serve(async (req) => {
       throw new Error("Chat highlight price not configured");
     }
     const originUrl = req.headers.get("origin") || "https://medical-masters.com";
+
+    assertStripeMinimum(Math.round(amount * 100), appCfg.currency);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

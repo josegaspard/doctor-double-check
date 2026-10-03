@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -20,7 +22,7 @@ Deno.serve(async (req) => {
     );
     const token = authHeader.replace("Bearer ", "");
     const { data: userData } = await supabaseClient.auth.getUser(token);
-    if (!userData.user) throw new Error("Usuario no autenticado");
+    if (!userData.user) throw httpError(401, "Usuario no autenticado");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -29,20 +31,20 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { orderId, reasonCategory, reason, evidence, amount } = body;
-    if (!orderId || !reason) throw new Error("orderId y reason requeridos");
+    if (!orderId || !reason) throw httpError(400, "orderId y reason requeridos");
 
     const { data: order } = await supabaseAdmin
       .from("marketplace_orders")
       .select("id, buyer_id, total_amount, currency, refund_status, status")
       .eq("id", orderId)
       .single();
-    if (!order) throw new Error("Pedido no encontrado");
-    if (order.buyer_id !== userData.user.id) throw new Error("No autorizado");
-    if (order.refund_status === "refunded") throw new Error("Pedido ya reembolsado");
-    if (["cancelled"].includes(order.status)) throw new Error("Pedido cancelado");
+    if (!order) throw httpError(404, "Pedido no encontrado");
+    if (order.buyer_id !== userData.user.id) throw httpError(403, "No autorizado");
+    if (order.refund_status === "refunded") throw httpError(409, "Pedido ya reembolsado");
+    if (["cancelled"].includes(order.status)) throw httpError(409, "Pedido cancelado");
     // Solo se reembolsan pedidos efectivamente cobrados.
     if (!["paid", "processing", "shipped", "delivered"].includes(order.status)) {
-      throw new Error("Solo se pueden reembolsar pedidos pagados");
+      throw httpError(409, "Solo se pueden reembolsar pedidos pagados");
     }
 
     // Evitar doble/múltiple reembolso: bloquear si ya hay una solicitud abierta
@@ -53,14 +55,14 @@ Deno.serve(async (req) => {
       .eq("order_id", orderId);
     const openRefund = (priorRefunds || []).some((r: any) =>
       ["requested", "approved", "processing"].includes(r.status));
-    if (openRefund) throw new Error("Ya existe una solicitud de devolución en proceso para este pedido");
+    if (openRefund) throw httpError(409, "Ya existe una solicitud de devolución en proceso para este pedido");
     const alreadyRefunded = (priorRefunds || [])
       .filter((r: any) => ["refunded", "partial"].includes(r.status))
       .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
 
     const requested = amount && amount > 0 && amount <= order.total_amount ? amount : order.total_amount;
     if (alreadyRefunded + requested > order.total_amount + 0.001) {
-      throw new Error("El monto de devolución supera el total del pedido");
+      throw httpError(400, "El monto de devolución supera el total del pedido");
     }
     const refundAmount = requested;
 
@@ -119,7 +121,7 @@ Deno.serve(async (req) => {
     console.error("request-marketplace-refund error:", error);
     return new Response(
       JSON.stringify({ ok: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: error?.status ?? 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

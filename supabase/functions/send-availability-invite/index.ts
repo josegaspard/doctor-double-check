@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/auth-guards.ts";
 import { renderEmail } from "../_shared/email-template.ts";
+import { getDoctorTimezone, formatInTimezone } from "../_shared/doctor-timezone.ts";
 
 const APP_URL = "https://medical-masters.com";
 const FROM = "Medical Masters <noreply@notify.medical-masters.com>";
@@ -12,17 +13,6 @@ interface InvitePayload {
   old_scheduled_at?: string;
 }
 
-const fmt = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleString("es-MX", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 // Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
 const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
@@ -64,6 +54,10 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (aErr || !avail) throw httpError(403, "Availability not found or not yours");
+
+    // Hora en la zona del médico (el servidor corre en UTC).
+    const tz = await getDoctorTimezone(admin, avail.doctor_id);
+    const fmt = (iso: string) => formatInTimezone(iso, tz);
 
     const { data: profile } = await admin
       .from("profiles_public")

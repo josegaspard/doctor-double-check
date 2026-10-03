@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Calendar as CalendarIcon, Clock, Stethoscope, Loader2, X, Video } from 'lucide-react';
+import { Calendar as CalendarIcon, CalendarClock, Clock, Stethoscope, Loader2, X, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -292,6 +292,13 @@ export default function MyAppointments() {
                           {liveSoon && a.daily_room_url && (
                             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(a.daily_room_url!, '_blank')}>
                               <Video className="w-3 h-3" /> {t('myAppointments.enter')}
+                            </Button>
+                          )}
+                          {role !== 'doctor' && tab === 'upcoming' && (a.status === 'requested' || a.status === 'confirmed')
+                            && new Date(a.scheduled_at).getTime() > Date.now() && (
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={cancelling === a.id} onClick={() => navigate(`/book/${a.doctor_id}?reschedule=${a.id}`)}>
+                              <CalendarClock className="w-3 h-3" />
+                              {t('myAppointments.reschedule')}
                             </Button>
                           )}
                           {tab === 'upcoming' && a.status !== 'cancelled' && (

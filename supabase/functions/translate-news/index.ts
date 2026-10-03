@@ -9,6 +9,15 @@ import { requireUserJWT, AuthError, corsHeadersFor } from "../_shared/auth-guard
 const MAX_CONTENT_BYTES = 32_000; // ~32KB ≈ 8K tokens, suficiente para una nota larga
 const MAX_TITLE_BYTES = 500;
 
+// No hay tabla de traducciones en la BD: caché en memoria del isolate (se pierde al reciclarse)
+// para no repetir la llamada a Gemini con la misma nota y bajar los 429.
+const CACHE_MAX = 200;
+const translationCache = new Map<string, { title: string; content: string }>();
+async function cacheKey(targetLang: string, title: string, content: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${targetLang}\n${title}\n${content}`));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 serve(async (req) => {
   const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -60,6 +69,14 @@ serve(async (req) => {
       });
     }
 
+    const key = await cacheKey(targetLang, title, content);
+    const cached = translationCache.get(key);
+    if (cached) {
+      return new Response(JSON.stringify({ ...cached, cached: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const targetLangName = targetLang === 'en' ? 'English' : 'Spanish';
     const tag = crypto.randomUUID().slice(0, 4);
 
@@ -103,8 +120,9 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later" }), {
-          status: 429,
+        // Cuota de la IA agotada: se devuelve el texto original con un indicador en vez de error.
+        console.warn("Gemini rate limited (429): returning original text");
+        return new Response(JSON.stringify({ title, content, untranslated: true, reason: "rate_limited" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -122,6 +140,10 @@ serve(async (req) => {
     if (text) {
       try {
         const translated = JSON.parse(text);
+        if (translated?.title && translated?.content) {
+          if (translationCache.size >= CACHE_MAX) translationCache.delete(translationCache.keys().next().value!);
+          translationCache.set(key, { title: translated.title, content: translated.content });
+        }
         return new Response(JSON.stringify(translated), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

@@ -15,12 +15,16 @@ import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { ArrowLeft, BookOpen, Download, Loader2, Trash2, Upload, Eye, FileText, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { money2, fmtDate } from '@/lib/proFormat';
+import { useSubscriptionPricing } from '@/hooks/useSubscriptionPricing';
 
 // Panel del doctor para sus libros/cursos PDF de pago (cliente 2026-07-08).
 // El PDF va al bucket privado doctor-content (solo compradores/creador/admin
 // pueden leerlo vía RLS); la portada al bucket público thumbnails.
 
 const MAX_PDF_MB = 50; // límite global de Supabase Storage por archivo
+// Stripe no cobra menos de $10.00 MXN por sesión y create-content-checkout aplica antes el
+// descuento de residente: un libro de 10 MXN quedaba en 5 MXN y el pago con tarjeta fallaba.
+const STRIPE_MIN_MXN = 10;
 
 interface ManagedBook extends DoctorBook {
   moderation_status: 'pending' | 'approved' | 'rejected';
@@ -34,6 +38,9 @@ export default function DoctorBooksManager({ embedded = false }: { embedded?: bo
   const { user, role } = useAuth();
   const { t, language } = useLanguage();
   const { confirm, dialog } = useConfirmAction();
+  const { residentMultiplier } = useSubscriptionPricing();
+  // Precio mínimo para que, tras el descuento de residente, el cobro llegue al mínimo de Stripe.
+  const minCardPrice = residentMultiplier > 0 ? Math.ceil(STRIPE_MIN_MXN / residentMultiplier) : STRIPE_MIN_MXN;
   const [books, setBooks] = useState<ManagedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -78,6 +85,10 @@ export default function DoctorBooksManager({ embedded = false }: { embedded?: bo
     const priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) {
       toast.error(t('doctorBooks.invalidPrice'));
+      return;
+    }
+    if (priceNum < minCardPrice) {
+      toast.error(t('doctorBooks.priceBelowCardMin').replace('{min}', String(minCardPrice)));
       return;
     }
     const originalNum = originalPrice ? parseFloat(originalPrice) : null;
@@ -267,7 +278,7 @@ export default function DoctorBooksManager({ embedded = false }: { embedded?: bo
                   <Input
                     id="book-price"
                     type="number"
-                    min="1"
+                    min={minCardPrice}
                     step="0.01"
                     value={price}
                     onChange={e => setPrice(e.target.value)}

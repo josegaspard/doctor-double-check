@@ -148,15 +148,22 @@ Deno.serve(async (req) => {
     } else {
       logStep("Doctor earnings credited atomically", { doctorId, amountToCredit, newPending });
 
+      // El earning debe reflejar el neto que se acredita (bruto menos comisión), igual que
+      // credit_doctor_earnings: round(p_amount * (1 - fn_commission_rate(sale_type)), 2).
+      const { data: commissionRate, error: rateError } = await adminClient.rpc("fn_commission_rate", { p_kind: 'recording' });
+      if (rateError) logStep("Could not read commission rate, using default 20%", { error: rateError.message });
+      const rate = rateError || commissionRate == null ? 0.20 : Number(commissionRate);
+      const netCredited = Math.round(Number(amountToCredit) * (1 - rate) * 100) / 100;
+
       await adminClient
         .from('wallet_transactions')
         .insert({
           user_id: doctorId,
           type: 'earning',
-          amount: amountToCredit,
+          amount: netCredited,
           description: `Ganancia por venta de grabación: ${recording.title}`,
           status: 'paid',
-          metadata: { source: 'recording', recording_id: recordingId, buyer_id: user.id },
+          metadata: { source: 'recording', gross_amount: amountToCredit, commission_rate: rate, recording_id: recordingId, buyer_id: user.id },
         });
     }
 

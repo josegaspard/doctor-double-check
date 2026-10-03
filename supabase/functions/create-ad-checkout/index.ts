@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getAppConfig } from "../_shared/appconfig.ts";
+import { assertStripeMinimum } from "../_shared/stripe-minimum.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,6 +64,8 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
+    assertStripeMinimum(Math.round(amount * 100), appCfg.currency);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -110,7 +113,7 @@ serve(async (req) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: (error as any)?.status ?? 500,
     });
   }
 });

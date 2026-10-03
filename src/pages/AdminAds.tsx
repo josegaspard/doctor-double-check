@@ -305,7 +305,17 @@ export default function AdminAds() {
   };
 
   const updateCampaignStatus = async (id: string, status: string) => {
-    await supabase.from('ad_campaigns' as any).update({ status } as any).eq('id', id);
+    const { data, error } = await supabase.from('ad_campaigns' as any).update({ status } as any).eq('id', id).select('id');
+    if (error || !data || (data as any[]).length === 0) { toast.error(t('ads.campaignStatusError')); return; }
+    const campaign = campaigns.find(c => c.id === id);
+    if (campaign?.advertiser_id) {
+      await supabase.from('notifications').insert({
+        user_id: campaign.advertiser_id, type: 'system' as any,
+        title: t('ads.campaignStatusNotifTitle'),
+        message: t('ads.campaignStatusNotifMessage').replace('{name}', campaign.name).replace('{status}', statusLabels[status] || status),
+        data: { url: '/advertiser/dashboard', campaign_id: id },
+      });
+    }
     toast.success(`${t('ads.campaignStatus')} ${statusLabels[status] || status}`);
     fetchCampaigns();
   };

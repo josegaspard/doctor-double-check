@@ -804,7 +804,7 @@ async function creditDoctorEarningsAtomic(
       user_id: doctorId,
       type: "earning",
       amount: amount,
-      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : source === "content" ? "venta de libro/curso" : "suscripción"}`,
+      description: `Ganancia por ${source === "recording" ? "venta de grabación" : source === "consultation" ? "consulta médica" : source === "subscription_renewal" ? "renovación de suscripción" : source === "content" ? "venta de libro/curso" : source === "live_chat_highlight" ? "mensaje destacado en live" : "suscripción"}`,
       status: "paid",
       metadata: { source, reference_id: referenceId, buyer_id: sale.buyerId ?? null, ...(sale.concept ? { concept: sale.concept } : {}) },
     });

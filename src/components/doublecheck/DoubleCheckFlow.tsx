@@ -117,10 +117,12 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
         throw new Error(result?.error || t('doubleCheckFlow.errors.paymentError'));
       }
 
+      // El importe que cuenta es el que cobró el servidor (amount_charged), no el que
+      // se mostró en pantalla; solo si no viene se usa el precio con descuento local.
       toast.success(
         t('doubleCheckFlow.walletDebited')
-          .replace('{amount}', String(result.amount_charged))
-          .replace('{balance}', String(result.new_balance))
+          .replace('{amount}', String(result.amount_charged ?? discountedFee))
+          .replace('{balance}', String(result.new_balance ?? '—'))
       );
 
       // 2. Consulta: la RPC ya la crea en la misma transacción del cobro y

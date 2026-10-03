@@ -192,6 +192,15 @@ Deno.serve(async (req) => {
     };
 
     // Marca 'refunded' la venta original FUSIONANDO su metadata (antes la pisaba).
+    // functions.invoke no lanza en respuestas no-2xx: hay que revisar `error`.
+    const sendRefundEmail = async (body: Record<string, unknown>) => {
+      try {
+        const { error } = await supabaseAdmin.functions.invoke("send-refund-email", { body });
+        if (error) logStep("Email send failed (non-blocking)", { error: error.message, refund_method: body.refund_method });
+        else logStep("Refund email sent", { refund_method: body.refund_method });
+      } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+    };
+
     // Si la BD aún no admite 'refunded' en transaction_status, se registra y se sigue:
     // el reembolso ya está hecho y no debe fallar por esto.
     const markOriginalRefunded = async (refundTxId: string | null, method: string) => {
@@ -281,11 +290,7 @@ Deno.serve(async (req) => {
       await markOriginalRefunded((stripeRefundTx as any)?.id ?? null, "stripe");
 
       // Send confirmation email
-      try {
-        await supabaseAdmin.functions.invoke("send-refund-email", {
-          body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "stripe" },
-        });
-      } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+      await sendRefundEmail({ user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "stripe" });
 
       // Notify user
       await supabaseAdmin.from("notifications").insert({
@@ -345,11 +350,7 @@ Deno.serve(async (req) => {
         }
 
         // Send email asking user to register bank account
-        try {
-          await supabaseAdmin.functions.invoke("send-refund-email", {
-            body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "awaiting_bank_details" },
-          });
-        } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+        await sendRefundEmail({ user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "awaiting_bank_details" });
 
         await supabaseAdmin.from("notifications").insert({
           user_id,
@@ -378,14 +379,10 @@ Deno.serve(async (req) => {
       }
 
       // Send email with bank transfer info
-      try {
-        await supabaseAdmin.functions.invoke("send-refund-email", {
-          body: { 
+      await sendRefundEmail({ 
             user_email: userProfile?.email, user_name: userProfile?.name, amount, 
             refund_method: "bank_transfer", estimated_date: estimatedDate.toLocaleDateString('es-MX') 
-          },
-        });
-      } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+          });
 
       await supabaseAdmin.from("notifications").insert({
         user_id,
@@ -440,11 +437,7 @@ Deno.serve(async (req) => {
     await markOriginalRefunded((walletRefundTx as any)?.id ?? null, "wallet");
 
     // Send email
-    try {
-      await supabaseAdmin.functions.invoke("send-refund-email", {
-        body: { user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "wallet" },
-      });
-    } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
+    await sendRefundEmail({ user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "wallet" });
 
     // Notify user
     await supabaseAdmin.from("notifications").insert({
