@@ -37,6 +37,11 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST')
     return new Response('Method not allowed', { status: 405, headers: CORS });
 
+  // Calentamiento que manda src/main.tsx al cargar la web: solo arranca el
+  // contenedor; se responde 204 sin tocar auth ni Bunny.
+  const warmBody = await req.clone().json().catch(() => null);
+  if (warmBody?.videoId === '__warmup__') return new Response(null, { status: 204, headers: CORS });
+
   try {
     const auth = req.headers.get('authorization');
     if (!auth) return json({ error: 'unauthorized' }, 401);

@@ -161,6 +161,8 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
   const [walletBalance, setWalletBalance] = useState(0);
   const [pendingEarnings, setPendingEarnings] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
+  // Ventas reembolsadas (doctor_sales.refunded_at), por id del movimiento de ganancia.
+  const [refundedEarningIds, setRefundedEarningIds] = useState<Set<string>>(new Set());
   const [clientNames, setClientNames] = useState<Record<string, string>>({});
 
   const [rangeOwn, setRangeOwn] = useState<Range>('thisMonth');
@@ -221,6 +223,21 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
       setPendingEarnings(Number((profileRes.data as any)?.pending_earnings) || 0);
       setTotalPaid(Number((profileRes.data as any)?.total_earnings) || 0);
 
+      // Una venta reembolsada no cuenta como ingreso aunque su movimiento siga
+      // marcado como pagado. Si la tabla no existe o falla, no se bloquea la página.
+      try {
+        const { data: refundedSales, error: refundedErr } = await (supabase as any)
+          .from('doctor_sales')
+          .select('earning_tx_id')
+          .eq('doctor_id', user.id)
+          .not('refunded_at', 'is', null);
+        if (refundedErr) throw refundedErr;
+        setRefundedEarningIds(new Set(((refundedSales as any[]) || []).map(r => r.earning_tx_id).filter(Boolean)));
+      } catch (refErr) {
+        console.warn('[DoctorEarnings] no se pudieron leer las ventas reembolsadas:', refErr);
+        setRefundedEarningIds(new Set());
+      }
+
       // Nombre real del paciente/cliente cuando el movimiento lo trae en metadata.
       const ids = [...new Set((((txRes.data as any[]) || [])
         .map(tx => (tx.metadata as any)?.patient_id || (tx.metadata as any)?.user_id || (tx.metadata as any)?.buyer_id)
@@ -254,6 +271,14 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, range]);
 
+  const isRefundedTx = (tx: Transaction) => tx.status === 'refunded' || refundedEarningIds.has(tx.id);
+  /** Lo que suma en los totales: fuera las ganancias de ventas reembolsadas. */
+  const countedPeriodTx = useMemo(
+    () => periodTx.filter(tx => !isRefundedTx(tx)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [periodTx, refundedEarningIds],
+  );
+
   const filteredTx = useMemo(
     () => (sourceTab === 'total' ? periodTx : periodTx.filter(tx => sourceOf((tx.metadata as any)?.source) === sourceTab)),
     [periodTx, sourceTab],
@@ -280,19 +305,20 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
   /** Del PERIODO completo: el KPI de comisiones y el desglose no dependen de la
    *  pestaña de fuente que esté abierta (antes cambiaban al pulsar «Consultas»). */
   const totals = useMemo(() => {
-    const gross = periodTx.reduce((s, tx) => s + grossOf(tx), 0);
-    const commission = periodTx.reduce((s, tx) => s + commissionOf(tx), 0);
+    const gross = countedPeriodTx.reduce((s, tx) => s + grossOf(tx), 0);
+    const commission = countedPeriodTx.reduce((s, tx) => s + commissionOf(tx), 0);
     return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodTx, commissionRate, ratesBySource]);
+  }, [countedPeriodTx, commissionRate, ratesBySource]);
 
   /** De lo que se ve en la tabla (sí depende de la pestaña) */
   const tableTotals = useMemo(() => {
-    const gross = filteredTx.reduce((s, tx) => s + grossOf(tx), 0);
-    const commission = filteredTx.reduce((s, tx) => s + commissionOf(tx), 0);
+    const counted = filteredTx.filter(tx => !isRefundedTx(tx));
+    const gross = counted.reduce((s, tx) => s + grossOf(tx), 0);
+    const commission = counted.reduce((s, tx) => s + commissionOf(tx), 0);
     return { gross, commission, net: gross - commission };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredTx, commissionRate, ratesBySource]);
+  }, [filteredTx, commissionRate, ratesBySource, refundedEarningIds]);
 
   /** La factura cuyo periodo cubre la fecha del movimiento */
   const invoiceFor = (iso: string) => {
@@ -306,9 +332,9 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
 
   const bySource = useMemo(() => {
     const acc: Record<SourceKey, number> = { consultations: 0, subscriptions: 0, content: 0, lives: 0, other: 0 };
-    periodTx.forEach(tx => { acc[sourceOf((tx.metadata as any)?.source)] += grossOf(tx); });
+    countedPeriodTx.forEach(tx => { acc[sourceOf((tx.metadata as any)?.source)] += grossOf(tx); });
     return acc;
-  }, [periodTx]);
+  }, [countedPeriodTx]);
 
   const periodNet = Object.values(bySource).reduce((a, b) => a + b, 0);
 
@@ -318,11 +344,13 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
     const thisFrom = new Date(now.getFullYear(), now.getMonth(), 1);
     const thisTo = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const cur = transactions.filter(tx => inRange(tx.created_at, thisFrom, thisTo)).reduce((s, tx) => s + grossOf(tx), 0);
-    const prev = transactions.filter(tx => inRange(tx.created_at, prevFrom, thisFrom)).reduce((s, tx) => s + grossOf(tx), 0);
+    const counted = transactions.filter(tx => !isRefundedTx(tx));
+    const cur = counted.filter(tx => inRange(tx.created_at, thisFrom, thisTo)).reduce((s, tx) => s + grossOf(tx), 0);
+    const prev = counted.filter(tx => inRange(tx.created_at, prevFrom, thisFrom)).reduce((s, tx) => s + grossOf(tx), 0);
     const pct = prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
     return { cur, prev, pct };
-  }, [transactions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactions, refundedEarningIds]);
 
   const chartData = useMemo(() => {
     const keyOf = (d: Date) => {
@@ -334,7 +362,7 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     };
     const map = new Map<string, any>();
-    periodTx.forEach(tx => {
+    countedPeriodTx.forEach(tx => {
       const d = new Date(tx.created_at);
       const k = keyOf(d);
       if (!map.has(k)) map.set(k, { k, date: d, consultations: 0, subscriptions: 0, content: 0, lives: 0, other: 0 });
@@ -348,7 +376,7 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
           ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-MX', { month: 'short', year: '2-digit' }).format(r.date)
           : fmtDayShort(r.date, language),
       }));
-  }, [periodTx, bucket, language]);
+  }, [countedPeriodTx, bucket, language]);
 
   const activeHolds = holds.filter(h => h.status === 'held');
   const heldTotal = activeHolds.reduce((s, h) => s + Number(h.amount), 0);
@@ -371,10 +399,11 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
   }[k]);
 
   const statusLabel = (s: string) => (s === 'paid' ? t('pro.earnings.statusPaid')
+    : s === 'refunded' ? t('pro.earnings.statusRefunded')
     : s === 'failed' ? t('pro.earnings.statusFailed')
     : s === 'initiated' ? t('pro.earnings.statusProcessing')
     : t('pro.earnings.statusPaid'));
-  const statusClass = (s: string) => (s === 'failed' ? 'pro-pill-live' : s === 'initiated' ? 'pro-pill-warn' : 'pro-pill-ok');
+  const statusClass = (s: string) => (s === 'failed' || s === 'refunded' ? 'pro-pill-live' : s === 'initiated' ? 'pro-pill-warn' : 'pro-pill-ok');
 
   const clientOf = (tx: Transaction) => {
     const m = (tx.metadata as any) || {};
@@ -396,7 +425,7 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
       grossOf(tx).toFixed(2),
       commissionOf(tx).toFixed(2),
       netOf(tx).toFixed(2),
-      statusLabel(tx.status),
+      statusLabel(isRefundedTx(tx) ? 'refunded' : tx.status),
     ]);
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -665,7 +694,7 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
                                   <td className="num">{money2(gross, language)}</td>
                                   <td className="num">{money2(commissionOf(tx), language)}</td>
                                   <td className="num strong">{money2(netOf(tx), language)}</td>
-                                  <td><span className={`pro-pill ${statusClass(tx.status)}`}>{statusLabel(tx.status)}</span></td>
+                                  <td><span className={`pro-pill ${statusClass(isRefundedTx(tx) ? 'refunded' : tx.status)}`}>{statusLabel(isRefundedTx(tx) ? 'refunded' : tx.status)}</span></td>
                                   <td>
                                     {!inv
                                       ? <span className="pro-muted">—</span>

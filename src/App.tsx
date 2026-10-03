@@ -304,7 +304,7 @@ const App = () => {
                       <Route path="/my-books" element={<DoctorLegacyRedirect><MyBooks /></DoctorLegacyRedirect>} />
                       <Route path="/order-success" element={<OrderSuccess />} />
                       <Route path="/double-check" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><DoubleCheck /></ToggleGate>} />
-                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/settings" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><Settings /></AccessGuard>} />
                       <Route path="/admin" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminDashboard /></AccessGuard>} />
                       <Route path="/admin/verifications" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminVerifications /></AccessGuard>} />
                       <Route path="/admin/doctors" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminDoctors /></AccessGuard>} />

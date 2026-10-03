@@ -24,6 +24,9 @@ const fmt = (iso: string) => {
   });
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,15 +41,15 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(supabaseUrl, serviceKey);
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing Authorization");
+    if (!authHeader) throw httpError(401, "Missing Authorization");
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userErr } = await admin.auth.getUser(token);
-    if (userErr || !userData.user) throw new Error("Authentication failed");
+    if (userErr || !userData.user) throw httpError(401, "Authentication failed");
 
-    const body = (await req.json()) as InvitePayload;
+    const body = (await req.json().catch(() => ({}))) as InvitePayload;
     const { availability_id, recipients, action, old_scheduled_at } = body;
 
-    if (!availability_id) throw new Error("availability_id required");
+    if (!availability_id) throw httpError(400, "availability_id required");
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return new Response(JSON.stringify({ success: true, sent: 0, skipped: "no recipients" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -60,7 +63,7 @@ Deno.serve(async (req: Request) => {
       .eq("doctor_id", userData.user.id)
       .single();
 
-    if (aErr || !avail) throw new Error("Availability not found or not yours");
+    if (aErr || !avail) throw httpError(403, "Availability not found or not yours");
 
     const { data: profile } = await admin
       .from("profiles_public")
@@ -165,7 +168,7 @@ Deno.serve(async (req: Request) => {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[send-availability-invite] error:", msg);
     return new Response(JSON.stringify({ success: false, error: msg }), {
-      status: 500,
+      status: (e as any)?.status ?? 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

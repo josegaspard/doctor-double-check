@@ -63,7 +63,9 @@ export default function Login() {
   const requestedRole = (location.state as any)?.preferredRole || (patientsOpen ? 'patient' : 'doctor');
   // Si alguien llega pidiendo "paciente" con el acceso cerrado, se le atiende como
   // médico y se le explica por qué (en vez de dejarlo en una pantalla muerta).
-  const patientRequestedButClosed = requestedRole === 'patient' && !patientsOpen;
+  // También se enseña cuando una cuenta de paciente intentó entrar con el acceso cerrado.
+  const [patientLoginBlocked, setPatientLoginBlocked] = useState(false);
+  const patientRequestedButClosed = (requestedRole === 'patient' && !patientsOpen) || patientLoginBlocked;
   const preferredRole = patientRequestedButClosed ? 'doctor' : requestedRole;
 
   // Insignia de rol (cliente 2026-06-26): login y registro deben verse DISTINTOS según
@@ -241,14 +243,30 @@ export default function Login() {
     // Gate de rol DESACTIVADO (2026-07-01): estaba bloqueando logins legítimos. Toda cuenta
     // válida entra directo a su panel según su rol real, sin importar la barra elegida.
     try { sessionStorage.removeItem('mm_role_gate'); } catch {}
+    setPatientLoginBlocked(false);
 
+    // Este formulario decide el destino tras entrar: el oyente global de sesión no
+    // redirige mientras la marca existe (si no, mandaba a /lives a un paciente con el
+    // acceso cerrado antes de poder cerrarle la sesión — 3-oct-2026).
+    try { sessionStorage.setItem('mm_login_form_pending', '1'); } catch {}
+    try {
+      await finishLogin();
+    } finally {
+      // Ya se navegó fuera de /login o se cerró la sesión: el oyente vuelve a lo normal.
+      try { sessionStorage.removeItem('mm_login_form_pending'); } catch {}
+    }
+  };
+
+  const finishLogin = async () => {
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
       // Cuenta de PACIENTE con el acceso cerrado: la contraseña era correcta, pero
       // no puede pasar. Se cierra la sesión recién abierta y se explica por qué —
       // dejarla abierta la metería en una app que no le corresponde todavía.
+      // scope 'local': solo esta pestaña; no cierra sus sesiones en otros dispositivos.
       if (result.role === 'patient' && !patientsOpen) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
+        setPatientLoginBlocked(true);
         setLoginError(t('login.patientLoginBlocked'));
         return;
       }

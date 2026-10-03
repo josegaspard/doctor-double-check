@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { fill } from '@/lib/proFormat';
 import {
   ShieldCheck,
   Check,
@@ -109,40 +110,80 @@ export default function AdminContentModeration() {
     if (!selected) return;
     setActing(true);
     const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase
+    const trimmedNote = note.trim();
+    // .select(): sin política UPDATE para admin, RLS no da error pero no cambia ninguna
+    // fila. Antes se daba por aprobado igual y se avisaba a los suscriptores (3-oct-2026).
+    const { data: updatedRows, error } = await supabase
       .from('doctor_content')
       .update({
         moderation_status: decision,
-        moderation_note: note || null,
+        moderation_note: trimmedNote || null,
         moderated_at: new Date().toISOString(),
         moderated_by: userData.user?.id,
       } as any)
-      .eq('id', selected.id);
+      .eq('id', selected.id)
+      .select('id');
 
     if (error) {
       toast.error(error.message);
       setActing(false);
       return;
     }
+    if (!updatedRows || updatedRows.length === 0) {
+      toast.error(t('adminContentModeration.toastNotSaved'));
+      setActing(false);
+      return;
+    }
+
+    // Aviso al médico creador con la decisión y la nota (campanita). No bloquea la moderación.
+    try {
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: selected.creator_id,
+        type: 'system',
+        title: decision === 'approved'
+          ? t('adminContentModeration.creatorApprovedTitle')
+          : t('adminContentModeration.creatorRejectedTitle'),
+        message: fill(
+          decision === 'approved'
+            ? t('adminContentModeration.creatorApprovedMessage')
+            : t('adminContentModeration.creatorRejectedMessage'),
+          { title: selected.title },
+        ) + (trimmedNote ? ` ${t('adminContentModeration.noteLabel')}: ${trimmedNote}` : ''),
+        data: {
+          kind: 'content_moderation',
+          content_id: selected.id,
+          status: decision,
+          moderation_note: trimmedNote || null,
+          deeplink: '/contenido',
+        },
+      } as any);
+      if (notifError) console.warn('creator moderation notification failed', notifError);
+    } catch (e) {
+      console.warn('creator moderation notification failed', e);
+    }
 
     // On approval, if content was public, notify the creator's subscribers (this is what would
     // have fired on upload before moderation was introduced).
+    // El toast solo dice «notificado a suscriptores» si el aviso salió de verdad.
+    let subscribersNotified = false;
     if (decision === 'approved' && selected.is_public) {
       try {
-        await supabase.rpc('notify_subscribers', {
+        const { error: notifySubsError } = await supabase.rpc('notify_subscribers', {
           p_doctor_id: selected.creator_id,
           p_notification_type: 'new_content',
           p_title: `${t('adminContentModeration.notifyTitlePrefix')}: ${selected.title}`,
           p_message: `${selected.creator_name || t('adminContentModeration.notifyDefaultDoctor')} ${t('adminContentModeration.notifyMessageBody')}${selected.category ? ` ${t('adminContentModeration.notifyInCategory')} ${selected.category}` : ''}`,
-          p_data: { content_id: selected.id, type: selected.type },
+          p_data: { content_id: selected.id, type: String(selected.type).replace(/^__reject__/, '') },
         });
+        if (notifySubsError) console.warn('notify_subscribers failed', notifySubsError);
+        else subscribersNotified = true;
         supabase.functions.invoke('send-content-notification-email', {
           body: {
             doctorId: selected.creator_id,
             doctorName: selected.creator_name || t('adminContentModeration.defaultDoctor'),
             contentId: selected.id,
             contentTitle: selected.title,
-            contentType: selected.type,
+            contentType: String(selected.type).replace(/^__reject__/, ''),
             category: selected.category || '',
           },
         }).catch((e) => console.warn('subscriber email notification failed', e));
@@ -151,7 +192,13 @@ export default function AdminContentModeration() {
       }
     }
 
-    toast.success(decision === 'approved' ? t('adminContentModeration.toastApproved') : t('adminContentModeration.toastRejected'));
+    toast.success(
+      decision === 'approved'
+        ? (subscribersNotified
+          ? t('adminContentModeration.toastApproved')
+          : t('adminContentModeration.toastApprovedNotNotified'))
+        : t('adminContentModeration.toastRejected'),
+    );
     setSelected(null);
     setNote('');
     setActing(false);

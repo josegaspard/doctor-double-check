@@ -52,7 +52,12 @@ Deno.serve(async (req) => {
     }
 
     const { roomName, isOwner = false, enableMedia = false } = await req.json();
-    if (!roomName) throw new Error("roomName is required");
+    if (!roomName) {
+      return new Response(
+        JSON.stringify({ success: false, error: "roomName is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Authorize the join against DB state:
     //   - Live rooms (lives.daily_room_name = roomName): public viewers allowed,
@@ -120,16 +125,53 @@ Deno.serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Un live terminado ya no tiene sala útil: no se emiten tokens.
+      if (liveRow.status === 'ended') {
+        return new Response(
+          JSON.stringify({ success: false, error: "Live has ended" }),
+          { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Interruptor "Acceso para PACIENTES" (site_settings.feature_toggles.enable_patient_access,
+      // apagado por defecto): con él apagado la web no deja entrar a pacientes, y aquí
+      // se aplica también para quien pida el token directamente a la API.
+      if (userId && userId !== liveRow.doctor_id) {
+        const { data: roleRows } = await admin.from("user_roles").select("role").eq("user_id", userId);
+        const roles = (roleRows || []).map((r: any) => r.role);
+        const isOnlyPatient = roles.includes("patient") &&
+          !roles.some((r: string) => r === "doctor" || r === "resident" || r === "admin");
+        if (isOnlyPatient) {
+          const { data: togglesRow } = await admin
+            .from("site_settings").select("value").eq("id", "feature_toggles").maybeSingle();
+          const patientAccess = (togglesRow?.value as any)?.enable_patient_access === true;
+          if (!patientAccess) {
+            logStep("Patient access disabled — live token rejected", { roomName, userId });
+            return new Response(
+              JSON.stringify({ success: false, error: "Patient access is disabled" }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+      }
     }
 
     logStep("Authorized", { roomName, kind: isConsultation ? 'consultation' : 'live', userId, isOwner });
+
+    // Visitantes sin sesión en un live: la web les deja ver 60 s de vista previa
+    // (LiveVisitorGate freeSeconds=60). El token dura eso más un margen y los saca
+    // de la sala al caducar, para que no se pueda ver el live entero sin cuenta.
+    const isLiveVisitor = !isConsultation && !userId;
+    const VISITOR_TOKEN_SECONDS = 90;
 
     const tokenProperties: Record<string, any> = {
       room_name: roomName,
       is_owner: isOwner,
       ...(userId && { user_id: userId }),
       user_name: userName,
-      exp: Math.floor(Date.now() / 1000) + 86400,
+      exp: Math.floor(Date.now() / 1000) + (isLiveVisitor ? VISITOR_TOKEN_SECONDS : 86400),
+      ...(isLiveVisitor && { eject_at_token_exp: true }),
       start_video_off: !enableMedia,
       start_audio_off: !enableMedia,
     };

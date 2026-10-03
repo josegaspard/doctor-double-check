@@ -125,8 +125,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/my-books?book_paid=success`,
-      cancel_url: `${req.headers.get("origin")}/doctor/${content.creator_id}?book_paid=canceled`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/my-books?book_paid=success`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/doctor/${content.creator_id}?book_paid=canceled`,
       metadata: {
         user_id: user.id,
         content_id: contentId,

@@ -28,16 +28,21 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    if (userError || !userData.user) {
+      return new Response(JSON.stringify({ success: false, error: "User not authenticated" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
-    const { data: roleData } = await supabaseAdmin
+    // Un usuario puede tener varios roles: .single() fallaba con 2 filas y dejaba fuera al admin.
+    const { data: adminRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", userData.user.id)
-      .single();
+      .eq("role", "admin")
+      .limit(1)
+      .maybeSingle();
 
-    if (roleData?.role !== "admin") {
-      throw new Error("Unauthorized - admin access required");
+    if (!adminRole) {
+      return new Response(JSON.stringify({ success: false, error: "Unauthorized - admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     logStep("Admin authenticated", { adminId: userData.user.id });
@@ -122,6 +127,89 @@ Deno.serve(async (req) => {
 
     let stripeRefundId = null;
 
+    // Revierte al médico el NETO de la venta original (si la venta era de un médico).
+    const reverseDoctorEarnings = async () => {
+      if (!transaction_id) return;
+      const { data: originalTx } = await supabaseAdmin
+        .from("wallet_transactions")
+        .select("metadata")
+        .eq("id", transaction_id)
+        .single();
+
+      // Resolver a QUÉ doctor y con qué comisión revertir. Antes SOLO 'consultation'
+      // revertía; las compras de grabación/libro (metadata {recording_id}/{content_id},
+      // sin doctor_id) nunca revertían → el doctor cobraba de más en cada reembolso.
+      // Segunda opinión y consulta en vivo se cobran como consulta (metadata.type
+      // 'double_check' / 'live_consultation' con doctor_id) y también se revierten.
+      const meta = originalTx?.metadata || {};
+      let doctorId: string | null = meta.doctor_id ?? null;
+      let commissionKind = "consultation";
+
+      if (meta.type === 'consultation' || meta.type === 'double_check' || meta.type === 'live_consultation') {
+        commissionKind = "consultation";
+      } else if (meta.recording_id) {
+        commissionKind = "recording";
+        if (!doctorId) {
+          const { data: rec } = await supabaseAdmin
+            .from("recordings").select("doctor_id").eq("id", meta.recording_id).maybeSingle();
+          doctorId = (rec as any)?.doctor_id ?? null;
+        }
+      } else if (meta.content_id) {
+        commissionKind = "content";
+        if (!doctorId) {
+          const { data: dc } = await supabaseAdmin
+            .from("doctor_content").select("creator_id").eq("id", meta.content_id).maybeSingle();
+          doctorId = (dc as any)?.creator_id ?? null;
+        }
+      } else {
+        doctorId = null; // recarga de wallet u otro: nada que revertir al doctor
+      }
+
+      if (!doctorId) return;
+      const { data: doctorProfile } = await supabaseAdmin
+        .from("doctor_profiles")
+        .select("pending_earnings")
+        .eq("user_id", doctorId)
+        .single();
+      if (!doctorProfile) return;
+
+      // Al doctor se le acreditó el NETO (bruto − comisión), NO el bruto. Revertir el
+      // bruto lo dejaba perdiendo de más. Se resta el neto usando la tasa de comisión
+      // correspondiente al tipo de venta (consultation/recording/content).
+      const { data: rate } = await supabaseAdmin.rpc("fn_commission_rate", { p_kind: commissionKind });
+      const commissionRate = Number.isFinite(Number(rate)) ? Number(rate) : 0.20;
+      const netToReverse = Number((amount * (1 - commissionRate)).toFixed(2));
+      const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - netToReverse);
+      await supabaseAdmin.from("doctor_profiles").update({ pending_earnings: newPendingEarnings }).eq("user_id", doctorId);
+      logStep("Reversed doctor earnings (net)", { doctorId, amount, commissionKind, commissionRate, netToReverse, newPendingEarnings });
+
+      await supabaseAdmin.from("notifications").insert({
+        user_id: doctorId, type: "system",
+        title: "Reembolso procesado",
+        message: `Se ha revertido una ganancia de $${netToReverse.toFixed(2)} por un reembolso.`,
+        data: { amount: netToReverse, reason },
+      });
+    };
+
+    // Marca 'refunded' la venta original FUSIONANDO su metadata (antes la pisaba).
+    // Si la BD aún no admite 'refunded' en transaction_status, se registra y se sigue:
+    // el reembolso ya está hecho y no debe fallar por esto.
+    const markOriginalRefunded = async (refundTxId: string | null, method: string) => {
+      if (!transaction_id) return;
+      const { data: orig } = await supabaseAdmin
+        .from("wallet_transactions").select("metadata").eq("id", transaction_id).maybeSingle();
+      const { error: markErr } = await supabaseAdmin.from("wallet_transactions").update({
+        status: "refunded",
+        metadata: {
+          ...((orig as any)?.metadata || {}),
+          refund_transaction_id: refundTxId,
+          refund_method: method,
+          refunded_at: new Date().toISOString(),
+        },
+      }).eq("id", transaction_id);
+      if (markErr) logStep("Could not mark original transaction as refunded (non-blocking)", { error: markErr.message });
+    };
+
     // Get user profile for email
     const { data: userProfile } = await supabaseAdmin
       .from("profiles")
@@ -134,8 +222,18 @@ Deno.serve(async (req) => {
       logStep("Processing Stripe refund", { paymentIntentId: stripe_payment_intent_id, amount });
       
       try {
+        // La web manda a veces el id de la sesión de Checkout (cs_...), no el del
+        // PaymentIntent (pi_...): Stripe rechaza el refund con ese id. Se resuelve aquí.
+        let paymentIntentId: string = stripe_payment_intent_id;
+        if (paymentIntentId.startsWith("cs_")) {
+          const checkoutSession = await stripe.checkout.sessions.retrieve(paymentIntentId);
+          const pi = checkoutSession.payment_intent;
+          paymentIntentId = typeof pi === "string" ? pi : (pi?.id ?? "");
+          if (!paymentIntentId) throw new Error("Checkout session has no payment intent");
+          logStep("Resolved checkout session to payment intent", { sessionId: stripe_payment_intent_id, paymentIntentId });
+        }
         const refund = await stripe.refunds.create({
-          payment_intent: stripe_payment_intent_id,
+          payment_intent: paymentIntentId,
           amount: Math.round(amount * 100),
           reason: "requested_by_customer",
         }, { idempotencyKey: refundIdemKey });
@@ -164,7 +262,7 @@ Deno.serve(async (req) => {
       }
 
       // Create refund transaction record
-      await supabaseAdmin.from("wallet_transactions").insert({
+      const { data: stripeRefundTx } = await supabaseAdmin.from("wallet_transactions").insert({
         user_id,
         type: "refund",
         amount,
@@ -176,7 +274,11 @@ Deno.serve(async (req) => {
           stripe_refund_id: stripeRefundId,
           refund_method: "stripe",
         },
-      });
+      }).select("id").maybeSingle();
+
+      // El dinero vuelve a la tarjeta: el médico tampoco debe conservar esa ganancia.
+      await reverseDoctorEarnings();
+      await markOriginalRefunded((stripeRefundTx as any)?.id ?? null, "stripe");
 
       // Send confirmation email
       try {
@@ -303,67 +405,7 @@ Deno.serve(async (req) => {
 
     // ========== WALLET REFUND (default) ==========
     // Reverse doctor earnings if applicable
-    if (transaction_id) {
-      const { data: originalTx } = await supabaseAdmin
-        .from("wallet_transactions")
-        .select("metadata")
-        .eq("id", transaction_id)
-        .single();
-
-      // Resolver a QUÉ doctor y con qué comisión revertir. Antes SOLO 'consultation'
-      // revertía; las compras de grabación/libro (metadata {recording_id}/{content_id},
-      // sin doctor_id) nunca revertían → el doctor cobraba de más en cada reembolso.
-      const meta = originalTx?.metadata || {};
-      let doctorId: string | null = meta.doctor_id ?? null;
-      let commissionKind = "consultation";
-
-      if (meta.type === 'consultation') {
-        commissionKind = "consultation";
-      } else if (meta.recording_id) {
-        commissionKind = "recording";
-        if (!doctorId) {
-          const { data: rec } = await supabaseAdmin
-            .from("recordings").select("doctor_id").eq("id", meta.recording_id).maybeSingle();
-          doctorId = (rec as any)?.doctor_id ?? null;
-        }
-      } else if (meta.content_id) {
-        commissionKind = "content";
-        if (!doctorId) {
-          const { data: dc } = await supabaseAdmin
-            .from("doctor_content").select("creator_id").eq("id", meta.content_id).maybeSingle();
-          doctorId = (dc as any)?.creator_id ?? null;
-        }
-      } else {
-        doctorId = null; // recarga de wallet u otro: nada que revertir al doctor
-      }
-
-      if (doctorId) {
-        const { data: doctorProfile } = await supabaseAdmin
-          .from("doctor_profiles")
-          .select("pending_earnings")
-          .eq("user_id", doctorId)
-          .single();
-
-        if (doctorProfile) {
-          // Al doctor se le acreditó el NETO (bruto − comisión), NO el bruto. Revertir el
-          // bruto lo dejaba perdiendo de más. Se resta el neto usando la tasa de comisión
-          // correspondiente al tipo de venta (consultation/recording/content).
-          const { data: rate } = await supabaseAdmin.rpc("fn_commission_rate", { p_kind: commissionKind });
-          const commissionRate = Number.isFinite(Number(rate)) ? Number(rate) : 0.20;
-          const netToReverse = Number((amount * (1 - commissionRate)).toFixed(2));
-          const newPendingEarnings = Math.max(0, (doctorProfile.pending_earnings || 0) - netToReverse);
-          await supabaseAdmin.from("doctor_profiles").update({ pending_earnings: newPendingEarnings }).eq("user_id", doctorId);
-          logStep("Reversed doctor earnings (net)", { doctorId, amount, commissionKind, commissionRate, netToReverse, newPendingEarnings });
-
-          await supabaseAdmin.from("notifications").insert({
-            user_id: doctorId, type: "system",
-            title: "Reembolso procesado",
-            message: `Se ha revertido una ganancia de $${netToReverse.toFixed(2)} por un reembolso.`,
-            data: { amount: netToReverse, reason },
-          });
-        }
-      }
-    }
+    await reverseDoctorEarnings();
 
     // Credit user's wallet
     const { error: rpcError } = await supabaseAdmin.rpc("credit_wallet_balance", { p_user_id: user_id, p_amount: amount });
@@ -377,12 +419,12 @@ Deno.serve(async (req) => {
     }
 
     // Create refund transaction
-    await supabaseAdmin.from("wallet_transactions").insert({
+    const { data: walletRefundTx } = await supabaseAdmin.from("wallet_transactions").insert({
       user_id, type: "refund", amount,
       description: reason || "Reembolso procesado por administrador",
       status: "paid",
       metadata: { admin_id: userData.user.id, original_transaction_id: transaction_id, refund_method: "wallet" },
-    });
+    }).select("id").maybeSingle();
 
     // Update refund request if provided
     if (refund_request_id) {
@@ -395,11 +437,7 @@ Deno.serve(async (req) => {
     }
 
     // Update original transaction
-    if (transaction_id) {
-      await supabaseAdmin.from("wallet_transactions").update({ 
-        status: "refunded", metadata: { refund_transaction_id: transaction_id }
-      }).eq("id", transaction_id);
-    }
+    await markOriginalRefunded((walletRefundTx as any)?.id ?? null, "wallet");
 
     // Send email
     try {

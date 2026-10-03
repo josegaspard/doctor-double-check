@@ -48,6 +48,8 @@ const LOCALE_MAP: Record<string, string> = {
   fr: 'fr-FR',
   it: 'it-IT',
   de: 'de-DE',
+  ca: 'ca-ES',
+  zh: 'zh-CN',
 };
 const formatDate = (iso: string, lang: string = 'es') => {
   const d = new Date(iso);
@@ -71,6 +73,40 @@ const DAY_NUM: Record<string, number> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
 };
 
+// 3-oct-2026: el horario del médico está en SU zona (doctor_schedule_ranges.timezone,
+// por defecto America/Mexico_City). Los turnos se construyen en esa zona y se muestran
+// en la hora local del paciente; antes se leían en la hora del navegador y un paciente
+// fuera de México veía turnos desplazados.
+const DEFAULT_DOCTOR_TZ = 'America/Mexico_City';
+const PATIENT_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; }
+})();
+const isValidTz = (tz: string | null | undefined): tz is string => {
+  if (!tz) return false;
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch { return false; }
+};
+/** Fecha y hora de pared en `tz` para el instante `ms`. */
+function zonedParts(ms: number, tz: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(new Date(ms));
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { y: get('year'), mo: get('month'), d: get('day'), h: get('hour') % 24, mi: get('minute'), s: get('second') };
+}
+const tzOffsetMs = (ms: number, tz: string) => {
+  const p = zonedParts(ms, tz);
+  return Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s) - Math.floor(ms / 1000) * 1000;
+};
+/** Instante UTC (ms) de la hora de pared y/mo/d h:mi en la zona `tz` (con cambio de horario). */
+function zonedWallToUtc(y: number, mo: number, d: number, h: number, mi: number, tz: string): number {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, 0, 0);
+  let ms = guess - tzOffsetMs(guess, tz);
+  const off2 = tzOffsetMs(ms, tz);
+  if (guess - off2 !== ms) ms = guess - off2;
+  return ms;
+}
+
 /** Tramo ocupado en milisegundos: [inicio, fin). */
 type BusyRange = [number, number];
 const overlapsBusy = (startMs: number, minutes: number, busy: BusyRange[]) => {
@@ -86,6 +122,7 @@ function generateOfficeHourSlots(
   busy: BusyRange[],
   now: Date,
   slotMin: number = ORIENTATION_SLOT_MIN,
+  tz: string = DEFAULT_DOCTOR_TZ,
 ): Slot[] {
   if (!officeDays?.length || !start || !end) return [];
   const [sh, sm] = start.split(':').map(Number);
@@ -95,14 +132,15 @@ function generateOfficeHourSlots(
   if (endMins <= startMins) return [];
   const activeNums = new Set(officeDays.map(d => DAY_NUM[d.toLowerCase()]).filter(n => n !== undefined));
   const out: Slot[] = [];
+  // Días de calendario en la zona del médico, no en la del navegador.
+  const today = zonedParts(now.getTime(), tz);
   for (let d = 0; d < ORIENTATION_HORIZON_DAYS; d++) {
-    const day = new Date(now);
-    day.setDate(now.getDate() + d);
-    day.setHours(0, 0, 0, 0);
-    if (!activeNums.has(day.getDay())) continue;
+    const day = new Date(Date.UTC(today.y, today.mo - 1, today.d + d));
+    if (!activeNums.has(day.getUTCDay())) continue;
     for (let m = startMins; m + slotMin <= endMins; m += slotMin) {
-      const dt = new Date(day);
-      dt.setHours(Math.floor(m / 60), m % 60, 0, 0);
+      const dt = new Date(zonedWallToUtc(
+        day.getUTCFullYear(), day.getUTCMonth() + 1, day.getUTCDate(), Math.floor(m / 60), m % 60, tz,
+      ));
       if (dt.getTime() <= now.getTime()) continue;
       if (overlapsBusy(dt.getTime(), slotMin, busy)) continue;
       const iso = dt.toISOString();
@@ -121,8 +159,8 @@ function generateOfficeHourSlots(
 }
 
 // 11-sep-2026: turnos a partir del horario por tramos y días sueltos del médico
-// (get_doctor_schedule: una fila por tramo efectivo de cada día). Las horas se leen
-// en la hora local del navegador, igual que hacía el horario semanal antiguo.
+// (get_doctor_schedule: una fila por tramo efectivo de cada día). Las horas son de
+// pared en la zona del médico (3-oct-2026; antes se leían en la del navegador).
 const scheduleDateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 function generateScheduleSlots(
@@ -131,18 +169,25 @@ function generateScheduleSlots(
   busy: BusyRange[],
   now: Date,
   slotMin: number = ORIENTATION_SLOT_MIN,
+  tz: string = DEFAULT_DOCTOR_TZ,
 ): Slot[] {
   const out: Slot[] = [];
   const seen = new Set<string>();
+  // Mismo horizonte que el horario semanal: de hoy a hoy + 20 días en la zona del médico.
+  const today = zonedParts(now.getTime(), tz);
+  const firstDay = Date.UTC(today.y, today.mo - 1, today.d);
+  const lastDay = Date.UTC(today.y, today.mo - 1, today.d + ORIENTATION_HORIZON_DAYS - 1);
   for (const r of rows) {
     const [y, mo, d] = String(r.day || '').split('-').map(Number);
     const [sh, sm] = String(r.start_time || '').split(':').map(Number);
     const [eh, em] = String(r.end_time || '').split(':').map(Number);
     if (!y || !mo || !d || Number.isNaN(sh) || Number.isNaN(eh)) continue;
+    const dayUtc = Date.UTC(y, mo - 1, d);
+    if (dayUtc < firstDay || dayUtc > lastDay) continue;
     const startMins = sh * 60 + (sm || 0);
     const endMins = eh * 60 + (em || 0);
     for (let m = startMins; m + slotMin <= endMins; m += slotMin) {
-      const dt = new Date(y, mo - 1, d, Math.floor(m / 60), m % 60, 0, 0);
+      const dt = new Date(zonedWallToUtc(y, mo, d, Math.floor(m / 60), m % 60, tz));
       if (dt.getTime() <= now.getTime()) continue;
       if (overlapsBusy(dt.getTime(), slotMin, busy)) continue;
       const iso = dt.toISOString();
@@ -170,6 +215,8 @@ interface AgendaData {
   booked: BusyRange[];
   blocked: BusyRange[];
   bookedIds: Set<string>;
+  /** Zona del horario del médico (doctor_schedule_ranges.timezone). */
+  tz: string;
 }
 
 /** Sin la migración 20260913a, appointments no tiene service_id / service_name / price. */
@@ -240,7 +287,9 @@ export default function BookAppointment() {
       // → esas queries .single() daban 406 y rompían TODO el booking. Usamos el RPC
       // público SECURITY DEFINER (mismo que usa /doctor/:id) que devuelve el perfil
       // público del doctor APROBADO con fee, horarios y datos de agenda.
-      const [{ data: docRows }, { data: avs }, { data: appts }, { data: blocks }, scheduleRes] = await Promise.all([
+      const busyFrom = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const busyTo = new Date(Date.now() + (ORIENTATION_HORIZON_DAYS + 2) * 86_400_000).toISOString();
+      const [{ data: docRows }, { data: avs }, { data: appts }, busyRes, scheduleRes, { data: tzRows }] = await Promise.all([
         supabase.rpc('get_doctor_public_profile', { p_user_id: doctorId }),
         supabase
           .from('doctor_availability')
@@ -255,25 +304,49 @@ export default function BookAppointment() {
           .select('availability_id, scheduled_at, duration_minutes')
           .eq('doctor_id', doctorId)
           .in('status', ['requested', 'confirmed']),
-        // Tramos que el médico BLOQUEÓ desde su agenda profesional (7-sep-2026):
-        // ningún turno generado por horario de atención puede caer dentro.
-        supabase
+        // Tramos ocupados del médico (bloqueos privados + citas de cualquier paciente) por
+        // la RPC get_doctor_busy_slots (3-oct-2026): el paciente ya no lee las filas de
+        // bloqueo ajenas. Ningún turno generado por horario de atención puede caer dentro.
+        (supabase.rpc as any)('get_doctor_busy_slots', {
+          p_doctor_id: doctorId,
+          p_from: busyFrom,
+          p_to: busyTo,
+        }),
+        // Un día de margen a cada lado del horizonte (hoy + 20 en la zona del médico): esa
+        // zona puede ir por detrás o por delante de la del navegador. Los días que quedan
+        // fuera del horizonte se descartan en generateScheduleSlots.
+        (supabase.rpc as any)('get_doctor_schedule', {
+          p_doctor_id: doctorId,
+          p_from: scheduleDateKey(new Date(Date.now() - 86_400_000)),
+          p_to: scheduleDateKey(new Date(Date.now() + ORIENTATION_HORIZON_DAYS * 86_400_000)),
+        }),
+        (supabase as any)
+          .from('doctor_schedule_ranges')
+          .select('timezone')
+          .eq('doctor_id', doctorId)
+          .limit(1),
+      ]);
+      let blocked: BusyRange[];
+      if (!(busyRes as any)?.error && Array.isArray((busyRes as any)?.data)) {
+        blocked = ((busyRes as any).data as { starts_at: string; ends_at: string }[])
+          .map((b) => [new Date(b.starts_at).getTime(), new Date(b.ends_at).getTime()] as BusyRange)
+          .filter(([st, en]) => Number.isFinite(st) && Number.isFinite(en));
+      } else {
+        // RPC sin desplegar (42883/PGRST202) u otro fallo: lectura directa de los bloqueos (7-sep-2026).
+        const { data: blocks } = await supabase
           .from('doctor_availability')
           .select('scheduled_at, duration_minutes')
           .eq('doctor_id', doctorId)
           .eq('type', 'blocked')
           .in('status', ['scheduled', 'confirmed'])
-          .gte('scheduled_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
-        (supabase.rpc as any)('get_doctor_schedule', {
-          p_doctor_id: doctorId,
-          p_from: scheduleDateKey(new Date()),
-          p_to: scheduleDateKey(new Date(Date.now() + ORIENTATION_HORIZON_DAYS * 86_400_000)),
-        }),
-      ]);
-      const blocked: BusyRange[] = ((blocks as any[]) || []).map((b) => {
-        const s = new Date(b.scheduled_at).getTime();
-        return [s, s + (Number(b.duration_minutes) || 60) * 60000] as BusyRange;
-      });
+          .gte('scheduled_at', busyFrom);
+        blocked = ((blocks as any[]) || []).map((b) => {
+          const st = new Date(b.scheduled_at).getTime();
+          return [st, st + (Number(b.duration_minutes) || 60) * 60000] as BusyRange;
+        });
+      }
+      const rawTz = (tzRows as any[])?.[0]?.timezone;
+      const tz = isValidTz(rawTz) ? rawTz : DEFAULT_DOCTOR_TZ;
 
       const dp = (docRows as any[])?.[0] ?? null;
 
@@ -307,6 +380,7 @@ export default function BookAppointment() {
         booked,
         blocked,
         bookedIds: new Set(apptRows.map((a) => a.availability_id).filter(Boolean)),
+        tz,
       });
       setLoading(false);
     };
@@ -325,7 +399,7 @@ export default function BookAppointment() {
         !overlapsBusy(new Date(s.scheduled_at).getTime(), Number(s.duration_minutes) || ORIENTATION_SLOT_MIN, agenda.blocked),
     );
     const officeSlots = (agenda.scheduleRows
-      ? generateScheduleSlots(doctorId, agenda.scheduleRows, busy, now, slotMin)
+      ? generateScheduleSlots(doctorId, agenda.scheduleRows, busy, now, slotMin, agenda.tz)
       : generateOfficeHourSlots(
         doctorId,
         agenda.dp?.office_days ?? null,
@@ -334,6 +408,7 @@ export default function BookAppointment() {
         busy,
         now,
         slotMin,
+        agenda.tz,
       )).filter((s) => !discreteTimes.has(new Date(s.scheduled_at).toISOString()));
     return [...discrete, ...officeSlots].sort(
       (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
@@ -412,7 +487,11 @@ export default function BookAppointment() {
     // la cita solo aparecía si el doctor abría "Mis citas" por su cuenta.
     try {
       const apptId = (data as any).id;
-      const when = new Date(selected.scheduled_at).toLocaleString();
+      // El médico lee la hora en SU zona, no en la del paciente.
+      const doctorTz = agenda?.tz || DEFAULT_DOCTOR_TZ;
+      const when = new Date(selected.scheduled_at).toLocaleString(LOCALE_MAP[language] || 'es-MX', {
+        timeZone: doctorTz, dateStyle: 'medium', timeStyle: 'short',
+      }) + ` (${doctorTz})`;
       const title = t('bookAppointment.notifyDoctorTitle');
       const baseMessage = t('bookAppointment.notifyDoctorMessage').replace('{when}', when);
       const message = service
@@ -489,7 +568,7 @@ export default function BookAppointment() {
                     <strong>{t('mm2.servicios.booking.confirmationPriceLabel')}</strong> {priceNode(confirmation.price)}
                   </p>
                 )}
-                <p><strong>{t('bookAppointment.confirmation.dateLabel')}</strong> {formatDate(confirmation.scheduled_at, language)} · {formatTime(confirmation.scheduled_at, language)}</p>
+                <p><strong>{t('bookAppointment.confirmation.dateLabel')}</strong> {formatDate(confirmation.scheduled_at, language)} · {formatTime(confirmation.scheduled_at, language)}{PATIENT_TZ ? ` ${PATIENT_TZ}` : ''}</p>
                 <p className="text-xs text-muted-foreground mt-2">{t('bookAppointment.confirmation.idLabel')} <code>{confirmation.appointmentId}</code></p>
               </div>
               <div className="flex gap-2 justify-center">
@@ -619,6 +698,15 @@ export default function BookAppointment() {
           </Card>
         ) : (
           <>
+            <p className="text-xs text-muted-foreground mb-3 flex items-start gap-1.5" role="note">
+              <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" aria-hidden="true" />
+              <span>
+                {fill(t('bookAppointment.timezoneNote'), { tz: PATIENT_TZ || agenda?.tz || DEFAULT_DOCTOR_TZ })}
+                {agenda?.tz && PATIENT_TZ && agenda.tz !== PATIENT_TZ
+                  ? ` ${fill(t('bookAppointment.timezoneDoctorNote'), { tz: agenda.tz })}`
+                  : ''}
+              </span>
+            </p>
             <div className="space-y-4 mb-6">
               {groupedSlots.map(([dateKey, daySlots]) => (
                 <div key={dateKey}>
@@ -657,7 +745,7 @@ export default function BookAppointment() {
                 <CardHeader>
                   <CardTitle className="text-base">{t('bookAppointment.confirm.title')}</CardTitle>
                   <CardDescription>
-                    {formatDate(selected.scheduled_at, language)} · {formatTime(selected.scheduled_at, language)} ({selectedService ? slotMin : selected.duration_minutes} {t('bookAppointment.minutes')})
+                    {formatDate(selected.scheduled_at, language)} · {formatTime(selected.scheduled_at, language)}{PATIENT_TZ ? ` ${PATIENT_TZ}` : ''} ({selectedService ? slotMin : selected.duration_minutes} {t('bookAppointment.minutes')})
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">

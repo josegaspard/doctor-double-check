@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,7 +17,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      throw httpError(401, "No authorization header");
     }
 
     const supabaseClient = createClient(
@@ -27,7 +30,7 @@ Deno.serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !userData.user) {
-      throw new Error("Usuario no autenticado");
+      throw httpError(401, "Usuario no autenticado");
     }
 
     const userId = userData.user.id;
@@ -156,7 +159,7 @@ Deno.serve(async (req) => {
         success: false,
         error: error.message || "Error al crear cuenta de pagos",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: error.status ?? 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

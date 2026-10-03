@@ -123,13 +123,22 @@ export function useAuthState() {
         // válida entra a su panel según su rol real. (Reactivar solo si se rehace bien.)
         try { sessionStorage.removeItem('mm_role_gate'); } catch {}
 
+        // La sesión pudo cerrarse mientras se cargaba el perfil (p. ej. /login la cierra
+        // a un paciente con el acceso cerrado): no se repone el usuario ni se redirige.
+        const { data: still } = await supabase.auth.getSession();
+        if (!still.session) return;
+
         setUserAndCache(profile);
         setIsLoading(false);
 
         // Redirect signed users away from login/root regardless of provider metadata.
         // Some linked accounts can report provider=email even when login happened with Google.
         const currentPath = window.location.pathname;
-        const shouldRedirect = currentPath === '/' || currentPath === '/login' || currentPath === '/email-confirmed';
+        // El formulario de /login hace su propia navegación (y su candado de pacientes).
+        let loginFormPending = false;
+        try { loginFormPending = sessionStorage.getItem('mm_login_form_pending') === '1'; } catch { /* noop */ }
+        const shouldRedirect = !(loginFormPending && currentPath === '/login')
+          && (currentPath === '/' || currentPath === '/login' || currentPath === '/email-confirmed');
 
         if (shouldRedirect) {
           if (event === 'SIGNED_IN') {

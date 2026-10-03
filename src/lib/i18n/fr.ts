@@ -3290,11 +3290,17 @@ export const fr = {
     cancel: "Annuler",
     confirmReject: "Confirmer le refus",
     toastApproved: "Contenu approuvé et abonnés notifiés",
+    toastApprovedNotNotified: "Contenu approuvé",
     toastRejected: "Contenu refusé",
     notifyTitlePrefix: "Nouveau contenu",
     notifyDefaultDoctor: "Un médecin",
     notifyMessageBody: "a publié un nouveau contenu",
-    notifyInCategory: "dans"
+    notifyInCategory: "dans",
+    toastNotSaved: "La décision n'a pas été enregistrée : la base de données n'a pas autorisé la modification. Vérifiez les droits d'administrateur et réessayez.",
+    creatorApprovedTitle: "Votre contenu a été approuvé",
+    creatorRejectedTitle: "Votre contenu a été refusé",
+    creatorApprovedMessage: "Votre contenu « {title} » a été approuvé.",
+    creatorRejectedMessage: "Votre contenu « {title} » n'a pas été approuvé.",
   },
   adminCredentials: {
     pageTitle: "Identifiants médicaux",
@@ -3899,7 +3905,9 @@ export const fr = {
       idLabel: "ID :",
       myAppointments: "Mes rendez-vous",
       findMoreDoctors: "Trouver d'autres médecins"
-    }
+    },
+    timezoneNote: "Horaires affichés dans votre heure locale ({tz}).",
+    timezoneDoctorNote: "Le médecin consulte à l'heure de {tz}.",
   },
   contentPreviewModal: {
     typeVideo: "Vidéo",
@@ -4168,6 +4176,12 @@ export const fr = {
     notificationFallbackDoctorName: "Un médecin que vous suivez",
     notificationLiveNowMessage: "{doctor} diffuse : {title}",
     broadcastStartedToast: "Diffusion démarrée !",
+    orphanLiveTitle: "Vous avez une diffusion en direct encore ouverte",
+    orphanLiveDesc: "« {title} » est toujours indiquée en direct. Vous pouvez la reprendre ou la terminer.",
+    orphanLiveResume: "Reprendre la diffusion",
+    orphanLiveEnd: "Terminer la diffusion",
+    orphanLiveResumeError: "Impossible de reprendre la diffusion. Terminez-la et lancez-en une nouvelle.",
+    orphanLiveEnded: "Diffusion terminée",
     recordingCaptureFailedToast: "L'enregistrement local n'a pas capturé la vidéo. Cela peut survenir si le navigateur a bloqué MediaRecorder ou si la connexion a été interrompue. Le live a été enregistré mais aucun fichier ne peut être téléversé.",
     recordingSavedToast: "Enregistrement sauvegardé avec succès",
     recordingSaveErrorToast: "Erreur lors de la sauvegarde de l'enregistrement",
@@ -4980,7 +4994,8 @@ export const fr = {
     rejectedByDoctor: "Refusée par le médecin",
     toastRejected: "Rendez-vous refusé",
     confirmedNotifyTitle: "Rendez-vous confirmé",
-    confirmedNotifyMessage: "Le médecin a confirmé votre rendez-vous. Consultez les détails dans « Mes rendez-vous »."
+    confirmedNotifyMessage: "Le médecin a confirmé votre rendez-vous. Consultez les détails dans « Mes rendez-vous ».",
+    unknownDoctor: "Médecin",
   },
   myNotesWidget: {
     title: "Mes notes",
@@ -7951,6 +7966,7 @@ export const fr = {
       paymentError: "Erreur de paiement",
       chatSessionError: "Erreur lors de la création de la session de chat",
       consultationError: "Erreur lors du démarrage du Deuxième avis",
+      paidButConsultationFailed: "Le paiement a été effectué, mais le Deuxième avis n'a pas pu être ouvert. Contactez le support avec la référence {ref} pour l'activer ou récupérer votre solde.",
       stripeError: "Erreur lors du traitement du paiement par carte"
     },
     purchase: {
@@ -8441,6 +8457,7 @@ export const fr = {
     callEnded: "Appel terminé",
     duration: "Durée",
     callEndedWith: "L'appel vidéo avec {name} est terminé",
+    incomingCallMessage: "{name} vous appelle pour une téléconsultation vidéo",
     createRoomError: "Erreur lors de la création de la salle",
     joinError: "Erreur lors de la connexion à l'appel",
     doctorNotStarted: "Le médecin n'a pas encore démarré l'appel vidéo",
@@ -9132,6 +9149,7 @@ export const fr = {
       statusHeld: 'Retenu',
       statusProcessing: 'En cours',
       statusFailed: 'Échoué',
+      statusRefunded: "Remboursé",
       account: 'Compte de retrait',
       editAccount: 'Modifier le compte',
       addAccount: 'Ajouter un compte',
@@ -11461,5 +11479,18 @@ export const fr = {
   mmcorr: {
     chkCofepris: 'Permis COFEPRIS',
     chkInReview: "en cours d'examen",
+  },
+  passwordStrength: {
+    title: "Robustesse :",
+    minLength: "Au moins 12 caractères",
+    lowercase: "Une lettre minuscule",
+    uppercase: "Une lettre majuscule",
+    number: "Un chiffre",
+    special: "Un caractère spécial (!@#$%)",
+    veryWeak: "Très faible",
+    weak: "Faible",
+    good: "Correcte",
+    strong: "Forte",
+    veryStrong: "Très forte",
   },
 };

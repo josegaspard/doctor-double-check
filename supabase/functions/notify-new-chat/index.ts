@@ -30,30 +30,48 @@ Deno.serve(async (req) => {
   try {
     logStep("Function started");
 
+    const jsonError = (status: number, error: string) =>
+      new Response(JSON.stringify({ error }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status,
+      });
+
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) return jsonError(401, "No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError || !userData?.user) return jsonError(401, "User not authenticated");
 
     const user = userData.user;
-    if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { doctorId, patientName, sessionId, isDoubleCheck } = await req.json();
-    if (!doctorId || !sessionId) throw new Error("doctorId and sessionId are required");
+    const { doctorId, patientName, sessionId, isDoubleCheck } = await req.json().catch(() => ({}));
+    if (!doctorId || !sessionId) return jsonError(400, "doctorId and sessionId are required");
 
     logStep("Notification request", { doctorId, patientName: maskName(patientName), sessionId, isDoubleCheck });
 
-    // Get patient info
+    // Quien llama y el médico tienen que ser los dos participantes de la sesión:
+    // si no, cualquiera podía mandar avisos a cualquier médico con un nombre inventado.
+    const { data: chatSession } = await supabaseAdmin
+      .from('chat_sessions')
+      .select('participant1_id, participant2_id, is_double_check')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (!chatSession) return jsonError(400, "Chat session not found");
+    const participants = [chatSession.participant1_id, chatSession.participant2_id];
+    if (!participants.includes(user.id) || !participants.includes(doctorId) || user.id === doctorId) {
+      return jsonError(403, "Not a participant of this chat session");
+    }
+
+    // Get patient info (el nombre sale del perfil, no del body)
     const { data: patientProfile } = await supabaseAdmin
       .from('profiles')
       .select('name')
       .eq('id', user.id)
       .single();
 
-    const displayName = patientName || patientProfile?.name || 'Un paciente';
+    const displayName = patientProfile?.name || 'Un paciente';
 
     // Create notification for doctor
     const notificationTitle = isDoubleCheck 

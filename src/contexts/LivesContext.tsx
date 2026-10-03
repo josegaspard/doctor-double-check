@@ -712,7 +712,7 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       // End Daily room if it exists
       if (live.dailyRoomName) {
         await supabase.functions.invoke('end-daily-room', {
-          body: { roomName: live.dailyRoomName },
+          body: { roomName: live.dailyRoomName, liveId },
         }).catch(err => console.warn('end-daily-room error (non-fatal):', err));
       }
 

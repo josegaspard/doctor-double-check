@@ -121,6 +121,9 @@ async function trySepSolr(cedula: string): Promise<SolrDoc | null> {
   }
 }
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -128,7 +131,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -138,16 +141,16 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("Usuario no autenticado");
+    if (userError || !userData.user) throw httpError(401, "Usuario no autenticado");
 
     const userId = userData.user.id;
-    const { cedula } = await req.json();
+    const { cedula } = await req.json().catch(() => ({}));
 
-    if (!cedula) throw new Error("Cédula es requerida");
+    if (!cedula) throw httpError(400, "Cédula es requerida");
 
     const cedulaRegex = /^\d{7,8}$/;
     if (!cedulaRegex.test(cedula)) {
-      throw new Error("Formato de cédula inválido. Debe contener 7-8 dígitos");
+      throw httpError(400, "Formato de cédula inválido. Debe contener 7-8 dígitos");
     }
 
     // Per-user rate limit: 10 cedula lookups / hour. Stops brute-force
@@ -316,7 +319,7 @@ Deno.serve(async (req) => {
         error: error.message || "Error al verificar cédula",
         manualUrl: "https://cedulaprofesional.sep.gob.mx",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: error.status ?? 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

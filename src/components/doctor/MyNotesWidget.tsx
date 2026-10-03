@@ -31,6 +31,7 @@ interface Attachment {
 
 interface DoctorNote {
   id: string;
+  title?: string | null;
   content: string;
   created_at: string;
   attachments?: Attachment[] | null;
@@ -39,7 +40,14 @@ interface DoctorNote {
 const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB por archivo
 const MAX_FILES_PER_NOTE = 5;
 
-export function MyNotesWidget() {
+interface MyNotesWidgetProps {
+  /** En la ficha de un paciente: solo sus notas, y las nuevas quedan ligadas a él. */
+  patientId?: string;
+  /** Se llama tras crear o borrar una nota (p. ej. para refrescar contadores). */
+  onChanged?: () => void;
+}
+
+export function MyNotesWidget({ patientId, onChanged }: MyNotesWidgetProps = {}) {
   const { t } = useLanguage();
   const { supabaseUser } = useAuth();
   const { formatDateTime } = useAppDateFormat();
@@ -72,12 +80,16 @@ export function MyNotesWidget() {
   const load = async () => {
     if (!doctorId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('doctor_notes' as any)
-      .select('id, content, created_at, attachments')
-      .eq('doctor_id', doctorId)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .select('id, title, content, created_at, attachments')
+      .eq('doctor_id', doctorId);
+    // En la ficha del paciente se ven TODAS sus notas (el contador «Notas» de la ficha
+    // las cuenta todas); en el panel general, solo las 10 últimas.
+    query = patientId
+      ? query.eq('patient_id', patientId).order('created_at', { ascending: false })
+      : query.order('created_at', { ascending: false }).limit(10);
+    const { data, error } = await query;
     if (error) console.error('[MyNotesWidget] load error:', error);
     const list = (data as unknown as DoctorNote[]) || [];
     setNotes(list);
@@ -95,7 +107,7 @@ export function MyNotesWidget() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [doctorId]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [doctorId, patientId]);
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -158,6 +170,7 @@ export function MyNotesWidget() {
           doctor_id: doctorId,
           content: parsed.data.content,
           attachments: uploaded,
+          ...(patientId ? { patient_id: patientId } : {}),
         });
 
       if (error) {
@@ -172,6 +185,7 @@ export function MyNotesWidget() {
       setPending([]);
       toast.success(t('myNotesWidget.noteSaved'));
       load();
+      onChanged?.();
     } catch (err: any) {
       console.error('[MyNotesWidget] save error:', err);
       if (err.code === '23503') toast.error(t('myNotesWidget.profileIncomplete'));
@@ -236,6 +250,7 @@ export function MyNotesWidget() {
       if (error) throw error;
       setNotes(prev => prev.filter(x => x.id !== n.id));
       toast.success(t('myNotesWidget.noteDeleted'));
+      onChanged?.();
     } catch (err: any) {
       toast.error(`${t('myNotesWidget.deleteError')} ${err.message}`);
     }
@@ -308,6 +323,7 @@ export function MyNotesWidget() {
           ) : notes.map(n => (
             <div key={n.id} className="group flex items-start gap-2 p-2.5 bg-muted/50 rounded-lg">
               <div className="flex-1 min-w-0">
+                {n.title && <p className="text-sm font-semibold break-words">{n.title}</p>}
                 <p className="text-sm whitespace-pre-wrap break-words">{n.content}</p>
 
                 {/* Attachments */}

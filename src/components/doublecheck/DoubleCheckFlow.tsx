@@ -112,7 +112,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       );
 
       if (purchaseError) throw purchaseError;
-      const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number; new_balance?: number } | null;
+      const result = purchaseResult as { success: boolean; error?: string; amount_charged?: number; new_balance?: number; consultation_id?: string } | null;
       if (!result?.success) {
         throw new Error(result?.error || t('doubleCheckFlow.errors.paymentError'));
       }
@@ -123,19 +123,40 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           .replace('{balance}', String(result.new_balance))
       );
 
-      // 2. Create consultation record
-      const { data: consultation, error: consultationError } = await supabase
-        .from('consultations')
-        .insert({
-          patient_id: user.id,
-          doctor_id: doctor.userId,
-          status: 'active',
-          notes: t('doubleCheckFlow.consultationNotes'),
-        })
-        .select()
-        .single();
+      // 2. Consulta: la RPC ya la crea en la misma transacción del cobro y
+      // devuelve consultation_id. Sin la migración nueva no lo devuelve y se
+      // crea aquí como antes.
+      let consultationId: string | null = result.consultation_id ?? null;
+      if (!consultationId) {
+        const { data: consultation, error: consultationError } = await supabase
+          .from('consultations')
+          .insert({
+            patient_id: user.id,
+            doctor_id: doctor.userId,
+            status: 'active',
+            notes: t('doubleCheckFlow.consultationNotes'),
+          })
+          .select()
+          .single();
 
-      if (consultationError) throw consultationError;
+        if (consultationError || !consultation) {
+          // El saldo ya se cobró: no basta un error genérico, el paciente tiene
+          // que saber que el pago entró y que soporte debe crear la consulta.
+          console.error('[Segunda Opinión] cobro hecho pero la consulta no se creó', {
+            doctorId: doctor.userId,
+            idempotencyKey: idemKeyRef.current,
+            error: consultationError,
+          });
+          toast.error(
+            t('doubleCheckFlow.errors.paidButConsultationFailed').replace('{ref}', idemKeyRef.current.slice(0, 8)),
+            { duration: 20000 }
+          );
+          await refreshWallet();
+          onClose();
+          return;
+        }
+        consultationId = consultation.id;
+      }
 
       // 3. Grant access to selected files
       for (const fileId of selectedFiles) {
@@ -143,7 +164,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
       }
 
       // 4. Create chat session
-      const chatResult = await createSession(doctor.userId, 'doctor', true, consultation.id);
+      const chatResult = await createSession(doctor.userId, 'doctor', true, consultationId);
 
       if (!chatResult.success) {
         throw new Error(chatResult.error || t('doubleCheckFlow.errors.chatSessionError'));
@@ -178,7 +199,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
           data: {
             patient_id: user.id,
             session_id: chatResult.session?.id,
-            consultation_id: consultation.id,
+            consultation_id: consultationId,
             url: '/chat',
             files_shared: selectedFiles.length
           },

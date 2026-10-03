@@ -343,7 +343,12 @@ export default function Vault() {
     const gb = bytes / (1024 * 1024 * 1024);
     if (gb >= 1) return `${gb.toFixed(gb % 1 === 0 ? 0 : 1)} GB`;
     const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(0)} MB`;
+    // Por debajo de 1 MB se mostraba «0 MB» aunque hubiera archivos subidos.
+    if (mb >= 10) return `${mb.toFixed(0)} MB`;
+    if (mb >= 1) return `${mb.toFixed(1)} MB`;
+    if (bytes <= 0) return '0 MB';
+    const kb = bytes / 1024;
+    return kb >= 1 ? `${kb.toFixed(kb >= 10 ? 0 : 1)} KB` : `${bytes} B`;
   };
 
   const getIcon = (type: string) => {

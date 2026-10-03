@@ -29,6 +29,7 @@ import { SectionTabs, useSectionParam } from '@/components/common/SectionTabs';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
 import { PatientDocumentsPanel } from '@/components/doctor/patient/PatientDocumentsPanel';
+import { MyNotesWidget } from '@/components/doctor/MyNotesWidget';
 import { useAppDateFormat } from '@/lib/dateFormat';
 import { fill, initialsOf } from '@/lib/proFormat';
 
@@ -55,12 +56,13 @@ function usePatientRecord(doctorId: string | undefined, patientId: string) {
   const [data, setData] = useState<RecordData>(EMPTY);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  // silent: refresca los datos sin pasar la página a «cargando» (p. ej. tras crear una nota).
+  const load = useCallback(async (silent = false) => {
     if (!doctorId || !UUID_RE.test(patientId)) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!silent) setLoading(true);
     const pair = `and(participant1_id.eq.${doctorId},participant2_id.eq.${patientId}),and(participant1_id.eq.${patientId},participant2_id.eq.${doctorId})`;
     const [appts, consults, rx, notes, clinical, vacc, chat] = await Promise.all([
       sb.from('appointments').select('id, scheduled_at, duration_minutes, status, reason, notes, created_at').eq('doctor_id', doctorId).eq('patient_id', patientId).order('scheduled_at', { ascending: false }),
@@ -87,7 +89,8 @@ function usePatientRecord(doctorId: string | undefined, patientId: string) {
     load();
   }, [load]);
 
-  return { data, loading, reload: load };
+  const reload = useCallback(() => load(true), [load]);
+  return { data, loading, reload };
 }
 
 export default function DoctorPatientDetail() {
@@ -100,7 +103,7 @@ export default function DoctorPatientDetail() {
   const { getAccessibleFiles } = useVault();
   const { patients, loading: loadingList } = useDoctorPatients();
   const { overview, status } = usePatientOverview(UUID_RE.test(patientId) ? patientId : undefined);
-  const { data, loading } = usePatientRecord(supabaseUser?.id, patientId);
+  const { data, loading, reload } = usePatientRecord(supabaseUser?.id, patientId);
   const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'resumen');
   const { confirm, dialog } = useConfirmAction();
   const [newOpen, setNewOpen] = useState(false);
@@ -352,21 +355,8 @@ export default function DoctorPatientDetail() {
                       <p className="text-xs pro-muted mt-3">{fill(t('mm2.patients.history.vaccinationsCount'), { n: data.vaccinations.length })}</p>
                     )}
                   </section>
-                  <section className="pro-card pro-card-pad bg-card">
-                    <h2 className="pro-card-title mb-3">{t('mm2.patients.history.notes')}</h2>
-                    {data.notes.length === 0
-                      ? empty(t('mm2.patients.history.emptyNotes'))
-                      : (
-                        <ul className="space-y-2 text-sm">
-                          {data.notes.map((n) => (
-                            <li key={n.id} className="rounded-xl bg-[#f3f6fa] p-2.5">
-                              <p className="font-semibold pro-ink">{n.title || dateOrDash(n.created_at)}</p>
-                              {n.content && <p className="pro-ink-2 mt-0.5 whitespace-pre-line">{n.content}</p>}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                  </section>
+                  {/* Crear y ver las notas de ESTE paciente (antes la lista era de solo lectura y el contador «Notas» no tenía cómo crecer). */}
+                  <MyNotesWidget patientId={patientId} onChanged={reload} />
                 </div>
               </div>
             )}

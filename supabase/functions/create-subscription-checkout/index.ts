@@ -179,8 +179,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/doctor/${creatorId}?subscription=success`,
-      cancel_url: `${req.headers.get("origin")}/doctor/${creatorId}?subscription=canceled`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/doctor/${creatorId}?subscription=success`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/doctor/${creatorId}?subscription=canceled`,
       metadata: {
         user_id: user.id,
         creator_id: creatorId,

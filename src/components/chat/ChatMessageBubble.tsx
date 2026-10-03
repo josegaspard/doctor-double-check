@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Image, Reply, CornerDownRight } from 'lucide-react';
 import { stripEmoji } from '@/lib/stripEmoji';
@@ -10,6 +10,30 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { SecureImage } from '@/components/security/SecureImage';
 import { SecurePDFViewer } from '@/components/security/SecurePDFViewer';
+import { supabase } from '@/integrations/supabase/client';
+
+// Los adjuntos del chat se guardan en el bucket privado `documents` y el mensaje
+// lleva una URL firmada de 15 min. Pasado ese plazo hay que firmar de nuevo a
+// partir de la ruta del objeto (chat/{sessionId}/{uploaderId}/{archivo}).
+const ATTACHMENT_URL_RE = /\[(?:Imagen|Video|Archivo): .+?\]\n(https?:\/\/.+)/;
+
+function extractDocumentsPath(url: string): string | null {
+  const m = url.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/documents\/([^?#]+)/);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+}
+
+function isSignedUrlExpired(url: string): boolean {
+  try {
+    const token = new URL(url).searchParams.get('token');
+    if (!token) return true;
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    // Margen de 60 s para no entregar un enlace que caduca mientras se descarga.
+    return typeof payload?.exp !== 'number' || payload.exp * 1000 - Date.now() < 60_000;
+  } catch {
+    return true;
+  }
+}
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
@@ -29,6 +53,30 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
       : `bubble-${message.id}-${Math.random().toString(36).slice(2, 10)}`),
     [message.id]
   );
+
+  // URL del adjunto lista para usar: la original si sigue vigente, o una firmada de nuevo.
+  const attachmentUrl = useMemo(() => message.content.match(ATTACHMENT_URL_RE)?.[1] ?? null, [message.content]);
+  const attachmentPath = useMemo(() => (attachmentUrl ? extractDocumentsPath(attachmentUrl) : null), [attachmentUrl]);
+  const attachmentNeedsRefresh = useMemo(
+    () => !!attachmentUrl && !!attachmentPath && isSignedUrlExpired(attachmentUrl),
+    [attachmentUrl, attachmentPath]
+  );
+  const [freshAttachmentUrl, setFreshAttachmentUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!attachmentNeedsRefresh || !attachmentPath || !attachmentUrl) return;
+    let cancelled = false;
+    supabase.storage
+      .from('documents')
+      .createSignedUrl(attachmentPath, 15 * 60)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) console.warn('[ChatMessageBubble] no se pudo renovar el enlace del adjunto:', error.message);
+        setFreshAttachmentUrl(data?.signedUrl ?? attachmentUrl);
+      });
+    return () => { cancelled = true; };
+  }, [attachmentNeedsRefresh, attachmentPath, attachmentUrl]);
+  const resolveAttachmentUrl = (url: string): string | null =>
+    url === attachmentUrl && attachmentNeedsRefresh ? freshAttachmentUrl : url;
 
   // Render message content (with file support)
   const renderMessageContent = (content: string) => {
@@ -59,7 +107,9 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
     const fileMatch = content.match(/\[Archivo: (.+?)\]\n(https?:\/\/.+)/);
 
     if (videoMatch) {
-      const [, fileName, url] = videoMatch;
+      const [, fileName, originalUrl] = videoMatch;
+      const url = resolveAttachmentUrl(originalUrl);
+      if (!url) return <p className="text-[11px] opacity-70">{fileName}</p>;
       return (
         <div className="space-y-2">
           <div className="relative rounded-lg overflow-hidden" data-testid="chat-video-attachment">
@@ -85,7 +135,9 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
 
 
     if (imageMatch) {
-      const [, fileName, url] = imageMatch;
+      const [, fileName, originalUrl] = imageMatch;
+      const url = resolveAttachmentUrl(originalUrl);
+      if (!url) return <p className="text-[11px] opacity-70">{fileName}</p>;
       return (
         <div className="space-y-2">
           <div className="relative rounded-lg overflow-hidden bg-muted/30">
@@ -106,7 +158,9 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
     }
 
     if (fileMatch) {
-      const [, fileName, url] = fileMatch;
+      const [, fileName, originalUrl] = fileMatch;
+      const url = resolveAttachmentUrl(originalUrl);
+      if (!url) return <p className="text-[11px] opacity-70">{fileName}</p>;
       const isPdf = /\.pdf(\?|$)/i.test(fileName) || /\.pdf(\?|$)/i.test(url);
       if (isPdf) {
         return (

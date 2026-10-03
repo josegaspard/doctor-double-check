@@ -107,10 +107,9 @@ export default function IdentityVerification() {
     if (!user?.id) return;
     setIsStartingVeriff(true);
 
-    // Try Veriff first (paid, primary provider). If it fails because the
-    // subscription is paused (503 from edge function), fall back to Didit
-    // (free tier alternative). When Veriff is reactivated, this fallback
-    // automatically goes dormant.
+    // Veriff es el único proveedor activo. El respaldo de Didit (kyc-didit-start) se quitó
+    // el 3-oct-2026: sin DIDIT_API_KEY/DIDIT_WORKFLOW_ID en Supabase solo devolvía 503.
+    // Si Veriff falla, se ofrece la subida manual de documentos.
     try {
       const { data, error } = await supabase.functions.invoke('create-veriff-session', {
         body: {
@@ -126,22 +125,9 @@ export default function IdentityVerification() {
       }
       throw error ?? new Error('Veriff unavailable');
     } catch (veriffErr) {
-      console.warn('Veriff unavailable, trying Didit fallback:', veriffErr);
-
-      try {
-        const { data: dData, error: dErr } = await supabase.functions.invoke('kyc-didit-start', {});
-        if (dErr) throw dErr;
-        if (!dData?.verification_url) throw new Error('No Didit verification URL');
-
-        toast.info(t('identityVerification.startingBiometric'));
-        window.location.href = dData.verification_url;
-        setTimeout(fetchVerification, 3000);
-        return;
-      } catch (diditErr: any) {
-        console.error('Both Veriff and Didit failed:', diditErr);
-        toast.error(t('identityVerification.couldNotStartAuto'));
-        setShowManualUpload(true);
-      }
+      console.error('Veriff unavailable:', veriffErr);
+      toast.error(t('identityVerification.couldNotStartAuto'));
+      setShowManualUpload(true);
     } finally {
       setIsStartingVeriff(false);
     }

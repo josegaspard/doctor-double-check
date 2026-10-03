@@ -3290,11 +3290,17 @@ export const de = {
     cancel: "Abbrechen",
     confirmReject: "Ablehnung bestätigen",
     toastApproved: "Inhalt genehmigt und Abonnenten benachrichtigt",
+    toastApprovedNotNotified: "Inhalt genehmigt",
     toastRejected: "Inhalt abgelehnt",
     notifyTitlePrefix: "Neuer Inhalt",
     notifyDefaultDoctor: "Ein Arzt",
     notifyMessageBody: "hat neue Inhalte veröffentlicht",
-    notifyInCategory: "in"
+    notifyInCategory: "in",
+    toastNotSaved: "Die Entscheidung wurde nicht gespeichert: Die Datenbank hat die Änderung nicht zugelassen. Prüfe die Administratorrechte und versuche es erneut.",
+    creatorApprovedTitle: "Dein Inhalt wurde freigegeben",
+    creatorRejectedTitle: "Dein Inhalt wurde abgelehnt",
+    creatorApprovedMessage: "Dein Inhalt „{title}“ wurde freigegeben.",
+    creatorRejectedMessage: "Dein Inhalt „{title}“ wurde nicht freigegeben.",
   },
   adminCredentials: {
     pageTitle: "Ärztliche Qualifikationsnachweise",
@@ -3899,7 +3905,9 @@ export const de = {
       idLabel: "ID:",
       myAppointments: "Meine Termine",
       findMoreDoctors: "Weitere Ärzte suchen"
-    }
+    },
+    timezoneNote: "Zeiten in deiner Ortszeit ({tz}).",
+    timezoneDoctorNote: "Die Ärztin bzw. der Arzt arbeitet nach der Zeit von {tz}.",
   },
   contentPreviewModal: {
     typeVideo: "Video",
@@ -4168,6 +4176,12 @@ export const de = {
     notificationFallbackDoctorName: "Ein Arzt, dem Sie folgen",
     notificationLiveNowMessage: "{doctor} überträgt gerade: {title}",
     broadcastStartedToast: "Übertragung gestartet!",
+    orphanLiveTitle: "Sie haben noch eine offene Live-Übertragung",
+    orphanLiveDesc: "„{title}“ ist noch als live markiert. Sie können sie fortsetzen oder beenden.",
+    orphanLiveResume: "Übertragung fortsetzen",
+    orphanLiveEnd: "Übertragung beenden",
+    orphanLiveResumeError: "Die Übertragung konnte nicht fortgesetzt werden. Beenden Sie sie und starten Sie eine neue.",
+    orphanLiveEnded: "Übertragung beendet",
     recordingCaptureFailedToast: "Die lokale Aufzeichnung hat kein Video erfasst. Das kann vorkommen, wenn der Browser den MediaRecorder blockiert hat oder die Verbindung abgebrochen ist. Der Live wurde registriert, es gibt jedoch keine hochladbare Datei.",
     recordingSavedToast: "Aufzeichnung erfolgreich gespeichert",
     recordingSaveErrorToast: "Fehler beim Speichern der Aufzeichnung",
@@ -4980,7 +4994,8 @@ export const de = {
     rejectedByDoctor: "Vom Arzt abgelehnt",
     toastRejected: "Termin abgelehnt",
     confirmedNotifyTitle: "Termin bestätigt",
-    confirmedNotifyMessage: "Der Arzt hat Ihren Termin bestätigt. Prüfen Sie die Details unter \"Meine Termine\"."
+    confirmedNotifyMessage: "Der Arzt hat Ihren Termin bestätigt. Prüfen Sie die Details unter \"Meine Termine\".",
+    unknownDoctor: "Arzt",
   },
   myNotesWidget: {
     title: "Meine Notizen",
@@ -7951,6 +7966,7 @@ export const de = {
       paymentError: "Zahlungsfehler",
       chatSessionError: "Fehler beim Erstellen der Chat-Sitzung",
       consultationError: "Fehler beim Starten der Zweitmeinung",
+      paidButConsultationFailed: "Die Zahlung ist erfolgt, aber die Zweitmeinung konnte nicht eröffnet werden. Wenden Sie sich mit der Referenz {ref} an den Support, um sie zu aktivieren oder Ihr Guthaben zurückzuerhalten.",
       stripeError: "Fehler bei der Kartenzahlung"
     },
     purchase: {
@@ -8441,6 +8457,7 @@ export const de = {
     callEnded: "Anruf beendet",
     duration: "Dauer",
     callEndedWith: "Der Videoanruf mit {name} wurde beendet",
+    incomingCallMessage: "{name} ruft Sie zu einer Videosprechstunde an",
     createRoomError: "Fehler beim Erstellen des Raums",
     joinError: "Fehler beim Beitreten zum Anruf",
     doctorNotStarted: "Der Arzt hat den Videoanruf noch nicht gestartet",
@@ -9132,6 +9149,7 @@ export const de = {
       statusHeld: 'Einbehalten',
       statusProcessing: 'In Bearbeitung',
       statusFailed: 'Fehlgeschlagen',
+      statusRefunded: "Erstattet",
       account: 'Auszahlungskonto',
       editAccount: 'Konto bearbeiten',
       addAccount: 'Konto hinzufügen',
@@ -11461,5 +11479,18 @@ export const de = {
   mmcorr: {
     chkCofepris: 'COFEPRIS-Genehmigung',
     chkInReview: 'in Prüfung',
+  },
+  passwordStrength: {
+    title: "Stärke:",
+    minLength: "Mindestens 12 Zeichen",
+    lowercase: "Ein Kleinbuchstabe",
+    uppercase: "Ein Großbuchstabe",
+    number: "Eine Zahl",
+    special: "Ein Sonderzeichen (!@#$%)",
+    veryWeak: "Sehr schwach",
+    weak: "Schwach",
+    good: "Gut",
+    strong: "Stark",
+    veryStrong: "Sehr stark",
   },
 };

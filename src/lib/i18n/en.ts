@@ -3290,11 +3290,17 @@ export const en = {
     cancel: "Cancel",
     confirmReject: "Confirm rejection",
     toastApproved: "Content approved and subscribers notified",
+    toastApprovedNotNotified: "Content approved",
     toastRejected: "Content rejected",
     notifyTitlePrefix: "New content",
     notifyDefaultDoctor: "A doctor",
     notifyMessageBody: "has published new content",
-    notifyInCategory: "in"
+    notifyInCategory: "in",
+    toastNotSaved: "The decision was not saved: the database did not allow the change. Check the administrator permissions and try again.",
+    creatorApprovedTitle: "Your content was approved",
+    creatorRejectedTitle: "Your content was rejected",
+    creatorApprovedMessage: "Your content \"{title}\" was approved.",
+    creatorRejectedMessage: "Your content \"{title}\" was not approved.",
   },
   adminCredentials: {
     pageTitle: "Medical Credentials",
@@ -3899,7 +3905,9 @@ export const en = {
       idLabel: "ID:",
       myAppointments: "My appointments",
       findMoreDoctors: "Find more doctors"
-    }
+    },
+    timezoneNote: "Times shown in your local time ({tz}).",
+    timezoneDoctorNote: "The doctor works on {tz} time.",
   },
   contentPreviewModal: {
     typeVideo: "Video",
@@ -4168,6 +4176,12 @@ export const en = {
     notificationFallbackDoctorName: "A doctor you follow",
     notificationLiveNowMessage: "{doctor} is streaming: {title}",
     broadcastStartedToast: "Broadcast started!",
+    orphanLiveTitle: "You have a live broadcast still open",
+    orphanLiveDesc: "\"{title}\" is still marked as live. You can resume it or end it.",
+    orphanLiveResume: "Resume broadcast",
+    orphanLiveEnd: "End broadcast",
+    orphanLiveResumeError: "Could not resume the broadcast. End it and start a new one.",
+    orphanLiveEnded: "Broadcast ended",
     recordingCaptureFailedToast: "The local recording did not capture video. This can happen if the browser blocked MediaRecorder or if the connection dropped. The live was logged but there is no file to upload.",
     recordingSavedToast: "Recording saved successfully",
     recordingSaveErrorToast: "Error saving the recording",
@@ -4980,7 +4994,8 @@ export const en = {
     rejectedByDoctor: "Declined by the doctor",
     toastRejected: "Appointment declined",
     confirmedNotifyTitle: "Appointment confirmed",
-    confirmedNotifyMessage: "The doctor confirmed your appointment. Review the details in \"My appointments\"."
+    confirmedNotifyMessage: "The doctor confirmed your appointment. Review the details in \"My appointments\".",
+    unknownDoctor: "Doctor",
   },
   myNotesWidget: {
     title: "My notes",
@@ -7997,6 +8012,7 @@ export const en = {
       paymentError: "Payment error",
       chatSessionError: "Error creating chat session",
       consultationError: "Error starting Double Check",
+      paidButConsultationFailed: "Your payment went through, but the Double Check could not be opened. Contact support with reference {ref} to activate it or get your balance back.",
       stripeError: "Error processing card payment"
     },
     purchase: {
@@ -8487,6 +8503,7 @@ export const en = {
     callEnded: "Call ended",
     duration: "Duration",
     callEndedWith: "The video call with {name} has ended",
+    incomingCallMessage: "{name} is calling you for a video consultation",
     createRoomError: "Error creating room",
     joinError: "Error joining call",
     doctorNotStarted: "The doctor has not started the video call yet",
@@ -9215,6 +9232,7 @@ export const en = {
       statusHeld: 'Held',
       statusProcessing: 'Processing',
       statusFailed: 'Failed',
+      statusRefunded: "Refunded",
       account: 'Payout account',
       editAccount: 'Edit account',
       addAccount: 'Add account',
@@ -11671,5 +11689,18 @@ export const en = {
   mmcorr: {
     chkCofepris: 'COFEPRIS permit',
     chkInReview: 'under review',
+  },
+  passwordStrength: {
+    title: "Strength:",
+    minLength: "At least 12 characters",
+    lowercase: "One lowercase letter",
+    uppercase: "One uppercase letter",
+    number: "One number",
+    special: "One special character (!@#$%)",
+    veryWeak: "Very weak",
+    weak: "Weak",
+    good: "Good",
+    strong: "Strong",
+    veryStrong: "Very strong",
   },
 };

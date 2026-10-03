@@ -24,6 +24,9 @@ const isAllowedCloudflareUrl = (rawUrl: string) => {
   }
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -39,28 +42,28 @@ Deno.serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
     const token = authHeader.replace("Bearer ", "");
 
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    if (userError || !userData.user) throw httpError(401, "User not authenticated");
     logStep("User authenticated", { userId: userData.user.id });
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const action = body?.action as WhipAction;
     const url = body?.url as string;
 
     if (!action || (action !== "post" && action !== "delete")) {
-      throw new Error("Invalid action. Expected 'post' or 'delete'.");
+      throw httpError(400, "Invalid action. Expected 'post' or 'delete'.");
     }
-    if (!url) throw new Error("url is required");
+    if (!url) throw httpError(400, "url is required");
     if (!isAllowedCloudflareUrl(url)) {
-      throw new Error("Invalid url host (only cloudflarestream.com is allowed)");
+      throw httpError(400, "Invalid url host (only cloudflarestream.com is allowed)");
     }
 
     if (action === "post") {
       const sdp = body?.sdp as string;
-      if (!sdp) throw new Error("sdp is required for action=post");
+      if (!sdp) throw httpError(400, "sdp is required for action=post");
 
       logStep("WHIP POST", { urlHost: new URL(url).hostname });
       const res = await fetch(url, {
@@ -133,7 +136,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: false, error: errorMessage }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: (error as any)?.status ?? 500,
       },
     );
   }

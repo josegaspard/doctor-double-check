@@ -10,6 +10,9 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-CLOUDFLARE-STREAM] ${step}${detailsStr}`);
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,18 +35,24 @@ Deno.serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    if (userError || !userData.user) throw httpError(401, "User not authenticated");
 
     const userId = userData.user.id;
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { liveId, title, enableRecording = true } = await req.json();
-    if (!liveId) throw new Error("liveId is required");
+    const { liveId, title, enableRecording = true } = await req.json().catch(() => ({}));
+    if (!liveId) throw httpError(400, "liveId is required");
+
+    // Solo el médico dueño del live puede crear su entrada de Cloudflare: antes
+    // cualquier usuario creaba entradas (con coste) aunque luego no se guardaran.
+    const { data: ownLive } = await supabaseClient
+      .from('lives').select('id').eq('id', liveId).eq('doctor_id', userId).maybeSingle();
+    if (!ownLive) throw httpError(403, "Live not found or not yours");
 
     logStep("Creating Cloudflare Stream live input", { liveId, title, enableRecording });
 
@@ -136,7 +145,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: false, error: errorMessage }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: (error as any)?.status ?? 500,
       }
     );
   }

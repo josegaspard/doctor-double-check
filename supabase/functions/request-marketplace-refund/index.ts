@@ -100,12 +100,15 @@ Deno.serve(async (req) => {
     if (admins) {
       const notifs = admins.map((a: any) => ({
         user_id: a.user_id,
-        type: "marketplace.refund_requested",
+        // notifications usa la columna 'data' (no 'metadata') y el enum notification_type
+        // no tiene tipos de marketplace: se usa 'system' y el detalle va en data.kind.
+        type: "system",
         title: "Nueva solicitud de devolución",
         message: `Pedido ${orderId.slice(0, 8)} — ${refundAmount.toFixed(2)} ${order.currency || "MXN"}`,
-        metadata: { refund_id: refundRow.id, order_id: orderId },
+        data: { kind: "marketplace.refund_requested", refund_id: refundRow.id, order_id: orderId },
       }));
-      await supabaseAdmin.from("notifications").insert(notifs);
+      const { error: notifErr } = await supabaseAdmin.from("notifications").insert(notifs);
+      if (notifErr) console.error("request-marketplace-refund notification insert failed:", notifErr.message);
     }
 
     return new Response(

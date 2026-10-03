@@ -126,8 +126,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/marketplace?interest=${interest.id}&paid=1`,
-      cancel_url: `${req.headers.get("origin")}/marketplace?canceled=1`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/marketplace?interest=${interest.id}&paid=1`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/marketplace?canceled=1`,
       metadata: {
         type: "marketplace_interest_fee",
         interest_id: interest.id,

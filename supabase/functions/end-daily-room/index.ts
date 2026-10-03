@@ -45,7 +45,37 @@ Deno.serve(async (req) => {
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { liveId, roomName, saveRecording = false } = await req.json();
+    let { liveId, roomName, saveRecording = false } = await req.json();
+
+    // La web (LivesContext.endLive) cierra la sala del live mandando solo roomName.
+    // Si esa sala no es de una consulta pero sí de un live del que llama, se trata
+    // como cierre del live (solo la sala; el estado del live lo pone la web).
+    let liveRoomOnly = false;
+    if (!liveId && roomName) {
+      const { data: consultForRoom } = await supabaseAdmin
+        .from("consultations")
+        .select("id")
+        .eq("video_room_name", roomName)
+        .maybeSingle();
+      if (!consultForRoom) {
+        const { data: liveForRoom } = await supabaseAdmin
+          .from("lives")
+          .select("id, doctor_id")
+          .eq("daily_room_name", roomName)
+          .limit(1)
+          .maybeSingle();
+        if (liveForRoom) {
+          if (liveForRoom.doctor_id !== userId) {
+            return new Response(
+              JSON.stringify({ success: false, error: "User is not the owner of this live" }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          liveId = liveForRoom.id;
+          liveRoomOnly = true;
+        }
+      }
+    }
 
     // If no liveId, this is a consultation-only room deletion.
     // Verify caller owns the consultation (was patient or doctor) before
@@ -115,11 +145,27 @@ Deno.serve(async (req) => {
       .single();
 
     if (liveError || !live) {
-      throw new Error("Live not found");
+      return new Response(
+        JSON.stringify({ success: false, error: "Live not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     if (live.doctor_id !== userId) {
-      throw new Error("User is not the owner of this live");
+      return new Response(
+        JSON.stringify({ success: false, error: "User is not the owner of this live" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // La sala a cerrar es la del live: sin roomName se usa la guardada, y un roomName
+    // ajeno al live no se acepta (si no, el dueño de un live podía cerrar otra sala).
+    if (!roomName) roomName = live.daily_room_name ?? null;
+    if (roomName && live.daily_room_name && roomName !== live.daily_room_name) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Room does not belong to this live" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     logStep("Live verified", { doctorId: live.doctor_id, status: live.status });
@@ -143,6 +189,13 @@ Deno.serve(async (req) => {
       } catch (roomError) {
         logStep("Warning: Error deleting room", { error: String(roomError) });
       }
+    }
+
+    if (liveRoomOnly) {
+      return new Response(
+        JSON.stringify({ success: true, status: "room_closed" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
     }
 
     // Get recordings from Daily.co if saving is enabled.

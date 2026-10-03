@@ -49,11 +49,11 @@ export function useDaily() {
     }
   }, []);
 
-  const getViewerToken = useCallback(async (roomName: string, isOwner?: boolean): Promise<string | null> => {
+  const getViewerToken = useCallback(async (roomName: string, isOwner?: boolean, enableMedia?: boolean): Promise<string | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-daily-token', {
-        body: { roomName, isOwner: isOwner || false },
+        body: { roomName, isOwner: isOwner || false, enableMedia: enableMedia || false },
       });
 
       if (error) throw error;
@@ -69,11 +69,13 @@ export function useDaily() {
     }
   }, []);
 
-  const endRoom = useCallback(async (roomName: string): Promise<boolean> => {
+  // Con liveId, end-daily-room valida que el live es del médico y lo cierra en la
+  // BD; sin él trata la sala como de consulta y la rechaza (404) para un live.
+  const endRoom = useCallback(async (roomName: string | null, liveId?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('end-daily-room', {
-        body: { roomName },
+        body: liveId ? { roomName, liveId } : { roomName },
       });
 
       if (error) throw error;

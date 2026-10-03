@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 function csvEscape(v: any): string {
   if (v === null || v === undefined) return "";
   const s = String(v);
@@ -20,7 +23,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -29,7 +32,7 @@ Deno.serve(async (req) => {
     );
     const token = authHeader.replace("Bearer ", "");
     const { data: userData } = await supabaseClient.auth.getUser(token);
-    if (!userData.user) throw new Error("Usuario no autenticado");
+    if (!userData.user) throw httpError(401, "Usuario no autenticado");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -38,7 +41,7 @@ Deno.serve(async (req) => {
 
     const { data: roleRow } = await supabaseAdmin
       .from("user_roles").select("role").eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
-    if (!roleRow) throw new Error("Solo admin");
+    if (!roleRow) throw httpError(403, "Solo admin");
 
     const url = new URL(req.url);
     const fromDate = url.searchParams.get("from");
@@ -96,7 +99,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error("export-orders-csv error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: error.status ?? 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

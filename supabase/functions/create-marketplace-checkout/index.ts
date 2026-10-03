@@ -72,8 +72,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/order-success?session_id=${"{CHECKOUT_SESSION_ID}"}`,
-      cancel_url: `${req.headers.get("origin")}/medical-supplies?canceled=true`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/order-success?session_id=${"{CHECKOUT_SESSION_ID}"}`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/medical-supplies?canceled=true`,
       metadata: {
         type: "marketplace_purchase",
         product_id: product.id,

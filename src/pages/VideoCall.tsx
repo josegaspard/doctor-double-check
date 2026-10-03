@@ -291,7 +291,7 @@ export default function VideoCall() {
     (async () => {
       const { data } = await supabase
         .from('consultations')
-        .select('doctor_id, patient_id')
+        .select('doctor_id, patient_id, chat_session_id')
         .eq('id', consultationId)
         .maybeSingle();
       if (!data) return;
@@ -301,7 +301,28 @@ export default function VideoCall() {
       // party is a patient → keep id null so no badge shows.
       setOtherParticipantId(isDoctor ? null : data.doctor_id);
       const { data: profile } = await supabase.from('profiles_public').select('name').eq('id', otherId).maybeSingle();
-      setOtherParticipantName(profile?.name || t('videoCall.participant'));
+      let otherName: string | null = profile?.name || null;
+      // profiles_public respeta el RLS de profiles (cada uno solo lee su fila), así
+      // que el nombre del otro llega vacío. El chat de la consulta sí lo expone a
+      // sus participantes mediante get_chat_sessions_details_bulk.
+      if (!otherName) {
+        try {
+          let sessionId: string | null = (data as any).chat_session_id ?? null;
+          if (!sessionId) {
+            const pair = `and(participant1_id.eq.${data.doctor_id},participant2_id.eq.${data.patient_id}),and(participant1_id.eq.${data.patient_id},participant2_id.eq.${data.doctor_id})`;
+            const { data: sess } = await supabase.from('chat_sessions').select('id').or(pair).order('created_at', { ascending: false }).limit(1).maybeSingle();
+            sessionId = sess?.id ?? null;
+          }
+          if (sessionId) {
+            const { data: details } = await supabase.rpc('get_chat_sessions_details_bulk' as any, { p_session_ids: [sessionId] });
+            const d: any = Array.isArray(details) ? details[0] : details;
+            if (d) otherName = d.participant1_id === otherId ? d.participant1_name : d.participant2_id === otherId ? d.participant2_name : null;
+          }
+        } catch (e) {
+          console.warn('[VideoCall] nombre del otro participante no disponible:', e);
+        }
+      }
+      setOtherParticipantName(otherName || t('videoCall.participant'));
 
       // Doctor credentials (visible to patient and doctor)
       const { data: doctorProfile } = await supabase
@@ -450,7 +471,7 @@ export default function VideoCall() {
           user_id: consultation.patient_id,
           type: 'video_call' as any,
           title: t('videoCall.title'),
-          message: `${user.name} ${t('videoCall.withParticipant')}`,
+          message: t('videoCall.incomingCallMessage').replace('{name}', user.name || t('videoCallPage.doctor')),
           data: {
             consultationId,
             doctorId: user.id,

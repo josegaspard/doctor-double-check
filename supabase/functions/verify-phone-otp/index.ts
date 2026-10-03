@@ -49,7 +49,12 @@ Deno.serve(async (req) => {
     logStep("Function started");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "No authorization header" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -58,7 +63,12 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    if (userError || !userData.user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "User not authenticated" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     const userId = userData.user.id;
     const { phone, action, otp_code } = await req.json();
@@ -107,28 +117,34 @@ Deno.serve(async (req) => {
       }
 
       // Generate OTP
-      const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+      const otpCode = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-      const { error: insertError } = await supabaseAdmin
+      const { data: verificationRow, error: insertError } = await supabaseAdmin
         .from("phone_verifications")
-        .insert({ user_id: userId, phone: normalizedPhone, otp_code: otpCode, expires_at: expiresAt });
+        .insert({ user_id: userId, phone: normalizedPhone, otp_code: otpCode, expires_at: expiresAt })
+        .select("id")
+        .single();
 
       if (insertError) throw new Error("Failed to create verification record");
       logStep("OTP created", { expiresAt });
 
-      // Send SMS
+      // Send SMS. El código SOLO viaja por SMS: antes también se guardaba en una
+      // notificación del propio usuario, lo que hacía inútil la verificación (quien
+      // tiene la sesión leía el código sin tener el teléfono).
       const message = `Medical Masters - Tu código de verificación es: ${otpCode}. Expira en 5 minutos.`;
       const smsSent = await sendSmsVonage(normalizedPhone, message);
 
-      // Also send in-app notification
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
-        type: "system",
-        title: "Verificación de teléfono",
-        message: `Tu código de verificación es: ${otpCode}. Expira en 5 minutos.`,
-        data: { otp_code: otpCode },
-      });
+      if (!smsSent) {
+        // Sin SMS no hay forma segura de entregar el código: se borra el intento para
+        // que no consuma el límite diario. La verificación del teléfono es opcional,
+        // así que el registro sigue sin ella.
+        await supabaseAdmin.from("phone_verifications").delete().eq("id", verificationRow.id);
+        return new Response(
+          JSON.stringify({ success: false, smsSent: false, error: "No pudimos enviar el SMS. Intenta más tarde." }),
+          { status: 503, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
 
       return new Response(
         JSON.stringify({ success: true, smsSent }),

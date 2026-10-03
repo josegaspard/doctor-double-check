@@ -13,6 +13,9 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-WALLET-CHECKOUT] ${step}${detailsStr}`);
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -31,14 +34,14 @@ Deno.serve(async (req) => {
     logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) throw httpError(401, "No authorization header provided");
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) throw httpError(401, `Authentication error: ${userError.message}`);
     
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) throw httpError(401, "User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     // SECURITY (2026-05-11 audit): rate-limit Stripe session creation per user
@@ -118,8 +121,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/wallet?success=true&amount=${amount}`,
-      cancel_url: `${req.headers.get("origin")}/wallet?canceled=true`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/wallet?success=true&amount=${amount}`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/wallet?canceled=true`,
       metadata: {
         user_id: user.id,
         amount: amount.toString(),
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: (error as any)?.status ?? 500,
     });
   }
 });

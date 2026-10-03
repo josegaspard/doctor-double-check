@@ -3290,11 +3290,17 @@ export const pt = {
     cancel: "Cancelar",
     confirmReject: "Confirmar rejeição",
     toastApproved: "Conteúdo aprovado e assinantes notificados",
+    toastApprovedNotNotified: "Conteúdo aprovado",
     toastRejected: "Conteúdo rejeitado",
     notifyTitlePrefix: "Novo conteúdo",
     notifyDefaultDoctor: "Um médico",
     notifyMessageBody: "publicou novo conteúdo",
-    notifyInCategory: "em"
+    notifyInCategory: "em",
+    toastNotSaved: "A decisão não foi salva: o banco de dados não permitiu a alteração. Verifique as permissões de administrador e tente novamente.",
+    creatorApprovedTitle: "Seu conteúdo foi aprovado",
+    creatorRejectedTitle: "Seu conteúdo foi rejeitado",
+    creatorApprovedMessage: "Seu conteúdo «{title}» foi aprovado.",
+    creatorRejectedMessage: "Seu conteúdo «{title}» não foi aprovado.",
   },
   adminCredentials: {
     pageTitle: "Credenciais Médicas",
@@ -3899,7 +3905,9 @@ export const pt = {
       idLabel: "ID:",
       myAppointments: "Minhas consultas",
       findMoreDoctors: "Buscar mais médicos"
-    }
+    },
+    timezoneNote: "Horários exibidos no seu horário local ({tz}).",
+    timezoneDoctorNote: "O médico atende no horário de {tz}.",
   },
   contentPreviewModal: {
     typeVideo: "Vídeo",
@@ -4168,6 +4176,12 @@ export const pt = {
     notificationFallbackDoctorName: "Um médico que você segue",
     notificationLiveNowMessage: "{doctor} está transmitindo: {title}",
     broadcastStartedToast: "Transmissão iniciada!",
+    orphanLiveTitle: "Você tem uma transmissão ao vivo aberta",
+    orphanLiveDesc: "«{title}» ainda está marcada como ao vivo. Você pode retomá-la ou encerrá-la.",
+    orphanLiveResume: "Retomar transmissão",
+    orphanLiveEnd: "Encerrar transmissão",
+    orphanLiveResumeError: "Não foi possível retomar a transmissão. Encerre-a e inicie uma nova.",
+    orphanLiveEnded: "Transmissão encerrada",
     recordingCaptureFailedToast: "A gravação local não capturou vídeo. Isso pode ocorrer se o navegador bloqueou o MediaRecorder ou se a conexão caiu. A live ficou registrada, mas não há arquivo para enviar.",
     recordingSavedToast: "Gravação salva com sucesso",
     recordingSaveErrorToast: "Erro ao salvar a gravação",
@@ -4980,7 +4994,8 @@ export const pt = {
     rejectedByDoctor: "Recusada pelo médico",
     toastRejected: "Consulta recusada",
     confirmedNotifyTitle: "Consulta confirmada",
-    confirmedNotifyMessage: "O médico confirmou sua consulta. Veja os detalhes em \"Minhas consultas\"."
+    confirmedNotifyMessage: "O médico confirmou sua consulta. Veja os detalhes em \"Minhas consultas\".",
+    unknownDoctor: "Médico",
   },
   myNotesWidget: {
     title: "Minhas notas",
@@ -7951,6 +7966,7 @@ export const pt = {
       paymentError: "Erro no pagamento",
       chatSessionError: "Erro ao criar sessão de chat",
       consultationError: "Erro ao iniciar Segunda Opinião",
+      paidButConsultationFailed: "O pagamento foi realizado, mas não foi possível abrir a Segunda Opinião. Escreva ao suporte com a referência {ref} para ativá-la ou devolver seu saldo.",
       stripeError: "Erro ao processar o pagamento com cartão"
     },
     purchase: {
@@ -8441,6 +8457,7 @@ export const pt = {
     callEnded: "Chamada encerrada",
     duration: "Duração",
     callEndedWith: "A videochamada com {name} foi encerrada",
+    incomingCallMessage: "{name} está ligando para você para uma videoconsulta",
     createRoomError: "Erro ao criar a sala",
     joinError: "Erro ao entrar na chamada",
     doctorNotStarted: "O médico ainda não iniciou a videochamada",
@@ -9132,6 +9149,7 @@ export const pt = {
       statusHeld: 'Retido',
       statusProcessing: 'Em processamento',
       statusFailed: 'Falhou',
+      statusRefunded: "Reembolsado",
       account: 'Conta para saques',
       editAccount: 'Editar conta',
       addAccount: 'Adicionar conta',
@@ -11461,5 +11479,18 @@ export const pt = {
   mmcorr: {
     chkCofepris: 'Licença COFEPRIS',
     chkInReview: 'em análise',
+  },
+  passwordStrength: {
+    title: "Força:",
+    minLength: "Pelo menos 12 caracteres",
+    lowercase: "Uma letra minúscula",
+    uppercase: "Uma letra maiúscula",
+    number: "Um número",
+    special: "Um caractere especial (!@#$%)",
+    veryWeak: "Muito fraca",
+    weak: "Fraca",
+    good: "Boa",
+    strong: "Forte",
+    veryStrong: "Muito forte",
   },
 };

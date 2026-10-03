@@ -96,24 +96,34 @@ Deno.serve(async (req: Request): Promise<Response> => {
       appUrl: APP_URL,
     });
 
-    await resend.emails.send({
+    // Resend v2 no lanza excepción: devuelve { data, error }. Antes se ignoraba el
+    // error y la función respondía ok aunque el correo no hubiera salido.
+    const { error: emailError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [patient.email],
       subject,
       html,
     });
+    if (emailError) console.error("send-missed-call-email resend error", emailError);
 
-    // Also drop an in-app notification so the bell catches it
-    await admin.from("notifications").insert({
+    // Also drop an in-app notification so the bell catches it.
+    // 'missed_call' llega con la migración del enum notification_type; si aún no
+    // existe, se reintenta con 'video_call' (el tipo existente más parecido).
+    const notif = {
       user_id: consultation.patient_id,
-      type: "missed_call" as any,
       title: "Llamada perdida",
       message: `El Dr. ${doctor?.name || "tu médico"} intentó llamarte`,
-      data: { consultationId, doctorId: consultation.doctor_id },
-    });
+      data: { consultationId, doctorId: consultation.doctor_id, kind: "missed_call" },
+    };
+    let { error: notifError } = await admin.from("notifications").insert({ ...notif, type: "missed_call" as any });
+    if (notifError) {
+      console.warn("send-missed-call-email: missed_call type rejected, retrying as video_call", notifError.message);
+      ({ error: notifError } = await admin.from("notifications").insert({ ...notif, type: "video_call" }));
+      if (notifError) console.error("send-missed-call-email notification insert failed", notifError.message);
+    }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
+    return new Response(JSON.stringify({ ok: !emailError, email_sent: !emailError, notified: !notifError }), {
+      status: emailError ? 502 : 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

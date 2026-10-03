@@ -35,6 +35,8 @@ Deno.serve(async (req: Request) => {
       .select("id, doctor_id, title, description, scheduled_at, type")
       .in("status", ["scheduled", "confirmed"])
       .eq("reminder_sent", false)
+      // Los bloqueos privados de agenda (type='blocked') no son eventos: no se avisa a nadie.
+      .or("type.is.null,type.neq.blocked")
       .gte("scheduled_at", now.toISOString())
       .lte("scheduled_at", oneHourFromNow.toISOString());
 

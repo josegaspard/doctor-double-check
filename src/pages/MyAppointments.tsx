@@ -84,9 +84,25 @@ export default function MyAppointments() {
     if (otherIds.length > 0) {
       const { data: profs } = await supabase.from('profiles').select('id, name, avatar_url').in('id', otherIds);
       (profs || []).forEach((p: any) => (profMap[p.id] = p));
+      // El paciente no puede leer profiles/doctor_profiles del médico (RLS) y salía
+      // "Dr. undefined" (3-oct-2026): se completa con la vista pública y, si aún
+      // falta, con el RPC público que ya usa BookAppointment.
+      const missing = () => otherIds.filter((id) => !profMap[id]?.name);
+      if (missing().length > 0) {
+        const { data: pubs } = await supabase.from('profiles_public').select('id, name, avatar_url').in('id', missing());
+        (pubs || []).forEach((p: any) => { if (p.id && p.name) profMap[p.id] = p; });
+      }
       if (role !== 'doctor') {
         const { data: dps } = await supabase.from('doctor_profiles').select('user_id, specialty').in('user_id', otherIds);
         (dps || []).forEach((d: any) => (specMap[d.user_id] = d.specialty));
+        const needRpc = otherIds.filter((id) => !profMap[id]?.name || !specMap[id]);
+        await Promise.all(needRpc.map(async (id) => {
+          const { data: docRows } = await supabase.rpc('get_doctor_public_profile', { p_user_id: id });
+          const dp = (docRows as any[])?.[0];
+          if (!dp) return;
+          if (!profMap[id]?.name && dp.name) profMap[id] = { id, name: dp.name, avatar_url: dp.avatar_url ?? null };
+          if (!specMap[id] && dp.specialty) specMap[id] = dp.specialty;
+        }));
       }
     }
 
@@ -226,7 +242,7 @@ export default function MyAppointments() {
               <div className="space-y-3">
                 {appts.map((a) => {
                   const badge = STATUS_BADGE[a.status] || STATUS_BADGE.requested;
-                  const counterpart = role === 'doctor' ? a.patient_name : a.doctor_name;
+                  const counterpart = (role === 'doctor' ? a.patient_name : a.doctor_name) || null;
                   const counterpartAvatar = role === 'doctor' ? a.patient_avatar : a.doctor_avatar;
                   const liveSoon = a.status === 'confirmed' && Math.abs(new Date(a.scheduled_at).getTime() - Date.now()) < 30 * 60_000;
                   return (
@@ -242,7 +258,9 @@ export default function MyAppointments() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="font-medium text-sm inline-flex items-center gap-1 min-w-0">
-                                <span className="truncate">{role === 'doctor' ? counterpart : `${t('myAppointments.doctorPrefix')} ${counterpart}`}</span>
+                                <span className="truncate">{role === 'doctor'
+                                  ? (counterpart || t('myAppointments.fallbackPatient'))
+                                  : (counterpart ? `${t('myAppointments.doctorPrefix')} ${counterpart}` : t('myAppointments.unknownDoctor'))}</span>
                                 {role !== 'doctor' && <DoctorBadgeIcon userId={a.doctor_id} size="sm" className="flex-shrink-0" />}
                               </p>
                               {a.specialty && (

@@ -593,6 +593,17 @@ export default function Foro() {
     try {
       const { error } = await sb.from('forum_posts').delete().eq('id', post.id);
       if (error) throw error;
+      // Borrar también sus adjuntos del depósito privado. Si la política del
+      // depósito no lo permite, la publicación ya está borrada: solo se registra.
+      const attachmentPaths = [...new Set((post.attachments || []).map((a) => a.path).filter(Boolean))];
+      if (attachmentPaths.length > 0) {
+        try {
+          const { error: rmError } = await supabase.storage.from(FORUM_FILES_BUCKET).remove(attachmentPaths);
+          if (rmError) console.warn('[Foro] no se pudieron borrar los adjuntos:', rmError.message);
+        } catch (rmErr) {
+          console.warn('[Foro] no se pudieron borrar los adjuntos:', rmErr);
+        }
+      }
       toast.success(t('forum.deleted'));
       fetchPosts();
     } catch (e: any) {

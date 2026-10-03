@@ -80,8 +80,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/advertiser/dashboard?payment=success&campaign_id=${campaign_id}`,
-      cancel_url: `${req.headers.get("origin")}/advertiser/dashboard?payment=cancelled`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/advertiser/dashboard?payment=success&campaign_id=${campaign_id}`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/advertiser/dashboard?payment=cancelled`,
       metadata: {
         campaign_id,
         user_id: user.id,

@@ -169,7 +169,8 @@ describe("LivesGrid — credentials rendering with stale cache", () => {
     // Both credential badges should appear in the grid
     await waitFor(
       () => {
-        expect(screen.getAllByText(/Céd\. Prof\./i).length).toBeGreaterThan(0);
+        // El mock de t() devuelve la clave: la insignia pinta «cofepris.badge.cedulaShort».
+        expect(screen.getAllByText(/Céd\. Prof\.|cedulaShort/i).length).toBeGreaterThan(0);
         expect(screen.getAllByText(/COFEPRIS/i).length).toBeGreaterThan(0);
       },
       { timeout: 4000 },

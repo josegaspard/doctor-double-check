@@ -40,6 +40,14 @@ export function PostConsultationSummaryDialog({ open, onOpenChange, consultation
         .eq('id', consultationId);
 
       if (error) throw error;
+      // La valoración del paciente se ofrece solo si la consulta tiene ended_at:
+      // si la videollamada no lo dejó puesto, lo rellenamos aquí sin pisar uno existente.
+      const { error: endedErr } = await supabase
+        .from('consultations')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', consultationId)
+        .is('ended_at', null);
+      if (endedErr) console.warn('[PostConsultation] ended_at no actualizado:', endedErr.message);
       toast.success(t('postConsultation.saved'));
       setSummary('');
       setDiagnosis('');

@@ -152,8 +152,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/chat?consultation=success&doctor=${doctorId}`,
-      cancel_url: `${req.headers.get("origin")}/doctor/${doctorId}?consultation=canceled`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/chat?consultation=success&doctor=${doctorId}`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/doctor/${doctorId}?consultation=canceled`,
       metadata: {
         user_id: user.id,
         doctor_id: doctorId,

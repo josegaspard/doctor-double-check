@@ -93,8 +93,8 @@ Deno.serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/vault?storage_success=true&extra_gb=${extraGB}`,
-      cancel_url: `${req.headers.get("origin")}/vault?canceled=true`,
+      success_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/vault?storage_success=true&extra_gb=${extraGB}`,
+      cancel_url: `${req.headers.get("origin") || Deno.env.get("SITE_URL") || "https://medical-masters.com"}/vault?canceled=true`,
       metadata: {
         user_id: user.id,
         extra_gb: extraGB.toString(),

@@ -22,6 +22,13 @@ Deno.serve(async (req)=>{
     status: 405,
     headers: CORS
   });
+  // Calentamiento que manda src/main.tsx al cargar la web: solo arranca el
+  // contenedor; se responde 204 sin tocar auth ni Bunny.
+  const warmBody = await req.clone().json().catch(()=>null);
+  if (warmBody?.__warmup__ === true) return new Response(null, {
+    status: 204,
+    headers: CORS
+  });
   try {
     const auth = req.headers.get('authorization');
     if (!auth) return json({

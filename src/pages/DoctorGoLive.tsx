@@ -59,7 +59,12 @@ export default function DoctorGoLive() {
   const [dailyRoomUrl, setDailyRoomUrl] = useState<string | null>(null);
   const [dailyOwnerToken, setDailyOwnerToken] = useState<string | null>(null);
 
-  const { createRoom, endRoom } = useDaily();
+  const { createRoom, endRoom, getViewerToken } = useDaily();
+
+  // Live propio que sigue «en directo» en la BD sin sesión en esta pestaña
+  // (recarga o cierre del navegador): se ofrece reanudarlo o finalizarlo.
+  const [orphanLive, setOrphanLive] = useState<any | null>(null);
+  const [orphanAction, setOrphanAction] = useState<'resume' | 'end' | null>(null);
   const localRecording = useLocalRecording();
 
   const { viewerCount, likesCount } = useViewerCount({
@@ -88,6 +93,106 @@ export default function DoctorGoLive() {
       setIsLive(true);
     }
   }, []); // Only on mount
+
+  useEffect(() => {
+    if (!user?.id || activeLiveSession || isLive) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('lives')
+        .select('*')
+        .eq('doctor_id', user.id)
+        .eq('status', 'live')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) { console.warn('[GoLive] no se pudo comprobar si hay un live abierto:', error.message); return; }
+      setOrphanLive(data || null);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const handleResumeOrphan = async () => {
+    if (!orphanLive || orphanAction) return;
+    const roomName: string | null = orphanLive.daily_room_name;
+    if (!roomName) { toast.error(t('doctorGoLivePage.orphanLiveResumeError')); return; }
+    setOrphanAction('resume');
+    try {
+      const token = await getViewerToken(roomName, true, true);
+      if (!token) throw new Error('owner token');
+
+      // La grabación local de antes de recargar se perdió; se graba desde aquí.
+      const recordingOn = orphanLive.recording_price != null;
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+      } catch {
+        stream = null;
+      }
+
+      const roomUrl = `https://doctores.daily.co/${roomName}`;
+      const startedAt = new Date(orphanLive.started_at);
+      setLiveData({
+        id: orphanLive.id, title: orphanLive.title, description: orphanLive.description || '',
+        specialty: orphanLive.specialty, viewerCount: 0, likesCount: 0, startedAt,
+      });
+      setDailyRoomName(roomName);
+      setDailyRoomUrl(roomUrl);
+      setDailyOwnerToken(token);
+      setEnableRecording(recordingOn);
+      setTags(orphanLive.tags || []);
+      setRecordingPrice(Number(orphanLive.recording_price) || 0);
+      if (stream) {
+        setLocalStream(stream);
+        if (recordingOn) localRecording.startRecording(stream);
+      }
+      await supabase.from('lives').update({ is_broadcasting: true }).eq('id', orphanLive.id);
+      setActiveLiveSession({
+        liveId: orphanLive.id,
+        title: orphanLive.title,
+        dailyRoomUrl: roomUrl,
+        dailyOwnerToken: token,
+        dailyRoomName: roomName,
+        enableRecording: recordingOn,
+        tags: orphanLive.tags || [],
+        recordingPrice: Number(orphanLive.recording_price) || 0,
+        liveStartedAt: startedAt,
+        specialty: orphanLive.specialty,
+        description: orphanLive.description || '',
+      });
+      setOrphanLive(null);
+      setIsLive(true);
+    } catch (err) {
+      console.error('[GoLive] no se pudo reanudar el live:', err);
+      toast.error(t('doctorGoLivePage.orphanLiveResumeError'));
+    } finally {
+      setOrphanAction(null);
+    }
+  };
+
+  const handleEndOrphan = async () => {
+    if (!orphanLive || orphanAction) return;
+    setOrphanAction('end');
+    try {
+      try { await endRoom(orphanLive.daily_room_name || null, orphanLive.id); } catch { /* no fatal */ }
+      const { error } = await supabase.from('lives').update({
+        status: 'ended', is_broadcasting: false, ended_at: new Date().toISOString(),
+      }).eq('id', orphanLive.id).eq('doctor_id', user?.id ?? '');
+      if (error) throw error;
+      setOrphanLive(null);
+      toast.success(t('doctorGoLivePage.orphanLiveEnded'));
+    } catch (err) {
+      console.error('[GoLive] no se pudo finalizar el live:', err);
+      toast.error(t('doctorGoLive.endError'));
+    } finally {
+      setOrphanAction(null);
+    }
+  };
 
   // Timer
   useEffect(() => {
@@ -407,9 +512,8 @@ export default function DoctorGoLive() {
         }
       } catch { /* no instance */ }
 
-      if (dailyRoomName) {
-        try { await endRoom(dailyRoomName); } catch {}
-      }
+      // Con liveId la función cierra el live en la BD aunque no haya sala.
+      try { await endRoom(dailyRoomName, liveData.id); } catch {}
 
       setEndingStage('saving');
       await supabase.from('lives').update({
@@ -643,6 +747,24 @@ export default function DoctorGoLive() {
             {t('doctorGoLivePage.broadcastOrSchedule')}
           </p>
         </div>
+        {orphanLive && (
+          <Card className="mb-4 p-4 sm:p-5 border-primary/40">
+            <h2 className="font-heading text-base font-bold text-foreground">{t('doctorGoLivePage.orphanLiveTitle')}</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {t('doctorGoLivePage.orphanLiveDesc').replace('{title}', orphanLive.title || '')}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button onClick={handleResumeOrphan} disabled={!!orphanAction || !orphanLive.daily_room_name}>
+                {orphanAction === 'resume' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Radio className="w-4 h-4 mr-2" />}
+                {t('doctorGoLivePage.orphanLiveResume')}
+              </Button>
+              <Button variant="outline" onClick={handleEndOrphan} disabled={!!orphanAction}>
+                {orphanAction === 'end' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {t('doctorGoLivePage.orphanLiveEnd')}
+              </Button>
+            </div>
+          </Card>
+        )}
         <Tabs defaultValue="now" className="w-full">
           <TabsList className="grid grid-cols-2 mb-4 max-w-md mx-auto">
             <TabsTrigger value="now" className="gap-2"><Radio className="w-4 h-4" /> {t('doctorGoLivePage.broadcastNowTab')}</TabsTrigger>

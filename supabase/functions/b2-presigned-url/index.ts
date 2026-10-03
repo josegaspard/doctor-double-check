@@ -83,6 +83,11 @@ async function presignS3Url(opts: {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Calentamiento que manda src/main.tsx al cargar la web: solo arranca el
+  // contenedor; se responde 204 sin tocar auth ni Backblaze.
+  const warmBody = await req.clone().json().catch(() => null);
+  if (warmBody?.path === "__warmup__") return new Response(null, { status: 204, headers: corsHeaders });
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";

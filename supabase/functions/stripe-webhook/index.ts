@@ -317,6 +317,21 @@ async function handleWalletTopup(db: ReturnType<typeof supabaseAdmin>, session: 
   
   logStep("Wallet topup completed", { userId, amount });
 
+  // Aviso en la campana. No bloqueante: el saldo ya está acreditado y un fallo aquí
+  // no debe provocar que Stripe reintente el webhook.
+  try {
+    const { error: notifError } = await db.from("notifications").insert({
+      user_id: userId,
+      type: "system", // 'payment_received' lleva a /doctor/earnings en la campana; 'system' usa data.url
+      title: "Recarga acreditada",
+      message: `Se acreditaron $${amount.toFixed(2)} a tu billetera.`,
+      data: { amount, stripe_session_id: session.id, url: "/wallet" },
+    });
+    if (notifError) logStep("Failed to notify topup (non-critical)", { error: notifError.message });
+  } catch (e: any) {
+    logStep("Failed to notify topup (non-critical)", { error: e?.message });
+  }
+
   // Send confirmation email (legal requirement)
   try {
     const { data: userProfile } = await db

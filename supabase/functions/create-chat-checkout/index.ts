@@ -55,15 +55,18 @@ Deno.serve(async (req) => {
     // SECURITY (2026-05-11 audit): amount comes from DB, NOT from body.
     // Previously a user could pass amount=0.01 (or negative-rounded) and
     // get a chat highlight at the wrong price.
-    const { data: liveData } = await supabase
+    // El precio del chat lo guarda el médico en lives.chat_price (DoctorGoLive/LiveChat);
+    // chat_highlight_price no existe y hacía fallar la consulta.
+    const { data: liveData, error: liveErr } = await supabase
       .from("lives")
-      .select("title, chat_highlight_seconds, chat_highlight_price")
+      .select("title, chat_highlight_seconds, chat_price")
       .eq("id", liveId)
-      .single();
+      .maybeSingle();
+    if (liveErr) console.error("[CREATE-CHAT-CHECKOUT] lives query failed", liveErr.message);
     if (!liveData) throw new Error("Live not found");
 
     const highlightSeconds = liveData.chat_highlight_seconds || 120;
-    const amount = Number((liveData as any).chat_highlight_price ?? 0);
+    const amount = Number((liveData as any).chat_price ?? 0);
     if (!amount || amount < 5 || amount > 5000) {
       throw new Error("Chat highlight price not configured");
     }

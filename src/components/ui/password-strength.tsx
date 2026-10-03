@@ -1,55 +1,59 @@
 import React, { useMemo } from 'react';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PasswordStrengthProps {
   password: string;
 }
 
+// Las etiquetas son claves de traducción (passwordStrength.*): antes iban en español
+// fijo y salían así con la interfaz en otro idioma (3-oct-2026).
 interface PasswordRequirement {
-  label: string;
+  labelKey: string;
   met: boolean;
 }
 
 export function getPasswordStrength(password: string): {
   score: number;
-  label: string;
+  labelKey: string;
   color: string;
   requirements: PasswordRequirement[];
 } {
   const requirements: PasswordRequirement[] = [
-    { label: 'Al menos 12 caracteres', met: password.length >= 12 },
-    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
-    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
-    { label: 'Un número', met: /[0-9]/.test(password) },
-    { label: 'Un carácter especial (!@#$%)', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+    { labelKey: 'passwordStrength.minLength', met: password.length >= 12 },
+    { labelKey: 'passwordStrength.lowercase', met: /[a-z]/.test(password) },
+    { labelKey: 'passwordStrength.uppercase', met: /[A-Z]/.test(password) },
+    { labelKey: 'passwordStrength.number', met: /[0-9]/.test(password) },
+    { labelKey: 'passwordStrength.special', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
   ];
 
   const metCount = requirements.filter(r => r.met).length;
   const score = (metCount / requirements.length) * 100;
 
-  let label = 'Muy débil';
+  let labelKey = 'passwordStrength.veryWeak';
   let color = 'bg-destructive';
 
   if (score >= 100) {
-    label = 'Muy fuerte';
+    labelKey = 'passwordStrength.veryStrong';
     color = 'bg-success';
   } else if (score >= 80) {
-    label = 'Fuerte';
+    labelKey = 'passwordStrength.strong';
     color = 'bg-success';
   } else if (score >= 60) {
-    label = 'Buena';
+    labelKey = 'passwordStrength.good';
     color = 'bg-warning';
   } else if (score >= 40) {
-    label = 'Débil';
+    labelKey = 'passwordStrength.weak';
     color = 'bg-warning';
   }
 
-  return { score, label, color, requirements };
+  return { score, labelKey, color, requirements };
 }
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
-  const { score, label, color, requirements } = useMemo(
+  const { t } = useLanguage();
+  const { score, labelKey, color, requirements } = useMemo(
     () => getPasswordStrength(password),
     [password]
   );
@@ -61,12 +65,12 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       {/* Strength bar */}
       <div className="space-y-1.5">
         <div className="flex justify-between items-center text-xs">
-          <span className="text-muted-foreground">Fortaleza:</span>
+          <span className="text-muted-foreground">{t('passwordStrength.title')}</span>
           <span className={cn(
             "font-medium",
             score >= 80 ? "text-success" : score >= 60 ? "text-warning" : "text-destructive"
           )}>
-            {label}
+            {t(labelKey)}
           </span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -92,7 +96,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
             ) : (
               <X className="w-3.5 h-3.5" />
             )}
-            <span>{req.label}</span>
+            <span>{t(req.labelKey)}</span>
           </div>
         ))}
       </div>

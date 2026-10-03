@@ -64,13 +64,15 @@ Deno.serve(async (req) => {
         metadata: { rejection_reason: rejectionReason },
       });
 
-      await supabaseAdmin.from("notifications").insert({
+      // notifications usa 'data' (no 'metadata') y el enum no tiene tipos de marketplace.
+      const { error: notifErr } = await supabaseAdmin.from("notifications").insert({
         user_id: refund.requested_by,
-        type: "marketplace.refund_rejected",
+        type: "system",
         title: "Tu solicitud de devolución fue rechazada",
         message: rejectionReason || "Contacta soporte para más detalles.",
-        metadata: { refund_id: refundId, order_id: refund.order_id },
+        data: { kind: "marketplace.refund_rejected", refund_id: refundId, order_id: refund.order_id },
       });
+      if (notifErr) console.error("process-marketplace-refund notification insert failed:", notifErr.message);
 
       return new Response(JSON.stringify({ ok: true, status: "rejected" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -176,7 +178,7 @@ Deno.serve(async (req) => {
         refund_status: "refunded",
         ...(Number(refund.amount) >= Number(order.total_amount) ? { status: "refunded" } : {}),
       })
-      .eq("id", order.id);
+      .eq("id", refund.order_id); // order no trae id en su select: con order.id el pedido nunca se actualizaba
 
     await supabaseAdmin.from("marketplace_audit_log").insert({
       actor_id: userData.user.id, actor_role: "admin",
@@ -184,13 +186,14 @@ Deno.serve(async (req) => {
       metadata: { stripe_refund_id: stripeRefundId, amount: refund.amount },
     });
 
-    await supabaseAdmin.from("notifications").insert({
+    const { error: notifErr } = await supabaseAdmin.from("notifications").insert({
       user_id: refund.requested_by,
-      type: "marketplace.refund_approved",
+      type: "system",
       title: "Tu devolución fue aprobada",
       message: `Recibirás ${refund.amount} ${refund.currency} en los próximos días.`,
-      metadata: { refund_id: refundId, order_id: refund.order_id },
+      data: { kind: "marketplace.refund_approved", refund_id: refundId, order_id: refund.order_id },
     });
+    if (notifErr) console.error("process-marketplace-refund notification insert failed:", notifErr.message);
 
     return new Response(
       JSON.stringify({ ok: true, status: "refunded", stripeRefundId }),

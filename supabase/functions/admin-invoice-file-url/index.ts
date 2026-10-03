@@ -23,6 +23,9 @@ const normalizeInvoicePath = (rawFileUrl: string) => {
   return decoded.replace(/^doctor-invoices\//, "");
 };
 
+// Error con código HTTP: 400 validación, 401 sin sesión, 403 rol, 404 no existe.
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -41,21 +44,24 @@ Deno.serve(async (req) => {
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !authData.user) {
-      throw new Error("User not authenticated");
+      throw httpError(401, "User not authenticated");
     }
 
-    const { data: roleData } = await supabaseAdmin
+    // Un admin puede tener varios roles: .single() fallaba con 2 filas.
+    const { data: adminRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", authData.user.id)
-      .single();
+      .eq("role", "admin")
+      .limit(1)
+      .maybeSingle();
 
-    if (roleData?.role !== "admin") {
-      throw new Error("Unauthorized");
+    if (!adminRole) {
+      throw httpError(403, "Unauthorized");
     }
 
-    const { invoiceId } = await req.json();
-    if (!invoiceId) throw new Error("invoiceId is required");
+    const { invoiceId } = await req.json().catch(() => ({}));
+    if (!invoiceId) throw httpError(400, "invoiceId is required");
 
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from("doctor_invoices")
@@ -64,7 +70,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (invoiceError || !invoice) {
-      throw new Error("Invoice not found");
+      throw httpError(404, "Invoice not found");
     }
 
     const normalizedPath = normalizeInvoicePath(invoice.file_url);
@@ -93,7 +99,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: error.message || "Unexpected error" }),
       {
-        status: 400,
+        status: error.status ?? 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

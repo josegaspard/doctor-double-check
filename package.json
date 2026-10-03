@@ -22,7 +22,7 @@
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/local-notifications": "^8.1.0",
     "@capacitor/push-notifications": "^8.0.4",
-    "@daily-co/daily-js": "^0.85.0",
+    "@daily-co/daily-js": "^0.93.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@hookform/resolvers": "^3.10.0",
