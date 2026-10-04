@@ -7,6 +7,10 @@
 --  4. Datos: ganancias y compras que siguen en 'paid' aunque su venta se reembolsó → 'refunded'.
 --  5. doctor_sales (base de la factura al comprador) toma el bruto de metadata.gross_amount si la
 --     ganancia se guarda en neto; sin ese dato, como hasta ahora.
+--  6. Rol: solo se elige en el onboarding inicial (política acotada + RPC set_onboarding_role);
+--     después, solo el admin. Nunca hacia admin.
+--  7. Bóveda: la paciente ya no reescribe storage_used_bytes; la cuota se comprueba en el servidor.
+--  8. Consultas: un participante ya no puede cambiar patient_id/doctor_id.
 
 -- 1a ------------------------------------------------------------------------------------------
 -- Segunda opinión con saldo: antes cobraba get_price_for_user(p_amount) con p_amount del navegador
@@ -545,5 +549,341 @@ begin
     raise warning 'fn_record_doctor_sale: %', sqlerrm;
   end;
   return new;
+end;
+$function$;
+
+-- 6 -------------------------------------------------------------------------------------------
+-- Rol: la política viva 'Users can update own non-admin role' (no estaba en el repo) dejaba a
+-- cualquier usuario pasarse a doctor/resident/patient en cualquier momento (un paciente leía casos
+-- clínicos; un paciente con el candado cerrado entraba como residente). Ahora el rol solo se elige
+-- durante el onboarding inicial (profiles.onboarding_completed sin marcar), nunca desde ni hacia
+-- admin, y 'patient' solo con el acceso de pacientes abierto. Después, solo el admin.
+-- La web publicada (Onboarding.tsx) hace un upsert directo: la política sigue, con estas reglas, para
+-- no romperla. La vía para la web nueva es la RPC set_onboarding_role (mismas reglas).
+CREATE OR REPLACE FUNCTION public.fn_onboarding_role_open()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  select (select auth.uid()) is not null
+     and not exists (select 1 from public.user_roles where user_id = (select auth.uid()) and role = 'admin')
+     and exists (select 1 from public.profiles where id = (select auth.uid()) and onboarding_completed is not true);
+$function$;
+
+REVOKE ALL ON FUNCTION public.fn_onboarding_role_open() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.fn_onboarding_role_open() TO authenticated;
+
+DROP POLICY IF EXISTS "Users can update own non-admin role" ON public.user_roles;
+DROP POLICY IF EXISTS "Users choose own role during onboarding" ON public.user_roles;
+CREATE POLICY "Users choose own role during onboarding" ON public.user_roles
+  FOR UPDATE
+  TO authenticated
+  USING ((select auth.uid()) = user_id AND role <> 'admin' AND public.fn_onboarding_role_open())
+  WITH CHECK ((select auth.uid()) = user_id
+              AND public.fn_onboarding_role_open()
+              AND (role IN ('doctor', 'resident') OR (role = 'patient' AND public.patient_access_enabled())));
+
+CREATE OR REPLACE FUNCTION public.set_onboarding_role(p_role public.app_role)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'Not authenticated' using errcode = '28000';
+  end if;
+  if not public.fn_onboarding_role_open() or p_role not in ('doctor', 'resident', 'patient') then
+    raise exception 'ROLE_CHANGE_NOT_ALLOWED' using errcode = '42501';
+  end if;
+  if p_role = 'patient' and not public.patient_access_enabled() then
+    raise exception 'PATIENT_SIGNUP_DISABLED' using errcode = '42501',
+      hint = 'El acceso para pacientes estará disponible próximamente.';
+  end if;
+  insert into public.user_roles (user_id, role) values (v_uid, p_role)
+  on conflict (user_id) do update set role = excluded.role;
+end;
+$function$;
+
+REVOKE ALL ON FUNCTION public.set_onboarding_role(public.app_role) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_onboarding_role(public.app_role) TO authenticated;
+
+-- 7 -------------------------------------------------------------------------------------------
+-- Bóveda: la paciente podía reescribir profiles.storage_used_bytes (PATCH a 0) y saltarse la cuota,
+-- que solo se comprobaba en el navegador. Ahora:
+--  · protect_profiles_cols también fija storage_used_bytes y no deja desmarcar onboarding_completed
+--    (lo usa la regla del punto 6);
+--  · el trigger de vault_files escribe el contador con app.bypass_protect y lo restaura;
+--  · al insertar en vault_files se comprueba la cuota en el servidor (STORAGE_QUOTA_EXCEEDED) con el
+--    tamaño real del objeto en storage si es mayor que el declarado; la paciente no puede cambiar
+--    file_size después.
+CREATE OR REPLACE FUNCTION public.protect_profiles_cols()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  if public.is_privileged_writer() then return new; end if;
+  new.is_identity_verified := old.is_identity_verified;
+  new.storage_limit_bytes  := old.storage_limit_bytes;
+  new.storage_used_bytes   := old.storage_used_bytes;
+  new.is_suspended         := old.is_suspended;
+  if old.onboarding_completed is true then
+    new.onboarding_completed := true;
+  end if;
+  return new;
+end; $function$;
+
+CREATE OR REPLACE FUNCTION public.fn_vault_files_storage_used()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_bypass text := current_setting('app.bypass_protect', true);
+begin
+  -- Lo dispara la paciente: sin esto, protect_profiles_cols devuelve el contador a su valor anterior.
+  perform set_config('app.bypass_protect', 'on', true);
+  if tg_op = 'INSERT' then
+    update public.profiles
+       set storage_used_bytes = coalesce(storage_used_bytes, 0) + greatest(coalesce(new.file_size, 0), 0)
+     where id = new.patient_id;
+  elsif tg_op = 'DELETE' then
+    update public.profiles
+       set storage_used_bytes = greatest(coalesce(storage_used_bytes, 0) - greatest(coalesce(old.file_size, 0), 0), 0)
+     where id = old.patient_id;
+  -- UPDATE: solo si cambia el tamaño o el dueño.
+  elsif new.patient_id is distinct from old.patient_id or new.file_size is distinct from old.file_size then
+    update public.profiles
+       set storage_used_bytes = greatest(coalesce(storage_used_bytes, 0) - greatest(coalesce(old.file_size, 0), 0), 0)
+     where id = old.patient_id;
+    update public.profiles
+       set storage_used_bytes = coalesce(storage_used_bytes, 0) + greatest(coalesce(new.file_size, 0), 0)
+     where id = new.patient_id;
+  end if;
+  perform set_config('app.bypass_protect', coalesce(v_bypass, ''), true);
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.fn_vault_files_quota()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_real bigint;
+  v_size bigint;
+  v_used bigint;
+  v_limit bigint;
+begin
+  if tg_op = 'UPDATE' then
+    if not public.is_privileged_writer() then
+      new.file_size := old.file_size;
+    end if;
+    return new;
+  end if;
+
+  select (o.metadata->>'size')::bigint into v_real
+    from storage.objects o
+   where o.bucket_id = 'vault-files' and o.name = new.file_url
+     and (o.metadata->>'size') ~ '^[0-9]+$'
+   limit 1;
+  v_size := greatest(coalesce(new.file_size, 0), coalesce(v_real, 0), 0);
+
+  if not public.is_privileged_writer() then
+    select coalesce(storage_used_bytes, 0), coalesce(storage_limit_bytes, 1073741824)
+      into v_used, v_limit
+      from public.profiles where id = new.patient_id
+       for update;
+    if v_size > 2147483647 or coalesce(v_used, 0) + v_size > coalesce(v_limit, 1073741824) then
+      raise exception 'STORAGE_QUOTA_EXCEEDED' using errcode = '53400',
+        hint = 'Se supera la cuota de almacenamiento de la bóveda.';
+    end if;
+  end if;
+
+  new.file_size := least(v_size, 2147483647)::integer;
+  return new;
+end;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_vault_files_quota ON public.vault_files;
+CREATE TRIGGER trg_vault_files_quota
+  BEFORE INSERT OR UPDATE OF file_size ON public.vault_files
+  FOR EACH ROW EXECUTE FUNCTION public.fn_vault_files_quota();
+
+-- 8 -------------------------------------------------------------------------------------------
+-- Consultas: la política UPDATE 'Participants can update consultations' no tiene WITH CHECK y un
+-- participante podía cambiar patient_id/doctor_id (pasarle la consulta a otro). Las partes de una
+-- consulta ya no cambian salvo el service role, el admin o un proceso con app.bypass_protect.
+CREATE OR REPLACE FUNCTION public.fn_guard_consultation_parties()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+begin
+  if public.is_privileged_writer() then return new; end if;
+  if new.patient_id is distinct from old.patient_id or new.doctor_id is distinct from old.doctor_id then
+    raise exception 'CONSULTATION_PARTIES_IMMUTABLE' using errcode = '42501';
+  end if;
+  return new;
+end;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_guard_consultation_parties ON public.consultations;
+CREATE TRIGGER trg_guard_consultation_parties
+  BEFORE UPDATE OF patient_id, doctor_id ON public.consultations
+  FOR EACH ROW EXECUTE FUNCTION public.fn_guard_consultation_parties();
+
+-- 9 -------------------------------------------------------------------------------------------
+-- Mensaje destacado sin pagar: la política INSERT de live_chat_messages solo exige user_id = auth.uid()
+-- y cualquiera podía insertar por la API is_paid = true con el highlight_until que quisiera.
+-- Ahora el destacado solo vale si lo inserta el service role (stripe-webhook, tras pagar con
+-- tarjeta), un escritor privilegiado, o el usuario con una compra con saldo de ese live hecha en
+-- los últimos 10 minutos y aún no usada (se marca con chat_message_id). La duración sale de
+-- lives.chat_highlight_seconds, nunca del cliente. Sin compra: is_paid = false, highlight_until = null.
+-- En UPDATE, quien no es privilegiado no cambia esas columnas.
+CREATE OR REPLACE FUNCTION public.fn_guard_live_chat_highlight()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_tx uuid;
+  v_secs integer;
+begin
+  if public.is_privileged_writer() then return new; end if;
+
+  if tg_op = 'UPDATE' then
+    new.is_paid := old.is_paid;
+    new.highlight_until := old.highlight_until;
+    return new;
+  end if;
+
+  if coalesce(new.is_paid, false) or new.highlight_until is not null then
+    select id into v_tx from wallet_transactions
+     where user_id = new.user_id
+       and type = 'purchase' and status = 'paid'
+       and metadata->>'type' = 'live_chat_highlight'
+       and metadata->>'live_id' = new.live_id::text
+       and metadata->>'chat_message_id' is null
+       and created_at >= now() - interval '10 minutes'
+     order by created_at
+     limit 1
+     for update;
+    if found then
+      update wallet_transactions
+         set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('chat_message_id', new.id)
+       where id = v_tx;
+      select coalesce(chat_highlight_seconds, 120) into v_secs from lives where id = new.live_id;
+      new.is_paid := true;
+      new.highlight_until := now() + make_interval(secs => coalesce(v_secs, 120));
+    else
+      new.is_paid := false;
+      new.highlight_until := null;
+    end if;
+  end if;
+  return new;
+end;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_guard_live_chat_highlight ON public.live_chat_messages;
+CREATE TRIGGER trg_guard_live_chat_highlight
+  BEFORE INSERT OR UPDATE OF is_paid, highlight_until ON public.live_chat_messages
+  FOR EACH ROW EXECUTE FUNCTION public.fn_guard_live_chat_highlight();
+
+-- Pagar con saldo un destacado en un live que ya no está en emisión se rechaza ('Live is not active').
+-- Misma función que en 1c; solo cambia la comprobación del status del live.
+CREATE OR REPLACE FUNCTION public.process_wallet_purchase(p_amount numeric, p_description text, p_metadata jsonb DEFAULT NULL::jsonb, p_idempotency_key text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_user_id uuid;
+  v_current_balance numeric;
+  v_final_amount numeric;
+  v_prev numeric;
+  v_live_doctor uuid;
+  v_live_price numeric;
+  v_live_status text;
+  v_live_txt text;
+  v_purchase_id uuid;
+begin
+  v_user_id := auth.uid();
+  if v_user_id is null then return jsonb_build_object('success', false, 'error', 'No authenticated user'); end if;
+  if p_amount <= 0 then return jsonb_build_object('success', false, 'error', 'Invalid amount'); end if;
+
+  -- Lock primero (serializa por usuario).
+  select balance into v_current_balance from wallets where user_id = v_user_id for update;
+  if not found then return jsonb_build_object('success', false, 'error', 'Wallet not found'); end if;
+
+  -- Replay idempotente: misma key ya cobrada → devolver sin volver a cobrar.
+  if p_idempotency_key is not null then
+    select abs(amount) into v_prev from wallet_transactions
+      where user_id = v_user_id and type = 'purchase'
+        and metadata->>'idempotency_key' = p_idempotency_key
+      limit 1;
+    if found then
+      return jsonb_build_object('success', true, 'amount_charged', v_prev,
+                                'new_balance', v_current_balance, 'idempotent_replay', true);
+    end if;
+  end if;
+
+  -- Mensaje destacado de un live: el médico y el precio se toman del live (no del cliente).
+  if coalesce(p_metadata->>'type', '') = 'live_chat_highlight' then
+    v_live_txt := p_metadata->>'live_id';
+    if v_live_txt ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+      select doctor_id, chat_price, status::text into v_live_doctor, v_live_price, v_live_status from lives where id = v_live_txt::uuid;
+      if found and v_live_status is distinct from 'live' then
+        return jsonb_build_object('success', false, 'error', 'Live is not active');
+      end if;
+      if found and (coalesce(v_live_price, 0) <= 0 or round(p_amount, 2) <> round(v_live_price, 2)) then
+        return jsonb_build_object('success', false, 'error', 'Price changed', 'price', coalesce(v_live_price, 0));
+      end if;
+    end if;
+    if v_live_doctor = v_user_id then v_live_doctor := null; end if;
+  end if;
+
+  -- El marketplace (vendor externo) se cobra al precio REAL: sin descuento de residente,
+  -- así lo cobrado == lo acreditado al vendor. El resto de compras conserva el descuento.
+  if coalesce(p_metadata->>'source', '') = 'marketplace' then
+    v_final_amount := p_amount;
+  else
+    v_final_amount := get_price_for_user(p_amount, v_user_id);
+  end if;
+
+  if v_current_balance < v_final_amount then return jsonb_build_object('success', false, 'error', 'Insufficient balance'); end if;
+
+  insert into wallet_transactions (user_id, type, amount, description, status, metadata)
+  values (v_user_id, 'purchase', -v_final_amount, p_description, 'paid',
+          case when p_idempotency_key is null then p_metadata
+               else coalesce(p_metadata, '{}'::jsonb) || jsonb_build_object('idempotency_key', p_idempotency_key) end
+          || case when v_live_doctor is not null then jsonb_build_object('doctor_id', v_live_doctor) else '{}'::jsonb end)
+  returning id into v_purchase_id;
+
+  update wallets set balance = balance - v_final_amount, updated_at = now() where user_id = v_user_id;
+
+  -- Ganancia del médico por el mensaje destacado: neto con la comisión 'live_chat_highlight',
+  -- igual que con tarjeta; el earning (bruto, con comprador y concepto) alimenta doctor_sales.
+  if v_live_doctor is not null then
+    perform public.credit_doctor_earnings(v_live_doctor, v_final_amount, 'live_chat_highlight');
+    insert into wallet_transactions (user_id, type, amount, description, status, metadata)
+    values (v_live_doctor, 'earning', v_final_amount, 'Ganancia por mensaje destacado en live', 'paid',
+            jsonb_build_object('source', 'live_chat_highlight', 'reference_id', v_live_txt,
+                               'buyer_id', v_user_id, 'purchase_txn_id', v_purchase_id,
+                               'concept', 'Mensaje destacado en transmisión en vivo'));
+  end if;
+  return jsonb_build_object('success', true, 'amount_charged', v_final_amount, 'new_balance', v_current_balance - v_final_amount);
 end;
 $function$;
