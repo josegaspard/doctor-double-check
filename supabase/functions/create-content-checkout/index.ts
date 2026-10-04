@@ -10,6 +10,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-CONTENT-CHECKOUT] ${step}${detailsStr}`);
@@ -62,12 +64,12 @@ Deno.serve(async (req) => {
 
     if (contentError) {
       logStep("Content query error", { error: contentError.message, code: contentError.code });
-      throw new Error("Content not found");
+      throw httpError(404, "Contenido no encontrado");
     }
-    if (!content) throw new Error("Content not found");
-    if (!content.price || content.price <= 0) throw new Error("This content is free");
-    if (content.creator_id === user.id) throw new Error("You cannot purchase your own content");
-    if (content.moderation_status !== 'approved') throw new Error("Content not available");
+    if (!content) throw httpError(404, "Contenido no encontrado");
+    if (content.moderation_status !== 'approved') throw httpError(404, "Este contenido no está disponible");
+    if (!content.price || content.price <= 0) throw httpError(400, "Este contenido es gratuito");
+    if (content.creator_id === user.id) throw httpError(400, "No puedes comprar tu propio contenido");
     logStep("Content found", { title: content.title, price: content.price });
 
     // Check if already purchased

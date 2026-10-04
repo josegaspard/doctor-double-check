@@ -113,7 +113,13 @@ Deno.serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: maskEmail(user.email) });
 
     // Facturas a nombre del comprador: sin RFC y nombre fiscal no se cobra.
-    const billingBlock = await requireBillingProfile(supabaseClient, user.id, corsHeaders);
+    // billing_profiles solo lo lee su dueño por RLS: con el cliente anon (sin sesión)
+    // la lectura sale vacía y bloquearía a todos, así que se lee con la clave de servicio.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    const billingBlock = await requireBillingProfile(adminClient, user.id, corsHeaders);
     if (billingBlock) return billingBlock;
 
     const { creatorId, tier } = await req.json();

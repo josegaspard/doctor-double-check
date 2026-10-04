@@ -254,7 +254,9 @@ Deno.serve(async (req) => {
       if (closeErr) { logStep("Could not close refunded consultation (non-blocking)", { error: closeErr.message }); return; }
       const chatSessionId = (closed as any)?.[0]?.chat_session_id;
       if (chatSessionId) {
-        await supabaseAdmin.from("chat_sessions").update({ status: "archived" }).eq("id", chatSessionId);
+        // chat_status solo admite 'active' y 'closed'.
+        const { error: chatErr } = await supabaseAdmin.from("chat_sessions").update({ status: "closed" }).eq("id", chatSessionId);
+        if (chatErr) logStep("Could not close refunded chat session (non-blocking)", { chatSessionId, error: chatErr.message });
       }
       logStep("Refunded consultation closed", { consultationId, closed: (closed || []).length });
     };

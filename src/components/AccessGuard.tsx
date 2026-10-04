@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AppRole as UserRole } from '@/types/database';
+import { getIntlLocale } from '@/lib/dateLocale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ export default function AccessGuard({
   featureLabel,
 }: AccessGuardProps) {
   const { user, role, isAuthenticated, isLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [auditOpen, setAuditOpen] = useState(false);
 
@@ -93,13 +94,13 @@ export default function AccessGuard({
       if (!hasEntitlement) {
         entitlementReason = ent
           ? (ent.expiresAt && new Date(ent.expiresAt) <= new Date()
-              ? `Tu acceso al chat expiró el ${new Date(ent.expiresAt).toLocaleDateString('es-MX')}`
-              : 'Tu acceso al chat no está activo')
-          : 'No has comprado una orientación médica activa';
+              ? t('admin.chatExpired').replace('{date}', new Date(ent.expiresAt).toLocaleDateString(getIntlLocale(language)))
+              : t('admin.chatInactive'))
+          : t('admin.chatNotPurchased');
       }
     } else if (requiresEntitlement === 'recordings') {
       hasEntitlement = role === 'doctor' || role === 'admin';
-      if (!hasEntitlement) entitlementReason = 'Las grabaciones requieren compra individual o suscripción';
+      if (!hasEntitlement) entitlementReason = t('admin.recordingsRequire');
     }
   }
 
@@ -107,23 +108,25 @@ export default function AccessGuard({
     // Build audit reasons (why was this blocked?)
     const reasons: { label: string; status: 'fail' | 'pass'; detail: string }[] = [
       {
-        label: 'Sesión iniciada',
+        label: t('admin.auditSession'),
         status: isAuthenticated ? 'pass' : 'fail',
-        detail: isAuthenticated ? `Conectado como ${user?.email || user?.name || 'usuario'}` : 'Necesitas iniciar sesión',
+        detail: isAuthenticated
+          ? t('admin.auditSessionOk').replace('{who}', user?.email || user?.name || t('admin.auditUser'))
+          : t('admin.auditSessionFail'),
       },
       {
-        label: 'Rol autorizado',
+        label: t('admin.auditRole'),
         status: hasRoleAccess ? 'pass' : 'fail',
         detail: hasRoleAccess
-          ? `Tu rol "${role}" tiene acceso`
-          : `Tu rol actual es "${role || 'visitante'}". Roles permitidos: ${allowedRoles.join(', ')}`,
+          ? t('admin.auditRoleOk').replace('{role}', String(role))
+          : t('admin.auditRoleFail').replace('{role}', role || t('admin.auditVisitor')).replace('{roles}', allowedRoles.join(', ')),
       },
     ];
     if (requiresEntitlement) {
       reasons.push({
-        label: `Permiso (${requiresEntitlement})`,
+        label: t('admin.auditPermission').replace('{perm}', requiresEntitlement),
         status: hasEntitlement ? 'pass' : 'fail',
-        detail: hasEntitlement ? 'Permiso activo' : entitlementReason || 'Permiso requerido no activo',
+        detail: hasEntitlement ? t('admin.auditPermissionOk') : entitlementReason || t('admin.auditPermissionFail'),
       });
     }
 
@@ -167,7 +170,7 @@ export default function AccessGuard({
               >
                 <span className="flex items-center gap-2">
                   <Info className="w-3.5 h-3.5" />
-                  ¿Por qué no puedo entrar?{featureLabel ? ` (${featureLabel})` : ''}
+                  {t('admin.whyCantEnter')}{featureLabel ? ` (${featureLabel})` : ''}
                 </span>
                 {auditOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
@@ -179,7 +182,7 @@ export default function AccessGuard({
                         variant={r.status === 'pass' ? 'success' : 'destructive'}
                         className="text-[10px] px-1.5 py-0 mt-0.5 flex-shrink-0"
                       >
-                        {r.status === 'pass' ? 'OK' : 'BLOQ'}
+                        {r.status === 'pass' ? 'OK' : t('admin.auditBlocked')}
                       </Badge>
                       <span className="flex-1 min-w-0">
                         <span className="font-medium text-foreground">{r.label}:</span>{' '}

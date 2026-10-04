@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[PURCHASE-CONTENT-WALLET] ${step}${detailsStr}`);
@@ -52,16 +54,16 @@ Deno.serve(async (req) => {
       .single();
 
     if (contentError || !content) {
-      throw new Error("Content not found");
-    }
-    if (!content.price || content.price <= 0) {
-      throw new Error("This content is free");
-    }
-    if (content.creator_id === user.id) {
-      throw new Error("You cannot purchase your own content");
+      throw httpError(404, "Contenido no encontrado");
     }
     if (content.moderation_status !== 'approved') {
-      throw new Error("Content not available");
+      throw httpError(404, "Este contenido no está disponible");
+    }
+    if (!content.price || content.price <= 0) {
+      throw httpError(400, "Este contenido es gratuito");
+    }
+    if (content.creator_id === user.id) {
+      throw httpError(400, "No puedes comprar tu propio contenido");
     }
     logStep("Content found", { title: content.title, price: content.price });
 
@@ -244,7 +246,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: errorMessage });
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: (error as any)?.status ?? 500 }
     );
   }
 });

@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { getIntlLocale } from '@/lib/dateLocale';
+import { appointmentErrorMessage, isConfirmedTooLate } from '@/lib/appointmentErrors';
 
 interface Appt {
   id: string;
@@ -137,7 +138,7 @@ export default function MyAppointments() {
       .eq('id', id);
     setCancelling(null);
     if (error) {
-      toast.error(error.message);
+      toast.error(appointmentErrorMessage(error, t));
       return;
     }
     toast.success(t('myAppointments.toastCancelled'));
@@ -245,6 +246,9 @@ export default function MyAppointments() {
                   const counterpart = (role === 'doctor' ? a.patient_name : a.doctor_name) || null;
                   const counterpartAvatar = role === 'doctor' ? a.patient_avatar : a.doctor_avatar;
                   const liveSoon = a.status === 'confirmed' && Math.abs(new Date(a.scheduled_at).getTime() - Date.now()) < 30 * 60_000;
+                  // El paciente ya no puede cancelar ni reprogramar una cita confirmada a menos de 2 h
+                  // (fn_guard_patient_appointment lo rechaza): se quitan los botones y se explica.
+                  const patientLocked = role !== 'doctor' && isConfirmedTooLate(a.status, a.scheduled_at);
                   return (
                     <Card key={a.id}>
                       <CardContent className="p-4 flex items-start gap-3">
@@ -277,6 +281,9 @@ export default function MyAppointments() {
                           {a.cancellation_reason && a.status === 'cancelled' && (
                             <p className="mt-1 text-[11px] text-destructive">{a.cancellation_reason}</p>
                           )}
+                          {tab === 'upcoming' && patientLocked && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">{t('myAppointments.lockedTooLate')}</p>
+                          )}
                         </div>
                         <div className="flex flex-col gap-2 flex-shrink-0">
                           {role === 'doctor' && a.status === 'requested' && (
@@ -295,13 +302,13 @@ export default function MyAppointments() {
                             </Button>
                           )}
                           {role !== 'doctor' && tab === 'upcoming' && (a.status === 'requested' || a.status === 'confirmed')
-                            && new Date(a.scheduled_at).getTime() > Date.now() && (
+                            && new Date(a.scheduled_at).getTime() > Date.now() && !patientLocked && (
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={cancelling === a.id} onClick={() => navigate(`/book/${a.doctor_id}?reschedule=${a.id}`)}>
                               <CalendarClock className="w-3 h-3" />
                               {t('myAppointments.reschedule')}
                             </Button>
                           )}
-                          {tab === 'upcoming' && a.status !== 'cancelled' && (
+                          {tab === 'upcoming' && a.status !== 'cancelled' && !patientLocked && (
                             <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive" disabled={cancelling === a.id} onClick={() => cancelAppt(a.id)}>
                               {cancelling === a.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                               {t('myAppointments.cancel')}

@@ -20,6 +20,7 @@ import { usePublicDoctorServices, minServicePrice } from '@/hooks/useDoctorServi
 import { isMissingDbObject } from '@/hooks/useCreateAppointment';
 import { serviceIcon } from '@/components/doctor/services/serviceIcons';
 import { fill } from '@/lib/proFormat';
+import { appointmentErrorMessage, isConfirmedTooLate } from '@/lib/appointmentErrors';
 import '@/styles/funciones-servicios.css';
 
 interface Slot {
@@ -268,6 +269,12 @@ export default function BookAppointment() {
       if (o && o.patient_id === user.id && o.doctor_id === doctorId
         && ['requested', 'confirmed'].includes(o.status)
         && new Date(o.scheduled_at).getTime() > Date.now()) {
+        // Confirmada a menos de 2 h: la base no deja cancelarla, así que tampoco reprogramarla.
+        if (isConfirmedTooLate(o.status, o.scheduled_at)) {
+          setRescheduleFrom(null);
+          toast.error(t('bookAppointment.rescheduleTooLate'));
+          return;
+        }
         setRescheduleFrom({ id: o.id, scheduled_at: o.scheduled_at });
         if (o.reason) setReason((r) => r || o.reason);
       } else {
@@ -508,10 +515,42 @@ export default function BookAppointment() {
         setSelected(null);
         reloadServices();
       } else {
-        toast.error(error.message);
+        toast.error(appointmentErrorMessage(error, t));
       }
       setSubmitting(false);
       return;
+    }
+
+    // Reprogramación: la nueva ya existe (si falla, la antigua sigue intacta). Ahora se cancela
+    // la antigua y, si no se puede (p. ej. confirmada a menos de 2 h), se cancela la nueva para
+    // no dejar dos citas, y se avisa. El aviso al médico sale solo cuando todo fue bien.
+    let rescheduledFrom: string | null = null;
+    if (rescheduleFrom) {
+      const { data: cancelled, error: cancelError } = await supabase
+        .from('appointments')
+        .update({ status: 'cancelled', cancellation_reason: t('bookAppointment.rescheduleCancellationReason') } as any)
+        .eq('id', rescheduleFrom.id)
+        .in('status', ['requested', 'confirmed'])
+        .select('id');
+      if (cancelError || !cancelled || (cancelled as any[]).length === 0) {
+        const { data: undone } = await supabase
+          .from('appointments')
+          .update({ status: 'cancelled', cancellation_reason: t('bookAppointment.rescheduleCancellationReason') } as any)
+          .eq('id', (data as any).id)
+          .select('id');
+        if (undone && (undone as any[]).length > 0) {
+          toast.error(t('bookAppointment.rescheduleRolledBack'), {
+            description: cancelError ? appointmentErrorMessage(cancelError, t) : undefined,
+          });
+          setSelected(null);
+          setSubmitting(false);
+          return;
+        }
+        // Ni la antigua ni la nueva se pudieron cancelar: quedan las dos y se avisa como antes.
+        toast.error(t('bookAppointment.rescheduleCancelOldFailed'));
+      } else {
+        rescheduledFrom = rescheduleFrom.scheduled_at;
+      }
     }
 
     // Avisar al doctor de la nueva solicitud (campanita + push). Antes NO se notificaba:
@@ -556,23 +595,6 @@ export default function BookAppointment() {
       if (pushError) console.warn('send-push-notification (appointment) failed:', pushError);
     } catch (e) {
       console.error('notify doctor (appointment) failed:', e);
-    }
-
-    // Reprogramación: la nueva ya existe; ahora se cancela la antigua. Si no se puede, la
-    // nueva se queda y se avisa al paciente para que cancele la antigua desde «Mis citas».
-    let rescheduledFrom: string | null = null;
-    if (rescheduleFrom) {
-      const { data: cancelled, error: cancelError } = await supabase
-        .from('appointments')
-        .update({ status: 'cancelled', cancellation_reason: t('bookAppointment.rescheduleCancellationReason') } as any)
-        .eq('id', rescheduleFrom.id)
-        .in('status', ['requested', 'confirmed'])
-        .select('id');
-      if (cancelError || !cancelled || (cancelled as any[]).length === 0) {
-        toast.error(t('bookAppointment.rescheduleCancelOldFailed'));
-      } else {
-        rescheduledFrom = rescheduleFrom.scheduled_at;
-      }
     }
 
     setConfirmation({

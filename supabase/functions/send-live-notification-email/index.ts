@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { requireUserJWT, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
+import { requireUserOrService, AuthError, corsHeaders } from "../_shared/auth-guards.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { renderEmail } from "../_shared/email-template.ts";
 import { generateUnsubscribeToken } from "../_shared/unsubscribe-token.ts";
@@ -17,7 +17,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   // SECURITY (2026-05-11 audit): authenticated doctor only.
-  try { await requireUserJWT(req); } catch (__e) {
+  // 2026-10-03: además, el médico solo avisa de SUS lives (admin/servicio, de cualquiera).
+  let caller: Awaited<ReturnType<typeof requireUserOrService>>;
+  try { caller = await requireUserOrService(req); } catch (__e) {
     if (__e instanceof AuthError) return __e.toResponse();
     return new Response(JSON.stringify({ error: 'auth failed' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
@@ -38,6 +40,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    if (caller && caller.id !== doctorId) {
+      const { data: adminRole } = await supabaseClient
+        .from('user_roles').select('role').eq('user_id', caller.id).eq('role', 'admin').maybeSingle();
+      if (!adminRole) {
+        return new Response(
+          JSON.stringify({ error: "Solo puedes avisar de tus propias transmisiones" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
+    // El live tiene que existir y ser de ese médico.
+    const { data: liveRow, error: liveError } = await supabaseClient
+      .from('lives')
+      .select('doctor_id')
+      .eq('id', liveId)
+      .maybeSingle();
+    if (liveError || !liveRow || liveRow.doctor_id !== doctorId) {
+      logStep("Live not found or not owned by doctor", { liveId, error: liveError?.message });
+      return new Response(
+        JSON.stringify({ error: "Transmisión no encontrada" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Get doctor info
     const { data: doctorProfile, error: doctorError } = await supabaseClient
