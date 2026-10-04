@@ -3,10 +3,16 @@ import { Link } from 'react-router-dom';
 import { DemoVideoModal } from '@/components/landing/DemoVideoModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import logoWhite from '@/assets/logo-medical-masters-white.png';
-import logoBlue from '@/assets/logo-medical-masters.png';
+// Logos reducidos a 168 px de alto (3× los 56 px a los que se pintan) en WebP:
+// el PNG original de 1920×710 pesaba ~120 KB cada uno.
+import logoWhite from '@/assets/logo-medical-masters-white-sm.webp';
+import logoBlue from '@/assets/logo-medical-masters-sm.webp';
 import heroBgDesktop from '@/assets/landing/hero-bg-desktop.png';
+import heroBgDesktopAvif from '@/assets/landing/hero-bg-desktop.avif';
+import heroBgDesktopWebp from '@/assets/landing/hero-bg-desktop.webp';
 import heroBgMobile from '@/assets/landing/hero-bg-mobile.png';
+import heroBgMobileAvif from '@/assets/landing/hero-bg-mobile.avif';
+import heroBgMobileWebp from '@/assets/landing/hero-bg-mobile.webp';
 import iconConsultas from '@/assets/landing/icons/CONSULTAS.svg';
 import iconEducacion from '@/assets/landing/icons/EDUCACION.svg';
 import iconUsuarios from '@/assets/landing/icons/USUARIOS.svg';
@@ -14,9 +20,11 @@ import iconRetransmision from '@/assets/landing/icons/RETRANSMISION.svg';
 import iconGlobal from '@/assets/landing/icons/GLOBAL.svg';
 import iconMedicos from '@/assets/landing/icons/MEDICOS.svg';
 import iconStream from '@/assets/landing/icons/STREAM.svg';
-import surgeryPhoto from '@/assets/landing/people/surgery.jpg';
-import doctorLivePhoto from '@/assets/landing/people/live-doctor.jpeg';
-import livesGridPhoto from '@/assets/landing/people/fotos-lives.jpg';
+// Fotos del hero en WebP (misma resolución salvo surgery: 800 px de ancho,
+// se pinta a ≤190 px). Los JPG originales siguen en la carpeta.
+import surgeryPhoto from '@/assets/landing/people/surgery.webp';
+import doctorLivePhoto from '@/assets/landing/people/live-doctor.webp';
+import livesGridPhoto from '@/assets/landing/people/fotos-lives.webp';
 import {
   ArrowRight,
   Star,
@@ -42,6 +50,9 @@ import {
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { useSiteVideos } from '@/hooks/useSiteVideos';
+
+// `fetchpriority` en minúsculas: React 18 no conoce la prop `fetchPriority`.
+const HIGH_PRIORITY = { fetchpriority: 'high' } as Record<string, string>;
 
 export default function Landing() {
   const { t } = useLanguage();
@@ -214,8 +225,14 @@ export default function Landing() {
       <header className="relative flex flex-col min-h-[calc(100svh_-_var(--sat)_-_var(--sab))] md:h-[calc(100svh_-_var(--sat)_-_var(--sab))] md:min-h-[640px] md:max-h-[1024px] land:min-h-0 overflow-hidden bg-[#0b1d45] mb-[-1px]">
         {/* Background image — desktop + mobile */}
         <picture className="absolute inset-0 z-0">
+          {/* AVIF/WebP a la MISMA resolución que el PNG (PSNR ≥40 dB); el PNG
+              queda solo de respaldo. Antes el fondo móvil pesaba 1,66 MB. */}
+          <source media="(max-width: 767px)" type="image/avif" srcSet={heroBgMobileAvif} />
+          <source media="(max-width: 767px)" type="image/webp" srcSet={heroBgMobileWebp} />
           <source media="(max-width: 767px)" srcSet={heroBgMobile} />
-          <img src={heroBgDesktop} alt="" className="w-full h-full object-cover object-center" />
+          <source type="image/avif" srcSet={heroBgDesktopAvif} />
+          <source type="image/webp" srcSet={heroBgDesktopWebp} />
+          <img src={heroBgDesktop} alt="" {...HIGH_PRIORITY} className="w-full h-full object-cover object-center" />
         </picture>
 
         {/* Gradient overlay for readability of left-side text */}
@@ -306,18 +323,7 @@ export default function Landing() {
                   aria-label={t('landing.hero.ctaSecondary')}
                   className="group relative block md:w-48 lg:w-60 xl:w-64 rounded-xl lg:rounded-2xl overflow-hidden border border-white/15 hover:border-[#aed3d9]/60 shadow-xl bg-black/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#aed3d9]"
                 >
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    disablePictureInPicture
-                    controlsList="nodownload nofullscreen noremoteplayback"
-                    preload="auto"
-                    poster="/hero-intro-loop-poster.jpg"
-                    className="block w-full h-auto aspect-video object-cover pointer-events-none"
-                    src="/hero-intro-loop.mp4"
-                  />
+                  <HeroLoopVideo className="block w-full h-auto aspect-video object-cover pointer-events-none" />
                   {/* Capa de "reproducir": el cliente pidió que el vídeo TAMBIÉN
                       abra el demo completo al hacer clic (2026-08-18). */}
                   <span className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
@@ -390,7 +396,7 @@ export default function Landing() {
                   <img
                     src={livesGridPhoto}
                     alt=""
-                    loading="lazy"
+                    {...HIGH_PRIORITY}
                     className="block w-full h-auto"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   />
@@ -405,18 +411,7 @@ export default function Landing() {
                     aria-label={t('landing.hero.ctaSecondary')}
                     className="relative block w-full active:scale-[0.98] transition-transform"
                   >
-                    <video
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      disablePictureInPicture
-                      controlsList="nodownload nofullscreen noremoteplayback"
-                      preload="metadata"
-                      poster="/hero-intro-loop-poster.jpg"
-                      className="block w-full h-auto aspect-video object-cover pointer-events-none"
-                      src="/hero-intro-loop.mp4"
-                    />
+                    <HeroLoopVideo className="block w-full h-auto aspect-video object-cover pointer-events-none" />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                       <span className="w-7 h-7 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg">
                         <Play className="w-3 h-3 text-white ml-[1px]" fill="currentColor" />
@@ -448,7 +443,7 @@ export default function Landing() {
                     <img
                       src={doctorLivePhoto}
                       alt=""
-                      loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover object-center"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
@@ -473,7 +468,7 @@ export default function Landing() {
                     <img
                       src={surgeryPhoto}
                       alt=""
-                      loading="lazy"
+                      decoding="async"
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
@@ -505,7 +500,7 @@ export default function Landing() {
               <img
                 src={livesGridPhoto}
                 alt=""
-                loading="lazy"
+                decoding="async"
                 className="block w-full h-auto"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
@@ -519,7 +514,7 @@ export default function Landing() {
                 <img
                   src={doctorLivePhoto}
                   alt=""
-                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover object-center"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
@@ -546,7 +541,7 @@ export default function Landing() {
                 <img
                   src={surgeryPhoto}
                   alt=""
-                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
@@ -628,18 +623,7 @@ export default function Landing() {
                 aria-label={t('landing.hero.ctaSecondary')}
                 className="relative block w-full active:scale-[0.98] transition-transform"
               >
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  disablePictureInPicture
-                  controlsList="nodownload nofullscreen noremoteplayback"
-                  preload="metadata"
-                  poster="/hero-intro-loop-poster.jpg"
-                  className="block w-full h-auto aspect-video object-cover pointer-events-none"
-                  src="/hero-intro-loop.mp4"
-                />
+                <HeroLoopVideo className="block w-full h-auto aspect-video object-cover pointer-events-none" />
                 <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <span className="w-10 h-10 rounded-full bg-white/25 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-lg">
                     <Play className="w-4 h-4 text-white ml-[1px]" fill="currentColor" />
@@ -827,7 +811,7 @@ export default function Landing() {
                 ref={videoRef}
                 controls
                 playsInline
-                preload="metadata"
+                preload={homeVideoPoster ? 'none' : 'metadata'}
                 poster={homeVideoPoster}
                 className="w-full aspect-video object-cover"
                 src={homeVideoPoster ? homeVideoSrc : `${homeVideoSrc}#t=0.1`}
@@ -993,5 +977,60 @@ export default function Landing() {
 
       <LandingFooter />
     </div>
+  );
+}
+
+/**
+ * Vídeo corto en bucle del hero (mudo, sin controles). Se pinta al instante con
+ * su póster (= frame 0, así que se ve igual) y el MP4 solo se pide cuando la
+ * página ya cargó y el vídeo está realmente a la vista: los tres sitios que lo
+ * usan (escritorio, móvil vertical y apaisado) se ocultan por CSS según el
+ * tamaño, y antes el navegador bajaba el MP4 tres veces compitiendo con la
+ * imagen principal. Un elemento con display:none nunca intersecta, así que
+ * ahora solo se descarga el visible.
+ */
+function HeroLoopVideo({ className }: { className?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setActive(true);
+      return;
+    }
+    let io: IntersectionObserver | null = null;
+    const start = () => {
+      io = new IntersectionObserver((entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setActive(true);
+          io?.disconnect();
+        }
+      }, { rootMargin: '200px' });
+      io.observe(el);
+    };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
+    return () => {
+      window.removeEventListener('load', start);
+      io?.disconnect();
+    };
+  }, []);
+
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      muted
+      loop
+      playsInline
+      disablePictureInPicture
+      controlsList="nodownload nofullscreen noremoteplayback"
+      preload="none"
+      poster="/hero-intro-loop-poster.jpg"
+      className={className}
+      src={active ? '/hero-intro-loop.mp4' : undefined}
+    />
   );
 }

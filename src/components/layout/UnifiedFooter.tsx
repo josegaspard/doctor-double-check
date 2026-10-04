@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { DmcaBadge } from '@/components/layout/DmcaBadge';
-import logoWhite from '@/assets/logo-medical-masters-white.png';
+import logoWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 interface Props {
   variant: 'landing' | 'app';

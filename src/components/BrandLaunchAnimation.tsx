@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import logo from '@/assets/logo-medical-masters-white.png';
+import logo from '@/assets/logo-medical-masters-white-sm.webp';
 
 interface BrandLaunchAnimationProps {
   onFinish: () => void;

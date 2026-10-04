@@ -1,15 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logFileAccess } from '@/lib/fileAccessLog';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// pdf.js (~100 KB) se carga SOLO cuando un visor abre un PDF. Antes iba en un
+// import estático y, por la precarga en reposo de rutas (App.tsx), la portada
+// descargaba el chunk `pdf` sin usarlo.
+let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
+function loadPdfjs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import('pdfjs-dist').then((lib) => {
+      lib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).toString();
+      return lib;
+    });
+  }
+  return pdfjsPromise;
+}
 
 interface SecurePDFViewerProps {
   signedUrl: string;
@@ -24,7 +36,7 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
   const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [pageNum, setPageNum] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +52,8 @@ export function SecurePDFViewer({ signedUrl, fileName, fileId, bucket, className
         const response = await fetch(signedUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const buf = await response.arrayBuffer();
+        if (cancelled) return;
+        const pdfjsLib = await loadPdfjs();
         if (cancelled) return;
         const loadingTask = pdfjsLib.getDocument({ data: buf });
         const doc = await loadingTask.promise;

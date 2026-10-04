@@ -291,13 +291,20 @@ export default function DoctorEarnings({ embedded = false, initialTab, wide = fa
    *  `credit_doctor_earnings` sobre `pending_earnings`. Comprobado en
    *  supabase/functions/purchase-content-wallet y purchase-recording-wallet.
    *  Por eso el BRUTO es el dato y la comisión y el neto son CÁLCULO. */
-  const grossOf = (tx: Transaction) => Number(tx.amount) || 0;
+  /** Desde el 3-oct, las compras con saldo de libros y grabaciones guardan el NETO en
+   *  `amount` y el bruto en `metadata.gross_amount`: entonces bruto y neto son dato. */
+  const grossAmountOf = (tx: Transaction) => {
+    const g = Number((tx.metadata as any)?.gross_amount);
+    return Number.isFinite(g) && g > 0 ? g : null;
+  };
+  const grossOf = (tx: Transaction) => grossAmountOf(tx) ?? (Number(tx.amount) || 0);
   /** La comisión de ESE tipo de venta si la plataforma la publica; si no, la global. */
   const rateOf = (tx: Transaction) => {
     const own = ratesBySource[sourceOf((tx.metadata as any)?.source)];
     return own != null ? Number(own) / 100 : rate;
   };
-  const commissionOf = (tx: Transaction) => grossOf(tx) * rateOf(tx);
+  const commissionOf = (tx: Transaction) =>
+    grossAmountOf(tx) != null ? grossOf(tx) - (Number(tx.amount) || 0) : grossOf(tx) * rateOf(tx);
   const netOf = (tx: Transaction) => grossOf(tx) - commissionOf(tx);
   /** ¿Hay alguna comisión por tipo publicada? Si no, el cálculo global es EXACTO. */
   const hasPerTypeRates = Object.values(ratesBySource).some(v => v != null);
