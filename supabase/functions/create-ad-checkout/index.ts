@@ -37,20 +37,21 @@ serve(async (req) => {
     // Previously only `amount > 0` was checked, allowing tiny floats or
     // overflow-large values, and the caller's relation to the campaign
     // wasn't verified.
-    const amount = Number(requestedAmount);
     // Admin-editable limits + currency (site_settings.app_config), fallback 100/1,000,000/mxn.
     const appCfg = await getAppConfig(supabaseAdmin);
-    if (!Number.isFinite(amount) || amount < appCfg.ad_min || amount > appCfg.ad_max) {
-      throw new Error(`Amount must be between ${appCfg.ad_min} and ${appCfg.ad_max}`);
-    }
     const { data: campaign, error: campErr } = await supabaseAdmin
       .from("ad_campaigns")
-      .select("advertiser_id, status")
+      .select("advertiser_id, status, budget")
       .eq("id", campaign_id)
       .single();
     if (campErr || !campaign) throw new Error("Campaign not found");
     if (campaign.advertiser_id !== user.id) {
       throw new Error("Forbidden — not your campaign");
+    }
+    // El importe es el presupuesto guardado de la campaña, no el que manda el navegador.
+    const amount = Number(campaign.budget ?? requestedAmount);
+    if (!Number.isFinite(amount) || amount < appCfg.ad_min || amount > appCfg.ad_max) {
+      throw new Error(`Amount must be between ${appCfg.ad_min} and ${appCfg.ad_max}`);
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
