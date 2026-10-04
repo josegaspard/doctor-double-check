@@ -1484,6 +1484,7 @@ export const it = {
     orientationSaved: "Orario di orientamento aggiornato",
     orientationNoDays: "Seleziona almeno un giorno",
     availabilityScheduled: "Disponibilità programmata",
+    notifySubscribersFailed: "Disponibilità salvata, ma non è stato possibile avvisare i tuoi follower. Riprova più tardi.",
     availabilityConfirmed: "Disponibilità confermata",
     availabilityCancelled: "Disponibilità annullata",
     notificationsSent: "Notifiche inviate",

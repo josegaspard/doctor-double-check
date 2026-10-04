@@ -78,6 +78,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const when = formatInTimezone(appt.scheduled_at, await getDoctorTimezone(admin, appt.doctor_id));
     const doctorName = doctor?.name || "tu médico";
 
+    let emailError: string | null = null;
     if (patient?.email) {
       const rows: Array<[string, string]> = [
         ["Médico", `Dr. ${doctorName}`],
@@ -101,12 +102,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         appUrl: APP_URL,
       });
 
-      await resend.emails.send({
+      const { error: sendError } = await resend.emails.send({
         from: FROM_EMAIL,
         to: [patient.email],
         subject: `Cita confirmada con el Dr. ${doctorName}`,
         html,
       });
+      if (sendError) emailError = sendError.message || String(sendError);
     }
 
     await admin.from("notifications").insert({
@@ -117,6 +119,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       message: `El Dr. ${doctorName} confirmó tu cita para ${when}`,
       data: { appointmentId: appt.id, doctorId: appt.doctor_id, scheduledAt: appt.scheduled_at },
     });
+
+    if (emailError) {
+      console.error("send-appointment-confirmation resend error", emailError);
+      return new Response(JSON.stringify({ ok: false, error: `Email not sent: ${emailError}`, notified: true }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,

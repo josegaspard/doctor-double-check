@@ -138,7 +138,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         .in("id", adminIds);
       adminEmails = (adminProfiles ?? [])
         .map((row: any) => row?.email)
-        .filter((e: any) => typeof e === "string" && e.includes("@"));
+        .filter((e: any) => typeof e === "string" && e.includes("@"))
+        // Cuentas de demo (admin0X@medicalmasters.demo) rebotan y Resend marcaba todo el envío.
+        .filter((e: string) => !/\.demo$/i.test(e.trim()) && !/@medicalmasters\.demo$/i.test(e.trim()));
+      adminEmails = [...new Set(adminEmails.map((e) => e.trim().toLowerCase()))];
     }
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -154,9 +157,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         ["Origen", isAnon ? "Anónimo" : "Usuario autenticado"],
       ];
       if (contactEmail) rows.push(["Contacto", `<a href="mailto:${contactEmail}" style="color:#00768b;text-decoration:none;">${contactEmail}</a>`]);
-      await resend.emails.send({
-        from: Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>",
-        to: adminEmails,
+      const fromEmail = Deno.env.get("FROM_EMAIL") ?? "Medical Masters <noreply@notify.medical-masters.com>";
+      // Un envío por admin: un destinatario que rebota no arrastra a los demás.
+      for (const adminEmail of adminEmails) {
+      const { error: sendError } = await resend.emails.send({
+        from: fromEmail,
+        to: [adminEmail],
         reply_to: contactEmail || undefined,
         subject: `Reporte (${reportTypeLabel(type)}): ${subject}`,
         html: renderEmail({
@@ -178,6 +184,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           appUrl: APP_URL,
         }),
       });
+      if (sendError) console.warn("submit-report admin email failed", adminEmail, sendError);
+      }
     }
   } catch (notifyErr) {
     console.warn("submit-report admin notify failed (non-blocking)", notifyErr);

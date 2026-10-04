@@ -1484,6 +1484,7 @@ export const en = {
     orientationSaved: "Orientation schedule updated",
     orientationNoDays: "Select at least one day",
     availabilityScheduled: "Availability scheduled",
+    notifySubscribersFailed: "Availability saved, but your followers could not be notified. Please try again later.",
     availabilityConfirmed: "Availability confirmed",
     availabilityCancelled: "Availability cancelled",
     notificationsSent: "Notifications sent",

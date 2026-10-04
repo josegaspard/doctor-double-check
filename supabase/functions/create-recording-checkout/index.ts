@@ -50,8 +50,13 @@ Deno.serve(async (req) => {
     const billingBlock = await requireBillingProfile(supabaseClient, user.id, corsHeaders);
     if (billingBlock) return billingBlock;
 
-    const { recordingId } = await req.json();
-    if (!recordingId) throw new Error("Recording ID is required");
+    const { recordingId } = await req.json().catch(() => ({}));
+    if (!recordingId) {
+      return new Response(JSON.stringify({ error: "Recording ID is required" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
 
     // Fetch recording details (simple query without joins)
     const { data: recording, error: recError } = await supabaseClient

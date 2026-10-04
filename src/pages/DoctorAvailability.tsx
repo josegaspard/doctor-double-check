@@ -303,6 +303,9 @@ export default function DoctorAvailabilityPage({ embedded = false }: { embedded?
 
     if (result.success) {
       toast({ title: t('common.success'), description: t('availabilityPage.availabilityScheduled') });
+      if (result.notifyFailed) {
+        toast({ title: t('common.error'), description: t('availabilityPage.notifySubscribersFailed'), variant: 'destructive' });
+      }
       setIsDialogOpen(false);
       setFormData({ title: '', description: '', type: 'live', date: new Date(), time: '10:00', duration: 60, invitees: [] });
       setInviteeInput('');

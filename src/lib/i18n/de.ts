@@ -1484,6 +1484,7 @@ export const de = {
     orientationSaved: "Beratungszeitplan aktualisiert",
     orientationNoDays: "Wählen Sie mindestens einen Tag",
     availabilityScheduled: "Verfügbarkeit geplant",
+    notifySubscribersFailed: "Verfügbarkeit gespeichert, aber deine Follower konnten nicht benachrichtigt werden. Bitte versuche es später erneut.",
     availabilityConfirmed: "Verfügbarkeit bestätigt",
     availabilityCancelled: "Verfügbarkeit abgesagt",
     notificationsSent: "Benachrichtigungen gesendet",

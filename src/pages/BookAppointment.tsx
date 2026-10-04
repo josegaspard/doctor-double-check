@@ -548,9 +548,12 @@ export default function BookAppointment() {
           ...(service ? { service_id: service.id, service_name: service.name } : {}),
         },
       } as any);
-      await supabase.functions.invoke('send-push-notification', {
+      // Formato {user_ids, title, body, url} de send-push-notification. Si el push
+      // falla, la reserva sigue: solo se registra el error.
+      const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
         body: { user_ids: [doctorId], title, body: message, url: '/my-appointments' },
-      }).catch(() => {});
+      }).catch((err) => ({ error: err }));
+      if (pushError) console.warn('send-push-notification (appointment) failed:', pushError);
     } catch (e) {
       console.error('notify doctor (appointment) failed:', e);
     }

@@ -1430,6 +1430,7 @@ export const zh = {
     "changeNotified": "变更已通知",
     "titleRequired": "标题为必填项",
     "availabilityScheduled": "空档已安排",
+    "notifySubscribersFailed": "空档已保存，但未能通知你的关注者。请稍后再试。",
     "availabilityConfirmed": "空档已确认",
     "availabilityCancelled": "空档已取消",
     "notificationsSent": "通知已发送",

@@ -672,7 +672,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       // Notify subscribers automatically when live starts
-      const { data: notifyResult } = await supabase.rpc('notify_subscribers', {
+      // Si el aviso falla, el live sigue: solo se registra el error.
+      const { data: notifyResult, error: notifyError } = await supabase.rpc('notify_subscribers', {
         p_doctor_id: user.id,
         p_notification_type: 'doctor_live',
         p_title: `${user.name} está en vivo`,
@@ -680,7 +681,8 @@ export function LivesProvider({ children }: { children: ReactNode }) {
         p_data: { live_id: newLive.id, specialty: data.specialty || 'General' },
       });
 
-      console.log(`Notified ${notifyResult} subscribers about new live`);
+      if (notifyError) console.error('notify_subscribers failed:', notifyError);
+      else console.log(`Notified ${notifyResult} subscribers about new live`);
 
       return { success: true, liveId: newLive.id };
     } catch (error: any) {

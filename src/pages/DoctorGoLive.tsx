@@ -462,7 +462,15 @@ export default function DoctorGoLive() {
           body: { doctorId: user.id, liveId: live.id, title: config.title.trim(),
             description: config.description.trim() || null },
         }),
-      ]).catch(() => {});
+      ]).then((results) => {
+        // El live sigue aunque falle un aviso; solo se registra el error
+        // (las llamadas de Supabase resuelven con { error } en vez de rechazar).
+        const names = ['notify_subscribers', 'send-push-notification', 'send-live-notification-email'];
+        results.forEach((r, i) => {
+          const err = r.status === 'rejected' ? r.reason : (r.value as { error?: unknown })?.error;
+          if (err) console.error(`${names[i]} failed:`, err);
+        });
+      }).catch(() => {});
 
       toast.success(t('doctorGoLivePage.broadcastStartedToast'));
     } catch (error: any) {

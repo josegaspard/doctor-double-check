@@ -1490,6 +1490,7 @@ export const es = {
     orientationSaved: 'Horario de orientación actualizado',
     orientationNoDays: 'Selecciona al menos un día',
     availabilityScheduled: 'Disponibilidad programada',
+    notifySubscribersFailed: 'Disponibilidad guardada, pero no se pudo avisar a tus seguidores. Inténtalo más tarde.',
     availabilityConfirmed: 'Disponibilidad confirmada',
     availabilityCancelled: 'Disponibilidad cancelada',
     notificationsSent: 'Notificaciones enviadas',

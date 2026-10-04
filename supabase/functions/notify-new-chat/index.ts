@@ -121,28 +121,23 @@ Deno.serve(async (req) => {
       if (pushSubs && pushSubs.length > 0) {
         logStep("Sending push notifications", { count: pushSubs.length });
         
-        // Call the send-push-notification function for each subscription
-        for (const sub of pushSubs) {
-          try {
-            await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              },
-              body: JSON.stringify({
-                subscription: sub,
-                payload: {
-                  title: notificationTitle,
-                  body: notificationMessage,
-                  data: { url: '/chat', sessionId },
-                  tag: `chat-${sessionId}`,
-                },
-              }),
-            });
-          } catch (pushError) {
-            logStep("Push notification error", { error: String(pushError) });
-          }
+        // send-push-notification envía a todas las suscripciones del médico.
+        try {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-push-notification`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              user_ids: [doctorId],
+              title: notificationTitle,
+              body: notificationMessage,
+              url: '/chat',
+            }),
+          });
+        } catch (pushError) {
+          logStep("Push notification error", { error: String(pushError) });
         }
       }
     }

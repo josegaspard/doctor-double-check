@@ -256,7 +256,7 @@ export function MeetingCreateDialog({ open, onOpenChange, onCreated, editing, de
       if (error) console.error('Error notifying invitees (bell):', error);
       // Push best-effort (no bloquea si falla).
       await supabase.functions.invoke('send-push-notification', {
-        body: { user_ids: invitees.map(i => i.id), title, body: message, url: '/meetings' },
+        body: { user_ids: invitees.map(i => i.id), title, body: message, url: '/meetings', meetingId: sessionId },
       }).catch(() => {});
       // Correo best-effort (requiere desplegar la función send-meeting-invite-email).
       await supabase.functions.invoke('send-meeting-invite-email', {

@@ -1,11 +1,7 @@
+// Solo el castellano (idioma por defecto y última red de `t`) va en el chunk
+// inicial. Los otros 7 diccionarios (~480 kB cada uno) se cargan bajo demanda
+// con `loadLanguage` (main.tsx precarga el de la sesión antes de pintar).
 import { es } from './i18n/es';
-import { en } from './i18n/en';
-import { pt } from './i18n/pt';
-import { fr } from './i18n/fr';
-import { it } from './i18n/it';
-import { de } from './i18n/de';
-import { ca } from './i18n/ca';
-import { zh } from './i18n/zh';
 
 // Idiomas que ofrece la plataforma. Decisión del cliente (11-sep-2026): se
 // mantienen los 8 y se traduce TODO; ninguno se oculta.
@@ -32,18 +28,48 @@ export const LANGUAGE_AUTONYMS: Record<SupportedLanguage, string> = {
   zh: '中文',
 };
 
-export const translations = {
-  es,
-  en,
-  pt,
-  fr,
-  it,
-  de,
-  ca,
-  zh,
-} as const;
+type Dictionary = typeof es;
 
-export type TranslationKey = keyof typeof translations.es;
+const loaders: Record<Exclude<SupportedLanguage, 'es'>, () => Promise<Dictionary>> = {
+  en: () => import('./i18n/en').then((m) => m.en as unknown as Dictionary),
+  pt: () => import('./i18n/pt').then((m) => m.pt as unknown as Dictionary),
+  fr: () => import('./i18n/fr').then((m) => m.fr as unknown as Dictionary),
+  it: () => import('./i18n/it').then((m) => m.it as unknown as Dictionary),
+  de: () => import('./i18n/de').then((m) => m.de as unknown as Dictionary),
+  ca: () => import('./i18n/ca').then((m) => m.ca as unknown as Dictionary),
+  zh: () => import('./i18n/zh').then((m) => m.zh as unknown as Dictionary),
+};
+
+/** Diccionarios ya cargados. El castellano siempre está. */
+export const translations: Partial<Record<SupportedLanguage, Dictionary>> = { es };
+
+const pending = new Map<SupportedLanguage, Promise<void>>();
+
+function loadOne(lang: SupportedLanguage): Promise<void> {
+  if (lang === 'es' || translations[lang]) return Promise.resolve();
+  let p = pending.get(lang);
+  if (!p) {
+    p = loaders[lang]()
+      .then((dict) => { translations[lang] = dict; })
+      .finally(() => pending.delete(lang));
+    pending.set(lang, p);
+  }
+  return p;
+}
+
+export function isLanguageLoaded(language: SupportedLanguage | string): boolean {
+  const lang = normalizeLanguage(language);
+  return Boolean(translations[lang]) && (lang === 'es' || Boolean(translations[BRIDGE_LANGUAGE]));
+}
+
+/** Carga el diccionario del idioma y, si no es castellano, el del idioma puente. */
+export function loadLanguage(language: SupportedLanguage | string): Promise<void> {
+  const lang = normalizeLanguage(language);
+  if (lang === 'es') return Promise.resolve();
+  return Promise.all([loadOne(lang), loadOne(BRIDGE_LANGUAGE)]).then(() => undefined);
+}
+
+export type TranslationKey = keyof Dictionary;
 
 export function isSupportedLanguage(value: unknown): value is SupportedLanguage {
   return typeof value === 'string' && (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
@@ -61,8 +87,8 @@ export function normalizeLanguage(value: string | null | undefined): SupportedLa
   return isSupportedLanguage(base) ? base : DEFAULT_LANGUAGE;
 }
 
-export function getTranslations(language: SupportedLanguage | string) {
-  return translations[normalizeLanguage(language)];
+export function getTranslations(language: SupportedLanguage | string): Dictionary {
+  return translations[normalizeLanguage(language)] ?? translations[BRIDGE_LANGUAGE] ?? es;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,7 +147,12 @@ function lookup(language: SupportedLanguage, keys: string[]): string | undefined
  *     código: se avisa y se devuelve la clave, como antes.
  */
 export function t(language: SupportedLanguage | string, path: string): string {
-  const lang = normalizeLanguage(language);
+  const requested = normalizeLanguage(language);
+  // Mientras el diccionario del idioma no ha llegado se usa el puente (o el
+  // castellano), sin registrar claves "que faltan" que en realidad existen.
+  const lang: SupportedLanguage = translations[requested]
+    ? requested
+    : (translations[BRIDGE_LANGUAGE] ? BRIDGE_LANGUAGE : DEFAULT_LANGUAGE);
   const keys = path.split('.');
 
   const direct = lookup(lang, keys);

@@ -6,6 +6,8 @@ import {
   DEFAULT_LANGUAGE,
   getTranslations,
   normalizeLanguage,
+  isLanguageLoaded,
+  loadLanguage as loadDictionary,
   t as translate,
 } from '@/lib/i18n';
 
@@ -51,7 +53,7 @@ function writeStored(lang: SupportedLanguage, explicit: boolean) {
   }
 }
 
-function initialLanguage(): SupportedLanguage {
+export function initialLanguage(): SupportedLanguage {
   const stored = readStored();
   if (stored) return stored.lang;
   // Sin nada guardado se usa el idioma del navegador como PISTA (no cuenta como
@@ -74,6 +76,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     let active = true;
     const loadLanguage = async () => {
       const stored = readStored();
+      if (stored) await loadDictionary(stored.lang).catch(() => {});
       if (stored && active) setLanguageState(stored.lang);
 
       if (!supabaseUser?.id) return;
@@ -96,6 +99,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
 
       if (profileLang) {
+        await loadDictionary(profileLang).catch(() => {});
+        if (!active) return;
         setLanguageState(profileLang);
         writeStored(profileLang, false);
       }
@@ -112,8 +117,22 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (typeof document !== 'undefined') document.documentElement.lang = language;
   }, [language]);
 
+  // Red de seguridad: si el idioma activo aún no tiene diccionario (la carga
+  // previa falló o llegó tarde), se carga y se vuelve a pintar.
+  const [, setDictTick] = useState(0);
+  useEffect(() => {
+    if (isLanguageLoaded(language)) return;
+    let active = true;
+    loadDictionary(language)
+      .then(() => { if (active) setDictTick((n) => n + 1); })
+      .catch((e) => console.warn('No se pudo cargar el idioma:', e));
+    return () => { active = false; };
+  }, [language]);
+
   const setLanguage = async (lang: SupportedLanguage) => {
     const next = normalizeLanguage(lang);
+    // Diccionario antes de cambiar: así no se ve un instante en otro idioma.
+    await loadDictionary(next).catch(() => {});
     setLanguageState(next);
     writeStored(next, true);
     if (supabaseUser?.id) await persistToProfile(supabaseUser.id, next);
@@ -182,7 +201,8 @@ function fallbackFor(lang: SupportedLanguage): LanguageContextType {
     t: (path: string) => translate(lang, path),
     translations: getTranslations(lang),
   };
-  fallbackCache.set(lang, value);
+  // Sin diccionario cargado no se memoriza: se quedaría con el del puente.
+  if (isLanguageLoaded(lang)) fallbackCache.set(lang, value);
   return value;
 }
 

@@ -14,6 +14,8 @@ import "@fontsource/plus-jakarta-sans/600.css";
 import "@fontsource/plus-jakarta-sans/700.css";
 import "./index.css";
 import { enforceBrowserSessionGuard } from "./lib/sessionGuard";
+import { loadLanguage } from "./lib/i18n";
+import { initialLanguage } from "./contexts/LanguageContext";
 
 // Register Service Worker for PWA + Push Notifications
 if ('serviceWorker' in navigator) {
@@ -54,7 +56,12 @@ if (typeof window !== 'undefined') {
 
 // Force re-login when all browser windows are closed (sessionStorage flag).
 // Must run BEFORE the React tree mounts so AuthProvider hydrates against a clean state.
-enforceBrowserSessionGuard().finally(() => {
+// El diccionario del idioma de la sesión se descarga en paralelo y se espera
+// antes de pintar (solo el castellano va en el chunk inicial).
+Promise.all([
+  enforceBrowserSessionGuard(),
+  loadLanguage(initialLanguage()).catch(() => {}),
+]).finally(() => {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       {/* ErrorBoundary en la RAÍZ (cliente 2026-07-01): si algo crashea POR ENCIMA de

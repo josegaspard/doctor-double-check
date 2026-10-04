@@ -138,7 +138,7 @@ export function CongressCreateDialog({ open, onOpenChange, onSaved, editing }: P
       const { error } = await supabase.from('notifications').insert(rows as any);
       if (error) console.error('Error notifying speakers (bell):', error);
       await supabase.functions.invoke('send-push-notification', {
-        body: { user_ids: targets, title, body: message, url: `/congreso/${congressId}` },
+        body: { user_ids: targets, title, body: message, url: `/congreso/${congressId}`, congressId },
       }).catch(() => {});
     } catch (e) {
       console.error('notifyNewSpeakers error:', e);

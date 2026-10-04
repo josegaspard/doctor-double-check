@@ -1429,6 +1429,7 @@ export const ca = {
     "changeNotified": "Canvi notificat",
     "titleRequired": "El títol és obligatori",
     "availabilityScheduled": "Disponibilitat programada",
+    "notifySubscribersFailed": "Disponibilitat desada, però no s'ha pogut avisar els teus seguidors. Torna-ho a provar més tard.",
     "availabilityConfirmed": "Disponibilitat confirmada",
     "availabilityCancelled": "Disponibilitat cancel·lada",
     "notificationsSent": "Notificacions enviades",

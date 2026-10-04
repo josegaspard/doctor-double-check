@@ -71,6 +71,7 @@ export function ScheduleCourseForm() {
 
     if (result.success) {
       toast.success(t('scheduleCourseForm.toast.success'));
+      if (result.notifyFailed) toast.error(t('availabilityPage.notifySubscribersFailed'));
       setTitle(''); setDescription(''); setScheduledAt('');
       navigate(doctorHref('agenda', { tab: 'disponibilidad' }));
       return;

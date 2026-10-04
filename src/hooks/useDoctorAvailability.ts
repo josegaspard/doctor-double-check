@@ -144,8 +144,9 @@ export function useDoctorAvailability() {
       return { success: false, error: error.message };
     }
 
+    let notifyFailed = false;
     try {
-      const { data: notifyCount } = await supabase.rpc('notify_subscribers', {
+      const { data: notifyCount, error: notifyError } = await supabase.rpc('notify_subscribers', {
         p_doctor_id: supabaseUser.id,
         p_notification_type: data.type === 'live' ? 'doctor_live' : 'doctor_availability',
         p_title: `Nueva disponibilidad: ${data.title}`,
@@ -153,7 +154,11 @@ export function useDoctorAvailability() {
         p_data: { availability_id: newAvail?.id, type: data.type },
       });
 
-      if (newAvail?.id) {
+      // Solo se marca como avisado si la RPC no devolvió error.
+      if (notifyError) {
+        notifyFailed = true;
+        console.error('notify_subscribers failed:', notifyError);
+      } else if (newAvail?.id) {
         await supabase
           .from('doctor_availability')
           .update({ notifications_sent: true })
@@ -172,11 +177,12 @@ export function useDoctorAvailability() {
 
       console.log(`Notified ${notifyCount} subscribers about new availability`);
     } catch (notifyError) {
+      notifyFailed = true;
       console.error('Failed to notify subscribers:', notifyError);
     }
 
     await fetchAvailabilities();
-    return { success: true };
+    return { success: true, notifyFailed };
   };
 
   const updateAvailability = async (id: string, updates: Partial<DoctorAvailability>) => {
