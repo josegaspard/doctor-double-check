@@ -107,6 +107,49 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0
 }
 
+/** Lee el claim `role` de un JWT SIN verificar la firma (solo para decidir si
+ *  merece la pena verificarlo). */
+function unverifiedJwtRole(token: string): string | null {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  try {
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const payload = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)))
+    return typeof payload?.role === 'string' ? payload.role : null
+  } catch {
+    return null
+  }
+}
+
+/** ¿La petición viene de otra función con la clave de servicio?
+ *  Con las claves nuevas (sb_secret_…) el gateway cambia el Authorization por
+ *  un JWT acuñado (cabecera sb-api-key-compatibility: minted), así que comparar
+ *  el Bearer con SUPABASE_SERVICE_ROLE_KEY ya no basta (2026-10-03: admin-refund
+ *  → send-refund-email y wallet → send-purchase-email daban 401). Se acepta:
+ *  1) Bearer o apikey idénticos a la clave de servicio;
+ *  2) un JWT con role service_role cuya firma valida GoTrue (endpoint admin,
+ *     que solo responde 200 a un service_role auténtico).                     */
+async function isServiceRoleCall(req: Request): Promise<boolean> {
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!serviceKey) return false
+  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  const apikey = (req.headers.get('apikey') || '').trim()
+  if (token && timingSafeEqual(token, serviceKey)) return true
+  if (apikey && timingSafeEqual(apikey, serviceKey)) return true
+  if (!token || unverifiedJwtRole(token) !== 'service_role') return false
+  try {
+    const res = await fetch(`${Deno.env.get('SUPABASE_URL') ?? ''}/auth/v1/admin/users?page=1&per_page=1`, {
+      // apikey = anon (NUNCA la secreta): así el gateway no acuña su propio JWT
+      // y GoTrue valida la firma y el rol del token recibido.
+      headers: { Authorization: `Bearer ${token}`, apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '' },
+    })
+    await res.body?.cancel()
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /** Verify x-cron-secret header matches env CRON_SECRET. For scheduled jobs and
  *  internal-only callers. Throws AuthError on mismatch.                       */
 export function requireCronSecret(req: Request): void {
@@ -124,9 +167,7 @@ export async function requireAdminOrCron(req: Request): Promise<void> {
     requireCronSecret(req)
     return
   }
-  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  if (token && serviceKey && timingSafeEqual(token, serviceKey)) return
+  if (await isServiceRoleCall(req)) return
   await requireAdminJWT(req)
 }
 
@@ -140,8 +181,7 @@ export async function requireUserOrService(req: Request): Promise<User | null> {
   const token = authHeader.replace(/^Bearer\s+/i, '').trim()
   if (!token) throw new AuthError(401, 'Missing Authorization header')
 
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  if (serviceKey && timingSafeEqual(token, serviceKey)) return null
+  if (await isServiceRoleCall(req)) return null
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',

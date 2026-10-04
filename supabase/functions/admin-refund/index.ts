@@ -2,6 +2,12 @@ import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeadersFor } from "../_shared/auth-guards.ts";
 
+// Error con código HTTP (p. ej. 409 en un doble reembolso); el resto sigue en 500.
+class HttpError extends Error {
+  status: number;
+  constructor(status: number, message: string) { super(message); this.status = status; }
+}
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[ADMIN-REFUND] ${step}${detailsStr}`);
@@ -64,6 +70,7 @@ Deno.serve(async (req) => {
     // SECURITY (2026-05-11 audit): cap refund at the source transaction's
     // remaining refundable amount. Previously a compromised admin token (or
     // bug elsewhere) could refund more than what was originally charged.
+    let isFullRefund = false;
     if (transaction_id) {
       const { data: srcTx } = await supabaseAdmin
         .from("wallet_transactions")
@@ -85,11 +92,15 @@ Deno.serve(async (req) => {
       );
       // Purchases are stored as negative amounts; compare against the absolute value.
       const maxRefundable = Math.abs(Number(srcTx.amount)) - alreadyRefunded;
+      if (maxRefundable <= 0.001) {
+        throw new HttpError(409, "Esta compra ya fue reembolsada por completo");
+      }
       if (Number(amount) > maxRefundable + 0.001) {
-        throw new Error(
+        throw new HttpError(409,
           `Refund exceeds remaining refundable amount (max ${maxRefundable.toFixed(2)})`,
         );
       }
+      isFullRefund = Number(amount) >= maxRefundable - 0.001;
     }
     if (Number(amount) <= 0 || !Number.isFinite(Number(amount))) {
       throw new Error("amount must be a positive number");
@@ -114,7 +125,7 @@ Deno.serve(async (req) => {
         .select("id");
       if (claimErr) throw new Error(`Could not lock refund request: ${claimErr.message}`);
       if (!claimed || claimed.length === 0) {
-        throw new Error("Refund request already processed or in progress");
+        throw new HttpError(409, "Refund request already processed or in progress");
       }
     }
 
@@ -195,7 +206,14 @@ Deno.serve(async (req) => {
     // functions.invoke no lanza en respuestas no-2xx: hay que revisar `error`.
     const sendRefundEmail = async (body: Record<string, unknown>) => {
       try {
-        const { error } = await supabaseAdmin.functions.invoke("send-refund-email", { body });
+        // Con la clave nueva (sb_secret) el gateway cambia el Authorization por un JWT
+        // acuñado y send-refund-email respondía 401: se manda también x-cron-secret,
+        // que requireAdminOrCron acepta (solo si el secreto existe en el entorno).
+        const cronSecret = Deno.env.get("CRON_SECRET");
+        const { error } = await supabaseAdmin.functions.invoke("send-refund-email", {
+          body,
+          ...(cronSecret ? { headers: { "x-cron-secret": cronSecret } } : {}),
+        });
         if (error) logStep("Email send failed (non-blocking)", { error: error.message, refund_method: body.refund_method });
         else logStep("Refund email sent", { refund_method: body.refund_method });
       } catch (e) { logStep("Email send failed (non-blocking)", { error: (e as any).message }); }
@@ -217,6 +235,28 @@ Deno.serve(async (req) => {
         },
       }).eq("id", transaction_id);
       if (markErr) logStep("Could not mark original transaction as refunded (non-blocking)", { error: markErr.message });
+    };
+
+    // Consulta / segunda opinión / consulta desde live reembolsada por completo:
+    // se cierra igual que hace request_consultation_refund (status 'refunded' y
+    // chat archivado). Antes seguía 'active'. consultations.status es texto libre.
+    const closeRefundedConsultation = async () => {
+      if (!transaction_id || !isFullRefund) return;
+      const { data: orig } = await supabaseAdmin
+        .from("wallet_transactions").select("metadata").eq("id", transaction_id).maybeSingle();
+      const consultationId = (orig as any)?.metadata?.consultation_id;
+      if (!consultationId) return;
+      const { data: closed, error: closeErr } = await supabaseAdmin.from("consultations")
+        .update({ status: "refunded", ended_at: new Date().toISOString() })
+        .eq("id", consultationId)
+        .not("status", "in", "(completed,refunded)")
+        .select("chat_session_id");
+      if (closeErr) { logStep("Could not close refunded consultation (non-blocking)", { error: closeErr.message }); return; }
+      const chatSessionId = (closed as any)?.[0]?.chat_session_id;
+      if (chatSessionId) {
+        await supabaseAdmin.from("chat_sessions").update({ status: "archived" }).eq("id", chatSessionId);
+      }
+      logStep("Refunded consultation closed", { consultationId, closed: (closed || []).length });
     };
 
     // Get user profile for email
@@ -288,6 +328,7 @@ Deno.serve(async (req) => {
       // El dinero vuelve a la tarjeta: el médico tampoco debe conservar esa ganancia.
       await reverseDoctorEarnings();
       await markOriginalRefunded((stripeRefundTx as any)?.id ?? null, "stripe");
+      await closeRefundedConsultation();
 
       // Send confirmation email
       await sendRefundEmail({ user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "stripe" });
@@ -435,6 +476,7 @@ Deno.serve(async (req) => {
 
     // Update original transaction
     await markOriginalRefunded((walletRefundTx as any)?.id ?? null, "wallet");
+    await closeRefundedConsultation();
 
     // Send email
     await sendRefundEmail({ user_email: userProfile?.email, user_name: userProfile?.name, amount, refund_method: "wallet" });
@@ -468,7 +510,7 @@ Deno.serve(async (req) => {
     logStep("ERROR", { message: error.message });
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: error instanceof HttpError ? error.status : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -164,7 +164,14 @@ export function usePurchases() {
       return { success: true };
     } catch (error: any) {
       if (await handleBillingError(error)) return { success: false, error: BILLING_REQUIRED_CODE };
-      const errorMsg = error.message || t('purchaseMessages.processingError');
+      let errorMsg = error.message || t('purchaseMessages.processingError');
+      // FunctionsHttpError (p. ej. 402 saldo insuficiente): el mensaje viene en el cuerpo.
+      if (error?.context && typeof error.context.clone === 'function') {
+        try {
+          const body = await error.context.clone().json();
+          if (typeof body?.error === 'string' && body.error) errorMsg = body.error;
+        } catch { /* cuerpo no JSON: se queda el mensaje genérico */ }
+      }
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     } finally {

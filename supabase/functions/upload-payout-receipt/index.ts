@@ -17,21 +17,29 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is admin
+    // Verify caller is admin: 401 sin sesión, 403 sin rol admin.
+    const deny = (status: number, error: string) =>
+      new Response(JSON.stringify({ error }), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) return deny(401, "No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: authData, error: authError } =
       await supabaseAdmin.auth.getUser(token);
-    if (authError || !authData.user) throw new Error("Not authenticated");
+    if (authError || !authData.user) return deny(401, "Not authenticated");
 
+    // Un usuario puede tener varios roles: .single() fallaba con 2 filas.
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", authData.user.id)
-      .single();
-    if (roleData?.role !== "admin") throw new Error("Unauthorized");
+      .eq("role", "admin")
+      .limit(1)
+      .maybeSingle();
+    if (!roleData) return deny(403, "Unauthorized - admin access required");
 
     // Parse multipart form data
     const formData = await req.formData();

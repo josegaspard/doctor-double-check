@@ -102,6 +102,17 @@ Deno.serve(async (req) => {
     }
 
     if (!purchaseResult?.success) {
+      // Saldo insuficiente es un error del cliente, no del servidor: 402 y mensaje claro.
+      if (purchaseResult?.error === "Insufficient balance") {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: "insufficient_balance",
+            error: "Saldo insuficiente en tu billetera. Recarga saldo para completar la compra.",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 402 }
+        );
+      }
       throw new Error(purchaseResult?.error || "Purchase failed");
     }
 
