@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -12,6 +12,8 @@ export function useDaily() {
   const [isLoading, setIsLoading] = useState(false);
   const [room, setRoom] = useState<DailyRoom | null>(null);
   const [viewerToken, setViewerToken] = useState<string | null>(null);
+  // Motivo del último rechazo de get-daily-token (p. ej. "Patient access is disabled").
+  const lastTokenErrorRef = useRef<string | null>(null);
 
   const createRoom = useCallback(async (liveId: string, title: string, mode: 'live' | 'consultation' = 'live'): Promise<DailyRoom | null> => {
     setIsLoading(true);
@@ -51,6 +53,7 @@ export function useDaily() {
 
   const getViewerToken = useCallback(async (roomName: string, isOwner?: boolean, enableMedia?: boolean): Promise<string | null> => {
     setIsLoading(true);
+    lastTokenErrorRef.current = null;
     try {
       const { data, error } = await supabase.functions.invoke('get-daily-token', {
         body: { roomName, isOwner: isOwner || false, enableMedia: enableMedia || false },
@@ -63,6 +66,12 @@ export function useDaily() {
       return data.token;
     } catch (error: any) {
       console.warn('Error getting viewer token (will retry):', error);
+      let reason: string | null = error?.message ?? null;
+      try {
+        const body = await error?.context?.json?.();
+        if (body?.error) reason = body.error;
+      } catch { /* cuerpo no JSON */ }
+      lastTokenErrorRef.current = reason;
       return null;
     } finally {
       setIsLoading(false);
@@ -91,12 +100,15 @@ export function useDaily() {
     }
   }, []);
 
+  const getLastTokenError = useCallback(() => lastTokenErrorRef.current, []);
+
   return {
     isLoading,
     room,
     viewerToken,
     createRoom,
     getViewerToken,
+    getLastTokenError,
     endRoom,
   };
 }

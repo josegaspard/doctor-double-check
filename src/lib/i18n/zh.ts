@@ -7953,6 +7953,7 @@ export const zh = {
     "paymentCompleted": "支付成功！您的精选消息即将发布。",
     "paymentCanceled": "支付已取消",
     "connectionError": "无法连接，请重试。",
+    "patientAccessDisabled": "患者观看直播的权限目前已关闭。",
     "retry": "重试",
     "verifiedProfessional": "已通过 Medical Masters 认证的专业人员",
     "cedulaProfShort": "执业证书",

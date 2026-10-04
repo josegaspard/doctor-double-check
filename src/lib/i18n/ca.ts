@@ -7934,6 +7934,7 @@ export const ca = {
     "paymentCompleted": "Pagament completat! El teu missatge destacat es publicarà.",
     "paymentCanceled": "Pagament cancel·lat",
     "connectionError": "No s'ha pogut connectar. Torna-ho a provar.",
+    "patientAccessDisabled": "L'accés dels pacients a les transmissions en directe està desactivat ara per ara.",
     "retry": "Torna-ho a provar",
     "verifiedProfessional": "Professional verificat per Medical Masters",
     "cedulaProfShort": "Cèd. Prof.",

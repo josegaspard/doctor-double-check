@@ -8371,6 +8371,7 @@ export const en = {
     paymentCompleted: "Payment completed! Your highlighted message will be published.",
     paymentCanceled: "Payment canceled",
     connectionError: "Could not connect. Try again.",
+    patientAccessDisabled: "Patient access to live streams is currently disabled.",
     retry: "Retry",
     verifiedProfessional: "Professional verified by Medical Masters",
     cedulaProfShort: "Prof. Lic.",

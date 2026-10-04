@@ -8325,6 +8325,7 @@ export const de = {
     paymentCompleted: "Zahlung abgeschlossen! Ihre hervorgehobene Nachricht wird veröffentlicht.",
     paymentCanceled: "Zahlung abgebrochen",
     connectionError: "Verbindung fehlgeschlagen. Bitte erneut versuchen.",
+    patientAccessDisabled: "Der Zugang für Patienten zu Live-Übertragungen ist derzeit deaktiviert.",
     retry: "Erneut versuchen",
     verifiedProfessional: "Von Medical Masters verifizierte Fachperson",
     cedulaProfShort: "Ber.-Nr.",

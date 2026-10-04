@@ -586,9 +586,14 @@ export default function Onboarding() {
       // (trigger que no corrió / fila borrada), un UPDATE afectaba 0 filas SIN error
       // y el usuario quedaba como 'patient' en silencio (un doctor terminaba como
       // paciente). El upsert garantiza que el rol quede escrito.
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .upsert({ user_id: supabaseUser.id, role: selectedRole }, { onConflict: 'user_id' });
+      // El rol se fija por la RPC set_onboarding_role (reglas en servidor). Si la RPC aún
+      // no existe en la BD (PGRST202 / 42883), se usa el upsert de siempre.
+      let { error: roleError } = await supabase.rpc('set_onboarding_role' as any, { p_role: selectedRole } as any);
+      if (roleError && (roleError.code === 'PGRST202' || roleError.code === '42883')) {
+        ({ error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({ user_id: supabaseUser.id, role: selectedRole }, { onConflict: 'user_id' }));
+      }
 
       if (roleError) throw roleError;
 

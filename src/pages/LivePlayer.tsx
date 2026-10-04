@@ -66,7 +66,7 @@ export default function LivePlayer() {
   const { user, role } = useAuth();
   const { t } = useLanguage();
   const { getSubscription } = useSubscriptions();
-  const { getViewerToken } = useDaily();
+  const { getViewerToken, getLastTokenError } = useDaily();
   
   const [isLiking, setIsLiking] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
@@ -314,6 +314,12 @@ export default function LivePlayer() {
         token = await getViewerToken(roomName, isOwner);
         if (cancelled) return;
         if (token) break;
+        // Paciente con el acceso desactivado: no tiene sentido reintentar.
+        if (getLastTokenError() === 'Patient access is disabled') {
+          setPlaybackError(t('livePlayerPage.patientAccessDisabled'));
+          setIsJoiningStream(false);
+          return;
+        }
         if (attempt < 2) {
           await new Promise(r => setTimeout(r, 3000));
           if (cancelled) return;

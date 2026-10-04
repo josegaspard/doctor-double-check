@@ -8325,6 +8325,7 @@ export const it = {
     paymentCompleted: "Pagamento completato! Il tuo messaggio in evidenza verrà pubblicato.",
     paymentCanceled: "Pagamento annullato",
     connectionError: "Impossibile connettersi. Riprova.",
+    patientAccessDisabled: "L'accesso dei pazienti alle dirette è attualmente disattivato.",
     retry: "Riprova",
     verifiedProfessional: "Professionista verificato da Medical Masters",
     cedulaProfShort: "N. iscr.",

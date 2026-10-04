@@ -60,11 +60,13 @@ Deno.serve(async (req) => {
       .eq("id", recordingId)
       .single();
 
-    if (recError) {
-      logStep("Recording query error", { error: recError.message, code: recError.code });
-      throw new Error("Recording not found");
+    if (recError || !recording) {
+      if (recError) logStep("Recording query error", { error: recError.message, code: recError.code });
+      return new Response(JSON.stringify({ error: "Recording not found" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404,
+      });
     }
-    if (!recording) throw new Error("Recording not found");
     logStep("Recording found", { title: recording.title, price: recording.price });
 
     // Check if already purchased

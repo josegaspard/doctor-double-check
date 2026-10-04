@@ -60,11 +60,18 @@ Deno.serve(async (req) => {
     // chat_highlight_price no existe y hacía fallar la consulta.
     const { data: liveData, error: liveErr } = await supabase
       .from("lives")
-      .select("title, chat_highlight_seconds, chat_price")
+      .select("title, chat_highlight_seconds, chat_price, status")
       .eq("id", liveId)
       .maybeSingle();
     if (liveErr) console.error("[CREATE-CHAT-CHECKOUT] lives query failed", liveErr.message);
     if (!liveData) throw new Error("Live not found");
+    // Solo se cobra un destacado mientras el live está en emisión.
+    if ((liveData as any).status !== "live") {
+      return new Response(JSON.stringify({ error: "Live is not active" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const highlightSeconds = liveData.chat_highlight_seconds || 120;
     const amount = Number((liveData as any).chat_price ?? 0);

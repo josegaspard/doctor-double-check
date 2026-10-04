@@ -8429,6 +8429,7 @@ export const es = {
     paymentCompleted: '¡Pago completado! Tu mensaje destacado será publicado.',
     paymentCanceled: 'Pago cancelado',
     connectionError: 'No se pudo conectar. Intenta de nuevo.',
+    patientAccessDisabled: 'El acceso de pacientes a las transmisiones en vivo está desactivado por ahora.',
     retry: 'Reintentar',
     verifiedProfessional: 'Profesional verificado por Medical Masters',
     cedulaProfShort: 'Céd. Prof.',

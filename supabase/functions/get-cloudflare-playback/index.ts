@@ -85,6 +85,8 @@ async function verifyRecordingAccess(
   return { allowed: false, reason: 'no_purchase' };
 }
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -106,10 +108,10 @@ Deno.serve(async (req) => {
     );
 
     // Parse request body first so we can allow public live playback
-    const { videoUid, liveInputUid, type = "recording", recordingId } = await req.json();
+    const { videoUid, liveInputUid, type = "recording", recordingId } = await req.json().catch(() => ({}));
 
     if (!videoUid && !liveInputUid) {
-      throw new Error("videoUid or liveInputUid is required");
+      throw httpError(400, "videoUid or liveInputUid is required");
     }
 
     const isLiveRequest = type === "live" && !!liveInputUid;
@@ -468,7 +470,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: false, error: errorMessage }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: (error as any)?.status ?? 500,
       }
     );
   }

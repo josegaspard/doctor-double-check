@@ -8325,6 +8325,7 @@ export const fr = {
     paymentCompleted: "Paiement effectué ! Votre message mis en avant sera publié.",
     paymentCanceled: "Paiement annulé",
     connectionError: "Connexion impossible. Réessayez.",
+    patientAccessDisabled: "L'accès des patients aux diffusions en direct est désactivé pour le moment.",
     retry: "Réessayer",
     verifiedProfessional: "Professionnel vérifié par Medical Masters",
     cedulaProfShort: "Num. Prof.",

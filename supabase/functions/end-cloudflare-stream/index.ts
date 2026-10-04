@@ -10,6 +10,8 @@ const logStep = (step: string, details?: any) => {
   console.log(`[END-CLOUDFLARE-STREAM] ${step}${detailsStr}`);
 };
 
+const httpError = (status: number, message: string) => Object.assign(new Error(message), { status });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,18 +34,18 @@ Deno.serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) throw httpError(401, "No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("User not authenticated");
+    if (userError || !userData.user) throw httpError(401, "User not authenticated");
 
     const userId = userData.user.id;
     logStep("User authenticated", { userId });
 
     // Parse request body
-    const { liveId, streamUid, saveRecording = true } = await req.json();
-    if (!liveId) throw new Error("liveId is required");
+    const { liveId, streamUid, saveRecording = true } = await req.json().catch(() => ({}));
+    if (!liveId) throw httpError(400, "liveId is required");
 
     logStep("Ending Cloudflare Stream", { liveId, streamUid, saveRecording });
 
@@ -56,7 +58,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (liveError || !liveRecord) {
-      throw new Error("Live not found or not authorized");
+      throw httpError(403, "Live not found or not authorized");
     }
 
     const actualStreamUid = streamUid || liveRecord.daily_room_name;
@@ -219,7 +221,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ success: false, error: errorMessage }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: (error as any)?.status ?? 500,
       }
     );
   }

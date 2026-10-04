@@ -40,7 +40,13 @@ export default function Login() {
   // formulario (que decide dashboard/onboarding según el rol).
   const loginAttemptedHere = React.useRef(false);
   useEffect(() => {
-    if (!isLoading && isAuthenticated && role && role !== 'visitor' && !loginAttemptedHere.current) {
+    // Al iniciar sesión, AuthenticatedProviders (App.tsx) cambia de árbol y esta página
+    // se monta de nuevo: el ref vuelve a false. La marca de sessionStorage sobrevive al
+    // remontaje; sin ella, un paciente con el acceso cerrado acababa en /lives con la
+    // sesión aún abierta (re-QA 3-oct-2026).
+    let loginFormPending = false;
+    try { loginFormPending = sessionStorage.getItem('mm_login_form_pending') === '1'; } catch { /* noop */ }
+    if (!isLoading && isAuthenticated && role && role !== 'visitor' && !loginAttemptedHere.current && !loginFormPending) {
       navigate('/lives', { replace: true });
     }
   }, [isLoading, isAuthenticated, role, navigate]);
@@ -95,6 +101,15 @@ export default function Login() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  // Paciente rechazado con el acceso cerrado: el aviso viaja en la URL porque la
+  // página se remonta al abrirse y cerrarse la sesión y el estado local se pierde.
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('reason') === 'patient_closed') {
+      setPatientLoginBlocked(true);
+      setLoginError(t('login.patientLoginBlocked'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   
@@ -244,6 +259,7 @@ export default function Login() {
     // válida entra directo a su panel según su rol real, sin importar la barra elegida.
     try { sessionStorage.removeItem('mm_role_gate'); } catch {}
     setPatientLoginBlocked(false);
+    if (location.search.includes('reason=patient_closed')) navigate('/login', { replace: true });
 
     // Este formulario decide el destino tras entrar: el oyente global de sesión no
     // redirige mientras la marca existe (si no, mandaba a /lives a un paciente con el
@@ -268,6 +284,8 @@ export default function Login() {
         await supabase.auth.signOut({ scope: 'local' });
         setPatientLoginBlocked(true);
         setLoginError(t('login.patientLoginBlocked'));
+        // Se queda en /login: el parámetro hace que la instancia remontada enseñe el aviso.
+        navigate('/login?reason=patient_closed', { replace: true });
         return;
       }
       const { data: sessionData } = await supabase.auth.getSession();

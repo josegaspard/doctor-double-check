@@ -126,8 +126,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Un live terminado ya no tiene sala útil: no se emiten tokens.
-      if (liveRow.status === 'ended') {
+      // Solo un live en emisión tiene sala útil: terminado, procesando o con la
+      // grabación lista ya no emite tokens.
+      if (liveRow.status !== 'live') {
         return new Response(
           JSON.stringify({ success: false, error: "Live has ended" }),
           { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
