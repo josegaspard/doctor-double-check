@@ -495,6 +495,20 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
   const planId = session.metadata?.plan_id || null;
   logStep("Processing creator subscription", { userId, creatorId, tier, planId });
 
+  // Idempotencia (igual que la consulta con tarjeta): la compra del suscriptor
+  // queda marcada con stripe_session_id; si ya existe, este pago ya se procesó.
+  const { data: dupTx } = await db
+    .from("wallet_transactions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("type", "purchase")
+    .contains("metadata", { stripe_session_id: session.id })
+    .maybeSingle();
+  if (dupTx) {
+    logStep("Creator subscription already processed, skipping", { sessionId: session.id });
+    return;
+  }
+
   // Admin-editable price (same site_settings.subscription_pricing as checkout),
   // converted cents→pesos; falls back to $99/$199 if the setting is missing.
   const pricing = await getSubscriptionPricing(db);
@@ -565,6 +579,19 @@ async function handleCreatorSubscription(db: ReturnType<typeof supabaseAdmin>, s
 
   // FIX #1: Use atomic credit function
   await creditDoctorEarningsAtomic(db, creatorId, tierPrice, "subscription", null, { buyerId: userId, concept: "Suscripción mensual" });
+
+  // Compra del suscriptor (pagada con tarjeta, no descuenta saldo): el trigger
+  // trg_ledger_wallet_txn genera los asientos contables, como en la consulta.
+  await db
+    .from("wallet_transactions")
+    .insert({
+      user_id: userId,
+      type: "purchase",
+      amount: -tierPrice,
+      description: "Suscripción mensual",
+      status: "paid",
+      metadata: { type: "subscription", doctor_id: creatorId, stripe_session_id: session.id },
+    });
 }
 
 async function handleConsultationPayment(db: ReturnType<typeof supabaseAdmin>, session: Stripe.Checkout.Session, isDoubleCheck = false, isLive = false) {
@@ -1129,6 +1156,19 @@ async function handleInvoicePaymentSucceeded(db: ReturnType<typeof supabaseAdmin
     // this handler returns early if this invoice already produced a renewal
     // earning, so we never reach this credit twice for the same invoice.
     await creditDoctorEarningsAtomic(db, sub.creator_id, sub.price_paid, "subscription_renewal", invoice.id || null, { buyerId: sub.subscriber_id, concept: "Renovación de suscripción mensual" });
+
+    // Compra del suscriptor (cobrada por Stripe, no descuenta saldo) para el libro
+    // contable vía trg_ledger_wallet_txn. Protegida por el guard de invoice.id de arriba.
+    await db
+      .from("wallet_transactions")
+      .insert({
+        user_id: sub.subscriber_id,
+        type: "purchase",
+        amount: -Number(sub.price_paid),
+        description: "Renovación de suscripción mensual",
+        status: "paid",
+        metadata: { type: "subscription_renewal", doctor_id: sub.creator_id, stripe_invoice_id: invoice.id },
+      });
 
     await db
       .from("notifications")
