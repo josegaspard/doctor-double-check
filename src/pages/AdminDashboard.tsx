@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck, Presentation, QrCode, Ticket, Search,
+  ClipboardCheck, Presentation, QrCode, Ticket, Search, FileSignature
 } from 'lucide-react';
 
 interface AdminModule {
@@ -110,6 +110,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       modules: [
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash35'), desc: t('autoI18n.clAdminDash36'), badge: stats.pendingReports },
         { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash37'), desc: t('autoI18n.clAdminDash38') },
+        { id: 'handover', icon: FileSignature, href: '/admin/entrega', color: 'text-primary', borderColor: 'border-l-primary', title: 'Entrega de la plataforma', desc: 'Guía de entrega y botón para confirmarla' },
       ],
     },
     {

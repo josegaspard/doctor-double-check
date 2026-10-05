@@ -116,6 +116,7 @@ const BookAppointment = React.lazy(() => import("./pages/BookAppointment"));
 const MyAppointments = React.lazy(() => import("./pages/MyAppointments"));
 const AdminSiteSettings = React.lazy(() => import("./pages/AdminSiteSettings"));
 const AdminSeo = React.lazy(() => import("./pages/AdminSeo"));
+const AdminHandover = React.lazy(() => import("./pages/AdminHandover"));
 const AdminRefunds = React.lazy(() => import("./pages/AdminRefunds"));
 const AdminPayoutSettings = React.lazy(() => import("./pages/AdminPayoutSettings"));
 const AdminPayouts = React.lazy(() => import("./pages/AdminPayouts"));
@@ -321,6 +322,7 @@ const App = () => {
                       {FEATURE_FLAGS.marketplaceVendors && <Route path="/vendor/products" element={<Navigate to="/vendor/dashboard" replace />} />}
                       <Route path="/admin/site-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSiteSettings /></AccessGuard>} />
                       <Route path="/admin/seo" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminSeo /></AccessGuard>} />
+                      <Route path="/admin/entrega" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminHandover /></AccessGuard>} />
                       <Route path="/admin/refunds" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRefunds /></AccessGuard>} />
                       <Route path="/admin/payout-settings" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayoutSettings /></AccessGuard>} />
                       <Route path="/admin/payouts" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminPayouts /></AccessGuard>} />
