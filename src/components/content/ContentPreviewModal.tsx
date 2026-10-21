@@ -18,6 +18,7 @@ import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DmcaBadge } from '@/components/layout/DmcaBadge';
 
 interface ContentPreviewModalProps {
   isOpen: boolean;
@@ -139,6 +140,8 @@ function PreviewContent({
           >
             {t('contentPreviewModal.browserNoVideoSupport')}
           </video>
+          {/* Contenido de pago: sello "Protegido por DMCA" (cliente 21-oct-2026). */}
+          <DmcaBadge className="absolute bottom-3 left-3 z-20" />
         </div>
       );
     case 'pdf': {
