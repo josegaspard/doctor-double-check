@@ -142,7 +142,20 @@ export function UnifiedFooter({ variant }: Props) {
   const legalLinksRaw = legalWithTerms.some(l => l.href === '/dmca')
     ? legalWithTerms
     : [...legalWithTerms, { label: t('landingFooter.dmca'), href: '/dmca' }];
-  const legalLinks = legalLinksRaw.map(translateLink);
+  // Garantizar el enlace al Código de ética JUSTO DEBAJO de Privacidad y
+  // Términos (cliente 2026-10-21). Etiqueta literal: no hay clave i18n y los
+  // vecinos ya caen a la etiqueta de la BD en castellano.
+  const legalWithEthics = legalLinksRaw.some(l => l.href === '/codigo-etica')
+    ? legalLinksRaw
+    : (() => {
+        const ethics = { label: 'Código de ética', href: '/codigo-etica' };
+        const idx = legalLinksRaw.findIndex(l => l.href === '/terms');
+        if (idx === -1) return [...legalLinksRaw, ethics];
+        const copy = [...legalLinksRaw];
+        copy.splice(idx + 1, 0, ethics);
+        return copy;
+      })();
+  const legalLinks = legalWithEthics.map(translateLink);
 
   // Copyright: el superadministrador puede sobrescribirlo desde /admin/site-settings
   // (site_settings → footer_links.copyright). Si no lo definió, se usa el texto

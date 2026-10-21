@@ -54,7 +54,6 @@ import {
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
-import { TutorialVideoDialog } from '@/components/profile/TutorialVideoDialog';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
@@ -88,15 +87,29 @@ const doctorNavOf = (id: string, over: Partial<DoctorNavItem> = {}): DoctorNavIt
 //   Inicio · Agenda · Mis pacientes · Consultas · Lives y contenidos · Comunidad · Más ▾ (Aprendizaje, Cuenta)
 // sin romper la arquitectura de su análisis: «Consultas» es Agenda › Consultas, «Lives y
 // contenidos» es la sección Contenido y «Más» queda reducido a dos destinos.
+// Lives y Contenido van SEPARADOS en el menú (cliente 21-oct-2026): la parrilla de
+// EN VIVO (/lives) es una pestaña propia y la biblioteca de Contenido (/contenido)
+// otra. Antes se mostraban juntas bajo «Lives y contenidos».
+const doctorLivesNav: DoctorNavItem = {
+  labelKey: 'nav.lives', href: '/lives', icon: Radio, roles: ['doctor'],
+  sectionId: 'contenido', navId: 'lives',
+};
+// Directorio de profesionales en el header del médico (cliente 21-oct-2026): el
+// listado completo de médicos, como estaba antes del rediseño.
+const doctorDirectorioNav: DoctorNavItem = {
+  labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'],
+  sectionId: 'directorio', navId: 'directorio',
+};
 const doctorPrimaryNav: DoctorNavItem[] = [
   doctorNavOf('inicio'),
   doctorNavOf('agenda'),
   doctorNavOf('pacientes'),
   doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
-  doctorNavOf('contenido', { labelKey: 'mm2.common.nav.livesContenidos' }),
+  doctorLivesNav,
+  doctorNavOf('contenido'),
   doctorNavOf('comunidad'),
 ];
-const doctorMoreNav: DoctorNavItem[] = [doctorNavOf('aprendizaje'), doctorNavOf('cuenta')];
+const doctorMoreNav: DoctorNavItem[] = [doctorDirectorioNav, doctorNavOf('aprendizaje'), doctorNavOf('cuenta')];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
 // Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
 const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
@@ -192,7 +205,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout, role } = useAuth();
-  const [tutorialOpen, setTutorialOpen] = useState(false);
   const { t } = useLanguage();
   const { toggles } = useSiteToggles();
   const { unreadCount: notifUnread } = useNotifications();
@@ -311,9 +323,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     new URLSearchParams(location.search).get('tab') === 'consultas'
     || location.pathname.startsWith('/doctor/consultations')
     || location.pathname.startsWith('/my-appointments'));
+  const onLives = location.pathname === '/lives' || location.pathname.startsWith('/live/');
   const isActiveItem = (item: { href: string; sectionId?: string; navId?: string }) => {
     if (item.navId === 'consultas') return onConsultas;
     if (item.navId === 'agenda') return activeSection === 'agenda' && !onConsultas;
+    // Lives y Contenido separados: en /lives sólo se ilumina Lives, no Contenido.
+    if (item.navId === 'lives') return onLives;
+    if (item.navId === 'directorio') return location.pathname === '/doctors';
+    if (item.sectionId === 'contenido') return activeSection === 'contenido' && !onLives;
     return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
   };
 
@@ -447,8 +464,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                 <Link
                   to="/chat"
                   aria-label={t('nav.chat')}
-                  className={`app-header-control relative px-2.5 ${location.pathname === '/chat' ? 'app-header-nav-active' : ''}`}
+                  className={`app-header-control relative flex items-center gap-1.5 px-2.5 ${location.pathname === '/chat' ? 'app-header-nav-active' : ''}`}
                 >
+                  {/* La palabra "Chat" a la IZQUIERDA del icono (cliente 21-oct-2026). */}
+                  <span className="hidden lg:inline text-sm font-medium">{t('nav.chat')}</span>
                   <MessageSquare className="w-4 h-4" />
                   {chatUnread > 0 && (
                     <span className="notification-count-badge absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
@@ -536,8 +555,14 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {t('nav.settings')}
                       </DropdownMenuItem>
                     )}
+                    {role === 'resident' && (
+                      <DropdownMenuItem onClick={() => navigate('/residentes/lo-que-debo-saber')} className="py-3 text-sm">
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        Lo que debo saber
+                      </DropdownMenuItem>
+                    )}
                     {(role === 'patient' || role === 'resident' || role === 'doctor') && (
-                      <DropdownMenuItem onClick={() => setTutorialOpen(true)} className="py-3 text-sm">
+                      <DropdownMenuItem onClick={() => navigate('/tutoriales')} className="py-3 text-sm">
                         <GraduationCap className="w-4 h-4 mr-2" />
                         {t('nav.tutorial')}
                       </DropdownMenuItem>
@@ -560,9 +585,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         </div>
       </header>
 
-      {isAuthenticated && user && (
-        <TutorialVideoDialog role={role} open={tutorialOpen} onOpenChange={setTutorialOpen} />
-      )}
 
       {/* Mobile Back Header */}
       <MobileBackHeader />

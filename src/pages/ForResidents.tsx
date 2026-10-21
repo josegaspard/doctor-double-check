@@ -185,6 +185,26 @@ export default function ForResidents() {
         </div>
       </section>
 
+      {/* "Lo que debo saber" para residentes de último año (cliente 21-oct-2026) */}
+      <section className="py-12 sm:py-20 bg-card border-b border-border">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8 text-center">
+            <span className="inline-block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary mb-2">Último año de residencia</span>
+            <h2 className="text-xl sm:text-3xl font-bold text-foreground mb-3">Lo que debo saber antes de ejercer</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto mb-6">
+              Cédula, contador y SAT, legal, seguro de responsabilidad, COFEPRIS y los asesores
+              que necesitas cuando estás por terminar y convertirte en médico en México.
+            </p>
+            <Link
+              to="/residentes/lo-que-debo-saber"
+              className="inline-flex items-center justify-center px-6 py-3 text-sm sm:text-base font-bold text-primary-foreground bg-primary rounded-xl shadow-lg hover:opacity-90 transition-opacity min-h-[44px]"
+            >
+              Ver la guía
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-12 sm:py-24 bg-[#227787]">
         <div className="container mx-auto px-4 sm:px-6 text-center">

@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { RecordingVideoPlayer } from '@/components/recordings/RecordingVideoPlayer';
 import { RecordingCaptionsControl } from '@/components/recordings/RecordingCaptionsControl';
 import { RecordingPaywall } from '@/components/recordings/RecordingPaywall';
+import { DmcaBadge } from '@/components/layout/DmcaBadge';
 import { AdPreroll } from '@/components/ads/AdPreroll';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { ProfileCategoryMark, AuthorRoleTag } from '@/components/profile/ProfileCategoryMark';
@@ -449,6 +450,12 @@ export default function RecordingPlayer() {
                     </p>
                   </div>
                 </div>
+              )}
+              {/* Sello DMCA (grabación = contenido premium/protegido): esquina
+                  superior derecha, lejos de los controles nativos del vídeo (que
+                  van abajo). Solo tras el preroll para no taparlo con el anuncio. */}
+              {(prerollDone || skipPreroll) && recording.videoUrl && (
+                <DmcaBadge className="absolute top-2 right-2 z-20" />
               )}
             </div>
 

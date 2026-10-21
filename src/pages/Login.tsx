@@ -192,7 +192,9 @@ export default function Login() {
     if (!profileResult.data?.onboarding_completed) return '/onboarding';
 
     const role = roleResult.data?.role;
-    if (role === 'doctor') return '/doctor/dashboard';
+    // Todos los usuarios (incluidos médicos) aterrizan en la parrilla de Lives al
+    // entrar: el cliente pidió recuperar la pantalla de "todos los en vivo" como
+    // primera vista (antes el médico caía en su panel — 21-oct-2026).
     if (role === 'admin') return '/admin';
     return '/lives';
   };

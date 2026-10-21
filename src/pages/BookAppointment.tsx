@@ -4,6 +4,7 @@ import { BOOKING_SLOT_MIN } from '@/lib/booking';
 import { supabase } from '@/integrations/supabase/client';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -242,6 +243,12 @@ export default function BookAppointment() {
   const [selected, setSelected] = useState<Slot | null>(null);
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // Tipo de orientación elegido en el paso previo a confirmar (cliente 2026-10-21):
+  // "consulta" = primera vez / consulta normal; "segunda_opinion" = ya lo vio un médico
+  // y quiere una segunda opinión. No hay columna propia en `appointments`, así que el
+  // tipo viaja en `notes` de la cita y en el payload de la notificación al médico.
+  const [consultationKind, setConsultationKind] = useState<'consulta' | 'segunda_opinion' | null>(null);
+  const [kindDialogOpen, setKindDialogOpen] = useState(false);
   const [confirmation, setConfirmation] = useState<{
     scheduled_at: string;
     appointmentId: string;
@@ -468,7 +475,7 @@ export default function BookAppointment() {
   const priceNode = (amount: number, size: 'sm' | 'md' | 'lg' = 'sm') =>
     amount === 0 ? t('doctorProfile.free') : <PriceDisplay amount={amount} size={size} />;
 
-  const book = async () => {
+  const book = async (kind: 'consulta' | 'segunda_opinion') => {
     if (!selected || !user || !doctorId) return;
     if (role !== 'patient' && role !== 'resident') {
       toast.error(t('bookAppointment.toast.onlyPatients'));
@@ -485,6 +492,9 @@ export default function BookAppointment() {
     }
     setSubmitting(true);
     const service = selectedService;
+    // `appointments` no tiene columna de tipo; el tipo elegido se guarda en `notes`
+    // (columna existente, escribible por el paciente) para que llegue a la cita y al médico.
+    const kindLabel = kind === 'segunda_opinion' ? 'Segunda opinión' : 'Consulta';
     const baseRow = {
       patient_id: user.id,
       doctor_id: doctorId,
@@ -494,6 +504,7 @@ export default function BookAppointment() {
       scheduled_at: selected.scheduled_at,
       duration_minutes: service ? service.duration_minutes : selected.duration_minutes,
       reason: reason || null,
+      notes: `Tipo de orientación: ${kindLabel}`,
       status: 'requested',
     };
     // Foto del servicio al reservar (la base la valida y la copia del servicio real).
@@ -582,6 +593,7 @@ export default function BookAppointment() {
         data: {
           kind: 'appointment_request',
           appointment_id: apptId,
+          consultation_kind: kind,
           ...(rescheduleFrom ? { rescheduled_from: rescheduleFrom.id } : {}),
           deeplink: '/my-appointments',
           ...(service ? { service_id: service.id, service_name: service.name } : {}),
@@ -642,6 +654,9 @@ export default function BookAppointment() {
               <div className="text-sm bg-muted/40 rounded-lg p-4 mb-6 text-left">
                 <p><strong>{t('bookAppointment.confirmation.doctorLabel')}</strong> Dr. {doctor.name}</p>
                 <p><strong>{t('bookAppointment.confirmation.specialtyLabel')}</strong> {doctor.specialty}</p>
+                {consultationKind && (
+                  <p><strong>Tipo:</strong> {consultationKind === 'segunda_opinion' ? 'Segunda opinión' : 'Consulta'}</p>
+                )}
                 {confirmation.serviceName && (
                   <p><strong>{t('mm2.servicios.booking.confirmationServiceLabel')}</strong> {confirmation.serviceName}</p>
                 )}
@@ -874,7 +889,7 @@ export default function BookAppointment() {
                   </p>
                   <div className="flex gap-2 justify-end">
                     <Button variant="ghost" onClick={() => setSelected(null)} disabled={submitting}>{t('bookAppointment.confirm.cancel')}</Button>
-                    <Button onClick={book} disabled={submitting} className="gap-1.5">
+                    <Button onClick={() => setKindDialogOpen(true)} disabled={submitting} className="gap-1.5">
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       {t('bookAppointment.confirm.submit')}
                     </Button>
@@ -884,6 +899,41 @@ export default function BookAppointment() {
             )}
           </>
         )}
+
+        {/* Paso previo a confirmar (cliente 2026-10-21): ¿consulta o segunda opinión? */}
+        <Dialog open={kindDialogOpen} onOpenChange={(o) => { if (!submitting) setKindDialogOpen(o); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>¿Es una segunda opinión o es una consulta?</DialogTitle>
+              <DialogDescription>
+                Elige el tipo de orientación antes de enviar tu solicitud al médico.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col gap-2 sm:flex-col">
+              <Button
+                variant="outline"
+                className="w-full justify-start h-auto py-3 text-left"
+                disabled={submitting}
+                onClick={() => { setConsultationKind('consulta'); setKindDialogOpen(false); book('consulta'); }}
+              >
+                <span className="flex flex-col items-start">
+                  <span className="font-medium">Consulta</span>
+                  <span className="text-xs text-muted-foreground font-normal">Consulta normal o primera vez.</span>
+                </span>
+              </Button>
+              <Button
+                className="w-full justify-start h-auto py-3 text-left"
+                disabled={submitting}
+                onClick={() => { setConsultationKind('segunda_opinion'); setKindDialogOpen(false); book('segunda_opinion'); }}
+              >
+                <span className="flex flex-col items-start">
+                  <span className="font-medium">Segunda opinión</span>
+                  <span className="text-xs text-primary-foreground/80 font-normal">Ya te vio un médico y quieres una segunda opinión.</span>
+                </span>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

@@ -163,6 +163,8 @@ const MedicalEducation = React.lazy(() => import("./pages/MedicalEducation"));
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
+const Tutoriales = React.lazy(() => import("./pages/Tutoriales"));
+const ResidenteLoQueDeboSaber = React.lazy(() => import("./pages/ResidenteLoQueDeboSaber"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const Congresses = React.lazy(() => import("./pages/Congresses"));
@@ -388,6 +390,9 @@ const App = () => {
                       <Route path="/nutrition" element={<Navigate to="/nutricion" replace />} />
                       <Route path="/nutricion" element={<NutritionDirectory />} />
                       <Route path="/for-residents" element={<ForResidents />} />
+                      <Route path="/tutoriales" element={<Tutoriales />} />
+                      <Route path="/tutorials" element={<Navigate to="/tutoriales" replace />} />
+                      <Route path="/residentes/lo-que-debo-saber" element={<ResidenteLoQueDeboSaber />} />
                       <Route path="/access-denied" element={<AccessDenied />} />
                       <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />

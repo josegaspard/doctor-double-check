@@ -1,21 +1,17 @@
-import { cn } from '@/lib/utils';
 import { flagEmojiToCode } from '@/lib/countryFlag';
+import { FlagIcon } from '@/components/common/FlagIcon';
 
 /**
- * Código de país en una etiqueta pequeña, en lugar del emoji de bandera
- * (que en Windows se ve como letras). Acepta el código ISO o el emoji guardado en BD.
+ * Bandera del idioma o del país, en SVG vectorial (NO emoji: en Windows los
+ * emojis de bandera se ven como letras; regla del cliente 2026-10-01).
+ *
+ * Mantiene la API anterior ({ code, flag, className }) para no romper sus usos:
+ *  - `code` puede ser un código de idioma (es, en, pt…) o de país ISO-2 (MX, US…).
+ *  - `flag` es el emoji guardado en BD; si no hay `code`, se deriva de ahí.
+ * Si no se reconoce el código, FlagIcon cae con elegancia a un globo.
  */
 export function CountryTag({ code, flag, className }: { code?: string | null; flag?: string | null; className?: string }) {
-  const iso = (code || flagEmojiToCode(flag) || '').toUpperCase();
-  if (!iso) return null;
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center justify-center rounded border border-border bg-muted px-1 text-[10px] font-semibold leading-4 tracking-wide text-muted-foreground align-middle',
-        className,
-      )}
-    >
-      {iso}
-    </span>
-  );
+  const value = code || flagEmojiToCode(flag) || '';
+  if (!value) return null;
+  return <FlagIcon code={value} className={className} />;
 }

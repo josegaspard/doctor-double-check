@@ -17,6 +17,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MainLayout from '@/components/layout/MainLayout';
 import { DailyVideoPlayer } from '@/components/live/DailyVideoPlayer';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
+import { DmcaBadge } from '@/components/layout/DmcaBadge';
 import { LiveChat } from '@/components/live/LiveChat';
 import { LiveDoctorSideChat } from '@/components/live/LiveDoctorSideChat';
 import { AnimatedViewerCount } from '@/components/live/AnimatedViewerCount';
@@ -562,6 +563,10 @@ export default function LivePlayer() {
                     </p>
                   )}
                 </div>
+                {/* Sello DMCA (contenido de pago/protegido): esquina inferior
+                    izquierda, libre de los controles del reproductor (que van
+                    centrados abajo) y del lower-third del doctor (abajo-dcha). */}
+                <DmcaBadge className="absolute bottom-3 left-3 z-20" />
                 <LiveVisitorGate isVisitor={role === 'visitor' || !user} livePath={`/live/${id}`} freeSeconds={60} />
               </div>
             ) : (
