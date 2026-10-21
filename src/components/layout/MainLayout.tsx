@@ -100,7 +100,10 @@ const doctorDirectorioNav: DoctorNavItem = {
   labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'],
   sectionId: 'directorio', navId: 'directorio',
 };
-const doctorPrimaryNav: DoctorNavItem[] = [
+// La píldora del médico queda limpia: TODO el menú vive en «Más» para que no se
+// desborde en computadora (cliente 21-oct-2026). En móvil siguen las pestañas de abajo.
+const doctorPrimaryNav: DoctorNavItem[] = [];
+const doctorMoreNav: DoctorNavItem[] = [
   doctorNavOf('inicio'),
   doctorNavOf('agenda'),
   doctorNavOf('pacientes'),
@@ -108,8 +111,10 @@ const doctorPrimaryNav: DoctorNavItem[] = [
   doctorLivesNav,
   doctorNavOf('contenido'),
   doctorNavOf('comunidad'),
+  doctorDirectorioNav,
+  doctorNavOf('aprendizaje'),
+  doctorNavOf('cuenta'),
 ];
-const doctorMoreNav: DoctorNavItem[] = [doctorDirectorioNav, doctorNavOf('aprendizaje'), doctorNavOf('cuenta')];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
 // Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
 const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
