@@ -184,18 +184,13 @@ export default function Login() {
 
 
   const resolvePostLoginRoute = async (userId: string) => {
-    const [profileResult, roleResult] = await Promise.all([
-      supabase.from('profiles').select('onboarding_completed').eq('id', userId).single(),
-      supabase.from('user_roles').select('role').eq('user_id', userId).single(),
-    ]);
+    const { data: profile } = await supabase
+      .from('profiles').select('onboarding_completed').eq('id', userId).single();
 
-    if (!profileResult.data?.onboarding_completed) return '/onboarding';
+    if (!profile?.onboarding_completed) return '/onboarding';
 
-    const role = roleResult.data?.role;
-    // Todos los usuarios (incluidos médicos) aterrizan en la parrilla de Lives al
-    // entrar: el cliente pidió recuperar la pantalla de "todos los en vivo" como
-    // primera vista (antes el médico caía en su panel — 21-oct-2026).
-    if (role === 'admin') return '/admin';
+    // QUIEN SEA que inicie sesión aterriza en la parrilla de Lives, SIN excepción de
+    // rol: ni médicos ni admin van a su panel al entrar (cliente 21-oct-2026).
     return '/lives';
   };
 
