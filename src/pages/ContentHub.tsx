@@ -14,7 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { SectionTabs, useSectionParam } from '@/components/common/SectionTabs';
 import { DOCTOR_SECTION_BY_ID } from '@/lib/doctorSections';
-import { PlaySquare, Loader2, Radio, ArrowRight, Film, Library } from 'lucide-react';
+import { PlaySquare, Loader2, Radio, ArrowRight, Film } from 'lucide-react';
 import ContentCollectionsPanel from '@/components/content/hub/ContentCollectionsPanel';
 import ContentSalesPanel from '@/components/content/hub/ContentSalesPanel';
 import ContentStatsPanel from '@/components/content/hub/ContentStatsPanel';
@@ -69,30 +69,14 @@ export default function ContentHub() {
         {tab === 'explorar' && (
           <div className="space-y-8">
             <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-                  <Film className="w-[18px] h-[18px] text-primary" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="font-heading text-lg font-bold text-foreground leading-tight">Grabaciones</h2>
-                  <p className="text-sm text-muted-foreground">Clases y lives grabados de la comunidad médica.</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <Film className="w-5 h-5 text-primary" />
+                <h2 className="font-heading text-base font-bold text-foreground">Grabaciones</h2>
               </div>
               <Suspense fallback={tabLoader}><RecordingsGrid embedded /></Suspense>
             </section>
             <div className="h-px bg-border/70" />
-            <section className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-                  <Library className="w-[18px] h-[18px] text-primary" />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="font-heading text-lg font-bold text-foreground leading-tight">Contenido publicado</h2>
-                  <p className="text-sm text-muted-foreground">Documentos, casos y material compartido por los médicos.</p>
-                </div>
-              </div>
-              <Suspense fallback={tabLoader}><ContentGallery embedded /></Suspense>
-            </section>
+            <Suspense fallback={tabLoader}><ContentGallery embedded /></Suspense>
           </div>
         )}
 
