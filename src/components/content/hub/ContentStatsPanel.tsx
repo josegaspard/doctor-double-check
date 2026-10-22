@@ -99,7 +99,7 @@ export default function ContentStatsPanel() {
   if (error) {
     return (
       <section className="pro-card pro-card-pad bg-card text-center py-10">
-        <p className="text-sm text-slate-600">{t('mm2.content.hub.stats.loadError')}</p>
+        <p className="text-sm pro-ink">{t('mm2.content.hub.stats.loadError')}</p>
       </section>
     );
   }
