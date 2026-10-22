@@ -96,7 +96,7 @@ export default function ContentSalesPanel() {
   if (error) {
     return (
       <section className="pro-card pro-card-pad bg-card text-center py-10">
-        <p className="text-sm text-slate-600">{t('mm2.content.hub.sales.loadError')}</p>
+        <p className="text-sm pro-ink">{t('mm2.content.hub.sales.loadError')}</p>
         <button type="button" className="pro-btn pro-btn-outline pro-btn-sm mt-3" onClick={load}>{t('pro.common.retry')}</button>
       </section>
     );
