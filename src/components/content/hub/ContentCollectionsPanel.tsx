@@ -178,7 +178,7 @@ export default function ContentCollectionsPanel() {
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">{t('mm2.content.hub.collections.hint')}</p>
+        <p className="text-sm text-white/90">{t('mm2.content.hub.collections.hint')}</p>
         <button type="button" className="pro-btn pro-btn-teal pro-btn-sm flex-shrink-0" onClick={() => setShowCreate(true)}>
           <Plus /> {t('mm2.content.hub.collections.new')}
         </button>
@@ -201,7 +201,7 @@ export default function ContentCollectionsPanel() {
                   {c.is_public ? t('mm2.content.hub.collections.badgePublished') : t('mm2.content.hub.collections.badgeDraft')}
                 </span>
               </div>
-              {c.description && <p className="text-sm text-slate-600 line-clamp-2">{c.description}</p>}
+              {c.description && <p className="text-sm pro-muted line-clamp-2">{c.description}</p>}
               <div className="flex items-center gap-2 text-xs pro-muted flex-wrap">
                 <span>{fill_items(c.items.length, t)}</span>
                 <span>·</span>
