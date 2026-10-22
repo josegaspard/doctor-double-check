@@ -335,7 +335,6 @@ export const DOCTOR_LEGACY_REDIRECTS: DoctorLegacyRedirect[] = [
   { from: '/doctor/recordings', to: s => doctorHref('contenido', { tab: 'grabaciones', sub: s.get('tab') === 'lives-pasados' ? 'lives-pasados' : null }), doctorOnly: false },
   { from: '/doctor/upload', to: () => doctorHref('contenido', { tab: 'crear', crear: 'subir' }), doctorOnly: false },
   { from: '/doctor/books', to: () => doctorHref('contenido', { tab: 'crear', crear: 'libros' }), doctorOnly: false },
-  { from: '/lives', to: s => doctorHref('contenido', { tab: 'lives', vista: s.get('vista') }), doctorOnly: true },
   { from: '/recordings', to: () => doctorHref('contenido', { tab: 'explorar' }), doctorOnly: true },
   { from: '/wallet', to: () => doctorHref('cuenta', { tab: 'finanzas', f: 'wallet' }), doctorOnly: true },
   { from: '/wallet/ledger', to: () => doctorHref('cuenta', { tab: 'finanzas', f: 'movimientos' }), doctorOnly: true },
