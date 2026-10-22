@@ -100,21 +100,21 @@ const doctorDirectorioNav: DoctorNavItem = {
   labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['doctor'],
   sectionId: 'directorio', navId: 'directorio',
 };
-// Cuatro secciones en la píldora y el resto en «Más», para que no se desborde
-// ni se corte en computadora (cliente 21-oct-2026). En móvil, pestañas abajo.
+// Cinco secciones en la píldora (Inicio · Agenda · Mis pacientes · Lives · Contenido);
+// el resto en «Más». La Cuenta NO va aquí, sólo bajo el botón del perfil, para no
+// duplicarla (cliente 21-oct-2026). En móvil, pestañas abajo.
 const doctorPrimaryNav: DoctorNavItem[] = [
   doctorNavOf('inicio'),
   doctorNavOf('agenda'),
   doctorNavOf('pacientes'),
   doctorLivesNav,
+  doctorNavOf('contenido'),
 ];
 const doctorMoreNav: DoctorNavItem[] = [
   doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
-  doctorNavOf('contenido'),
   doctorNavOf('comunidad'),
   doctorDirectorioNav,
   doctorNavOf('aprendizaje'),
-  doctorNavOf('cuenta'),
 ];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
 // Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
