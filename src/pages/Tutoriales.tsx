@@ -11,10 +11,13 @@ import { SectionTabs } from '@/components/common/SectionTabs';
 
 type TutorialRole = 'patient' | 'doctor' | 'resident';
 
+// Fallback a las URL PÚBLICAS del storage (site_settings está bloqueado por RLS para
+// no-admin, así que no se puede depender de él para visitantes/pacientes/residentes).
+const SV = 'https://ouawwfqexfwuptlgoksr.supabase.co/storage/v1/object/public/site-videos/tutoriales';
 const STATIC_FALLBACK: Record<TutorialRole, string> = {
-  doctor: '/tutoriales/tutorial-doctores.mp4',
-  patient: '/tutoriales/tutorial-pacientes.mp4',
-  resident: '/tutoriales/tutorial-residentes.mp4',
+  doctor: `${SV}/tutorial-doctor.mp4`,
+  patient: '',
+  resident: `${SV}/tutorial-resident.mp4`,
 };
 
 const TABS: { role: TutorialRole; label: string; icon: React.ElementType; chip: string; desc: string; points: string[] }[] = [
@@ -33,7 +36,7 @@ function TutorialPlayer({ role }: { role: TutorialRole }) {
   const { videos } = useSiteVideos();
   const [unavailable, setUnavailable] = useState(false);
   const src = videos[`tutorial_${role}` as const] || STATIC_FALLBACK[role];
-  if (unavailable) {
+  if (unavailable || !src) {
     return (
       <section className="pro-card pro-card-pad bg-card text-center py-14">
         <span className="pro-icon-box mx-auto mb-3"><Clapperboard /></span>
