@@ -114,9 +114,13 @@ Deno.serve(async (req) => {
       card.unit = "cobros";
       card.usage = count;
       card.requests = count;
-      card.consumedUsd = feeTotal;                 // comisiones pagadas = coste real
-      card.balanceUsd = available;                 // saldo disponible
-      card.remaining = `Disponible ${available.toFixed(2)} · en tránsito ${pending.toFixed(2)}`;
+      // Los importes de Stripe ya vienen en la moneda de la cuenta (MXN para una
+      // cuenta mexicana): NO se convierten. El volumen procesado es el "ingreso"
+      // que Stripe habilita, base del ROI de la pasarela.
+      card.consumedUsd = feeTotal;                 // comisiones pagadas = coste real (MXN)
+      card.balanceUsd = available;                 // saldo disponible (MXN)
+      card.revenueMxn = grossTotal;                // volumen procesado (MXN)
+      card.remaining = `Disponible ${new Intl.NumberFormat("es-MX").format(Math.round(available))} MXN · en tránsito ${new Intl.NumberFormat("es-MX").format(Math.round(pending))}`;
       card.note = `${count} cobros · volumen ${grossTotal.toFixed(0)} · comisión ${feeTotal.toFixed(2)}`;
     } catch (e) { card.note = `No se pudo leer: ${String((e as Error).message).slice(0, 80)}`; }
     cards.push(card);
@@ -245,10 +249,12 @@ Deno.serve(async (req) => {
 
   // --- Totales y ROI ---
   const out = cards.map((c) => {
-    const costMxn = c.consumedUsd != null ? toMxn(c.consumedUsd) : null;
+    // Stripe informa ya en MXN (moneda de la cuenta); el resto cobra en USD y se convierte.
+    const currency = c.key === "stripe" ? "MXN" : "USD";
+    const costMxn = c.consumedUsd == null ? null : (currency === "MXN" ? c.consumedUsd : toMxn(c.consumedUsd));
     const roi = costMxn && costMxn > 0 ? c.revenueMxn / costMxn : null; // múltiplo de retorno
     const netMxn = costMxn != null ? c.revenueMxn - costMxn : null;
-    return { ...c, costMxn, netMxn, roi };
+    return { ...c, currency, costMxn, netMxn, roi };
   });
   const totalCostMxn = out.reduce((s, c) => s + nz(c.costMxn), 0);
   const totalRevenueMxn = rev.gross;
