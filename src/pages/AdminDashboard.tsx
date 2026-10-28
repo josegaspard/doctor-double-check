@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck, Presentation, QrCode, Ticket, Search, FileSignature
+  ClipboardCheck, Presentation, QrCode, Ticket, Search, FileSignature, Gauge
 } from 'lucide-react';
 
 interface AdminModule {
@@ -71,6 +71,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: t('autoI18n.clAdminDash1'),
       modules: [
         { id: 'analytics', icon: BarChart3, href: '/admin/analytics', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminDash2'), desc: t('autoI18n.clAdminDash3') },
+        { id: 'api-usage', icon: Gauge, href: '/admin/api-usage', color: 'text-info', borderColor: 'border-l-info', title: 'Consumo de APIs y ROI', desc: 'Gasto, saldo, peticiones y retorno de Stripe, Cloudflare, Daily, Bunny y Backblaze' },
         { id: 'qr', icon: QrCode, href: '/admin/qr', color: 'text-info', borderColor: 'border-l-info', title: 'Campañas QR', desc: 'Escaneos del QR impreso (invitaciones a médicos)' },
         { id: 'campaigns', icon: Ticket, href: '/admin/campaigns', color: 'text-warning', borderColor: 'border-l-warning', title: 'Campañas de registro', desc: 'Códigos por tandas de 50 o 100 para dar de alta médicos y residentes' },
         { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash4'), desc: t('autoI18n.clAdminDash5') },

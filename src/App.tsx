@@ -101,6 +101,7 @@ const AdminDoctors = React.lazy(() => import("./pages/AdminDoctors"));
 const AdminResidents = React.lazy(() => import("./pages/AdminResidents"));
 const AdminUsers = React.lazy(() => import("./pages/AdminUsers"));
 const AdminAnalytics = React.lazy(() => import("./pages/AdminAnalytics"));
+const AdminApiUsage = React.lazy(() => import("./pages/AdminApiUsage"));
 const AdminQR = React.lazy(() => import("./pages/AdminQR"));
 const AdminCampaigns = React.lazy(() => import("./pages/AdminCampaigns"));
 const VerificationPending = React.lazy(() => import("./pages/VerificationPending"));
@@ -314,6 +315,7 @@ const App = () => {
                       <Route path="/admin/residents" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminResidents /></AccessGuard>} />
                       <Route path="/admin/users" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminUsers /></AccessGuard>} />
                       <Route path="/admin/analytics" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminAnalytics /></AccessGuard>} />
+                      <Route path="/admin/api-usage" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminApiUsage /></AccessGuard>} />
                       <Route path="/admin/qr" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQR /></AccessGuard>} />
                       <Route path="/admin/campaigns" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminCampaigns /></AccessGuard>} />
                       <Route path="/admin/reports" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminReports /></AccessGuard>} />
