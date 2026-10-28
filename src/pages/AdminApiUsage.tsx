@@ -23,7 +23,7 @@ interface Provider {
   usage: number | null; requests: number | null;
   consumedUsd: number | null; balanceUsd: number | null; remaining: string;
   revenueMxn: number; costMxn: number | null; netMxn: number | null; roi: number | null;
-  available: boolean; note: string;
+  currency?: string; available: boolean; note: string;
 }
 interface UsageData {
   generatedAt: string; days: number; usdMxn: number;
@@ -87,7 +87,7 @@ export default function AdminApiUsage() {
       <td class="r">${p.available ? num(p.requests) : '—'}</td>
       <td class="r">${p.available && p.usage != null ? num(p.usage) + (p.unit ? ' ' + p.unit : '') : '—'}</td>
       <td class="r">${p.available ? mxn(p.costMxn) : '—'}</td>
-      <td class="r">${p.balanceUsd != null ? usd(p.balanceUsd) : '—'}</td>
+      <td class="r">${p.balanceUsd != null ? (p.currency === 'MXN' ? mxn(p.balanceUsd) : usd(p.balanceUsd)) : '—'}</td>
       <td class="r">${mxn(p.revenueMxn)}</td>
       <td class="r ${(p.netMxn ?? 0) >= 0 ? 'g' : 'bad'}">${p.netMxn != null ? mxn(p.netMxn) : '—'}</td>
       <td class="r">${roiFmt(p.roi)}</td></tr>`).join('');
@@ -216,11 +216,11 @@ export default function AdminApiUsage() {
                       </div>
                       {p.available ? (
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                          <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p><p className="text-[9px] text-muted-foreground">{usd(p.consumedUsd)}</p></div>
-                          <div><p className="text-muted-foreground text-[10px]">Ingreso atribuido</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
+                          <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p>{p.currency !== 'MXN' && <p className="text-[9px] text-muted-foreground">{usd(p.consumedUsd)}</p>}</div>
+                          <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Peticiones</p><p className="font-semibold">{num(p.requests)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Consumo{p.unit ? ` (${p.unit})` : ''}</p><p className="font-semibold">{num(p.usage)}</p></div>
-                          <div><p className="text-muted-foreground text-[10px]">Saldo</p><p className="font-semibold">{p.balanceUsd != null ? usd(p.balanceUsd) : '—'}</p></div>
+                          <div><p className="text-muted-foreground text-[10px]">Saldo</p><p className="font-semibold">{p.balanceUsd != null ? (p.currency === 'MXN' ? mxn(p.balanceUsd) : usd(p.balanceUsd)) : '—'}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Beneficio neto</p><p className={`font-semibold ${(p.netMxn ?? 0) >= 0 ? 'text-success' : 'text-destructive'}`}>{mxn(p.netMxn)}</p></div>
                           <div className="col-span-2 pt-1 border-t mt-0.5"><p className="text-[10px] text-muted-foreground">{p.remaining}</p></div>
                         </div>
@@ -274,7 +274,7 @@ export default function AdminApiUsage() {
                           <td className="p-2 text-right">{p.available ? num(p.requests) : '—'}</td>
                           <td className="p-2 text-right">{p.available && p.usage != null ? `${num(p.usage)}${p.unit ? ' ' + p.unit : ''}` : '—'}</td>
                           <td className="p-2 text-right">{p.available ? mxn(p.costMxn) : '—'}</td>
-                          <td className="p-2 text-right">{p.balanceUsd != null ? usd(p.balanceUsd) : '—'}</td>
+                          <td className="p-2 text-right">{p.balanceUsd != null ? (p.currency === 'MXN' ? mxn(p.balanceUsd) : usd(p.balanceUsd)) : '—'}</td>
                           <td className="p-2 text-right text-success">{mxn(p.revenueMxn)}</td>
                           <td className={`p-2 text-right ${(p.netMxn ?? 0) >= 0 ? 'text-success' : 'text-destructive'}`}>{p.netMxn != null ? mxn(p.netMxn) : '—'}</td>
                           <td className="p-2 text-right font-semibold">{roiFmt(p.roi)}</td>
