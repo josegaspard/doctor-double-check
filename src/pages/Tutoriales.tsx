@@ -13,7 +13,7 @@ type TutorialRole = 'patient' | 'doctor' | 'resident';
 
 // Fallback a las URL PÚBLICAS del storage (site_settings está bloqueado por RLS para
 // no-admin, así que no se puede depender de él para visitantes/pacientes/residentes).
-const SV = 'https://ouawwfqexfwuptlgoksr.supabase.co/storage/v1/object/public/site-videos/tutoriales';
+const SV = 'https://api.medical-masters.com/storage/v1/object/public/site-videos/tutoriales';
 const STATIC_FALLBACK: Record<TutorialRole, string> = {
   doctor: `${SV}/tutorial-doctor.mp4`,
   patient: '',
