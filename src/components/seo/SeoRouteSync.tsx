@@ -5,7 +5,7 @@ import { isPrivatePath, normalizePath, type ResolvedSeo } from '@/lib/seo';
 // La primera carga de cada URL ya trae su <head> escrito por middleware.ts. Esto solo
 // actualiza título, descripción, robots y canonical cuando se navega dentro de la app
 // sin recargar, para que la pestaña no se quede con el título de la página anterior.
-const FN = 'https://ouawwfqexfwuptlgoksr.supabase.co/functions/v1/seo-meta';
+const FN = 'https://api.medical-masters.com/functions/v1/seo-meta';
 const TTL_MS = 30_000;
 const cache = new Map<string, { at: number; value: ResolvedSeo }>();
 let lastSiteName = 'Medical Masters';

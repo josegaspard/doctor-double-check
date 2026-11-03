@@ -5,7 +5,7 @@ import type { Database } from './types';
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-// Producción real — proyecto Supabase "doctores" (ref: ouawwfqexfwuptlgoksr).
+// Producción real — Supabase self-hosted en el VPS (api.medical-masters.com) desde el 27-oct-2026.
 // Estos valores son PÚBLICOS (la URL y la anon key viajan en el bundle del
 // cliente de todas formas), por eso es seguro fijarlos como respaldo.
 //
@@ -14,9 +14,9 @@ import type { Database } from './types';
 // .env), TODA la app cae — auth, lives, go-live con Daily, etc., porque cada
 // request iría a un host inexistente. Anclar producción aquí hace imposible
 // desplegar un build que apunte a un Supabase muerto.
-const PROD_SUPABASE_URL = 'https://ouawwfqexfwuptlgoksr.supabase.co';
+const PROD_SUPABASE_URL = 'https://api.medical-masters.com';
 const PROD_SUPABASE_PUBLISHABLE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91YXd3ZnFleGZ3dXB0bGdva3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNjkyOTcsImV4cCI6MjA5MzY0NTI5N30.9SYYLgXAJ_S07ok8iayL8MmU1ZTlIFQmvFKvysTiq7E';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkzMTE4OTY5LCJleHAiOjIxMDg0Nzg5Njl9.zWjJNAzQ8lP_qZbZ_3tXFerbZduRj3kLIj0KJYtWhNY';
 
 const envUrl = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
 const envKey = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '').trim();
