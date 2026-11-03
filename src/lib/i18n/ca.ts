@@ -921,6 +921,7 @@ export const ca = {
     "register": "Registra't",
     "orContinueWith": "O continua amb",
     "continueWithGoogle": "Continuar amb Google",
+    "continueWithX": "Continuar amb X",
     "continueWithApple": "Continuar amb Apple",
     "loginTab": "Iniciar sessió",
     "registerTab": "Registrar-se",

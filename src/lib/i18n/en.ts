@@ -987,6 +987,7 @@ export const en = {
     register: "Sign up",
     orContinueWith: "Or continue with",
     continueWithGoogle: "Continue with Google",
+    continueWithX: "Continue with X",
     continueWithApple: "Continue with Apple",
     loginTab: "Log In",
     registerTab: "Sign Up",

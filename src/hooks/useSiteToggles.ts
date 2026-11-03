@@ -45,6 +45,10 @@ export interface SiteToggles {
   // Bloquea el registro desde VPN/proxy/datacenter (2026-08-28). APAGADO por
   // defecto: primero se mira el registro de veredictos, luego se cierra.
   block_vpn_signup: boolean;
+  // Botones «Continuar con Google» y «Continuar con X» en login y registro
+  // (2026-11-03). ENCENDIDOS por defecto.
+  enable_google_login: boolean;
+  enable_x_login: boolean;
 }
 
 const DEFAULT_TOGGLES: SiteToggles = {
@@ -67,6 +71,8 @@ const DEFAULT_TOGGLES: SiteToggles = {
   enable_lives_patients: false,
   enable_content_ratings: true,
   block_vpn_signup: false,
+  enable_google_login: true,
+  enable_x_login: true,
 };
 
 let cachedToggles: SiteToggles | null = null;

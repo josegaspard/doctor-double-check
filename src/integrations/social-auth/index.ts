@@ -9,7 +9,7 @@ type SignInOptions = {
 export const socialAuth = {
   auth: {
     signInWithOAuth: async (
-      provider: "google" | "apple",
+      provider: "google" | "apple" | "x",
       opts?: SignInOptions,
     ) => {
       const { data, error } = await supabase.auth.signInWithOAuth({

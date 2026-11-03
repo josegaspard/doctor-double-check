@@ -46,6 +46,18 @@ export default function Login() {
     // sesión aún abierta (re-QA 3-oct-2026).
     let loginFormPending = false;
     try { loginFormPending = sessionStorage.getItem('mm_login_form_pending') === '1'; } catch { /* noop */ }
+    // Vuelta de Google o X: el alta nueva nace como 'visitor' y va al Onboarding;
+    // quien ya lo completó, a su destino normal.
+    let oauthPending = false;
+    try { oauthPending = sessionStorage.getItem('mm_oauth_pending') === '1'; } catch { /* noop */ }
+    if (!isLoading && isAuthenticated && oauthPending) {
+      try { sessionStorage.removeItem('mm_oauth_pending'); } catch { /* noop */ }
+      supabase.auth.getSession().then(async ({ data }) => {
+        const uid = data.session?.user?.id;
+        if (uid) navigate(await resolvePostLoginRoute(uid), { replace: true });
+      });
+      return;
+    }
     if (!isLoading && isAuthenticated && role && role !== 'visitor' && !loginAttemptedHere.current && !loginFormPending) {
       navigate('/lives', { replace: true });
     }
@@ -145,6 +157,7 @@ export default function Login() {
   // Candado "solo México" del súper admin (apagado por defecto → no hace nada).
   const countryGate = useSignupCountryGate();
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [xLoading, setXLoading] = useState(false);
   // Casillas de aceptación obligatorias en el registro (pedido cliente 2026-06-30):
   // T&C + Privacidad para TODOS; Código de Ética solo doctor/residente.
   const [acceptedLegal, setAcceptedLegal] = useState(false);
@@ -178,9 +191,11 @@ export default function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerSignupCode]);
 
-  // MIGRATION 2026-05-08: OAuth temporalmente deshabilitado hasta que el cliente
-  // tenga su propio OAuth client en Google Cloud. Flip a true para reactivar.
-  const OAUTH_ENABLED = false;
+  // Login y registro con Google y X (2026-11-03). Cada botón se enciende y se
+  // apaga desde Ajustes del sitio, sin desplegar.
+  const GOOGLE_ENABLED = toggles.enable_google_login !== false;
+  const X_ENABLED = toggles.enable_x_login !== false;
+  const OAUTH_ENABLED = GOOGLE_ENABLED || X_ENABLED;
 
 
   const resolvePostLoginRoute = async (userId: string) => {
@@ -212,8 +227,38 @@ export default function Login() {
     return false;
   };
 
+  // El proveedor no devuelve el rol: se guarda el elegido en el formulario para
+  // que el Onboarding lo traiga marcado al volver.
+  const rememberOAuthRole = () => {
+    try {
+      sessionStorage.setItem('mm_oauth_role', registerRole);
+      sessionStorage.setItem('mm_oauth_pending', '1');
+    } catch { /* noop */ }
+  };
+
+  const handleXLogin = async () => {
+    loginAttemptedHere.current = true;
+    rememberOAuthRole();
+    setXLoading(true);
+    try {
+      const result = await socialAuth.auth.signInWithOAuth('x', {
+        redirect_uri: `${window.location.origin}/login`,
+      });
+      if (result.error) {
+        toast.error(t('authErrors.googleLoginError').replace('Google', 'X'));
+        console.error('X login error:', result.error);
+      }
+    } catch (error) {
+      toast.error(t('authErrors.googleConnectError').replace('Google', 'X'));
+      console.error('X login error:', error);
+    } finally {
+      setXLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     loginAttemptedHere.current = true;
+    rememberOAuthRole();
     setGoogleLoading(true);
     try {
       const result = await socialAuth.auth.signInWithOAuth('google', {
@@ -578,6 +623,7 @@ export default function Login() {
                         </span>
                       </div>
 
+                      {GOOGLE_ENABLED && (
                       <Button
                         variant="outline"
                         className="w-full"
@@ -596,6 +642,22 @@ export default function Login() {
                         )}
                         {t('login.continueWithGoogle')}
                       </Button>
+                      )}
+                      {X_ENABLED && (
+                        <Button
+                          variant="outline"
+                          className="w-full mt-2"
+                          onClick={handleXLogin}
+                          disabled={xLoading}
+                        >
+                          {xLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                          )}
+                          {t('login.continueWithX')}
+                        </Button>
+                      )}
                     </>
                   )}
 
@@ -960,6 +1022,7 @@ export default function Login() {
                           </span>
                         </div>
 
+                        {GOOGLE_ENABLED && (
                         <Button
                           variant="outline"
                           className="w-full"
@@ -978,6 +1041,22 @@ export default function Login() {
                           )}
                           {t('login.continueWithGoogle')}
                         </Button>
+                        )}
+                        {X_ENABLED && (
+                          <Button
+                            variant="outline"
+                            className="w-full mt-2"
+                            onClick={handleXLogin}
+                            disabled={xLoading}
+                          >
+                            {xLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                            )}
+                            {t('login.continueWithX')}
+                          </Button>
+                        )}
                       </>
                     )}
 

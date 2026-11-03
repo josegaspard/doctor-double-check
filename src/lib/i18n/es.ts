@@ -975,6 +975,7 @@ export const es = {
     register: 'Regístrate',
     orContinueWith: 'O continúa con',
     continueWithGoogle: 'Continuar con Google',
+    continueWithX: 'Continuar con X',
     continueWithApple: 'Continuar con Apple',
     loginTab: 'Iniciar Sesión',
     registerTab: 'Registrarse',

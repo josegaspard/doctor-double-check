@@ -197,8 +197,19 @@ export default function Onboarding() {
   const { t, language } = useLanguage();
   const { specialtiesList: MEDICAL_SPECIALTIES } = useSpecialties();
 
+  // Alta con Google o X (2026-11-03): la cuenta nace como 'visitor' y el rol se
+  // elige aquí. Viene marcado el que eligió en el formulario antes de salir.
+  const oauthRole = (): OnboardingRole => {
+    try {
+      const r = sessionStorage.getItem('mm_oauth_role');
+      if (r === 'doctor' || r === 'resident') return r;
+    } catch { /* noop */ }
+    return 'doctor';
+  };
+
   const resolveInitialRole = (): OnboardingRole => {
-    const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | undefined;
+    const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | 'visitor' | undefined;
+    if (r === 'visitor') return oauthRole();
     return r === 'doctor' || r === 'resident' || r === 'patient' ? r : 'patient';
   };
 
@@ -213,6 +224,9 @@ export default function Onboarding() {
     const r = (user?.role || (supabaseUser?.user_metadata as any)?.role) as OnboardingRole | undefined;
     if (r === 'doctor' || r === 'resident' || r === 'patient') {
       setSelectedRole(r);
+      setRoleHydrated(true);
+    } else if ((r as string) === 'visitor') {
+      setSelectedRole(oauthRole());
       setRoleHydrated(true);
     }
   }, [user?.role, supabaseUser, roleHydrated]);
@@ -1138,6 +1152,27 @@ export default function Onboarding() {
                       initial="initial"
                       animate="animate"
                     >
+                      {/* Rol: solo para quien se registró con Google o X */}
+                      {user?.role === 'visitor' && (
+                        <motion.div variants={itemVariants} className="space-y-2">
+                          <Label>{t('roles.doctor')} / {t('roles.resident')}</Label>
+                          <div className="grid grid-cols-2 gap-3">
+                            {(['doctor', 'resident'] as const).map((r) => (
+                              <Button
+                                key={r}
+                                type="button"
+                                variant={selectedRole === r ? 'default' : 'outline'}
+                                className="h-auto py-3 flex flex-col gap-1"
+                                onClick={() => handleRoleSelect(r)}
+                              >
+                                {r === 'doctor' ? <Stethoscope className="w-5 h-5" /> : <GraduationCap className="w-5 h-5" />}
+                                <span>{t(`roles.${r}`)}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+
                       {/* Avatar Upload */}
                       {supabaseUser && (
                         <motion.div variants={itemVariants}>
