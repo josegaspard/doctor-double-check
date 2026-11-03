@@ -217,6 +217,8 @@ export default function AdminSiteSettings() {
     enable_lives_patients: false,
     enable_content_ratings: true,
     block_vpn_signup: false,
+    enable_google_login: true,
+    enable_x_login: true,
   });
 
   // Categorías de perfil (cliente 2026-08-28): el distintivo es fijo (estrella /
@@ -1682,6 +1684,8 @@ export default function AdminSiteSettings() {
                     { key: 'enable_lives_residents' as const, label: 'Lives: pueden emitir los RESIDENTES', desc: 'Apagado (por defecto, 28-ago-2026) = los residentes ven y participan en los lives pero NO pueden emitir. Encendido = los residentes aprobados también pueden iniciar transmisiones; en la parrilla de lives aparecen pestañas Médicos / Residentes y cada live lleva la etiqueta de quién lo emite. Se cambia aquí sin desplegar nada.' },
                     { key: 'enable_lives_patients' as const, label: 'Lives: pueden emitir los PACIENTES', desc: 'Apagado (por defecto). Sólo tiene efecto si además está encendido el acceso para pacientes. Está aquí por si algún día lo piden: es un switch, no un desarrollo.' },
                     { key: 'enable_content_ratings' as const, label: 'Reseñas con estrellas (contenido y lives)', desc: 'Encendido (por defecto) = cualquier usuario puede puntuar de 1 a 5 estrellas el contenido publicado, los lives y las grabaciones. Regla del cliente (28-ago-2026): puntúa todo el mundo MENOS un residente a un paciente, y nadie a sí mismo. Apagado = se ocultan las estrellas en toda la web.' },
+                    { key: 'enable_google_login' as const, label: 'Entrar y registrarse con Google', desc: 'Encendido (por defecto) = en el login y en el registro aparece «Continuar con Google». Quien se registra así elige si es médico o residente en el Onboarding y pasa por la misma verificación que el resto. Cada alta te llega como aviso y queda en Usuarios › Accesos con Google y X.' },
+                    { key: 'enable_x_login' as const, label: 'Entrar y registrarse con X', desc: 'Encendido (por defecto) = en el login y en el registro aparece «Continuar con X». Mismo recorrido que con Google: elige rol en el Onboarding, aviso al admin en cada alta y registro en Usuarios › Accesos con Google y X.' },
                     { key: 'block_vpn_signup' as const, label: 'Bloquear registro desde VPN / proxy', desc: 'Apagado (por defecto) = se REGISTRA el veredicto de cada intento de registro (VPN, proxy, datacenter, Tor) pero no se bloquea a nadie. Encendido = quien se registre desde una VPN o proxy ve un aviso y no puede completar el alta. Las IPs de la lista blanca nunca se bloquean.' },
                     { key: 'show_news_section' as const, label: t('adminSiteSettingsPage.toggles.items.newsSection.label'), desc: t('adminSiteSettingsPage.toggles.items.newsSection.desc') },
                     { key: 'show_content_medical' as const, label: t('adminSiteSettingsPage.toggles.items.contentMedical.label'), desc: t('adminSiteSettingsPage.toggles.items.contentMedical.desc') },

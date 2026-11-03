@@ -29,7 +29,22 @@ interface UserData {
   is_identity_verified: boolean;
   onboarding_completed: boolean;
   role?: string;
+  providers?: string[];
 }
+
+// Registro de altas y accesos con Google y X (tabla auth_provider_events, 2026-11-03).
+interface ProviderEvent {
+  id: number;
+  user_id: string;
+  email: string | null;
+  name: string | null;
+  provider: string;
+  event: 'signup' | 'login' | 'link';
+  created_at: string;
+}
+
+const PROVIDER_LABEL: Record<string, string> = { google: 'Google', x: 'X', twitter: 'X', email: 'Correo' };
+const EVENT_LABEL: Record<string, string> = { signup: 'Alta', login: 'Acceso', link: 'Vinculó cuenta' };
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -40,6 +55,8 @@ export default function AdminUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [providerFilter, setProviderFilter] = useState<string>('all');
+  const [providerEvents, setProviderEvents] = useState<ProviderEvent[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
   useEffect(() => {
@@ -53,7 +70,17 @@ export default function AdminUsers() {
       return;
     }
     fetchUsers();
+    fetchProviderEvents();
   }, [user, navigate]);
+
+  const fetchProviderEvents = async () => {
+    const { data, error } = await supabase
+      .from('auth_provider_events' as any)
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (!error) setProviderEvents((data || []) as unknown as ProviderEvent[]);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -63,6 +90,11 @@ export default function AdminUsers() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      const { data: providerRows } = await supabase.rpc('admin_user_providers' as any);
+      const providersByUser = new Map<string, string[]>(
+        ((providerRows || []) as { user_id: string; providers: string[] }[]).map((r) => [r.user_id, r.providers])
+      );
 
       const usersWithRoles = await Promise.all(
         (profiles || []).map(async (profile) => {
@@ -74,6 +106,7 @@ export default function AdminUsers() {
           return { 
             ...profile, 
             role: roleData?.role || 'patient',
+            providers: providersByUser.get(profile.id) || [],
             onboarding_completed: profile.onboarding_completed || false,
           } as UserData;
         })
@@ -93,7 +126,12 @@ export default function AdminUsers() {
       u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesProvider =
+      providerFilter === 'all' ||
+      (providerFilter === 'email'
+        ? !(u.providers || []).some((p) => p !== 'email')
+        : (u.providers || []).includes(providerFilter));
+    return matchesSearch && matchesRole && matchesProvider;
   });
 
   const getRoleIcon = (role: string) => {
@@ -182,6 +220,39 @@ export default function AdminUsers() {
           })}
         </div>
 
+        {/* Accesos con Google y X */}
+        <Card className="mb-6 bg-white border-2 border-primary/20 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="font-semibold text-secondary">Accesos con Google y X</h2>
+              <span className="text-xs text-secondary/70">
+                {providerEvents.filter((e) => e.event === 'signup').length} altas · {providerEvents.filter((e) => e.event === 'login').length} accesos (últimos 50 movimientos)
+              </span>
+            </div>
+            {providerEvents.length === 0 ? (
+              <p className="text-sm text-secondary/70">Todavía nadie ha entrado ni se ha registrado con Google o X.</p>
+            ) : (
+              <div className="divide-y divide-border max-h-72 overflow-y-auto">
+                {providerEvents.map((e) => (
+                  <div key={e.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 py-2 text-sm">
+                    <div className="min-w-0">
+                      <span className="font-medium text-secondary">{e.name || e.email || e.user_id}</span>
+                      {e.name && e.email && <span className="text-secondary/70"> · {e.email}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge variant="outline" className="text-[10px] h-5">{PROVIDER_LABEL[e.provider] || e.provider}</Badge>
+                      <Badge variant="outline" className={`text-[10px] h-5 ${e.event === 'signup' ? 'bg-primary text-white border-primary' : ''}`}>
+                        {EVENT_LABEL[e.event] || e.event}
+                      </Badge>
+                      <span className="text-xs text-secondary/70">{new Date(e.created_at).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-4">
@@ -206,6 +277,17 @@ export default function AdminUsers() {
                   <SelectItem value="resident">{t('admin.residents')}</SelectItem>
                   <SelectItem value="patient">{t('admin.patients')}</SelectItem>
                   <SelectItem value="visitor">{t('admin.visitors')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={providerFilter} onValueChange={setProviderFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Cómo entra" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Cualquier acceso</SelectItem>
+                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="x">X</SelectItem>
+                  <SelectItem value="email">Solo correo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -239,6 +321,11 @@ export default function AdminUsers() {
                          <div className="flex items-center gap-1.5 flex-wrap">
                            <h3 className="font-medium text-sm truncate">{userData.name || t('admin.noName')}</h3>
                            {getRoleBadge(userData.role || 'patient')}
+                           {(userData.providers || []).filter((p) => p !== 'email').map((p) => (
+                             <Badge key={p} variant="outline" className="text-[10px] h-5 font-semibold">
+                               {PROVIDER_LABEL[p] || p}
+                             </Badge>
+                           ))}
                            {userData.is_identity_verified && (
                              <Badge variant="outline" className="bg-primary text-white border-primary text-[10px] h-5 font-semibold">
                                <Check className="inline w-3 h-3 mr-0.5" aria-hidden="true" />{t('admin.verified')}

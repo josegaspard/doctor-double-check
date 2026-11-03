@@ -976,6 +976,7 @@ export const de = {
     register: "Registrieren",
     orContinueWith: "Oder fortfahren mit",
     continueWithGoogle: "Mit Google fortfahren",
+    continueWithX: "Mit X fortfahren",
     continueWithApple: "Mit Apple fortfahren",
     loginTab: "Anmelden",
     registerTab: "Registrieren",

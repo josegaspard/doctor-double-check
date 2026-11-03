@@ -922,6 +922,7 @@ export const zh = {
     "register": "立即注册",
     "orContinueWith": "或使用以下方式继续",
     "continueWithGoogle": "使用 Google 继续",
+    "continueWithX": "使用 X 继续",
     "continueWithApple": "使用 Apple 继续",
     "loginTab": "登录",
     "registerTab": "注册",
