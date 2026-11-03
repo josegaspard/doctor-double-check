@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createHmac } from "node:crypto";
+import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -131,6 +132,18 @@ Deno.serve(async (req) => {
         if (expected.length === v1.length) {
           let diff = 0;
           for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ v1.charCodeAt(i);
+          if (diff === 0) valid = true;
+        }
+      }
+      // Formato real de Daily: base64(HMAC-SHA256(base64decode(secreto), "<X-Webhook-Timestamp>.<cuerpo>")).
+      const dailyTs = req.headers.get("x-webhook-timestamp");
+      if (!valid && dailyTs) {
+        const expected = createHmac("sha256", Buffer.from(dailyWebhookSecret, "base64"))
+          .update(`${dailyTs}.${rawBody}`)
+          .digest("base64");
+        if (expected.length === dailySignature.length) {
+          let diff = 0;
+          for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ dailySignature.charCodeAt(i);
           if (diff === 0) valid = true;
         }
       }
