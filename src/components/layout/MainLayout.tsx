@@ -135,7 +135,7 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
   // Residente: el Chat ya está en el icono de la cabecera; en el menú salía repetido (cliente 4-nov-2026).
   { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient'] },
-  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
+  { labelKey: 'nav.soyMedico', shortLabelKey: 'nav.soyMedicoShort', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
     : []),
@@ -305,6 +305,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }
     // Paciente: todos directos (cliente 2026-07-09); resto: 5 + Más.
     if (role === 'patient') return { primaryNav: filteredNavItems, moreNav: [] as NavItem[] };
+    // Residente: 4 + Más. Con 5 la píldora se desbordaba y «Marketplace» quedaba cortado (4-nov-2026).
+    if (role === 'resident') return { primaryNav: filteredNavItems.slice(0, 4), moreNav: filteredNavItems.slice(4) };
     return { primaryNav: filteredNavItems.slice(0, 5), moreNav: filteredNavItems.slice(5) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, filteredNavItems, disabledHrefs, toggles]);
@@ -449,9 +451,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <span className={active ? 'hidden md:inline' : 'hidden xl:inline'}>{label}</span>
                     </Link>
                   ) : (
-                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
-                      <span className="hidden xl:inline">{label}</span>
-                      <span className="xl:hidden">{t(item.shortLabelKey || item.labelKey)}</span>
+                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} title={label}>
+                      {/* Residente: siempre la etiqueta corta, para que sus 4 pestañas quepan enteras. */}
+                      <span className={role === 'resident' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
+                      <span className={role === 'resident' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
                 })}
@@ -470,7 +473,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
                   }`}
                 >
-                  <MessageSquare className="w-5 h-5" />
+                  {/* Icono de personas: con el bocadillo parecía un segundo «Chat» (cliente 4-nov-2026). */}
+                  <Users className="w-5 h-5" />
                   <span className="hidden lg:inline">{t('forum.title')}</span>
                 </Link>
               )}
