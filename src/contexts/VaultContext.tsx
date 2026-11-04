@@ -70,8 +70,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     if (!user?.id || user.role === 'visitor') return;
 
     try {
-      if (user.role === 'patient') {
-        // Fetch patient's own files
+      if (user.role === 'patient' || user.role === 'resident') {
+        // Archivos propios (paciente o residente: los dos usan «Mis Estudios»)
         const { data: vaultFiles } = await supabase
           .from('vault_files')
           .select('*')

@@ -9152,6 +9152,8 @@ export const es = {
       railPatients: 'Pacientes',
       railDoctors: 'Médicos',
       railProviders: 'Proveedores',
+      railGroups: 'Grupos',
+      newGroup: 'Nuevo grupo',
       railOrientations: 'Orientaciones',
       railRoom: 'Sala verificada',
       railClosed: 'Finalizadas',

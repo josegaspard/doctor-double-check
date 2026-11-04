@@ -10971,6 +10971,8 @@ export const zh = {
       railPatients: '患者',
       railDoctors: '医生',
       railProviders: '卖家',
+      railGroups: '群组',
+      newGroup: '新建群组',
       railOrientations: '咨询',
       railRoom: '认证聊天室',
       railClosed: '已结束',

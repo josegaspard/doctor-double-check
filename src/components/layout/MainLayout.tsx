@@ -59,6 +59,7 @@ import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import { DiscoverGate } from '@/components/DiscoverGate';
+import { useResidentGroups } from '@/components/chat/ResidentGroups';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -110,10 +111,16 @@ const doctorPrimaryNav: DoctorNavItem[] = [
   doctorLivesNav,
   doctorNavOf('contenido'),
 ];
+// Marketplace también para el médico (cliente 4-nov-2026; antes solo lo veía el residente).
+const doctorMarketplaceNav: DoctorNavItem = {
+  labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor'],
+  sectionId: 'marketplace', navId: 'marketplace',
+};
 const doctorMoreNav: DoctorNavItem[] = [
   doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
   doctorNavOf('comunidad'),
   doctorDirectorioNav,
+  ...(FEATURE_FLAGS.marketplaceFeeModel ? [doctorMarketplaceNav] : []),
   doctorNavOf('aprendizaje'),
 ];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
@@ -126,7 +133,8 @@ const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'resident'] },
+  // Residente: el Chat ya está en el icono de la cabecera; en el menú salía repetido (cliente 4-nov-2026).
+  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient'] },
   { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
@@ -178,12 +186,11 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // resident
+  // resident — sin Chat abajo: ya está en la cabecera (salía repetido, cliente 4-nov-2026)
   return [
     lives,
     { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
     { label: t('nav.soyMedicoShort'), href: '/doctors', icon: Stethoscope },
-    { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
   ];
 }
 
@@ -241,13 +248,15 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   // Get unread chat count - useChat is always available since ChatProvider wraps MainLayout
   const { getSessionsByUser } = useChat();
+  // Residente: los mensajes sin leer de sus grupos también suman en el icono del Chat.
+  const { unreadTotal: groupUnread } = useResidentGroups(role === 'resident');
   const chatUnread = useMemo(() => {
     const sessions = getSessionsByUser();
     return sessions.reduce((sum, s) => {
       if (s.status !== 'active') return sum;
       return sum + (s.unreadCount || 0);
-    }, 0);
-  }, [getSessionsByUser]);
+    }, 0) + (role === 'resident' ? groupUnread : 0);
+  }, [getSessionsByUser, groupUnread, role]);
 
   // Funciones activables/desactivables desde el admin.
   const disabledHrefs = useMemo(() => {
@@ -336,6 +345,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     // Lives y Contenido separados: en /lives sólo se ilumina Lives, no Contenido.
     if (item.navId === 'lives') return onLives;
     if (item.navId === 'directorio') return location.pathname === '/doctors';
+    if (item.navId === 'marketplace') return location.pathname.startsWith('/marketplace');
     if (item.sectionId === 'contenido') return activeSection === 'contenido' && !onLives;
     return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
   };
