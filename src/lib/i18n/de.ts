@@ -9011,6 +9011,8 @@ export const de = {
       railPatients: 'Patienten',
       railDoctors: 'Ärzte',
       railProviders: 'Dienstleister',
+      railGroups: 'Gruppen',
+      newGroup: 'Neue Gruppe',
       railOrientations: 'Beratungen',
       railRoom: 'Verifizierter Raum',
       railClosed: 'Abgeschlossen',

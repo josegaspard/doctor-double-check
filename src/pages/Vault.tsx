@@ -244,13 +244,17 @@ export default function Vault() {
     }
   }, [supabaseUser?.id]);
 
+  // «Mis Estudios» es del paciente y también del residente (cliente 4-nov-2026:
+  // en residentes abría en blanco porque aquí solo se dejaba pasar al paciente).
+  const ownsVault = role === 'patient' || role === 'resident';
+
   useEffect(() => {
-    if (role === 'patient' && supabaseUser?.id) {
+    if (ownsVault && supabaseUser?.id) {
       fetchRelatedDoctors();
     }
-  }, [role, supabaseUser?.id, fetchRelatedDoctors]);
+  }, [ownsVault, supabaseUser?.id, fetchRelatedDoctors]);
 
-  if (role !== 'patient') return null;
+  if (!ownsVault) return null;
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

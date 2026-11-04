@@ -10970,6 +10970,8 @@ export const ca = {
       railPatients: 'Pacients',
       railDoctors: 'Metges',
       railProviders: 'Proveïdors',
+      railGroups: 'Grups',
+      newGroup: 'Nou grup',
       railOrientations: 'Orientacions',
       railRoom: 'Sala verificada',
       railClosed: 'Finalitzades',

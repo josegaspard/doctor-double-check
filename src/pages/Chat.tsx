@@ -18,15 +18,18 @@ import { TriageChat } from '@/components/chat/TriageChat';
 import { ProChatList, ConvSort } from '@/components/chat/ProChatList';
 import { ChatClinicalContext } from '@/components/chat/ChatClinicalContext';
 import {
+  useResidentGroups, ResidentGroupList, ResidentGroupThread, ResidentGroupMembers, CreateResidentGroupDialog,
+} from '@/components/chat/ResidentGroups';
+import {
   MessageSquare, Loader2, Users, User, Stethoscope, Store, Sparkles, CheckCircle2,
-  Archive, Plus, ChevronDown, ClipboardList, PanelRightOpen,
+  Archive, Plus, ChevronDown, ClipboardList, PanelRightOpen, UsersRound,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostConsultationSummaryDialog } from '@/components/chat/PostConsultationSummaryDialog';
 import { norm } from '@/lib/proFormat';
 
-/** Secciones del carril izquierdo (relación + archivo) */
-type View = 'all' | 'patients' | 'doctors' | 'providers' | 'orientations' | 'badge' | 'closed' | 'archived';
+/** Secciones del carril izquierdo (relación + archivo). «groups» = grupos entre residentes. */
+type View = 'all' | 'patients' | 'doctors' | 'providers' | 'groups' | 'orientations' | 'badge' | 'closed' | 'archived';
 
 const archiveKey = (userId?: string) => `mm_chat_archived_${userId || 'anon'}`;
 
@@ -53,6 +56,12 @@ export default function Chat() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<ConvSort>('recent');
   const [contextOpen, setContextOpen] = useState(false);
+  // Grupos entre residentes (cliente 4-nov-2026: sustituyen a «Proveedores» en el residente).
+  const isResident = role === 'resident';
+  const residentGroups = useResidentGroups(isResident);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const selectedGroup = residentGroups.groups.find(g => g.id === selectedGroupId) || null;
 
   // Archivo del propio médico: no borra nada ni toca la base, sólo decide qué
   // ve él en su lista. Se guarda en su navegador.
@@ -145,7 +154,9 @@ export default function Chat() {
       // no quede oculta por el filtro que hubiera puesto antes.
       if (session.status === 'closed') setView('closed');
       else if (session.is_double_check) setView('orientations');
-      else if (session.marketplace_interest_id && (role === 'doctor' || role === 'resident')) setView('providers');
+      // El residente ya no tiene sección «Proveedores»: el chat de una orden del
+      // marketplace se abre igual (desde el propio marketplace), sin carril propio.
+      else if (session.marketplace_interest_id && role === 'doctor') setView('providers');
       else setView(role === 'resident' ? 'doctors' : 'all');
 
       setActiveTab(session.status === 'closed' ? 'history' : 'active');
@@ -156,6 +167,18 @@ export default function Chat() {
       setSearchParams({}, { replace: true });
     })();
   }, [searchParams, user?.id]);
+
+  // ?group= (aviso «Te agregaron a un grupo»): abre el grupo de residentes.
+  useEffect(() => {
+    const groupParam = searchParams.get('group');
+    if (!groupParam || !isResident) return;
+    setView('groups');
+    setSelectedSession(null);
+    setSelectedGroupId(groupParam);
+    residentGroups.refresh();
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isResident]);
 
   // Handle Stripe redirect: ?consultation=success&doctor=X
   useEffect(() => {
@@ -385,11 +408,12 @@ export default function Chat() {
 
   // ------------------------------------------------------------ carril + lista
   const countFor = useCallback((v: View) => {
+    if (v === 'groups') return residentGroups.unreadTotal;
     if (v === 'archived') return allSessions.filter(s => archivedIds.has(s.id)).length;
     if (v === 'closed') return allSessions.filter(s => s.status === 'closed' && !archivedIds.has(s.id)).length;
     return allSessions.filter(s => s.status === 'active' && !archivedIds.has(s.id) && matchesRelation(s, v)).length;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allSessions, archivedIds, user?.id]);
+  }, [allSessions, archivedIds, user?.id, residentGroups.unreadTotal]);
 
   const visibleSessions = useMemo(() => {
     const q = norm(query.trim());
@@ -478,17 +502,20 @@ export default function Chat() {
     );
   }
 
-  const showMobileChat = isMobile && !!selectedSession;
-  const showMobileList = isMobile && !selectedSession;
+  const inGroups = isResident && view === 'groups';
+  const hasOpenThread = inGroups ? !!selectedGroupId : !!selectedSession;
+  const showMobileChat = isMobile && hasOpenThread;
+  const showMobileList = isMobile && !hasOpenThread;
 
   // Secciones del carril según el rol: sólo se enseña lo que ese rol usa.
+  // Residente (cliente 4-nov-2026): sin «Proveedores»; en su lugar, «Grupos» entre residentes.
   const relationViews: View[] = role === 'doctor'
     ? ['all', 'patients', 'doctors', 'providers', 'orientations']
     : role === 'resident'
-      ? ['doctors', 'providers', 'orientations']
+      ? ['doctors', 'groups', 'orientations']
       : ['all', 'orientations'];
   const railIcon: Record<View, React.ElementType> = {
-    all: Users, patients: User, doctors: Stethoscope, providers: Store, orientations: Sparkles,
+    all: Users, patients: User, doctors: Stethoscope, providers: Store, groups: UsersRound, orientations: Sparkles,
     badge: CheckCircle2, closed: CheckCircle2, archived: Archive,
   };
   const railLabel = (v: View) => ({
@@ -496,6 +523,7 @@ export default function Chat() {
     patients: t('pro.chatPro.railPatients'),
     doctors: t('pro.chatPro.railDoctors'),
     providers: t('pro.chatPro.railProviders'),
+    groups: t('pro.chatPro.railGroups'),
     orientations: t('pro.chatPro.railOrientations'),
     badge: t('pro.chatPro.railRoom'),
     closed: t('pro.chatPro.railClosed'),
@@ -515,7 +543,7 @@ export default function Chat() {
         type="button"
         className={`pro-lane-item ${view === v ? 'is-active' : ''}`}
         aria-pressed={view === v}
-        onClick={() => { setView(v); setSelectedSession(null); }}
+        onClick={() => { setView(v); setSelectedSession(null); setSelectedGroupId(null); }}
       >
         {v === 'badge' && hasBadgeRoom
           ? <img src={myBadge === 'gold' ? '/badge-gold.png' : '/badge-verified.png'} alt="" aria-hidden="true" className="w-[18px] h-[18px] object-contain flex-shrink-0" />
@@ -560,6 +588,11 @@ export default function Chat() {
         <DropdownMenuItem onClick={() => navigate('/doctors')}>
           <Stethoscope className="w-4 h-4 mr-2" /> {t('pro.chatPro.railDoctors')}
         </DropdownMenuItem>
+        {isResident && (
+          <DropdownMenuItem onClick={() => { setView('groups'); setSelectedSession(null); setCreateGroupOpen(true); }}>
+            <UsersRound className="w-4 h-4 mr-2" /> {t('pro.chatPro.newGroup')}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -602,8 +635,42 @@ export default function Chat() {
               {rail}
             </nav>
 
+            {/* Grupos entre residentes: lista · conversación · miembros, en la misma rejilla */}
+            {inGroups && (
+              <>
+                <div className={`pro-col ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
+                  <ResidentGroupList
+                    groups={residentGroups.groups}
+                    loading={residentGroups.loading}
+                    selectedId={selectedGroupId}
+                    onSelect={setSelectedGroupId}
+                    onCreate={() => setCreateGroupOpen(true)}
+                  />
+                </div>
+                <div className={`pro-col pro-thread-col min-w-0 ${showMobileList ? 'hidden md:flex' : 'flex'}`}>
+                  <ResidentGroupThread
+                    group={selectedGroup}
+                    userId={user?.id}
+                    lastInsert={residentGroups.lastInsert}
+                    isMobile={isMobile}
+                    onBack={() => setSelectedGroupId(null)}
+                    onOpenMembers={() => setContextOpen(true)}
+                  />
+                </div>
+                <aside className="hidden xl:flex pro-col p-3 overflow-y-auto" aria-label="Miembros del grupo">
+                  <h2 className="pro-card-title text-[15px] mb-2"><UsersRound /> Miembros</h2>
+                  <ResidentGroupMembers
+                    group={selectedGroup}
+                    userId={user?.id}
+                    onChanged={residentGroups.refresh}
+                    onLeft={() => { setSelectedGroupId(null); residentGroups.refresh(); }}
+                  />
+                </aside>
+              </>
+            )}
+
             {/* Columna 2 — lista */}
-            {view === 'badge' && hasBadgeRoom ? null : (
+            {inGroups || (view === 'badge' && hasBadgeRoom) ? null : (
               <div className={`pro-col ${showMobileChat ? 'hidden md:flex' : 'flex'}`}>
                 <ProChatList
                   sessions={visibleSessions}
@@ -624,7 +691,7 @@ export default function Chat() {
             )}
 
             {/* Columna 3 — hilo (o sala por insignia) */}
-            {view === 'badge' && hasBadgeRoom ? (
+            {inGroups ? null : view === 'badge' && hasBadgeRoom ? (
               <div className="pro-chat-full min-h-0 overflow-hidden w-full max-w-full">
                 <BadgeChatPanel badge={myBadge} />
               </div>
@@ -665,7 +732,7 @@ export default function Chat() {
             )}
 
             {/* Columna 4 — contexto clínico */}
-            {view !== 'badge' && (
+            {view !== 'badge' && !inGroups && (
               <aside className="hidden xl:flex pro-col p-3" aria-label={t('pro.chatPro.context')}>
                 <h2 className="pro-card-title text-[15px] mb-2"><ClipboardList /> {t('pro.chatPro.context')}</h2>
                 {selectedSessionData && otherInfo ? (
@@ -687,8 +754,16 @@ export default function Chat() {
       {/* Contexto clínico en hoja lateral cuando no cabe la columna */}
       <Sheet open={contextOpen} onOpenChange={setContextOpen}>
         <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto bg-card">
-          <SheetHeader className="mb-3"><SheetTitle className="pro-card-title">{t('pro.chatPro.context')}</SheetTitle></SheetHeader>
-          {selectedSessionData && otherInfo && (
+          <SheetHeader className="mb-3"><SheetTitle className="pro-card-title">{inGroups ? 'Miembros' : t('pro.chatPro.context')}</SheetTitle></SheetHeader>
+          {inGroups && (
+            <ResidentGroupMembers
+              group={selectedGroup}
+              userId={user?.id}
+              onChanged={residentGroups.refresh}
+              onLeft={() => { setContextOpen(false); setSelectedGroupId(null); residentGroups.refresh(); }}
+            />
+          )}
+          {!inGroups && selectedSessionData && otherInfo && (
             <ChatClinicalContext
               session={selectedSessionData}
               other={otherInfo}
@@ -698,6 +773,14 @@ export default function Chat() {
           )}
         </SheetContent>
       </Sheet>
+
+      {isResident && (
+        <CreateResidentGroupDialog
+          open={createGroupOpen}
+          onOpenChange={setCreateGroupOpen}
+          onCreated={(id) => { setView('groups'); setSelectedGroupId(id); residentGroups.refresh(); }}
+        />
+      )}
 
       {/* Post-consultation summary dialog */}
       <PostConsultationSummaryDialog

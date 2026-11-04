@@ -59,6 +59,7 @@ import { AppBackground } from '@/components/layout/AppBackground';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import { DiscoverGate } from '@/components/DiscoverGate';
+import { useResidentGroups } from '@/components/chat/ResidentGroups';
 import logoMedicalMasters from '@/assets/logo-medical-masters.png';
 import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
 
@@ -110,10 +111,16 @@ const doctorPrimaryNav: DoctorNavItem[] = [
   doctorLivesNav,
   doctorNavOf('contenido'),
 ];
+// Marketplace también para el médico (cliente 4-nov-2026; antes solo lo veía el residente).
+const doctorMarketplaceNav: DoctorNavItem = {
+  labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor'],
+  sectionId: 'marketplace', navId: 'marketplace',
+};
 const doctorMoreNav: DoctorNavItem[] = [
   doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
   doctorNavOf('comunidad'),
   doctorDirectorioNav,
+  ...(FEATURE_FLAGS.marketplaceFeeModel ? [doctorMarketplaceNav] : []),
   doctorNavOf('aprendizaje'),
 ];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
@@ -126,8 +133,9 @@ const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient', 'resident'] },
-  { labelKey: 'nav.soyMedico', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
+  // Residente: el Chat ya está en el icono de la cabecera; en el menú salía repetido (cliente 4-nov-2026).
+  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient'] },
+  { labelKey: 'nav.soyMedico', shortLabelKey: 'nav.soyMedicoShort', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
     : []),
@@ -178,12 +186,11 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
-  // resident
+  // resident — sin Chat abajo: ya está en la cabecera (salía repetido, cliente 4-nov-2026)
   return [
     lives,
     { label: t('nav.educationShort'), href: '/education', icon: GraduationCap },
     { label: t('nav.soyMedicoShort'), href: '/doctors', icon: Stethoscope },
-    { label: t('nav.chat'), href: '/chat', icon: MessageSquare },
   ];
 }
 
@@ -241,13 +248,15 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
 
   // Get unread chat count - useChat is always available since ChatProvider wraps MainLayout
   const { getSessionsByUser } = useChat();
+  // Residente: los mensajes sin leer de sus grupos también suman en el icono del Chat.
+  const { unreadTotal: groupUnread } = useResidentGroups(role === 'resident');
   const chatUnread = useMemo(() => {
     const sessions = getSessionsByUser();
     return sessions.reduce((sum, s) => {
       if (s.status !== 'active') return sum;
       return sum + (s.unreadCount || 0);
-    }, 0);
-  }, [getSessionsByUser]);
+    }, 0) + (role === 'resident' ? groupUnread : 0);
+  }, [getSessionsByUser, groupUnread, role]);
 
   // Funciones activables/desactivables desde el admin.
   const disabledHrefs = useMemo(() => {
@@ -296,6 +305,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     }
     // Paciente: todos directos (cliente 2026-07-09); resto: 5 + Más.
     if (role === 'patient') return { primaryNav: filteredNavItems, moreNav: [] as NavItem[] };
+    // Residente: 4 + Más. Con 5 la píldora se desbordaba y «Marketplace» quedaba cortado (4-nov-2026).
+    if (role === 'resident') return { primaryNav: filteredNavItems.slice(0, 4), moreNav: filteredNavItems.slice(4) };
     return { primaryNav: filteredNavItems.slice(0, 5), moreNav: filteredNavItems.slice(5) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, filteredNavItems, disabledHrefs, toggles]);
@@ -336,6 +347,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     // Lives y Contenido separados: en /lives sólo se ilumina Lives, no Contenido.
     if (item.navId === 'lives') return onLives;
     if (item.navId === 'directorio') return location.pathname === '/doctors';
+    if (item.navId === 'marketplace') return location.pathname.startsWith('/marketplace');
     if (item.sectionId === 'contenido') return activeSection === 'contenido' && !onLives;
     return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
   };
@@ -439,9 +451,10 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <span className={active ? 'hidden md:inline' : 'hidden xl:inline'}>{label}</span>
                     </Link>
                   ) : (
-                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined}>
-                      <span className="hidden xl:inline">{label}</span>
-                      <span className="xl:hidden">{t(item.shortLabelKey || item.labelKey)}</span>
+                    <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} title={label}>
+                      {/* Residente: siempre la etiqueta corta, para que sus 4 pestañas quepan enteras. */}
+                      <span className={role === 'resident' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
+                      <span className={role === 'resident' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
                 })}
@@ -460,7 +473,8 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     location.pathname === '/foro' ? 'text-primary' : 'text-foreground/80'
                   }`}
                 >
-                  <MessageSquare className="w-5 h-5" />
+                  {/* Icono de personas: con el bocadillo parecía un segundo «Chat» (cliente 4-nov-2026). */}
+                  <Users className="w-5 h-5" />
                   <span className="hidden lg:inline">{t('forum.title')}</span>
                 </Link>
               )}

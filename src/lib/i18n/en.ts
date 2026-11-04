@@ -9094,6 +9094,8 @@ export const en = {
       railPatients: 'Patients',
       railDoctors: 'Doctors',
       railProviders: 'Providers',
+      railGroups: 'Groups',
+      newGroup: 'New group',
       railOrientations: 'Second opinions',
       railRoom: 'Verified room',
       railClosed: 'Closed',
