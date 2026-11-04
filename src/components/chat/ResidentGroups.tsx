@@ -187,16 +187,17 @@ export function ResidentGroupThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const groupId = group?.id;
 
+  // Nombres por la función del grupo: profiles_public no deja a un residente ver
+  // el nombre de otro. Se recargan si escribe alguien que aún no conocemos.
   const loadNames = useCallback(async (ids: string[]) => {
-    const missing = ids.filter(id => !names.has(id));
-    if (!missing.length) return;
-    const { data } = await supabase.from('profiles_public').select('id, name').in('id', missing);
+    if (!groupId || !ids.some(id => !names.has(id))) return;
+    const { data } = await (supabase as any).rpc('resident_group_members', { p_group: groupId });
     setNames(prev => {
       const next = new Map(prev);
-      (data || []).forEach((p: any) => next.set(p.id, p.name || 'Residente'));
+      ((data as any[]) || []).forEach(p => next.set(p.user_id, p.name || 'Residente'));
       return next;
     });
-  }, [names]);
+  }, [names, groupId]);
 
   useEffect(() => {
     if (!groupId) { setMessages([]); return; }
@@ -449,20 +450,12 @@ export function ResidentGroupMembers({
 
   const load = useCallback(async () => {
     if (!groupId) { setMembers([]); return; }
-    const { data: rows } = await (supabase as any)
-      .from('resident_chat_group_members')
-      .select('user_id, is_admin, joined_at')
-      .eq('group_id', groupId)
-      .order('joined_at', { ascending: true });
-    const ids = ((rows as any[]) || []).map(r => r.user_id);
-    const { data: profs } = ids.length
-      ? await supabase.from('profiles_public').select('id, name, avatar_url').in('id', ids)
-      : { data: [] as any[] };
-    const map = new Map((profs || []).map((p: any) => [p.id, p]));
+    // Por la función del grupo (con nombres): profiles_public los oculta entre residentes.
+    const { data: rows } = await (supabase as any).rpc('resident_group_members', { p_group: groupId });
     setMembers(((rows as any[]) || []).map(r => ({
       id: r.user_id,
-      name: (map.get(r.user_id) as any)?.name ?? 'Residente',
-      avatar_url: (map.get(r.user_id) as any)?.avatar_url ?? null,
+      name: r.name || 'Residente',
+      avatar_url: r.avatar_url ?? null,
       is_admin: r.is_admin,
     })));
   }, [groupId]);
