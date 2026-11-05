@@ -9872,6 +9872,7 @@ export const es = {
         inicio: 'Inicio',
         livesContenidos: 'Lives y contenidos',
         pacientes: 'Mis pacientes',
+        pacientesShort: 'Pacientes',
         wallet: 'Finanzas',
       },
       next: 'Siguiente',

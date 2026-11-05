@@ -8265,6 +8265,7 @@ export const ca = {
         inicio: 'Inici',
         livesContenidos: 'Lives i continguts',
         pacientes: 'Els meus pacients',
+        pacientesShort: 'Pacients',
         wallet: 'Finances',
       },
       next: 'Següent',

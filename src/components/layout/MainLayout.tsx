@@ -160,7 +160,8 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'doctor') {
     return doctorNav
       .filter(s => DOCTOR_BOTTOM_TABS.includes(s.navId))
-      .map(s => ({ label: t(s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId, navId: s.navId }));
+      // Barra inferior: «Pacientes» (corto) para que quepa en 375 px.
+      .map(s => ({ label: t(s.navId === 'pacientes' ? 'mm2.common.nav.pacientesShort' : s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId, navId: s.navId }));
   }
 
   if (role === 'patient') {

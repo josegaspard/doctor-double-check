@@ -8392,6 +8392,7 @@ export const zh = {
         inicio: '首页',
         livesContenidos: '直播与内容',
         pacientes: '我的患者',
+        pacientesShort: '患者',
         wallet: '财务',
       },
       next: '下一步',

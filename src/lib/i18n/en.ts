@@ -9814,6 +9814,7 @@ export const en = {
         inicio: 'Home',
         livesContenidos: 'Lives & content',
         pacientes: 'My patients',
+        pacientesShort: 'Patients',
         wallet: 'Finances',
       },
       next: 'Next',

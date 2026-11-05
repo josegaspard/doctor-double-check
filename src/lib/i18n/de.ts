@@ -9630,6 +9630,7 @@ export const de = {
         inicio: 'Start',
         livesContenidos: 'Lives & Inhalte',
         pacientes: 'Meine Patienten',
+        pacientesShort: 'Patienten',
         wallet: 'Finanzen',
       },
       next: 'Weiter',
