@@ -281,7 +281,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
               <span className="text-xs font-semibold text-primary">{filterMaxDist < 100 ? `${filterMaxDist} km` : t('autoI18n.hospitalLoc12')}</span>
             </div>
             <Slider value={[filterMaxDist]} onValueChange={([v]) => setFilterMaxDist(v)} min={1} max={100} step={1} className="py-2" />
-            <div className="flex justify-between text-[9px] text-muted-foreground mt-1 px-0.5">
+            <div className="flex justify-between text-[10.5px] text-muted-foreground mt-1 px-0.5">
               <span>1 km</span><span>25</span><span>50</span><span>75</span><span>100</span>
             </div>
           </div>
@@ -359,7 +359,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="h-10 w-10 relative sm:hidden flex-shrink-0">
                 <SlidersHorizontal className="w-4 h-4" />
-                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10.5px] flex items-center justify-center">{activeFilterCount}</span>}
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
@@ -486,7 +486,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
                             </span>
                           </div>
                           {isFeatured && (
-                            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[9px] font-bold bg-accent/90 text-accent-foreground backdrop-blur-sm flex items-center gap-1 shadow-lg">
+                            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-accent/90 text-accent-foreground backdrop-blur-sm flex items-center gap-1 shadow-lg">
                               <Sparkles className="w-3 h-3" /> {featuredLabel}
                             </span>
                           )}
@@ -505,7 +505,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
                             {h.type === 'public' ? t('autoI18n.hospitalLoc40') : h.type === 'private' ? t('autoI18n.hospitalLoc41') : t('autoI18n.hospitalLoc42')}
                           </span>
                           {isFeatured && (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-accent/15 text-accent flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-accent/15 text-accent flex items-center gap-1">
                               <Sparkles className="w-3 h-3" /> {featuredLabel}
                             </span>
                           )}
@@ -540,12 +540,12 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
                         {h.specialties.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
                             {h.specialties.slice(0, 3).map((sp: string, i: number) => (
-                              <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-primary/8 text-primary font-medium border border-primary/10">
+                              <span key={i} className="text-[10.5px] px-2 py-0.5 rounded-full bg-primary/8 text-primary font-medium border border-primary/10">
                                 {sp}
                               </span>
                             ))}
                             {h.specialties.length > 3 && (
-                              <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                              <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
                                 +{h.specialties.length - 3}
                               </span>
                             )}
@@ -555,7 +555,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
                         {/* Info row */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                           {h.phone && (
-                            <a href={`tel:${h.phone}`} className="flex items-center gap-1 hover:text-primary transition-colors">
+                            <a href={`tel:${h.phone}`} className="flex items-center gap-1 py-2 -my-2 hover:text-primary transition-colors">
                               <Phone className="w-3 h-3" />{h.phone}
                             </a>
                           )}
@@ -603,7 +603,7 @@ export default function HospitalLocator({ embedded = false }: { embedded?: boole
                                 <p className="text-xs font-medium mb-1.5">{t('autoI18n.hospitalLoc46')}</p>
                                 <div className="flex flex-wrap gap-1">
                                   {h.specialties.map((sp: string, i: number) => (
-                                    <span key={i} className="text-[9px] px-2 py-0.5 rounded-full bg-primary/8 text-primary font-medium border border-primary/10">
+                                    <span key={i} className="text-[10.5px] px-2 py-0.5 rounded-full bg-primary/8 text-primary font-medium border border-primary/10">
                                       {sp}
                                     </span>
                                   ))}

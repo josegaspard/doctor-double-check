@@ -1099,7 +1099,7 @@ export const zh = {
     "activateChat": "您还没有聊天记录",
     "premiumService": "当您与医生开始咨询时，对话将显示在此处。咨询费用在开始时支付——您可以直接付款或使用钱包余额。",
     "viewOptions": "查看医生",
-    "goToLives": "充值钱包",
+    "goToLives": "前往 Lives",
     "available": "可用",
     "offHours": "非服务时间",
     "closed": "已关闭",

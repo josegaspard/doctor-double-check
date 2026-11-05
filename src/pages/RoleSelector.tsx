@@ -379,7 +379,7 @@ export default function RoleSelector() {
                   {option.description}
                 </p>
                 {option.comingSoon ? (
-                  <span className="mt-3 sm:mt-4 land:mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 land:px-2 land:py-0.5 text-[10px] sm:text-[11px] land:text-[9px] font-bold uppercase tracking-[0.16em] text-[#0a1f47] shadow-lg ring-1 ring-white/70">
+                  <span className="mt-3 sm:mt-4 land:mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 land:px-2 land:py-0.5 text-[10px] sm:text-[11px] land:text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#0a1f47] shadow-lg ring-1 ring-white/70">
                     <Lock className="w-3 h-3 land:w-2.5 land:h-2.5" strokeWidth={2.5} />
                     {t('roleSelector.comingSoonBadge')}
                   </span>

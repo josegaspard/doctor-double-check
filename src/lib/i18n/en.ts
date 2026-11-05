@@ -1145,7 +1145,7 @@ export const en = {
     activateChat: "No chats yet",
     premiumService: "When you start a consultation with a doctor it will show up here. The consultation fee is charged at start — you can pay directly or use your wallet balance.",
     viewOptions: "Browse doctors",
-    goToLives: "Top up wallet",
+    goToLives: "Go to Lives",
     available: "Available",
     offHours: "Off hours",
     closed: "Closed",

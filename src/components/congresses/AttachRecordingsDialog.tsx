@@ -157,7 +157,7 @@ export function AttachRecordingsDialog({ open, onOpenChange, congressId, canMana
                       </div>
                     )}
                     {rec.duration > 0 && (
-                      <span className="absolute bottom-0.5 right-0.5 text-[9px] leading-none bg-black/75 text-white px-1 py-0.5 rounded">
+                      <span className="absolute bottom-0.5 right-0.5 text-[10.5px] leading-none bg-black/75 text-white px-1 py-0.5 rounded">
                         {fmtDuration(rec.duration)}
                       </span>
                     )}
@@ -169,13 +169,13 @@ export function AttachRecordingsDialog({ open, onOpenChange, congressId, canMana
                         <span className="text-[11px] text-muted-foreground truncate">{rec.doctorName}</span>
                       )}
                       {attachedHere && (
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1.5 gap-0.5">
+                        <Badge variant="secondary" className="text-[10.5px] h-4 px-1.5 gap-0.5">
                           <Check className="w-2.5 h-2.5" />
                           {t('congresses.attachedHere')}
                         </Badge>
                       )}
                       {attachedElsewhere && (
-                        <Badge variant="outline" className="text-[9px] h-4 px-1.5">{t('congresses.attachedElsewhere')}</Badge>
+                        <Badge variant="outline" className="text-[10.5px] h-4 px-1.5">{t('congresses.attachedElsewhere')}</Badge>
                       )}
                     </div>
                   </div>

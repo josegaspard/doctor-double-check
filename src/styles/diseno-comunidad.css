@@ -150,7 +150,7 @@
 .dc-post-meta .who .nm { font-weight: 600; color: var(--pro-ink-2, #3c4f63); overflow-wrap: anywhere; }
 .dc-post-meta .cmt {
   display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-  font-weight: 600; white-space: nowrap; background: transparent; border: 0; padding: 0;
+  font-weight: 600; white-space: nowrap; background: transparent; border: 0; padding: 10px 0; margin: -10px 0;
   color: var(--pro-teal, #227787) !important;
 }
 .dc-post-meta .cmt svg { width: 15px; height: 15px; color: currentColor !important; }

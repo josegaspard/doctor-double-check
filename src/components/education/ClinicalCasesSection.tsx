@@ -444,7 +444,7 @@ export default function ClinicalCasesSection() {
                       <div key={cm.id} className="bg-muted/50 rounded-lg p-2.5">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-medium">{cm.author_name}</span>
-                          <Badge variant={cm.author_role === 'resident' ? 'secondary' : 'verified'} className="text-[9px] h-4">
+                          <Badge variant={cm.author_role === 'resident' ? 'secondary' : 'verified'} className="text-[10.5px] h-4">
                             {cm.author_role === 'resident' ? t('medicalEducationPage.roleResidentShort') : t('medicalEducationPage.roleDoctorShort')}
                           </Badge>
                         </div>

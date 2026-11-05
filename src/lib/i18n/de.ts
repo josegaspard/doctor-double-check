@@ -1145,7 +1145,7 @@ export const de = {
     activateChat: "Sie haben noch keine Chats",
     premiumService: "Wenn Sie eine Beratung mit einem Arzt starten, sehen Sie hier Ihr Gespräch. Die Bezahlung der Beratung erfolgt beim Start — Sie können direkt bezahlen oder Ihr Wallet-Guthaben verwenden.",
     viewOptions: "Ärzte ansehen",
-    goToLives: "Wallet aufladen",
+    goToLives: "Zu Lives",
     available: "Verfügbar",
     offHours: "Außerhalb der Sprechzeiten",
     closed: "Beendet",

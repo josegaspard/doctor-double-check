@@ -117,7 +117,7 @@ function BMICalculator() {
                 <div className="w-2 h-2 bg-foreground rounded-full ring-2 ring-background" />
                 <div className="w-0.5 h-3 bg-foreground mx-auto" />
               </div>
-              <div className="flex justify-between mt-1.5 text-[9px] text-muted-foreground">
+              <div className="flex justify-between mt-1.5 text-[10.5px] text-muted-foreground">
                 <span>16</span><span>18.5</span><span>25</span><span>30</span><span>35</span><span>40</span><span>50</span>
               </div>
             </div>
@@ -144,7 +144,7 @@ function BMICalculator() {
                 </span>
                 <Badge
                   variant={r.riskKey === 'normal' ? 'verified' : r.riskKey === 'low' ? 'secondary' : 'outline'}
-                  className="ml-2 text-[9px] px-1.5"
+                  className="ml-2 text-[10.5px] px-1.5"
                 >
                   {t(`healthCalculators.bmi.riskLevels.${r.riskKey}`)}
                 </Badge>
@@ -399,7 +399,7 @@ function GlasgowScale() {
           <div className="mt-2">
             <Progress value={(total / 15) * 100} className="h-2" />
           </div>
-          <div className="flex justify-between mt-1 text-[9px] text-muted-foreground">
+          <div className="flex justify-between mt-1 text-[10.5px] text-muted-foreground">
             <span>{t('healthCalculators.glasgow.scaleLabels.severe')}</span><span>8</span><span>12</span><span>{t('healthCalculators.glasgow.scaleLabels.normal')}</span>
           </div>
         </div>

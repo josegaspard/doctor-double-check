@@ -106,7 +106,7 @@ function EventChip({
     >
       {isManaging && (
         <span className={cn(
-          'w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[8px]',
+          'w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[10px]',
           isSelected ? 'bg-white text-primary border-white' : 'border-white/60',
         )}>
           {isSelected && <Check className="w-2.5 h-2.5" aria-hidden="true" />}

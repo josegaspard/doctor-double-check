@@ -1145,7 +1145,7 @@ export const it = {
     activateChat: "Non hai ancora chat",
     premiumService: "Quando inizi una consulenza con un medico, qui vedrai la tua conversazione. Il pagamento del consulto avviene all'inizio — puoi pagare direttamente o usare il saldo del tuo wallet.",
     viewOptions: "Vedi medici",
-    goToLives: "Ricarica wallet",
+    goToLives: "Vai ai Lives",
     available: "Disponibile",
     offHours: "Fuori orario",
     closed: "Chiusa",

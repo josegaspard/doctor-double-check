@@ -1145,7 +1145,7 @@ export const pt = {
     activateChat: "Você ainda não tem chats",
     premiumService: "Quando você iniciar uma consulta com um médico, verá aqui sua conversa. O pagamento da consulta é feito ao iniciá-la — você pode pagar direto ou usar o saldo da sua carteira.",
     viewOptions: "Ver médicos",
-    goToLives: "Recarregar carteira",
+    goToLives: "Ir para Lives",
     available: "Disponível",
     offHours: "Fora do horário",
     closed: "Encerrada",

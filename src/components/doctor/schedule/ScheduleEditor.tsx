@@ -65,7 +65,7 @@ const tramosLabel = (list: { start_time: string; end_time: string }[]) =>
   byStart(list).map(r => `${hhmm(r.start_time)}–${hhmm(r.end_time)}`).join(', ');
 
 const timeInput =
-  'h-9 w-[92px] rounded-lg border border-[#d6e1e7] bg-white px-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
+  'h-9 min-w-0 flex-1 max-w-[140px] rounded-lg border border-[#d6e1e7] bg-white px-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
 
 function TramoInputs({
   start, end, onChange, onRemove, invalid, disabled, removeLabel, fromLabel, toLabel,

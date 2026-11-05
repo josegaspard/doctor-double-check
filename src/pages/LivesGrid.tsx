@@ -173,7 +173,7 @@ function SideLiveItem({ live, t }: { live: any; t: (k: string) => string }) {
         <span className="pro-side-views"><Eye /> {fill(t('pro.lives.watching'), { n: (live.viewerCount ?? 0).toLocaleString() })}</span>
         <div className="pro-side-title">{live.title}</div>
         <div className="pro-side-sub">
-          <DoctorAvatar live={live} className="w-5 h-5 text-[9px]" />
+          <DoctorAvatar live={live} className="w-5 h-5 text-[10.5px]" />
           <span className="truncate font-semibold text-white">{live.doctorName}</span>
           <DoctorBadgeIcon userId={live.doctorId} size="sm" className="flex-shrink-0" />
           <span className="truncate">{live.specialty}</span>

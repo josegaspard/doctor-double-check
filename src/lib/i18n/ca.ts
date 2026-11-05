@@ -1098,7 +1098,7 @@ export const ca = {
     "activateChat": "Encara no tens xats",
     "premiumService": "Quan iniciïs una consulta amb un metge, veuràs aquí la teva conversa. El pagament de la consulta es fa en iniciar-la — pots pagar directament o utilitzar el saldo del teu wallet.",
     "viewOptions": "Veure metges",
-    "goToLives": "Recarregar wallet",
+    "goToLives": "Anar a Lives",
     "available": "Disponible",
     "offHours": "Fora d'horari",
     "closed": "Tancada",

@@ -94,7 +94,7 @@ export default function DoctorCongresses({ doctorId }: Props) {
                   {phase === 'upcoming' && <Badge variant="info" className="text-[10px] h-5">{t('congresses.statusUpcoming')}</Badge>}
                   {phase === 'archived' && <Badge variant="secondary" className="text-[10px] h-5">{t('congresses.statusArchived')}</Badge>}
                   {c.isLead && (
-                    <Badge className="text-[9px] h-4 px-1.5 bg-premium/15 text-premium border border-premium/30 gap-0.5">
+                    <Badge className="text-[10.5px] h-4 px-1.5 bg-premium/15 text-premium border border-premium/30 gap-0.5">
                       <Star className="w-2.5 h-2.5" fill="currentColor" />
                       {t('congresses.lead')}
                     </Badge>

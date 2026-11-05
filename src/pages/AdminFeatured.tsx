@@ -262,8 +262,8 @@ function ListingsTab({ es }: { es: boolean }) {
                       <div>
                         <p className="font-semibold text-sm">{l.listing_name || t('autoI18n.clAdminFeat15')}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-[9px]">{l.listing_type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
-                          <Badge variant={l.is_active ? 'default' : 'secondary'} className="text-[9px]">{l.is_active ? t('autoI18n.clAdminFeat18') : t('autoI18n.clAdminFeat19')}</Badge>
+                          <Badge variant="outline" className="text-[10.5px]">{l.listing_type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
+                          <Badge variant={l.is_active ? 'default' : 'secondary'} className="text-[10.5px]">{l.is_active ? t('autoI18n.clAdminFeat18') : t('autoI18n.clAdminFeat19')}</Badge>
                           <span className="text-[10px] text-muted-foreground">P:{l.priority}</span>
                         </div>
                       </div>
@@ -282,22 +282,22 @@ function ListingsTab({ es }: { es: boolean }) {
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <Eye className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
                       <p className="text-xs font-bold">{stats?.impressions || 0}</p>
-                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat20')}</p>
+                      <p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat20')}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <MousePointerClick className="w-3.5 h-3.5 mx-auto mb-0.5 text-success" />
                       <p className="text-xs font-bold">{stats?.clicks || 0}</p>
-                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p>
+                      <p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <TrendingUp className="w-3.5 h-3.5 mx-auto mb-0.5 text-warning" />
                       <p className="text-xs font-bold">{(stats?.ctr || 0).toFixed(1)}%</p>
-                      <p className="text-[9px] text-muted-foreground">CTR</p>
+                      <p className="text-[10.5px] text-muted-foreground">CTR</p>
                     </div>
                     <div className="bg-muted/50 rounded-lg p-2 text-center">
                       <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5 text-primary" />
                       <p className="text-xs font-bold">${(stats?.cost || 0).toFixed(0)}</p>
-                      <p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p>
+                      <p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p>
                     </div>
                   </div>
 
@@ -493,13 +493,13 @@ function AnalyticsTab({ es }: { es: boolean }) {
                   {row.type === 'hospital' ? <Building2 className="w-4 h-4 text-primary flex-shrink-0" /> : <Package className="w-4 h-4 text-secondary flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{row.name}</p>
-                    <Badge variant="outline" className="text-[9px]">{row.type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
+                    <Badge variant="outline" className="text-[10.5px]">{row.type === 'hospital' ? t('autoI18n.clAdminFeat16') : t('autoI18n.clAdminFeat17')}</Badge>
                   </div>
                   <div className="flex gap-4 text-xs text-right">
-                    <div><p className="font-bold">{row.impressions}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat44')}</p></div>
-                    <div><p className="font-bold">{row.clicks}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p></div>
-                    <div><p className="font-bold">{row.ctr}%</p><p className="text-[9px] text-muted-foreground">CTR</p></div>
-                    <div><p className="font-bold">${row.cost}</p><p className="text-[9px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p></div>
+                    <div><p className="font-bold">{row.impressions}</p><p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat44')}</p></div>
+                    <div><p className="font-bold">{row.clicks}</p><p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat21')}</p></div>
+                    <div><p className="font-bold">{row.ctr}%</p><p className="text-[10.5px] text-muted-foreground">CTR</p></div>
+                    <div><p className="font-bold">${row.cost}</p><p className="text-[10.5px] text-muted-foreground">{t('autoI18n.clAdminFeat22')}</p></div>
                   </div>
                 </div>
               </CardContent>

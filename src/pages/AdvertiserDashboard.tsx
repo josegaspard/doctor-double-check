@@ -101,7 +101,7 @@ function PlacementMockup({ width, height, format: fmt }: { width: number; height
 
   return (
     <div
-      className="rounded border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-[9px] text-primary/60 font-mono"
+      className="rounded border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-[10.5px] text-primary/60 font-mono"
       style={{ width: maxW, height: maxH }}
     >
       {fmt === 'preroll' ? <Play className="w-3 h-3" aria-hidden="true" /> : fmt === 'interstitial' ? <Maximize2 className="w-3 h-3" aria-hidden="true" /> : 'AD'}
@@ -828,19 +828,19 @@ export default function AdvertiserDashboard() {
                     <div className="grid grid-cols-4 gap-2">
                       <div className="rounded-lg bg-muted/50 p-1.5 text-center">
                         <p className="text-xs font-bold text-info">{stats.impressions.toLocaleString()}</p>
-                        <p className="text-[9px] text-muted-foreground">{t('ads.impressions').substring(0, 3)}</p>
+                        <p className="text-[10.5px] text-muted-foreground">{t('ads.impressions').substring(0, 3)}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-1.5 text-center">
                         <p className="text-xs font-bold text-warning">{stats.clicks}</p>
-                        <p className="text-[9px] text-muted-foreground">{t('ads.clicks')}</p>
+                        <p className="text-[10.5px] text-muted-foreground">{t('ads.clicks')}</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-1.5 text-center">
                         <p className="text-xs font-bold text-success">{ctr}%</p>
-                        <p className="text-[9px] text-muted-foreground">CTR</p>
+                        <p className="text-[10.5px] text-muted-foreground">CTR</p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-1.5 text-center">
                         <p className="text-xs font-bold">${calcSpent.toFixed(0)}</p>
-                        <p className="text-[9px] text-muted-foreground">{t('ads.spent')}</p>
+                        <p className="text-[10.5px] text-muted-foreground">{t('ads.spent')}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-muted-foreground">

@@ -526,7 +526,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-                      <span className="text-[9px] text-muted-foreground">{getRemainingTime(msg.highlightUntil!)}</span>
+                      <span className="text-[10.5px] text-muted-foreground">{getRemainingTime(msg.highlightUntil!)}</span>
                     </div>
                   </div>
                   <p className="text-[11px] text-foreground/80 truncate mt-0.5">{msg.content}</p>
@@ -588,16 +588,16 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
                         {msg.isDoctor ? `${t('liveChat.doctorPrefix')} ${msg.userName}` : msg.userName}
                       </span>
                       {msg.isDoctor && (
-                        <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 border-primary/30 text-primary">
+                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-3.5 border-primary/30 text-primary">
                           {t('liveChat.doctorBadge')}
                         </Badge>
                       )}
                       {highlighted && !msg.isDoctor && (
-                        <Badge className="text-[8px] px-1 py-0 h-3.5 bg-primary/10 text-primary border-0">
+                        <Badge className="text-[10px] px-1 py-0 h-3.5 bg-primary/10 text-primary border-0">
                           <Sparkles className="inline w-2 h-2 mr-0.5" aria-hidden="true" />{t('liveChat.featured')}
                         </Badge>
                       )}
-                      <span className="text-[9px] sm:text-[10px] text-muted-foreground">
+                      <span className="text-[10.5px] sm:text-[10px] text-muted-foreground">
                         {msg.createdAt.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>

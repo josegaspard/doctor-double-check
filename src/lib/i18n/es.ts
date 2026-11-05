@@ -1139,7 +1139,7 @@ export const es = {
     activateChat: 'Aún no tienes chats',
     premiumService: 'Cuando inicies una orientación con un médico verá aquí tu conversación. El pago de la orientación se realiza al iniciarla — puedes pagar directo o usar saldo de tu Wallet.',
     viewOptions: 'Ver médicos',
-    goToLives: 'Recargar wallet',
+    goToLives: 'Ir a Lives',
     available: 'Disponible',
     offHours: 'Fuera de horario',
     closed: 'Cerrada',

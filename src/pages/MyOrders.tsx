@@ -353,7 +353,7 @@ export default function MyOrders({ embedded = false }: MyOrdersProps = {}) {
                                         }`} />
                                       )}
                                     </div>
-                                    <span className="text-[9px] text-muted-foreground mt-1.5 text-center leading-tight">
+                                    <span className="text-[10.5px] text-muted-foreground mt-1.5 text-center leading-tight">
                                       {es ? stepSc.label_es : stepSc.label_en}
                                     </span>
                                   </div>

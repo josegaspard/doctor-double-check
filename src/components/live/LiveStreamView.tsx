@@ -157,8 +157,8 @@ export function LiveStreamView({
           <DoctorBadgeIcon userId={supabaseUser?.id ?? user?.id} size="sm" className="flex-shrink-0" />
         </span>
         {liveData.specialty && <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{liveData.specialty}</p>}
-        {ownCedula && <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">{t('mm2.common.licenseAbbrev')} <span className="font-mono">{ownCedula}</span></p>}
-        {user?.email && <p className="text-white/60 text-[9px] sm:text-[10px] leading-tight truncate">{user.email}</p>}
+        {ownCedula && <p className="text-white/70 text-[10.5px] sm:text-[10px] leading-tight mt-0.5">{t('mm2.common.licenseAbbrev')} <span className="font-mono">{ownCedula}</span></p>}
+        {user?.email && <p className="text-white/60 text-[10.5px] sm:text-[10px] leading-tight truncate">{user.email}</p>}
       </div>
     </>
   );

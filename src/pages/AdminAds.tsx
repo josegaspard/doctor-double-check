@@ -86,7 +86,7 @@ function PlacementMockup({ width, height, format: fmt }: { width: number; height
   const maxW = fmt === 'interstitial' ? 40 : fmt === 'preroll' ? 60 : isVertical ? 20 : 80;
   const maxH = fmt === 'interstitial' ? 60 : fmt === 'preroll' ? 34 : isVertical ? 50 : 16;
   return (
-    <div className="rounded border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-[9px] text-primary/60 font-mono" style={{ width: maxW, height: maxH }}>
+    <div className="rounded border-2 border-dashed border-primary/30 bg-primary/5 flex items-center justify-center text-[10.5px] text-primary/60 font-mono" style={{ width: maxW, height: maxH }}>
       {fmt === 'preroll' ? <Play className="w-3 h-3" aria-hidden="true" /> : fmt === 'interstitial' ? <Maximize2 className="w-3 h-3" aria-hidden="true" /> : 'AD'}
     </div>
   );

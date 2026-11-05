@@ -120,7 +120,7 @@ export const NewsFeed = React.forwardRef<HTMLElement, object>(function NewsFeed(
                   {item.title}
                 </h4>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{item.category}</Badge>
+                  <Badge variant="secondary" className="text-[10.5px] px-1.5 py-0">{item.category}</Badge>
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                     <Clock className="w-2.5 h-2.5" />
                     {formatDate(item)}

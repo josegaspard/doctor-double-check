@@ -257,7 +257,7 @@ export default function Landing() {
               <img src={iconStream} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
               <div className="leading-tight">
                 <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.streaming')}</p>
-                <p className="text-[9px] lg:text-[10px] text-slate-300/80 normal-case tracking-normal">{t('landing.hero.streamingSub')}</p>
+                <p className="text-[10.5px] lg:text-[10px] text-slate-300/80 normal-case tracking-normal">{t('landing.hero.streamingSub')}</p>
               </div>
             </div>
           </div>
@@ -277,7 +277,7 @@ export default function Landing() {
                   <div key={i} className="flex items-center gap-1 shrink-0">
                     {i > 0 && <span className="w-px h-5 bg-white/15 mr-1 shrink-0" />}
                     <img src={s.img} alt="" className="w-[15px] h-[15px] shrink-0" />
-                    <p className="text-[8.5px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
+                    <p className="text-[10px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -353,7 +353,7 @@ export default function Landing() {
                 ].map((s, i) => (
                   <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2 rounded-xl border border-white/15 shadow-lg flex flex-col items-center text-center gap-1">
                     <img src={s.img} alt="" className="w-[18px] h-[18px]" />
-                    <p className="text-[9px] leading-tight text-slate-200 font-semibold">{s.label}</p>
+                    <p className="text-[10.5px] leading-tight text-slate-200 font-semibold">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -428,7 +428,7 @@ export default function Landing() {
                       <div key={i} className="w-0.5 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
                     ))}
                   </div>
-                  <p className="text-[9px] text-slate-300/80 mt-1 flex items-center gap-1 leading-tight">
+                  <p className="text-[10.5px] text-slate-300/80 mt-1 flex items-center gap-1 leading-tight">
                     <span className="w-1 h-1 rounded-full bg-[#aed3d9] animate-pulse shrink-0" />
                     {t('landing.hero.realTime')}
                   </p>
@@ -456,7 +456,7 @@ export default function Landing() {
                     <span className="text-[10px] font-semibold text-white/85 leading-tight">{t('landing.hero.vitalSigns')}</span>
                     <HeartPulse className="w-3 h-3 text-[#aed3d9] shrink-0" />
                   </div>
-                  <p className="text-[9px] text-slate-300/80 leading-tight">{t('landing.hero.realTime')}</p>
+                  <p className="text-[10.5px] text-slate-300/80 leading-tight">{t('landing.hero.realTime')}</p>
                   <svg className="w-full h-5 text-[#aed3d9] mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
                   </svg>
@@ -472,13 +472,13 @@ export default function Landing() {
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
-                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                       <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                     </span>
                   </div>
                   <div className="px-1.5 py-1.5">
                     <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
-                    <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1 leading-tight">
+                    <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1 leading-tight">
                       <span className="w-1 h-1 rounded-full bg-[#aed3d9] shrink-0" />
                       {t('landing.hero.watchingNow')}
                     </p>
@@ -529,7 +529,7 @@ export default function Landing() {
                 <span className="text-[11px] font-medium text-white/85">{t('landing.hero.vitalSigns')}</span>
                 <HeartPulse className="w-3 h-3 text-primary" />
               </div>
-              <p className="text-[9px] text-slate-300/80 mb-1">{t('landing.hero.realTime')}</p>
+              <p className="text-[10.5px] text-slate-300/80 mb-1">{t('landing.hero.realTime')}</p>
               <svg className="w-full h-6 text-primary mt-1" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
               </svg>
@@ -545,13 +545,13 @@ export default function Landing() {
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                 </span>
               </div>
               <div className="p-2">
                 <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
-                <p className="text-[9px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-primary" />
                   {t('landing.hero.watchingNow')}
                 </p>
@@ -566,7 +566,7 @@ export default function Landing() {
                   <div key={i} className="w-0.5 lg:w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
                 ))}
               </div>
-              <p className="text-[9px] text-slate-300/80 flex items-center gap-1">
+              <p className="text-[10.5px] text-slate-300/80 flex items-center gap-1">
                 <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />
                 {t('landing.hero.realTime')}
               </p>
@@ -588,7 +588,7 @@ export default function Landing() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] sm:text-xs lg:text-sm font-bold text-white leading-tight">{f.title}</p>
-                    <p className="text-[9px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 line-clamp-2 md:hidden lg:block lg:line-clamp-none land:hidden">{f.desc}</p>
+                    <p className="text-[10.5px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 line-clamp-2 md:hidden lg:block lg:line-clamp-none land:hidden">{f.desc}</p>
                   </div>
                 </div>
               ))}
@@ -654,7 +654,7 @@ export default function Landing() {
                   className="block w-full aspect-[4/3] object-cover object-center"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                 </span>
               </div>
@@ -674,7 +674,7 @@ export default function Landing() {
                   className="block w-full aspect-[16/7] object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[8px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
                 </span>
               </div>
