@@ -649,7 +649,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </span>
                     )}
                   </div>
-                  <span className={`text-[11px] font-medium leading-tight max-w-full truncate whitespace-nowrap px-0.5 ${isActive ? 'text-primary' : ''}`}>
+                  <span className={`text-[10.5px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
                 </Link>
@@ -672,7 +672,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </span>
                 )}
               </span>
-              <span className="text-[11px] font-medium leading-tight">{t('nav.more')}</span>
+              <span className="text-[10.5px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
         </nav>
