@@ -307,14 +307,14 @@ export default function Wallet({ embedded = false }: WalletProps = {}) {
               {t('wallet.topUp')}
             </h2>
 
-            {/* Amount chips — horizontal scroll on mobile */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x -mx-1 px-1">
+            {/* Importes: rejilla de 4 para que quepan siempre (en Safari 390 px se salían) */}
+            <div className="grid grid-cols-4 gap-2">
               {TOPUP_AMOUNTS.map(amount => (
                 <Button
                   key={amount}
                   variant={selectedAmount === amount ? "default" : "outline"}
                   onClick={() => { setSelectedAmount(amount); setCustomAmount(''); }}
-                  className="h-11 min-h-[44px] min-w-[90px] flex-shrink-0 snap-start text-sm font-semibold"
+                  className="h-11 min-h-[44px] min-w-0 px-1 text-sm font-semibold"
                 >
                   ${amount}
                 </Button>

@@ -216,7 +216,7 @@ export default function AdminApiUsage() {
                       </div>
                       {p.available ? (
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                          <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p>{p.currency !== 'MXN' && <p className="text-[9px] text-muted-foreground">{usd(p.consumedUsd)}</p>}</div>
+                          <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p>{p.currency !== 'MXN' && <p className="text-[10.5px] text-muted-foreground">{usd(p.consumedUsd)}</p>}</div>
                           <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Peticiones</p><p className="font-semibold">{num(p.requests)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Consumo{p.unit ? ` (${p.unit})` : ''}</p><p className="font-semibold">{num(p.usage)}</p></div>

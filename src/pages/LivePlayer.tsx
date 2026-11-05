@@ -553,12 +553,12 @@ export default function LivePlayer() {
                     <p className="text-white/85 text-[10px] sm:text-xs leading-tight truncate">{live.specialty}</p>
                   )}
                   {(live.doctorCedula || doctorCedula) && (
-                    <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight mt-0.5">
+                    <p className="text-white/70 text-[10.5px] sm:text-[10px] leading-tight mt-0.5">
                       {t('livePlayerPage.cedulaProfShort')} <span className="font-mono">{live.doctorCedula || doctorCedula}</span>
                     </p>
                   )}
                   {doctorEmail && (
-                    <p className="text-white/70 text-[9px] sm:text-[10px] leading-tight truncate">
+                    <p className="text-white/70 text-[10.5px] sm:text-[10px] leading-tight truncate">
                       <span className="font-mono">{doctorEmail}</span>
                     </p>
                   )}

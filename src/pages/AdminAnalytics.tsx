@@ -332,7 +332,7 @@ export default function AdminAnalytics() {
               <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-3 sm:p-4">
                   <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 truncate">{item.label}</p>
                   <p className="text-sm sm:text-xl font-bold truncate">{item.value}</p>
-                  {item.sub && <p className="text-[9px] sm:text-[10px] text-muted-foreground">{item.sub}</p>}
+                  {item.sub && <p className="text-[10.5px] sm:text-[10px] text-muted-foreground">{item.sub}</p>}
                 </CardContent></Card>
               ))}
             </div>
@@ -353,7 +353,7 @@ export default function AdminAnalytics() {
               <Card key={i} className={`border-l-4 ${item.border}`}><CardContent className="p-3 sm:p-4">
                   <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5 truncate">{item.label}</p>
                   <p className="text-sm sm:text-xl font-bold truncate">{item.value}</p>
-                  {item.sub && <p className="text-[9px] sm:text-[10px] text-muted-foreground">{item.sub}</p>}
+                  {item.sub && <p className="text-[10.5px] sm:text-[10px] text-muted-foreground">{item.sub}</p>}
                 </CardContent></Card>
               ))}
             </div>

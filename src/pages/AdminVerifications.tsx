@@ -384,7 +384,7 @@ export default function AdminVerifications() {
                                 <Calendar className="w-3 h-3" />
                                 {new Date(verification.created_at).toLocaleDateString()}
                               </span>
-                              <Badge variant="outline" className="text-[9px] h-4 px-1">
+                              <Badge variant="outline" className="text-[10.5px] h-4 px-1">
                                 {verification.provider === 'veriff' ? <><Lock className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />Veriff</> : <><FileText className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />Manual</>}
                               </Badge>
                             </div>

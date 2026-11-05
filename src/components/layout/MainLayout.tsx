@@ -160,7 +160,8 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
   if (role === 'doctor') {
     return doctorNav
       .filter(s => DOCTOR_BOTTOM_TABS.includes(s.navId))
-      .map(s => ({ label: t(s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId, navId: s.navId }));
+      // Barra inferior: «Pacientes» (corto) para que quepa en 375 px.
+      .map(s => ({ label: t(s.navId === 'pacientes' ? 'mm2.common.nav.pacientesShort' : s.labelKey), href: s.href, icon: s.icon, sectionId: s.sectionId, navId: s.navId }));
   }
 
   if (role === 'patient') {
@@ -649,7 +650,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </span>
                     )}
                   </div>
-                  <span className={`text-[10px] font-medium leading-tight max-w-full truncate whitespace-nowrap px-0.5 ${isActive ? 'text-primary' : ''}`}>
+                  <span className={`text-[10.5px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
                 </Link>
@@ -672,7 +673,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-medium leading-tight">{t('nav.more')}</span>
+              <span className="text-[10.5px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
         </nav>

@@ -124,11 +124,11 @@ export function RecordingChatReplay({ liveId, videoPreviewUrl }: RecordingChatRe
                     {msg.userName}
                   </span>
                   {msg.isPaid && (
-                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] border-warning/30 text-warning dark:text-warning bg-warning/5">
+                    <Badge variant="outline" className="h-3.5 px-1 text-[10px] border-warning/30 text-warning dark:text-warning bg-warning/5">
                       {t('recordingChatReplay.featuredBadge')}
                     </Badge>
                   )}
-                  <span className="text-[9px] text-muted-foreground font-mono">
+                  <span className="text-[10.5px] text-muted-foreground font-mono">
                     {formatTime(msg.elapsedSeconds)}
                   </span>
                 </div>

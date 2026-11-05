@@ -45,12 +45,12 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
   return (
     <div className="text-left">
       <h4 className="text-white font-bold mb-3 sm:mb-4 text-xs uppercase tracking-wider">{title}</h4>
-      <ul className="space-y-2 sm:space-y-3">
+      <ul className="space-y-0 sm:space-y-3">
         {links.map((link, i) => (
           <li key={i}>
             <Link
               to={link.href}
-              className={`text-xs sm:text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-[36px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
                 link.href === '/report-issue'
                   ? 'text-warning hover:text-white'
                   : 'text-white hover:text-white hover:underline'

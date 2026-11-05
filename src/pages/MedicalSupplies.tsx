@@ -240,7 +240,7 @@ export default function MedicalSupplies() {
           <Input type="number" placeholder="Max" value={priceRange[1] || ''} onChange={e => setPriceRange([priceRange[0], Number(e.target.value) || maxPrice])} className="h-8 text-xs" />
         </div>
         <Slider value={priceRange} onValueChange={([a, b]) => setPriceRange([a, b])} min={0} max={maxPrice} step={50} className="py-2" />
-        <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
+        <div className="flex justify-between text-[10.5px] text-muted-foreground mt-1">
           <span>${priceRange[0].toLocaleString()}</span>
           <span>${priceRange[1].toLocaleString()}</span>
         </div>
@@ -331,7 +331,7 @@ export default function MedicalSupplies() {
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" className="h-10 w-10 relative sm:hidden flex-shrink-0">
                     <SlidersHorizontal className="w-4 h-4" />
-                    {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center">{activeFilterCount}</span>}
+                    {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10.5px] flex items-center justify-center">{activeFilterCount}</span>}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
@@ -382,8 +382,8 @@ export default function MedicalSupplies() {
                         <Card key={p.id} className={`overflow-hidden hover:shadow-lg transition-all cursor-pointer group ${isFeatured ? 'ring-2 ring-warning/60 shadow-yellow-100/50' : ''}`} onClick={() => handleProductClick(p)}>
                           <div className="relative aspect-square overflow-hidden bg-muted">
                             {p.image_url ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Package className="w-12 h-12 text-muted-foreground/30" /></div>}
-                            {isFeatured && <Badge className="absolute top-2 left-2 bg-warning text-warning text-[9px] gap-1 shadow-lg"><Sparkles className="w-3 h-3" /> {featuredLabel}</Badge>}
-                            {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[9px]">{t('medicalSuppliesPage.product.lowStock')}</Badge>}
+                            {isFeatured && <Badge className="absolute top-2 left-2 bg-warning text-warning text-[10.5px] gap-1 shadow-lg"><Sparkles className="w-3 h-3" /> {featuredLabel}</Badge>}
+                            {p.stock <= 5 && p.stock > 0 && <Badge variant="destructive" className="absolute top-2 right-2 text-[10.5px]">{t('medicalSuppliesPage.product.lowStock')}</Badge>}
                             {p.stock === 0 && <div className="absolute inset-0 bg-black/40 flex items-center justify-center"><Badge variant="destructive">{t('medicalSuppliesPage.product.soldOut')}</Badge></div>}
                           </div>
                           <CardContent className="p-3">
@@ -392,7 +392,7 @@ export default function MedicalSupplies() {
                               {p.marketplace_brands?.name ? (<><Tag className="w-2.5 h-2.5" />{p.marketplace_brands.name}</>) : (FEATURE_FLAGS.marketplaceVendors && p.marketplace_vendors?.name) || ''}
                             </p>
                             <div className="flex items-end justify-between">
-                              <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[9px] text-muted-foreground">{p.currency}</p></div>
+                              <div><p className="text-sm sm:text-base font-bold text-primary">${p.price.toLocaleString()}</p><p className="text-[10.5px] text-muted-foreground">{p.currency}</p></div>
                               <Button size="sm" variant="default" className="h-7 text-xs gap-1 px-2"><ShoppingCart className="w-3 h-3" />{t('medicalSuppliesPage.product.buy')}</Button>
                             </div>
                           </CardContent>

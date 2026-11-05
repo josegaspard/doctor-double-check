@@ -234,18 +234,18 @@ export function TransactionHistory({ excludeEarnings = false }: TransactionHisto
             <div className="p-2 sm:p-3 bg-success/10 rounded-lg text-center">
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success mx-auto mb-0.5 sm:mb-1" />
               <p className="text-[11px] sm:text-lg font-bold text-success">+${stats.deposits.toLocaleString()}</p>
-              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.topups')}</p>
+              <p className="text-[10.5px] sm:text-xs text-muted-foreground">{t('transactions.topups')}</p>
             </div>
             <div className="p-2 sm:p-3 bg-muted rounded-lg text-center">
               <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground mx-auto mb-0.5 sm:mb-1" />
               <p className="text-[11px] sm:text-lg font-bold">-${stats.purchases.toLocaleString()}</p>
-              <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
+              <p className="text-[10.5px] sm:text-xs text-muted-foreground">{t('transactions.purchases')}</p>
             </div>
             {!excludeEarnings && (
               <div className="p-2 sm:p-3 bg-info/10 rounded-lg text-center">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-info mx-auto mb-0.5 sm:mb-1" />
                 <p className="text-[11px] sm:text-lg font-bold text-info">+${stats.earnings.toLocaleString()}</p>
-                <p className="text-[9px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
+                <p className="text-[10.5px] sm:text-xs text-muted-foreground">{t('transactions.earnings')}</p>
               </div>
             )}
           </div>

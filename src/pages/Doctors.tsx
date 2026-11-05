@@ -702,12 +702,12 @@ export default function Doctors({
       {/* Advanced Filters — Collapsible */}
       <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
         <CollapsibleTrigger asChild>
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2 px-1">
+          <button className="flex items-center gap-1.5 min-h-[36px] text-xs text-muted-foreground hover:text-foreground transition-colors mb-1 px-1">
             <SlidersHorizontal className="w-3.5 h-3.5" />
             {t('doctors.moreFilters')}
             <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
             {advancedCount > 0 && (
-              <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">{advancedCount}</Badge>
+              <Badge variant="secondary" className="h-4 px-1.5 text-[10.5px]">{advancedCount}</Badge>
             )}
           </button>
         </CollapsibleTrigger>

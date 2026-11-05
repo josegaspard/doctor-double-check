@@ -251,7 +251,7 @@ export default function AdminContentModeration() {
                         </div>
                         <div className="flex items-center gap-2 mt-2 flex-wrap text-[11px] text-muted-foreground">
                           <Avatar className="w-5 h-5">
-                            <AvatarFallback className="text-[9px]">
+                            <AvatarFallback className="text-[10.5px]">
                               {(it.creator_name || 'Dr').split(' ').map((n) => n[0]).join('').slice(0, 2)}
                             </AvatarFallback>
                           </Avatar>

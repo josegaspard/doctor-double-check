@@ -65,7 +65,7 @@ const tramosLabel = (list: { start_time: string; end_time: string }[]) =>
   byStart(list).map(r => `${hhmm(r.start_time)}–${hhmm(r.end_time)}`).join(', ');
 
 const timeInput =
-  'h-9 w-[92px] rounded-lg border border-[#d6e1e7] bg-white px-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
+  'h-9 min-w-0 flex-1 max-w-[140px] rounded-lg border border-[#d6e1e7] bg-white px-1.5 sm:px-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60';
 
 function TramoInputs({
   start, end, onChange, onRemove, invalid, disabled, removeLabel, fromLabel, toLabel,
@@ -74,8 +74,8 @@ function TramoInputs({
   onRemove: () => void; invalid: boolean; disabled?: boolean; removeLabel: string; fromLabel: string; toLabel: string;
 }) {
   return (
-    <div className={`flex items-center gap-2 rounded-xl px-2 py-1.5 ${invalid ? 'bg-red-50 ring-1 ring-red-300' : 'bg-[#f3f6fa]'}`}>
-      <Clock className="h-4 w-4 flex-none text-primary" aria-hidden="true" />
+    <div className={`flex min-w-0 items-center gap-1.5 sm:gap-2 rounded-xl px-1.5 sm:px-2 py-1.5 ${invalid ? 'bg-red-50 ring-1 ring-red-300' : 'bg-[#f3f6fa]'}`}>
+      <Clock className="hidden sm:block h-4 w-4 flex-none text-primary" aria-hidden="true" />
       <input type="time" step={900} value={hhmm(start)} aria-label={fromLabel} disabled={disabled}
         onChange={e => onChange({ start_time: e.target.value })} className={timeInput} />
       <span className="text-slate-500">–</span>
@@ -352,7 +352,7 @@ export function ScheduleEditor({
           <span className="text-xs text-slate-500">{fill(t('mm2.schedule.tz'), { tz: fmt.tzLabel() })}</span>
         </div>
         <p className="text-sm text-slate-600 mb-3">{t('mm2.schedule.weekHint')}</p>
-        <div className="grid gap-2 lg:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-2 lg:grid-cols-2">
           {fmt.weekdayOrder.map(w => {
             const list = weekday(w);
             const on = list.length > 0;
