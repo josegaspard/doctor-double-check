@@ -11756,7 +11756,7 @@ export const en = {
   howItWorks: {
     "nav": "How it works",
     "title": "How Medical Masters works",
-    "subtitle": "The doctor's full journey inside the platform, from sign-up to payout. Each step takes you to its screen.",
+    "subtitle": "The doctor's whole journey on the platform, from sign-up to payout.",
     "rolesNote": "Guide for doctors, residents and administration.",
     "mapTitle": "The journey at a glance",
     "stepLabel": "Step",
@@ -11803,177 +11803,212 @@ export const en = {
       "a1": {
         "title": "Create your account",
         "you": "Choose \"Doctor\" and your specialty, and confirm your phone with a code.",
-        "other": "Gets a notice that there is a new doctor."
+        "other": "Gets a notice that there is a new doctor.",
+        "short": "You choose \"Doctor\" and confirm your phone."
       },
       "a2": {
         "title": "License and COFEPRIS",
         "you": "Enter your professional license number (cédula, 7 or 8 digits) and upload its photo. COFEPRIS is optional.",
-        "other": "Checks the license against the SEP registry."
+        "other": "Checks the license against the SEP registry.",
+        "short": "You enter your cédula and upload its photo."
       },
       "a3": {
         "title": "Signature and contract",
         "you": "You sign the doctor contract and accept the terms and privacy policy. Your signature is saved for your prescriptions.",
-        "other": "A dated signed record is kept."
+        "other": "A dated signed record is kept.",
+        "short": "You sign the contract; your signature is used on your prescriptions."
       },
       "a4": {
         "title": "Verify your identity",
         "you": "Verify your identity with your official ID and a selfie.",
-        "other": "Sees the verification result and reviews it."
+        "other": "Sees the verification result and reviews it.",
+        "short": "You verify your identity with your ID and a selfie."
       },
       "a5": {
         "title": "Approval",
         "you": "Meanwhile you see your license status. Once approved you get an email and your schedule, patients, Lives and content open up.",
-        "other": "Approves or rejects the account and can assign you a badge."
+        "other": "Approves or rejects the account and can assign you a badge.",
+        "short": "Administration approves you and all your tools open up."
       },
       "b1": {
         "title": "Profile and services",
         "you": "Add your photo, background and services with price and format: in person, online or both.",
-        "other": "Sees your profile with the Profile, Services, Subscriptions and Lives tabs."
+        "other": "Sees your profile with the Profile, Services, Subscriptions and Lives tabs.",
+        "short": "You complete your photo, background and priced services."
       },
       "b2": {
         "title": "They find you",
         "you": "You appear in the doctor directory and in Double Check (second opinion) if you turn it on.",
-        "other": "Searches by specialty and opens your profile."
+        "other": "Searches by specialty and opens your profile.",
+        "short": "You appear in the directory and in Double Check."
       },
       "b3": {
         "title": "Invite your patients",
         "you": "From Patients, send personal invitations or import your list as CSV.",
-        "other": "Gets a link and goes straight to your practice."
+        "other": "Gets a link and goes straight to your practice.",
+        "short": "You send invitations or import your patient list."
       },
       "b4": {
         "title": "First contact",
         "you": "You get a notice of a new chat or an appointment request.",
-        "other": "Books or opens a chat: free if your rate is 0; otherwise pays with their wallet or card."
+        "other": "Books or opens a chat: free if your rate is 0; otherwise pays with their wallet or card.",
+        "short": "The patient books an appointment or opens a chat with you."
       },
       "b5": {
         "title": "Check your public profile",
         "you": "See how patients see you before sharing your link.",
-        "other": "Finds the Book, Chat and Subscribe buttons."
+        "other": "Finds the Book, Chat and Subscribe buttons.",
+        "short": "You check how you look before sharing your link."
       },
       "c1": {
         "title": "Availability",
         "you": "Set your hours by day and block the slots you can't take.",
-        "other": "When booking, only sees free slots."
+        "other": "When booking, only sees free slots.",
+        "short": "You set your hours and block the gaps."
       },
       "c2": {
         "title": "Request arrives",
         "you": "You get a notification with the type: consultation, second opinion or guidance.",
-        "other": "Picks a service and time; the appointment is marked as requested."
+        "other": "Picks a service and time; the appointment is marked as requested.",
+        "short": "The patient's appointment request reaches you."
       },
       "c3": {
         "title": "You confirm",
         "you": "On confirming, the video room is created and the confirmation email goes out. You can also decline.",
-        "other": "Gets the confirmation with the date and link."
+        "other": "Gets the confirmation with the date and link.",
+        "short": "You confirm and the video room is created."
       },
       "c4": {
         "title": "You see the patient",
         "you": "Online, join the video call from the appointment. In person, see them at your office.",
-        "other": "Joins the same room; if it doesn't connect, gets a missed-call notice."
+        "other": "Joins the same room; if it doesn't connect, gets a missed-call notice.",
+        "short": "You see patients online or at your office."
       },
       "c5": {
         "title": "Close the consultation",
         "you": "Mark it as completed and open the record or prescription from there.",
-        "other": "Sees the consultation in their history."
+        "other": "Sees the consultation in their history.",
+        "short": "You mark the consultation as completed."
       },
       "d1": {
         "title": "Your patients",
         "you": "The list builds itself from those who consult you or accept your invitation.",
-        "other": "Their data is shared with you when they consult you."
+        "other": "Their data is shared with you when they consult you.",
+        "short": "Your patient list builds itself."
       },
       "d2": {
         "title": "Patient file",
         "you": "Tabs: Summary, History, Consultations, Documents, Prescriptions and Schedule; add notes and vaccines.",
-        "other": "Fills in their record: history, habits, vaccines and tests."
+        "other": "Fills in their record: history, habits, vaccines and tests.",
+        "short": "History, notes, vaccines and consultations in one file."
       },
       "d3": {
         "title": "Tests and documents",
         "you": "See the tests the patient shares with you from their vault.",
-        "other": "Uploads their tests and chooses which doctor gets access."
+        "other": "Uploads their tests and chooses which doctor gets access.",
+        "short": "You see the tests the patient shares with you."
       },
       "d4": {
         "title": "Digital prescription",
         "you": "Create the prescription and a PDF is generated with your signature and a QR code.",
-        "other": "Gets a notice and downloads their prescription."
+        "other": "Gets a notice and downloads their prescription.",
+        "short": "You create the prescription as a PDF with your signature and a QR."
       },
       "d5": {
         "title": "Verifiable prescription",
         "you": "Look up your issued prescriptions whenever you need.",
-        "other": "The pharmacy scans the QR and checks the prescription is valid."
+        "other": "The pharmacy scans the QR and checks the prescription is valid.",
+        "short": "The pharmacy validates the prescription with the QR."
       },
       "e1": {
         "title": "Set up the Live",
         "you": "Add a title, recording price, free, paid or mixed chat, and translation if you want it.",
-        "other": "Your followers see the Live announced."
+        "other": "Your followers see the Live announced.",
+        "short": "You set the recording price, chat and translation."
       },
       "e2": {
         "title": "Go live",
         "you": "When you start, your followers get a push notification and an email.",
-        "other": "Doctors and residents join from Lives and ask in the chat."
+        "other": "Doctors and residents join from Lives and ask in the chat.",
+        "short": "Your followers get a notice when you start."
       },
       "e3": {
         "title": "The recording",
         "you": "The recording is saved in your Content at the price you set.",
-        "other": "They buy it with their wallet or card."
+        "other": "They buy it with their wallet or card.",
+        "short": "The recording is sold at the price you set."
       },
       "e4": {
         "title": "Content and books",
         "you": "Upload videos, posts and paid PDF books.",
-        "other": "They buy it and watch it in their library."
+        "other": "They buy it and watch it in their library.",
+        "short": "You upload videos, posts and paid books."
       },
       "e5": {
         "title": "Subscriptions",
         "you": "Offer free following or Basic and Premium plans.",
-        "other": "They subscribe from your profile."
+        "other": "They subscribe from your profile.",
+        "short": "You offer free following or Basic and Premium plans."
       },
       "f1": {
         "title": "Chat",
         "you": "Talk with patients (free or paid consultation) and with other doctors.",
-        "other": "Messages you from your profile or their appointment."
+        "other": "Messages you from your profile or their appointment.",
+        "short": "You talk with patients and with other doctors."
       },
       "f2": {
         "title": "Groups",
         "you": "Create groups with doctors and residents and add members.",
-        "other": "Each member gets a notice and chats in real time."
+        "other": "Each member gets a notice and chats in real time.",
+        "short": "You create groups with doctors and residents."
       },
       "f3": {
         "title": "Community",
         "you": "Post cases and topics in Community and host clinical sessions by invitation.",
-        "other": "They comment and join the session."
+        "other": "They comment and join the session.",
+        "short": "You post cases and organize clinical sessions."
       },
       "f4": {
         "title": "Marketplace",
         "you": "List equipment or supplies (administration approves them) or show interest in one.",
-        "other": "The item is held for 72 h; when the sale closes, the seller pays a 10 % fee."
+        "other": "The item is held for 72 h; when the sale closes, the seller pays a 10 % fee.",
+        "short": "You buy or sell equipment among doctors."
       },
       "f5": {
         "title": "Residents",
         "you": "A resident asks to connect; accept or decline from your Home.",
-        "other": "Once accepted, they can message you and book guidance."
+        "other": "Once accepted, they can message you and book guidance.",
+        "short": "You accept or decline residents' connection requests."
       },
       "g1": {
         "title": "Your wallet",
         "you": "Top up your balance by card (from $50 MXN) to buy inside the platform.",
-        "other": "Pays consultations and content with their balance or card."
+        "other": "Pays consultations and content with their balance or card.",
+        "short": "You top up your balance by card from $50 MXN."
       },
       "g2": {
         "title": "Earnings",
         "you": "Each sale arrives net: the platform fee is deducted (currently 20 %).",
-        "other": "Pays the price you set."
+        "other": "Pays the price you set.",
+        "short": "Each sale arrives already net of the fee (20 %)."
       },
       "g3": {
         "title": "Bank account",
         "you": "Register your 18-digit CLABE and connect your payout account.",
-        "other": "Uses these details to pay you."
+        "other": "Uses these details to pay you.",
+        "short": "You register your CLABE to receive your payments."
       },
       "g4": {
         "title": "Invoice",
         "you": "Upload the invoice for the period: it's required to get paid.",
-        "other": "Reviews the invoice and approves it."
+        "other": "Reviews the invoice and approves it.",
+        "short": "You upload the invoice for the period."
       },
       "g5": {
         "title": "Weekly payout",
         "you": "Paid every week once you reach $100 MXN. We notify you when it leaves and when it arrives.",
-        "other": "Processes the payment and sends you the receipt."
+        "other": "Processes the payment and sends you the receipt.",
+        "short": "We pay you every week from $100 MXN."
       }
     },
     "notif": {
@@ -11989,6 +12024,74 @@ export const en = {
         "meetings": "Meeting invitations",
         "refunds": "Refunds",
         "moderation": "Content review"
+      }
+    },
+    "metro": {
+      "title": "The full journey",
+      "sub": "Tap a station to see its steps.",
+      "legendMain": "Main journey",
+      "legendBranch": "In parallel",
+      "stations": {
+        "registro": "Sign-up",
+        "verificacion": "Verification",
+        "perfil": "Profile",
+        "pacientes": "Patients arrive",
+        "agenda": "Schedule",
+        "consulta": "Consultation",
+        "expediente": "Records and prescriptions",
+        "cobro": "Payment",
+        "retiro": "Payout",
+        "lives": "Lives and content",
+        "comunidad": "Chat, community and marketplace"
+      }
+    },
+    "status": {
+      "title": "Your progress",
+      "done": "Done",
+      "pending": "Pending"
+    },
+    "tags": {
+      "doctor": "Doctor",
+      "patient": "Patient",
+      "team": "Admin",
+      "resident": "Resident",
+      "community": "Peers"
+    },
+    "more": "See more",
+    "less": "See less",
+    "go": "Go to screen",
+    "index": "On this page",
+    "stepsCount": "{n} steps",
+    "showSteps": "Show steps",
+    "hideSteps": "Hide steps",
+    "progressLabel": "Reading progress",
+    "faq": {
+      "title": "Quick questions",
+      "items": {
+        "q1": {
+          "q": "When do I get paid?",
+          "a": "Every week, once you have at least $100 MXN accumulated and have uploaded the invoice for the period. The payment goes to the account you registered in Finance."
+        },
+        "q2": {
+          "q": "How much does the platform charge?",
+          "a": "20 % of each sale: consultations, chat, lives, recordings and content. Your earnings already show as net. In the marketplace, the seller pays 10 % when the sale closes."
+        },
+        "q3": {
+          "q": "What does the patient see on my profile?",
+          "a": "Your photo, background, services with price and format, your subscription plans and your lives, with the Book, Chat and Subscribe buttons."
+        },
+        "q4": {
+          "q": "How do patients reach me?",
+          "a": "Through the doctor directory, Double Check, your invitation link, or by importing your list from Patients."
+        },
+        "q5": {
+          "q": "What if I'm not approved yet?",
+          "a": "You see your cédula status under Pending verification and can watch lives and recordings. Schedule, patients, lives and content open once you're approved."
+        },
+        "q6": {
+          "q": "How does a pharmacy validate my prescription?",
+          "a": "They scan the QR on the PDF and a public page opens saying whether the prescription is valid."
+        }
       }
     }
   },
