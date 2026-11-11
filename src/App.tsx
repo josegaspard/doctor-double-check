@@ -166,6 +166,7 @@ const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory")
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const Tutoriales = React.lazy(() => import("./pages/Tutoriales"));
 const ResidenteLoQueDeboSaber = React.lazy(() => import("./pages/ResidenteLoQueDeboSaber"));
+const ComoFunciona = React.lazy(() => import("./pages/ComoFunciona"));
 const MedicalRecord = React.lazy(() => import("./pages/MedicalRecord"));
 const Meetings = React.lazy(() => import("./pages/Meetings"));
 const Congresses = React.lazy(() => import("./pages/Congresses"));
@@ -395,6 +396,7 @@ const App = () => {
                       <Route path="/tutoriales" element={<Tutoriales />} />
                       <Route path="/tutorials" element={<Navigate to="/tutoriales" replace />} />
                       <Route path="/residentes/lo-que-debo-saber" element={<ResidenteLoQueDeboSaber />} />
+                      <Route path="/como-funciona" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><ComoFunciona /></AccessGuard>} />
                       <Route path="/access-denied" element={<AccessDenied />} />
                       <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />

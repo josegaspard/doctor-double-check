@@ -11543,4 +11543,243 @@ export const de = {
     strong: "Stark",
     veryStrong: "Sehr stark",
   },
+  howItWorks: {
+    "nav": "So funktioniert's",
+    "title": "So funktioniert Medical Masters",
+    "subtitle": "Der komplette Weg des Arztes auf der Plattform, von der Anmeldung bis zur Auszahlung. Jeder Schritt führt dich zu seinem Bildschirm.",
+    "rolesNote": "Leitfaden für Ärzte, Assistenzärzte und Verwaltung.",
+    "mapTitle": "Der Weg auf einen Blick",
+    "stepLabel": "Schritt",
+    "open": "Bildschirm öffnen",
+    "langLabel": "Sprache",
+    "who": {
+      "you": "Du, Arzt",
+      "patient": "Der Patient",
+      "resident": "Der Assistenzarzt",
+      "team": "Verwaltung",
+      "community": "Kollegen und Follower"
+    },
+    "sections": {
+      "a": {
+        "title": "Registrierung und Verifizierung",
+        "sub": "Du registrierst dich, lädst deine Cédula hoch und die Verwaltung genehmigt dein Konto."
+      },
+      "b": {
+        "title": "Dein Profil und wie Patienten zu dir kommen",
+        "sub": "Dein öffentliches Profil ist der Eingang: Von dort schreiben sie dir, buchen oder abonnieren."
+      },
+      "c": {
+        "title": "Kalender und Sprechstunden",
+        "sub": "Du legst deine Verfügbarkeit fest, bestätigst Termine und behandelst online oder in der Praxis."
+      },
+      "d": {
+        "title": "Patientenakte und Rezepte",
+        "sub": "Alle Patientendaten in einer Akte und Rezepte, signiert mit QR-Code."
+      },
+      "e": {
+        "title": "Chirurgische Lives und Inhalte",
+        "sub": "Du sendest live, verkaufst Aufzeichnungen und Inhalte und bietest Abos an."
+      },
+      "f": {
+        "title": "Chat, Gruppen, Community und Marketplace",
+        "sub": "Du sprichst mit Patienten und Kollegen, teilst Fälle und kaufst oder verkaufst Geräte."
+      },
+      "g": {
+        "title": "Wallet, Einnahmen und Auszahlungen",
+        "sub": "Du verdienst mit Sprechstunden, Lives und Inhalten; die Plattform zieht ihre Provision ab und zahlt dir jede Woche aus."
+      }
+    },
+    "steps": {
+      "a1": {
+        "title": "Du erstellst dein Konto",
+        "you": "Wähle „Arzt“, dein Fachgebiet und bestätige deine Telefonnummer mit einem Code.",
+        "other": "Erhält die Meldung über einen neuen Arzt."
+      },
+      "a2": {
+        "title": "Cédula und COFEPRIS",
+        "you": "Gib deine Berufslizenznummer (Cédula, 7 oder 8 Ziffern) ein und lade ein Foto hoch. COFEPRIS ist optional.",
+        "other": "Prüft die Cédula im SEP-Register."
+      },
+      "a3": {
+        "title": "Unterschrift und Vertrag",
+        "you": "Du unterschreibst den Arztvertrag und akzeptierst Bedingungen und Datenschutz. Deine Unterschrift wird für deine Rezepte gespeichert.",
+        "other": "Der unterschriebene Nachweis mit Datum bleibt erhalten."
+      },
+      "a4": {
+        "title": "Verifiziere deine Identität",
+        "you": "Bestätige deine Identität mit einem amtlichen Ausweis und einem Selfie.",
+        "other": "Sieht das Ergebnis der Verifizierung und prüft es."
+      },
+      "a5": {
+        "title": "Freigabe",
+        "you": "Bis dahin siehst du den Status deiner Cédula. Nach der Freigabe bekommst du eine E-Mail und Kalender, Patienten, Lives und Inhalte werden freigeschaltet.",
+        "other": "Genehmigt oder lehnt das Konto ab und kann dir ein Abzeichen zuweisen."
+      },
+      "b1": {
+        "title": "Profil und Leistungen",
+        "you": "Ergänze Foto, Werdegang und Leistungen mit Preis und Form: vor Ort, online oder beides.",
+        "other": "Sieht dein Profil mit den Tabs Profil, Leistungen, Abos und Lives."
+      },
+      "b2": {
+        "title": "Sie finden dich",
+        "you": "Du erscheinst im Ärzteverzeichnis und in Double Check (Zweitmeinung), wenn du es aktivierst.",
+        "other": "Sucht nach Fachgebiet und öffnet dein Profil."
+      },
+      "b3": {
+        "title": "Lade deine Patienten ein",
+        "you": "Sende unter Patienten persönliche Einladungen oder importiere deine Liste als CSV.",
+        "other": "Erhält einen Link und landet direkt in deiner Praxis."
+      },
+      "b4": {
+        "title": "Erster Kontakt",
+        "you": "Du erhältst die Meldung über einen neuen Chat oder eine Terminanfrage.",
+        "other": "Bucht oder öffnet einen Chat: kostenlos, wenn dein Tarif 0 ist; sonst zahlt er mit Wallet oder Karte."
+      },
+      "b5": {
+        "title": "Prüfe dein öffentliches Profil",
+        "you": "Sieh, wie Patienten dich sehen, bevor du deinen Link teilst.",
+        "other": "Findet die Buttons Buchen, Chat und Abonnieren."
+      },
+      "c1": {
+        "title": "Verfügbarkeit",
+        "you": "Lege deine Zeiten pro Tag fest und sperre Slots, die du nicht abdecken kannst.",
+        "other": "Sieht beim Buchen nur freie Zeiten."
+      },
+      "c2": {
+        "title": "Die Anfrage kommt",
+        "you": "Du bekommst die Benachrichtigung mit der Art: Sprechstunde, Zweitmeinung oder Beratung.",
+        "other": "Wählt Leistung und Zeit; der Termin gilt als angefragt."
+      },
+      "c3": {
+        "title": "Du bestätigst",
+        "you": "Mit der Bestätigung wird der Videoraum erstellt und die Bestätigungs-E-Mail verschickt. Du kannst auch ablehnen.",
+        "other": "Erhält die Bestätigung mit Datum und Link."
+      },
+      "c4": {
+        "title": "Du behandelst",
+        "you": "Online trittst du dem Videoanruf über den Termin bei. Vor Ort behandelst du in deiner Praxis.",
+        "other": "Tritt demselben Raum bei; ohne Verbindung kommt eine Meldung über einen verpassten Anruf."
+      },
+      "c5": {
+        "title": "Schließe die Sprechstunde ab",
+        "you": "Markiere sie als abgeschlossen und öffne von dort die Akte oder das Rezept.",
+        "other": "Sieht die Sprechstunde in seinem Verlauf."
+      },
+      "d1": {
+        "title": "Deine Patienten",
+        "you": "Die Liste füllt sich von selbst mit denen, die dich konsultieren oder deine Einladung annehmen.",
+        "other": "Seine Daten werden mit dir geteilt, wenn er dich konsultiert."
+      },
+      "d2": {
+        "title": "Patientenakte",
+        "you": "Tabs Übersicht, Verlauf, Sprechstunden, Dokumente, Rezepte und Kalender; ergänze Notizen und Impfungen.",
+        "other": "Füllt seine Akte aus: Vorgeschichte, Gewohnheiten, Impfungen und Untersuchungen."
+      },
+      "d3": {
+        "title": "Untersuchungen und Dokumente",
+        "you": "Sieh die Untersuchungen, die der Patient aus seinem Tresor mit dir teilt.",
+        "other": "Lädt seine Untersuchungen hoch und entscheidet, welcher Arzt Zugriff bekommt."
+      },
+      "d4": {
+        "title": "Digitales Rezept",
+        "you": "Du erstellst das Rezept und es entsteht ein PDF mit deiner Unterschrift und einem QR-Code.",
+        "other": "Erhält die Meldung und lädt sein Rezept herunter."
+      },
+      "d5": {
+        "title": "Prüfbares Rezept",
+        "you": "Rufe deine ausgestellten Rezepte ab, wann du willst.",
+        "other": "Die Apotheke scannt den QR und prüft, ob das Rezept gültig ist."
+      },
+      "e1": {
+        "title": "Bereite das Live vor",
+        "you": "Lege Titel, Preis der Aufzeichnung, kostenlosen, bezahlten oder gemischten Chat und Übersetzung fest.",
+        "other": "Deine Follower sehen das angekündigte Live."
+      },
+      "e2": {
+        "title": "Geh live",
+        "you": "Beim Start erhalten deine Follower Push-Benachrichtigung und E-Mail.",
+        "other": "Ärzte und Assistenzärzte kommen über Lives und fragen im Chat."
+      },
+      "e3": {
+        "title": "Die Aufzeichnung",
+        "you": "Die Aufzeichnung landet in deinen Inhalten zum Preis, den du festgelegt hast.",
+        "other": "Kauft sie mit Wallet oder Karte."
+      },
+      "e4": {
+        "title": "Inhalte und Bücher",
+        "you": "Lade Videos, Beiträge und kostenpflichtige PDF-Bücher hoch.",
+        "other": "Kauft sie und sieht sie in seiner Bibliothek."
+      },
+      "e5": {
+        "title": "Abos",
+        "you": "Biete kostenloses Folgen oder die Pläne Basis und Premium an.",
+        "other": "Abonniert über dein Profil."
+      },
+      "f1": {
+        "title": "Chat",
+        "you": "Schreibe mit Patienten (kostenlose oder bezahlte Sprechstunde) und anderen Ärzten.",
+        "other": "Schreibt dir über dein Profil oder seinen Termin."
+      },
+      "f2": {
+        "title": "Gruppen",
+        "you": "Erstelle Gruppen mit Ärzten und Assistenzärzten und füge Mitglieder hinzu.",
+        "other": "Jedes Mitglied erhält die Meldung und chattet in Echtzeit."
+      },
+      "f3": {
+        "title": "Community",
+        "you": "Poste Fälle und Themen in der Community und organisiere klinische Sitzungen auf Einladung.",
+        "other": "Kommentieren und treten der Sitzung bei."
+      },
+      "f4": {
+        "title": "Marketplace",
+        "you": "Stelle Geräte oder Material ein (die Verwaltung genehmigt) oder zeige Interesse an einem Artikel.",
+        "other": "Der Artikel wird 72 h reserviert; beim Verkaufsabschluss zahlt der Verkäufer 10 % Provision."
+      },
+      "f5": {
+        "title": "Assistenzärzte",
+        "you": "Ein Assistenzarzt bittet um Verbindung; nimm sie an oder lehne sie auf deiner Startseite ab.",
+        "other": "Mit angenommener Verbindung kann er dir schreiben und eine Beratung buchen."
+      },
+      "g1": {
+        "title": "Dein Wallet",
+        "you": "Lade dein Guthaben per Karte auf (ab $50 MXN), um auf der Plattform zu kaufen.",
+        "other": "Zahlt Sprechstunden und Inhalte mit Guthaben oder Karte."
+      },
+      "g2": {
+        "title": "Einnahmen",
+        "you": "Jeder Verkauf kommt netto an: Die Plattformprovision wird abgezogen (derzeit 20 %).",
+        "other": "Zahlt den Preis, den du festgelegt hast."
+      },
+      "g3": {
+        "title": "Bankkonto",
+        "you": "Hinterlege deine 18-stellige CLABE und verbinde dein Auszahlungskonto.",
+        "other": "Nutzt diese Daten, um dich zu bezahlen."
+      },
+      "g4": {
+        "title": "Rechnung",
+        "you": "Lade die Rechnung für den Zeitraum hoch: Sie ist für die Auszahlung nötig.",
+        "other": "Prüft die Rechnung und genehmigt sie."
+      },
+      "g5": {
+        "title": "Wöchentliche Auszahlung",
+        "you": "Auszahlung jede Woche ab $100 MXN aufgelaufen. Wir melden dir, wann sie rausgeht und ankommt.",
+        "other": "Verarbeitet die Zahlung und schickt dir den Beleg."
+      }
+    },
+    "notif": {
+      "title": "Benachrichtigungen für dich",
+      "sub": "Wichtiges erreicht dich in der Glocke, als Push-Benachrichtigung und per E-Mail.",
+      "open": "Benachrichtigungen ansehen",
+      "items": {
+        "chat": "Neuer Chat",
+        "appointment": "Terminanfrage",
+        "messages": "Nachrichten",
+        "payouts": "Zahlungen und Auszahlungen",
+        "community": "Community",
+        "meetings": "Meeting-Einladungen",
+        "refunds": "Erstattungen",
+        "moderation": "Inhaltsprüfung"
+      }
+    }
+  },
 };

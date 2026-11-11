@@ -11753,4 +11753,243 @@ export const en = {
     strong: "Strong",
     veryStrong: "Very strong",
   },
+  howItWorks: {
+    "nav": "How it works",
+    "title": "How Medical Masters works",
+    "subtitle": "The doctor's full journey inside the platform, from sign-up to payout. Each step takes you to its screen.",
+    "rolesNote": "Guide for doctors, residents and administration.",
+    "mapTitle": "The journey at a glance",
+    "stepLabel": "Step",
+    "open": "Open screen",
+    "langLabel": "Language",
+    "who": {
+      "you": "You, doctor",
+      "patient": "The patient",
+      "resident": "The resident",
+      "team": "Administration",
+      "community": "Colleagues and followers"
+    },
+    "sections": {
+      "a": {
+        "title": "Sign-up and verification",
+        "sub": "You sign up, upload your license and administration approves your account."
+      },
+      "b": {
+        "title": "Your profile and how patients find you",
+        "sub": "Your public profile is the front door: patients message you, book or subscribe from there."
+      },
+      "c": {
+        "title": "Schedule and consultations",
+        "sub": "You set your availability, confirm appointments and see patients online or in your office."
+      },
+      "d": {
+        "title": "Medical records and prescriptions",
+        "sub": "All patient information in one file, and prescriptions signed with a QR code."
+      },
+      "e": {
+        "title": "Surgical Lives and content",
+        "sub": "You stream live, sell recordings and content, and offer subscriptions."
+      },
+      "f": {
+        "title": "Chat, groups, community and Marketplace",
+        "sub": "You talk to patients and colleagues, share cases and buy or sell equipment."
+      },
+      "g": {
+        "title": "Wallet, payments and payouts",
+        "sub": "You get paid for consultations, Lives and content; the platform deducts its fee and pays you every week."
+      }
+    },
+    "steps": {
+      "a1": {
+        "title": "Create your account",
+        "you": "Choose \"Doctor\" and your specialty, and confirm your phone with a code.",
+        "other": "Gets a notice that there is a new doctor."
+      },
+      "a2": {
+        "title": "License and COFEPRIS",
+        "you": "Enter your professional license number (cédula, 7 or 8 digits) and upload its photo. COFEPRIS is optional.",
+        "other": "Checks the license against the SEP registry."
+      },
+      "a3": {
+        "title": "Signature and contract",
+        "you": "You sign the doctor contract and accept the terms and privacy policy. Your signature is saved for your prescriptions.",
+        "other": "A dated signed record is kept."
+      },
+      "a4": {
+        "title": "Verify your identity",
+        "you": "Verify your identity with your official ID and a selfie.",
+        "other": "Sees the verification result and reviews it."
+      },
+      "a5": {
+        "title": "Approval",
+        "you": "Meanwhile you see your license status. Once approved you get an email and your schedule, patients, Lives and content open up.",
+        "other": "Approves or rejects the account and can assign you a badge."
+      },
+      "b1": {
+        "title": "Profile and services",
+        "you": "Add your photo, background and services with price and format: in person, online or both.",
+        "other": "Sees your profile with the Profile, Services, Subscriptions and Lives tabs."
+      },
+      "b2": {
+        "title": "They find you",
+        "you": "You appear in the doctor directory and in Double Check (second opinion) if you turn it on.",
+        "other": "Searches by specialty and opens your profile."
+      },
+      "b3": {
+        "title": "Invite your patients",
+        "you": "From Patients, send personal invitations or import your list as CSV.",
+        "other": "Gets a link and goes straight to your practice."
+      },
+      "b4": {
+        "title": "First contact",
+        "you": "You get a notice of a new chat or an appointment request.",
+        "other": "Books or opens a chat: free if your rate is 0; otherwise pays with their wallet or card."
+      },
+      "b5": {
+        "title": "Check your public profile",
+        "you": "See how patients see you before sharing your link.",
+        "other": "Finds the Book, Chat and Subscribe buttons."
+      },
+      "c1": {
+        "title": "Availability",
+        "you": "Set your hours by day and block the slots you can't take.",
+        "other": "When booking, only sees free slots."
+      },
+      "c2": {
+        "title": "Request arrives",
+        "you": "You get a notification with the type: consultation, second opinion or guidance.",
+        "other": "Picks a service and time; the appointment is marked as requested."
+      },
+      "c3": {
+        "title": "You confirm",
+        "you": "On confirming, the video room is created and the confirmation email goes out. You can also decline.",
+        "other": "Gets the confirmation with the date and link."
+      },
+      "c4": {
+        "title": "You see the patient",
+        "you": "Online, join the video call from the appointment. In person, see them at your office.",
+        "other": "Joins the same room; if it doesn't connect, gets a missed-call notice."
+      },
+      "c5": {
+        "title": "Close the consultation",
+        "you": "Mark it as completed and open the record or prescription from there.",
+        "other": "Sees the consultation in their history."
+      },
+      "d1": {
+        "title": "Your patients",
+        "you": "The list builds itself from those who consult you or accept your invitation.",
+        "other": "Their data is shared with you when they consult you."
+      },
+      "d2": {
+        "title": "Patient file",
+        "you": "Tabs: Summary, History, Consultations, Documents, Prescriptions and Schedule; add notes and vaccines.",
+        "other": "Fills in their record: history, habits, vaccines and tests."
+      },
+      "d3": {
+        "title": "Tests and documents",
+        "you": "See the tests the patient shares with you from their vault.",
+        "other": "Uploads their tests and chooses which doctor gets access."
+      },
+      "d4": {
+        "title": "Digital prescription",
+        "you": "Create the prescription and a PDF is generated with your signature and a QR code.",
+        "other": "Gets a notice and downloads their prescription."
+      },
+      "d5": {
+        "title": "Verifiable prescription",
+        "you": "Look up your issued prescriptions whenever you need.",
+        "other": "The pharmacy scans the QR and checks the prescription is valid."
+      },
+      "e1": {
+        "title": "Set up the Live",
+        "you": "Add a title, recording price, free, paid or mixed chat, and translation if you want it.",
+        "other": "Your followers see the Live announced."
+      },
+      "e2": {
+        "title": "Go live",
+        "you": "When you start, your followers get a push notification and an email.",
+        "other": "Doctors and residents join from Lives and ask in the chat."
+      },
+      "e3": {
+        "title": "The recording",
+        "you": "The recording is saved in your Content at the price you set.",
+        "other": "They buy it with their wallet or card."
+      },
+      "e4": {
+        "title": "Content and books",
+        "you": "Upload videos, posts and paid PDF books.",
+        "other": "They buy it and watch it in their library."
+      },
+      "e5": {
+        "title": "Subscriptions",
+        "you": "Offer free following or Basic and Premium plans.",
+        "other": "They subscribe from your profile."
+      },
+      "f1": {
+        "title": "Chat",
+        "you": "Talk with patients (free or paid consultation) and with other doctors.",
+        "other": "Messages you from your profile or their appointment."
+      },
+      "f2": {
+        "title": "Groups",
+        "you": "Create groups with doctors and residents and add members.",
+        "other": "Each member gets a notice and chats in real time."
+      },
+      "f3": {
+        "title": "Community",
+        "you": "Post cases and topics in Community and host clinical sessions by invitation.",
+        "other": "They comment and join the session."
+      },
+      "f4": {
+        "title": "Marketplace",
+        "you": "List equipment or supplies (administration approves them) or show interest in one.",
+        "other": "The item is held for 72 h; when the sale closes, the seller pays a 10 % fee."
+      },
+      "f5": {
+        "title": "Residents",
+        "you": "A resident asks to connect; accept or decline from your Home.",
+        "other": "Once accepted, they can message you and book guidance."
+      },
+      "g1": {
+        "title": "Your wallet",
+        "you": "Top up your balance by card (from $50 MXN) to buy inside the platform.",
+        "other": "Pays consultations and content with their balance or card."
+      },
+      "g2": {
+        "title": "Earnings",
+        "you": "Each sale arrives net: the platform fee is deducted (currently 20 %).",
+        "other": "Pays the price you set."
+      },
+      "g3": {
+        "title": "Bank account",
+        "you": "Register your 18-digit CLABE and connect your payout account.",
+        "other": "Uses these details to pay you."
+      },
+      "g4": {
+        "title": "Invoice",
+        "you": "Upload the invoice for the period: it's required to get paid.",
+        "other": "Reviews the invoice and approves it."
+      },
+      "g5": {
+        "title": "Weekly payout",
+        "you": "Paid every week once you reach $100 MXN. We notify you when it leaves and when it arrives.",
+        "other": "Processes the payment and sends you the receipt."
+      }
+    },
+    "notif": {
+      "title": "Notifications you get",
+      "sub": "Important things reach you in the bell, as a push notification and by email.",
+      "open": "View notifications",
+      "items": {
+        "chat": "New chat",
+        "appointment": "Appointment request",
+        "messages": "Messages",
+        "payouts": "Payments and payouts",
+        "community": "Community",
+        "meetings": "Meeting invitations",
+        "refunds": "Refunds",
+        "moderation": "Content review"
+      }
+    }
+  },
 };

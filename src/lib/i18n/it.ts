@@ -11543,4 +11543,243 @@ export const it = {
     strong: "Forte",
     veryStrong: "Molto forte",
   },
+  howItWorks: {
+    "nav": "Come funziona",
+    "title": "Come funziona Medical Masters",
+    "subtitle": "Il percorso completo del medico nella piattaforma, dalla registrazione al pagamento. Ogni passo ti porta alla sua schermata.",
+    "rolesNote": "Guida per medici, specializzandi e amministrazione.",
+    "mapTitle": "Il percorso in breve",
+    "stepLabel": "Passo",
+    "open": "Apri schermata",
+    "langLabel": "Lingua",
+    "who": {
+      "you": "Tu, medico",
+      "patient": "Il paziente",
+      "resident": "Lo specializzando",
+      "team": "Amministrazione",
+      "community": "Colleghi e follower"
+    },
+    "sections": {
+      "a": {
+        "title": "Registrazione e verifica",
+        "sub": "Ti registri, carichi la tua cédula e l'amministrazione approva il tuo account."
+      },
+      "b": {
+        "title": "Il tuo profilo e come arrivano i pazienti",
+        "sub": "Il tuo profilo pubblico è la porta d'ingresso: da lì ti scrivono, prenotano o si abbonano."
+      },
+      "c": {
+        "title": "Agenda e visite",
+        "sub": "Segni la tua disponibilità, confermi gli appuntamenti e visiti online o in studio."
+      },
+      "d": {
+        "title": "Cartella clinica e ricette",
+        "sub": "Tutte le informazioni del paziente in una scheda e ricette firmate con codice QR."
+      },
+      "e": {
+        "title": "Live chirurgici e contenuti",
+        "sub": "Trasmetti in diretta, vendi registrazioni e contenuti e offri abbonamenti."
+      },
+      "f": {
+        "title": "Chat, gruppi, community e Marketplace",
+        "sub": "Parli con pazienti e colleghi, condividi casi e compri o vendi attrezzature."
+      },
+      "g": {
+        "title": "Wallet, incassi e prelievi",
+        "sub": "Incassi per visite, live e contenuti; la piattaforma trattiene la sua commissione e ti paga ogni settimana."
+      }
+    },
+    "steps": {
+      "a1": {
+        "title": "Crei il tuo account",
+        "you": "Scegli «Medico», la tua specialità e conferma il telefono con un codice.",
+        "other": "Riceve l'avviso che c'è un nuovo medico."
+      },
+      "a2": {
+        "title": "Cédula e COFEPRIS",
+        "you": "Inserisci il numero della tua licenza professionale (cédula, 7 o 8 cifre) e carica la foto. COFEPRIS è facoltativo.",
+        "other": "Controlla la cédula sul registro della SEP."
+      },
+      "a3": {
+        "title": "Firma e contratto",
+        "you": "Firmi il contratto da medico e accetti termini e privacy. La tua firma resta salvata per le ricette.",
+        "other": "Resta la prova firmata con data."
+      },
+      "a4": {
+        "title": "Verifica la tua identità",
+        "you": "Convalida la tua identità con un documento ufficiale e un selfie.",
+        "other": "Vede l'esito della verifica e lo esamina."
+      },
+      "a5": {
+        "title": "Approvazione",
+        "you": "Nel frattempo vedi lo stato della tua cédula. Quando sei approvato ricevi un'e-mail e si aprono agenda, pazienti, live e contenuti.",
+        "other": "Approva o rifiuta l'account e può assegnarti un badge."
+      },
+      "b1": {
+        "title": "Profilo e servizi",
+        "you": "Completa foto, percorso e servizi con prezzo e modalità: in presenza, online o entrambe.",
+        "other": "Vede il tuo profilo con le schede Profilo, Servizi, Abbonamenti e Live."
+      },
+      "b2": {
+        "title": "Ti trovano",
+        "you": "Compari nell'elenco dei medici e in Double Check (secondo parere) se lo attivi.",
+        "other": "Cerca per specialità ed entra nel tuo profilo."
+      },
+      "b3": {
+        "title": "Inviti i tuoi pazienti",
+        "you": "Da Pazienti invia inviti personali o importa la tua lista in CSV.",
+        "other": "Riceve un link ed entra direttamente nel tuo studio."
+      },
+      "b4": {
+        "title": "Primo contatto",
+        "you": "Ti arriva l'avviso di una nuova chat o di una richiesta di appuntamento.",
+        "other": "Prenota o apre una chat: gratis se la tua tariffa è 0; altrimenti paga con il suo wallet o con carta."
+      },
+      "b5": {
+        "title": "Controlla il tuo profilo pubblico",
+        "you": "Guarda come ti vedono i pazienti prima di condividere il link.",
+        "other": "Trova i pulsanti Prenota, Chat e Abbonati."
+      },
+      "c1": {
+        "title": "Disponibilità",
+        "you": "Definisci gli orari per giorno e blocca le fasce che non puoi coprire.",
+        "other": "Prenotando vede solo gli orari liberi."
+      },
+      "c2": {
+        "title": "Arriva la richiesta",
+        "you": "Ricevi la notifica con il tipo: visita, secondo parere o orientamento.",
+        "other": "Sceglie servizio e orario; l'appuntamento resta come richiesto."
+      },
+      "c3": {
+        "title": "Confermi",
+        "you": "Alla conferma si crea la sala video e parte l'e-mail di conferma. Puoi anche rifiutare.",
+        "other": "Riceve la conferma con data e link."
+      },
+      "c4": {
+        "title": "Visiti",
+        "you": "Online, entra nella videochiamata dall'appuntamento. In presenza, visiti nel tuo studio.",
+        "other": "Entra nella stessa sala; se non si collega, riceve un avviso di chiamata persa."
+      },
+      "c5": {
+        "title": "Chiudi la visita",
+        "you": "La segni come completata e da lì apri la cartella o la ricetta.",
+        "other": "Vede la visita nel suo storico."
+      },
+      "d1": {
+        "title": "I tuoi pazienti",
+        "you": "L'elenco si compone da solo con chi ti consulta o accetta il tuo invito.",
+        "other": "I suoi dati vengono condivisi con te quando ti consulta."
+      },
+      "d2": {
+        "title": "Scheda paziente",
+        "you": "Schede Riepilogo, Storico, Visite, Documenti, Ricette e Agenda; aggiungi note e vaccini.",
+        "other": "Compila la sua cartella: anamnesi, abitudini, vaccini ed esami."
+      },
+      "d3": {
+        "title": "Esami e documenti",
+        "you": "Vedi gli esami che il paziente condivide con te dal suo archivio.",
+        "other": "Carica i suoi esami e decide a quale medico dare accesso."
+      },
+      "d4": {
+        "title": "Ricetta digitale",
+        "you": "Crei la ricetta e si genera un PDF con la tua firma e un codice QR.",
+        "other": "Riceve l'avviso e scarica la sua ricetta."
+      },
+      "d5": {
+        "title": "Ricetta verificabile",
+        "you": "Consulta le ricette emesse quando ti serve.",
+        "other": "La farmacia scansiona il QR e verifica che la ricetta sia valida."
+      },
+      "e1": {
+        "title": "Prepara il live",
+        "you": "Imposti titolo, prezzo della registrazione, chat gratuita, a pagamento o mista e traduzione se vuoi.",
+        "other": "I tuoi follower vedono il live annunciato."
+      },
+      "e2": {
+        "title": "Vai in diretta",
+        "you": "All'avvio, i tuoi follower ricevono notifica push ed e-mail.",
+        "other": "Medici e specializzandi entrano da Live e fanno domande in chat."
+      },
+      "e3": {
+        "title": "La registrazione",
+        "you": "La registrazione resta nei tuoi Contenuti al prezzo che hai fissato.",
+        "other": "La acquistano con il wallet o con carta."
+      },
+      "e4": {
+        "title": "Contenuti e libri",
+        "you": "Carichi video, post e libri in PDF a pagamento.",
+        "other": "Li acquistano e li vedono nella loro libreria."
+      },
+      "e5": {
+        "title": "Abbonamenti",
+        "you": "Offri il follow gratuito o piani Base e Premium.",
+        "other": "Si abbonano dal tuo profilo."
+      },
+      "f1": {
+        "title": "Chat",
+        "you": "Parli con i pazienti (visita gratuita o a pagamento) e con altri medici.",
+        "other": "Ti scrive dal tuo profilo o dal suo appuntamento."
+      },
+      "f2": {
+        "title": "Gruppi",
+        "you": "Crei gruppi con medici e specializzandi e aggiungi membri.",
+        "other": "Ogni membro riceve l'avviso e conversa in tempo reale."
+      },
+      "f3": {
+        "title": "Community",
+        "you": "Pubblichi casi e temi in Community e organizzi sessioni cliniche su invito.",
+        "other": "Commentano e si uniscono alla sessione."
+      },
+      "f4": {
+        "title": "Marketplace",
+        "you": "Pubblichi attrezzature o materiali (l'amministrazione li approva) o ti interessi a uno.",
+        "other": "Il prodotto è riservato 72 h; a vendita conclusa, chi vende paga il 10 % di commissione."
+      },
+      "f5": {
+        "title": "Specializzandi",
+        "you": "Uno specializzando chiede di connettersi; accetti o rifiuti dalla tua Home.",
+        "other": "Con la connessione accettata può scriverti e prenotare un orientamento."
+      },
+      "g1": {
+        "title": "Il tuo wallet",
+        "you": "Ricarichi il saldo con carta (da $50 MXN) per acquistare nella piattaforma.",
+        "other": "Paga visite e contenuti con il saldo o con carta."
+      },
+      "g2": {
+        "title": "Guadagni",
+        "you": "Ogni vendita arriva già al netto: si trattiene la commissione della piattaforma (oggi 20 %).",
+        "other": "Paga il prezzo che hai fissato."
+      },
+      "g3": {
+        "title": "Conto bancario",
+        "you": "Registri la tua CLABE di 18 cifre e colleghi il tuo conto di incasso.",
+        "other": "Usa questi dati per pagarti."
+      },
+      "g4": {
+        "title": "Fattura",
+        "you": "Carichi la fattura del periodo: è necessaria per incassare.",
+        "other": "Controlla la fattura e la approva."
+      },
+      "g5": {
+        "title": "Prelievo settimanale",
+        "you": "Si paga ogni settimana da $100 MXN accumulati. Ti avvisiamo quando parte e quando arriva.",
+        "other": "Elabora il pagamento e ti invia la ricevuta."
+      }
+    },
+    "notif": {
+      "title": "Gli avvisi che ricevi",
+      "sub": "Le cose importanti ti arrivano nella campanella, come notifica push e via e-mail.",
+      "open": "Vedi notifiche",
+      "items": {
+        "chat": "Nuova chat",
+        "appointment": "Richiesta di appuntamento",
+        "messages": "Messaggi",
+        "payouts": "Pagamenti e prelievi",
+        "community": "Community",
+        "meetings": "Inviti a riunioni",
+        "refunds": "Rimborsi",
+        "moderation": "Revisione dei contenuti"
+      }
+    }
+  },
 };
