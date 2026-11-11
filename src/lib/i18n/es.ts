@@ -11814,7 +11814,7 @@ export const es = {
   howItWorks: {
     "nav": "Cómo funciona",
     "title": "Cómo funciona Medical Masters",
-    "subtitle": "El recorrido completo del médico dentro de la plataforma, del registro al cobro. Cada paso te lleva a su pantalla.",
+    "subtitle": "Todo el recorrido del médico en la plataforma, del registro al cobro.",
     "rolesNote": "Guía para médicos, residentes y administración.",
     "mapTitle": "El recorrido de un vistazo",
     "stepLabel": "Paso",
@@ -11861,177 +11861,212 @@ export const es = {
       "a1": {
         "title": "Creas tu cuenta",
         "you": "Eliges «Médico», tu especialidad y confirmas tu teléfono con un código.",
-        "other": "Recibe el aviso de que hay un médico nuevo."
+        "other": "Recibe el aviso de que hay un médico nuevo.",
+        "short": "Eliges «Médico» y confirmas tu teléfono."
       },
       "a2": {
         "title": "Cédula y COFEPRIS",
         "you": "Escribes tu cédula (7 u 8 dígitos) y subes su foto. COFEPRIS es opcional.",
-        "other": "Revisa la cédula contra el registro de la SEP."
+        "other": "Revisa la cédula contra el registro de la SEP.",
+        "short": "Escribes tu cédula y subes su foto."
       },
       "a3": {
         "title": "Firma y contrato",
         "you": "Firmas el contrato de médico y aceptas términos y privacidad. Tu firma queda guardada para tus recetas.",
-        "other": "Queda la constancia firmada con fecha."
+        "other": "Queda la constancia firmada con fecha.",
+        "short": "Firmas el contrato; tu firma sirve para tus recetas."
       },
       "a4": {
         "title": "Verificas tu identidad",
         "you": "Validas tu identidad con tu identificación oficial y una selfie.",
-        "other": "Ve el resultado de la verificación y lo revisa."
+        "other": "Ve el resultado de la verificación y lo revisa.",
+        "short": "Validas tu identidad con tu identificación y una selfie."
       },
       "a5": {
         "title": "Aprobación",
         "you": "Mientras tanto ves el estado de tu cédula. Al aprobarte te llega un correo y se abren agenda, pacientes, lives y contenido.",
-        "other": "Aprueba o rechaza la cuenta y puede asignarte una insignia."
+        "other": "Aprueba o rechaza la cuenta y puede asignarte una insignia.",
+        "short": "Administración te aprueba y se abren todas tus herramientas."
       },
       "b1": {
         "title": "Perfil y servicios",
         "you": "Completas foto, trayectoria y servicios con precio y modalidad: presencial, en línea o ambas.",
-        "other": "Ve tu perfil con las pestañas Perfil, Servicios, Suscripciones y Lives."
+        "other": "Ve tu perfil con las pestañas Perfil, Servicios, Suscripciones y Lives.",
+        "short": "Completas foto, trayectoria y servicios con precio."
       },
       "b2": {
         "title": "Te encuentran",
         "you": "Apareces en el directorio de médicos y en Double Check (segunda opinión) si lo activas.",
-        "other": "Busca por especialidad y entra a tu perfil."
+        "other": "Busca por especialidad y entra a tu perfil.",
+        "short": "Apareces en el directorio y en Double Check."
       },
       "b3": {
         "title": "Invitas a tus pacientes",
         "you": "Desde Pacientes mandas invitaciones personales o importas tu lista en CSV.",
-        "other": "Recibe un enlace y entra directo a tu consulta."
+        "other": "Recibe un enlace y entra directo a tu consulta.",
+        "short": "Mandas invitaciones o importas tu lista de pacientes."
       },
       "b4": {
         "title": "Primer contacto",
         "you": "Te llega el aviso de un chat nuevo o de una solicitud de cita.",
-        "other": "Reserva o abre un chat: gratis si tu tarifa es 0; si no, paga con su wallet o con tarjeta."
+        "other": "Reserva o abre un chat: gratis si tu tarifa es 0; si no, paga con su wallet o con tarjeta.",
+        "short": "El paciente reserva una cita o abre un chat contigo."
       },
       "b5": {
         "title": "Revisa tu perfil público",
         "you": "Mira cómo te ven los pacientes antes de compartir tu enlace.",
-        "other": "Encuentra los botones Reservar, Chat y Suscribirse."
+        "other": "Encuentra los botones Reservar, Chat y Suscribirse.",
+        "short": "Revisas cómo te ven antes de compartir tu enlace."
       },
       "c1": {
         "title": "Disponibilidad",
         "you": "Defines tus horarios por día y bloqueas los huecos que no puedes atender.",
-        "other": "Al reservar solo ve los horarios libres."
+        "other": "Al reservar solo ve los horarios libres.",
+        "short": "Defines tus horarios y bloqueas los huecos."
       },
       "c2": {
         "title": "Llega la solicitud",
         "you": "Recibes la notificación con el tipo: consulta, segunda opinión u orientación.",
-        "other": "Elige servicio y horario; la cita queda como solicitada."
+        "other": "Elige servicio y horario; la cita queda como solicitada.",
+        "short": "Te llega la solicitud de cita del paciente."
       },
       "c3": {
         "title": "Confirmas",
         "you": "Al confirmar se crea la sala de videollamada y sale el correo de confirmación. También puedes rechazarla.",
-        "other": "Recibe la confirmación con la fecha y el enlace."
+        "other": "Recibe la confirmación con la fecha y el enlace.",
+        "short": "Confirmas y se crea la sala de videollamada."
       },
       "c4": {
         "title": "Atiendes",
         "you": "En línea entras a la videollamada desde la cita. Presencial, atiendes en tu consultorio.",
-        "other": "Entra a la misma sala; si no se conecta, recibe aviso de llamada perdida."
+        "other": "Entra a la misma sala; si no se conecta, recibe aviso de llamada perdida.",
+        "short": "Atiendes en línea o en tu consultorio."
       },
       "c5": {
         "title": "Cierras la consulta",
         "you": "La marcas como completada y desde ahí abres el expediente o la receta.",
-        "other": "Ve la consulta en su historial."
+        "other": "Ve la consulta en su historial.",
+        "short": "Marcas la consulta como completada."
       },
       "d1": {
         "title": "Tus pacientes",
         "you": "La lista se arma sola con quienes te consultan o aceptan tu invitación.",
-        "other": "Sus datos quedan compartidos contigo al consultarte."
+        "other": "Sus datos quedan compartidos contigo al consultarte.",
+        "short": "Tu lista de pacientes se arma sola."
       },
       "d2": {
         "title": "Ficha del paciente",
         "you": "Pestañas Resumen, Historial, Consultas, Documentos, Recetas y Agenda; añades notas y vacunas.",
-        "other": "Llena su expediente: antecedentes, hábitos, vacunas y estudios."
+        "other": "Llena su expediente: antecedentes, hábitos, vacunas y estudios.",
+        "short": "Historial, notas, vacunas y consultas en una ficha."
       },
       "d3": {
         "title": "Estudios y documentos",
         "you": "Ves los estudios que el paciente comparte contigo desde su bóveda.",
-        "other": "Sube sus estudios y decide a qué médico le da acceso."
+        "other": "Sube sus estudios y decide a qué médico le da acceso.",
+        "short": "Ves los estudios que el paciente te comparte."
       },
       "d4": {
         "title": "Receta digital",
         "you": "Creas la receta y se genera un PDF con tu firma y un código QR.",
-        "other": "Recibe el aviso y descarga su receta."
+        "other": "Recibe el aviso y descarga su receta.",
+        "short": "Generas la receta en PDF con tu firma y un QR."
       },
       "d5": {
         "title": "Receta verificable",
         "you": "Consultas tus recetas emitidas cuando lo necesites.",
-        "other": "La farmacia escanea el QR y comprueba que la receta es válida."
+        "other": "La farmacia escanea el QR y comprueba que la receta es válida.",
+        "short": "La farmacia valida la receta con el QR."
       },
       "e1": {
         "title": "Preparas el live",
         "you": "Pones título, precio de la grabación, chat gratis, de pago o mixto y traducción si la quieres.",
-        "other": "Tus seguidores ven el live anunciado."
+        "other": "Tus seguidores ven el live anunciado.",
+        "short": "Configuras precio de la grabación, chat y traducción."
       },
       "e2": {
         "title": "Sales en vivo",
         "you": "Al empezar, tus seguidores reciben notificación push y correo.",
-        "other": "Médicos y residentes entran desde Lives y preguntan en el chat."
+        "other": "Médicos y residentes entran desde Lives y preguntan en el chat.",
+        "short": "Tus seguidores reciben aviso al empezar."
       },
       "e3": {
         "title": "La grabación",
         "you": "La grabación queda en tu Contenido con el precio que fijaste.",
-        "other": "La compran con su wallet o con tarjeta."
+        "other": "La compran con su wallet o con tarjeta.",
+        "short": "La grabación se vende al precio que fijas."
       },
       "e4": {
         "title": "Contenido y libros",
         "you": "Subes videos, publicaciones y libros en PDF de pago.",
-        "other": "Lo compran y lo ven en su biblioteca."
+        "other": "Lo compran y lo ven en su biblioteca.",
+        "short": "Subes videos, publicaciones y libros de pago."
       },
       "e5": {
         "title": "Suscripciones",
         "you": "Ofreces seguirte gratis o planes Básico y Premium.",
-        "other": "Se suscriben desde tu perfil."
+        "other": "Se suscriben desde tu perfil.",
+        "short": "Ofreces seguirte gratis o planes Básico y Premium."
       },
       "f1": {
         "title": "Chat",
         "you": "Conversas con pacientes (consulta gratis o de pago) y con otros médicos.",
-        "other": "Te escribe desde tu perfil o desde su cita."
+        "other": "Te escribe desde tu perfil o desde su cita.",
+        "short": "Hablas con pacientes y con otros médicos."
       },
       "f2": {
         "title": "Grupos",
         "you": "Creas grupos con médicos y residentes y agregas miembros.",
-        "other": "Cada miembro recibe el aviso y conversa en tiempo real."
+        "other": "Cada miembro recibe el aviso y conversa en tiempo real.",
+        "short": "Creas grupos con médicos y residentes."
       },
       "f3": {
         "title": "Comunidad",
         "you": "Publicas casos y temas en Comunidad y organizas sesiones clínicas por invitación.",
-        "other": "Comentan y se unen a la sesión."
+        "other": "Comentan y se unen a la sesión.",
+        "short": "Publicas casos y organizas sesiones clínicas."
       },
       "f4": {
         "title": "Marketplace",
         "you": "Publicas equipo o insumos (administración los aprueba) o te interesas en uno.",
-        "other": "El producto se aparta 72 h; al cerrar la venta, quien vende paga 10 % de comisión."
+        "other": "El producto se aparta 72 h; al cerrar la venta, quien vende paga 10 % de comisión.",
+        "short": "Compras o vendes equipo entre médicos."
       },
       "f5": {
         "title": "Residentes",
         "you": "Un residente te pide conexión; la aceptas o la rechazas desde tu Inicio.",
-        "other": "Con la conexión aceptada puede escribirte y reservar una orientación."
+        "other": "Con la conexión aceptada puede escribirte y reservar una orientación.",
+        "short": "Aceptas o rechazas las conexiones de residentes."
       },
       "g1": {
         "title": "Tu wallet",
         "you": "Recargas saldo con tarjeta (desde $50 MXN) para comprar dentro de la plataforma.",
-        "other": "Paga consultas y contenido con su saldo o con tarjeta."
+        "other": "Paga consultas y contenido con su saldo o con tarjeta.",
+        "short": "Recargas saldo con tarjeta desde $50 MXN."
       },
       "g2": {
         "title": "Ingresos",
         "you": "Cada venta entra ya neta: se descuenta la comisión de la plataforma (hoy 20 %).",
-        "other": "Paga el precio que tú fijaste."
+        "other": "Paga el precio que tú fijaste.",
+        "short": "Cada venta entra ya sin la comisión (20 %)."
       },
       "g3": {
         "title": "Cuenta bancaria",
         "you": "Registras tu CLABE de 18 dígitos y conectas tu cuenta de cobro.",
-        "other": "Usa esos datos para pagarte."
+        "other": "Usa esos datos para pagarte.",
+        "short": "Registras tu CLABE para recibir tus pagos."
       },
       "g4": {
         "title": "Factura",
         "you": "Subes la factura del periodo: es necesaria para cobrar.",
-        "other": "Revisa la factura y la aprueba."
+        "other": "Revisa la factura y la aprueba.",
+        "short": "Subes la factura del periodo."
       },
       "g5": {
         "title": "Retiro semanal",
         "you": "Se paga cada semana a partir de $100 MXN acumulados. Te avisamos cuando sale y cuando llega.",
-        "other": "Procesa el pago y te manda el comprobante."
+        "other": "Procesa el pago y te manda el comprobante.",
+        "short": "Te pagamos cada semana desde $100 MXN."
       }
     },
     "notif": {
@@ -12047,6 +12082,74 @@ export const es = {
         "meetings": "Invitaciones a reuniones",
         "refunds": "Reembolsos",
         "moderation": "Revisión de contenido"
+      }
+    },
+    "metro": {
+      "title": "El recorrido completo",
+      "sub": "Toca una estación para ver sus pasos.",
+      "legendMain": "Recorrido principal",
+      "legendBranch": "En paralelo",
+      "stations": {
+        "registro": "Registro",
+        "verificacion": "Verificación",
+        "perfil": "Perfil",
+        "pacientes": "Llegan pacientes",
+        "agenda": "Agenda",
+        "consulta": "Consulta",
+        "expediente": "Expediente y receta",
+        "cobro": "Cobro",
+        "retiro": "Retiro",
+        "lives": "Lives y contenido",
+        "comunidad": "Chat, comunidad y marketplace"
+      }
+    },
+    "status": {
+      "title": "Tu avance",
+      "done": "Hecho",
+      "pending": "Pendiente"
+    },
+    "tags": {
+      "doctor": "Médico",
+      "patient": "Paciente",
+      "team": "Admin",
+      "resident": "Residente",
+      "community": "Colegas"
+    },
+    "more": "Ver más",
+    "less": "Ver menos",
+    "go": "Ir a la pantalla",
+    "index": "En esta página",
+    "stepsCount": "{n} pasos",
+    "showSteps": "Ver pasos",
+    "hideSteps": "Ocultar pasos",
+    "progressLabel": "Avance de lectura",
+    "faq": {
+      "title": "Preguntas rápidas",
+      "items": {
+        "q1": {
+          "q": "¿Cuándo me pagan?",
+          "a": "Cada semana, cuando tienes al menos $100 MXN acumulados y subiste la factura del periodo. El pago llega a la cuenta que registraste en Finanzas."
+        },
+        "q2": {
+          "q": "¿Cuánto cobra la plataforma?",
+          "a": "Un 20 % de cada venta: consultas, chat, lives, grabaciones y contenido. Tus ingresos ya aparecen netos. En el marketplace, quien vende paga un 10 % al cerrar la venta."
+        },
+        "q3": {
+          "q": "¿Qué ve el paciente de mi perfil?",
+          "a": "Tu foto, trayectoria, servicios con precio y modalidad, tus planes de suscripción y tus lives, con los botones Reservar, Chat y Suscribirse."
+        },
+        "q4": {
+          "q": "¿Cómo me llegan los pacientes?",
+          "a": "Por el directorio de médicos, por Double Check, por tu enlace de invitación o importando tu lista desde Pacientes."
+        },
+        "q5": {
+          "q": "¿Y si todavía no me aprueban?",
+          "a": "Ves el estado de tu cédula en Verificación pendiente y puedes ver lives y grabaciones. Agenda, pacientes, lives y contenido se abren al aprobarte."
+        },
+        "q6": {
+          "q": "¿Cómo valida una farmacia mi receta?",
+          "a": "Escanea el QR del PDF y se abre una página pública que dice si la receta es válida."
+        }
       }
     }
   },

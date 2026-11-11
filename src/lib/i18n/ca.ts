@@ -11527,7 +11527,7 @@ export const ca = {
   howItWorks: {
     "nav": "Com funciona",
     "title": "Com funciona Medical Masters",
-    "subtitle": "El recorregut complet del metge a la plataforma, del registre al cobrament. Cada pas et porta a la seva pantalla.",
+    "subtitle": "Tot el recorregut del metge a la plataforma, del registre al cobrament.",
     "rolesNote": "Guia per a metges, residents i administració.",
     "mapTitle": "El recorregut d'un cop d'ull",
     "stepLabel": "Pas",
@@ -11574,177 +11574,212 @@ export const ca = {
       "a1": {
         "title": "Crees el teu compte",
         "you": "Tria «Metge», la teva especialitat i confirma el telèfon amb un codi.",
-        "other": "Rep l'avís que hi ha un metge nou."
+        "other": "Rep l'avís que hi ha un metge nou.",
+        "short": "Tries «Metge» i confirmes el telèfon."
       },
       "a2": {
         "title": "Cédula i COFEPRIS",
         "you": "Escriu el número de la teva llicència professional (cédula, 7 o 8 dígits) i puja'n la foto. COFEPRIS és opcional.",
-        "other": "Revisa la cédula al registre de la SEP."
+        "other": "Revisa la cédula al registre de la SEP.",
+        "short": "Escrius la teva cédula i en puges la foto."
       },
       "a3": {
         "title": "Signatura i contracte",
         "you": "Signes el contracte de metge i acceptes termes i privacitat. La teva signatura queda desada per a les receptes.",
-        "other": "Queda la constància signada amb data."
+        "other": "Queda la constància signada amb data.",
+        "short": "Signes el contracte; la signatura serveix per a les receptes."
       },
       "a4": {
         "title": "Verifica la teva identitat",
         "you": "Valida la teva identitat amb un document oficial i una selfie.",
-        "other": "Veu el resultat de la verificació i el revisa."
+        "other": "Veu el resultat de la verificació i el revisa.",
+        "short": "Valides la teva identitat amb el document i una selfie."
       },
       "a5": {
         "title": "Aprovació",
         "you": "Mentrestant veus l'estat de la teva cédula. En aprovar-te rebràs un correu i s'obren agenda, pacients, lives i contingut.",
-        "other": "Aprova o rebutja el compte i et pot assignar una insígnia."
+        "other": "Aprova o rebutja el compte i et pot assignar una insígnia.",
+        "short": "Administració t'aprova i s'obren totes les eines."
       },
       "b1": {
         "title": "Perfil i serveis",
         "you": "Completa foto, trajectòria i serveis amb preu i modalitat: presencial, en línia o ambdues.",
-        "other": "Veu el teu perfil amb les pestanyes Perfil, Serveis, Subscripcions i Lives."
+        "other": "Veu el teu perfil amb les pestanyes Perfil, Serveis, Subscripcions i Lives.",
+        "short": "Completes foto, trajectòria i serveis amb preu."
       },
       "b2": {
         "title": "Et troben",
         "you": "Apareixes al directori de metges i a Double Check (segona opinió) si ho actives.",
-        "other": "Cerca per especialitat i entra al teu perfil."
+        "other": "Cerca per especialitat i entra al teu perfil.",
+        "short": "Apareixes al directori i a Double Check."
       },
       "b3": {
         "title": "Convida els teus pacients",
         "you": "Des de Pacients envia invitacions personals o importa la teva llista en CSV.",
-        "other": "Rep un enllaç i entra directe a la teva consulta."
+        "other": "Rep un enllaç i entra directe a la teva consulta.",
+        "short": "Envies invitacions o importes la teva llista de pacients."
       },
       "b4": {
         "title": "Primer contacte",
         "you": "Et ve l'avís d'un xat nou o d'una sol·licitud de cita.",
-        "other": "Reserva o obre un xat: gratis si la teva tarifa és 0; si no, paga amb el seu wallet o amb targeta."
+        "other": "Reserva o obre un xat: gratis si la teva tarifa és 0; si no, paga amb el seu wallet o amb targeta.",
+        "short": "El pacient reserva una cita o obre un xat amb tu."
       },
       "b5": {
         "title": "Revisa el teu perfil públic",
         "you": "Mira com et veuen els pacients abans de compartir l'enllaç.",
-        "other": "Hi troba els botons Reservar, Xat i Subscriure's."
+        "other": "Hi troba els botons Reservar, Xat i Subscriure's.",
+        "short": "Revises com et veuen abans de compartir l'enllaç."
       },
       "c1": {
         "title": "Disponibilitat",
         "you": "Defineix els teus horaris per dia i bloqueja els buits que no pots atendre.",
-        "other": "En reservar només veu els horaris lliures."
+        "other": "En reservar només veu els horaris lliures.",
+        "short": "Defineixes els teus horaris i bloqueges els buits."
       },
       "c2": {
         "title": "Arriba la sol·licitud",
         "you": "Reps la notificació amb el tipus: consulta, segona opinió o orientació.",
-        "other": "Tria servei i horari; la cita queda com a sol·licitada."
+        "other": "Tria servei i horari; la cita queda com a sol·licitada.",
+        "short": "Et arriba la sol·licitud de cita del pacient."
       },
       "c3": {
         "title": "Confirmes",
         "you": "En confirmar es crea la sala de videotrucada i surt el correu de confirmació. També pots rebutjar-la.",
-        "other": "Rep la confirmació amb la data i l'enllaç."
+        "other": "Rep la confirmació amb la data i l'enllaç.",
+        "short": "Confirmes i es crea la sala de videotrucada."
       },
       "c4": {
         "title": "Atens",
         "you": "En línia, entres a la videotrucada des de la cita. Presencial, atens a la teva consulta.",
-        "other": "Entra a la mateixa sala; si no es connecta, rep avís de trucada perduda."
+        "other": "Entra a la mateixa sala; si no es connecta, rep avís de trucada perduda.",
+        "short": "Atens en línia o al teu consultori."
       },
       "c5": {
         "title": "Tanca la consulta",
         "you": "Marca-la com a completada i des d'allà obre l'expedient o la recepta.",
-        "other": "Veu la consulta al seu historial."
+        "other": "Veu la consulta al seu historial.",
+        "short": "Marques la consulta com a completada."
       },
       "d1": {
         "title": "Els teus pacients",
         "you": "La llista es fa sola amb qui et consulta o accepta la teva invitació.",
-        "other": "Les seves dades queden compartides amb tu en consultar-te."
+        "other": "Les seves dades queden compartides amb tu en consultar-te.",
+        "short": "La teva llista de pacients es munta sola."
       },
       "d2": {
         "title": "Fitxa del pacient",
         "you": "Pestanyes Resum, Historial, Consultes, Documents, Receptes i Agenda; afegeix notes i vacunes.",
-        "other": "Omple el seu expedient: antecedents, hàbits, vacunes i estudis."
+        "other": "Omple el seu expedient: antecedents, hàbits, vacunes i estudis.",
+        "short": "Historial, notes, vacunes i consultes en una fitxa."
       },
       "d3": {
         "title": "Estudis i documents",
         "you": "Veus els estudis que el pacient comparteix amb tu des de la seva caixa forta.",
-        "other": "Puja els seus estudis i decideix a quin metge dona accés."
+        "other": "Puja els seus estudis i decideix a quin metge dona accés.",
+        "short": "Veus els estudis que el pacient comparteix amb tu."
       },
       "d4": {
         "title": "Recepta digital",
         "you": "Crees la recepta i es genera un PDF amb la teva signatura i un codi QR.",
-        "other": "Rep l'avís i descarrega la seva recepta."
+        "other": "Rep l'avís i descarrega la seva recepta.",
+        "short": "Generes la recepta en PDF amb la teva signatura i un QR."
       },
       "d5": {
         "title": "Recepta verificable",
         "you": "Consulta les receptes emeses quan ho necessitis.",
-        "other": "La farmàcia escaneja el QR i comprova que la recepta és vàlida."
+        "other": "La farmàcia escaneja el QR i comprova que la recepta és vàlida.",
+        "short": "La farmàcia valida la recepta amb el QR."
       },
       "e1": {
         "title": "Prepara el live",
         "you": "Posa títol, preu de la gravació, xat gratis, de pagament o mixt i traducció si la vols.",
-        "other": "Els teus seguidors veuen el live anunciat."
+        "other": "Els teus seguidors veuen el live anunciat.",
+        "short": "Configures preu de l'enregistrament, xat i traducció."
       },
       "e2": {
         "title": "Surts en directe",
         "you": "En començar, els teus seguidors reben notificació push i correu.",
-        "other": "Metges i residents entren des de Lives i pregunten al xat."
+        "other": "Metges i residents entren des de Lives i pregunten al xat.",
+        "short": "Els teus seguidors reben avís quan comences."
       },
       "e3": {
         "title": "La gravació",
         "you": "La gravació queda al teu Contingut amb el preu que has fixat.",
-        "other": "La compren amb el wallet o amb targeta."
+        "other": "La compren amb el wallet o amb targeta.",
+        "short": "L'enregistrament es ven al preu que fixes."
       },
       "e4": {
         "title": "Contingut i llibres",
         "you": "Puja vídeos, publicacions i llibres en PDF de pagament.",
-        "other": "El compren i el veuen a la seva biblioteca."
+        "other": "El compren i el veuen a la seva biblioteca.",
+        "short": "Puges vídeos, publicacions i llibres de pagament."
       },
       "e5": {
         "title": "Subscripcions",
         "you": "Ofereix seguir-te gratis o plans Bàsic i Premium.",
-        "other": "Se subscriuen des del teu perfil."
+        "other": "Se subscriuen des del teu perfil.",
+        "short": "Ofereixes seguir-te gratis o plans Bàsic i Premium."
       },
       "f1": {
         "title": "Xat",
         "you": "Converses amb pacients (consulta gratis o de pagament) i amb altres metges.",
-        "other": "T'escriu des del teu perfil o des de la seva cita."
+        "other": "T'escriu des del teu perfil o des de la seva cita.",
+        "short": "Parles amb pacients i amb altres metges."
       },
       "f2": {
         "title": "Grups",
         "you": "Crees grups amb metges i residents i afegeixes membres.",
-        "other": "Cada membre rep l'avís i conversa en temps real."
+        "other": "Cada membre rep l'avís i conversa en temps real.",
+        "short": "Crees grups amb metges i residents."
       },
       "f3": {
         "title": "Comunitat",
         "you": "Publiques casos i temes a Comunitat i organitzes sessions clíniques per invitació.",
-        "other": "Comenten i s'uneixen a la sessió."
+        "other": "Comenten i s'uneixen a la sessió.",
+        "short": "Publiques casos i organitzes sessions clíniques."
       },
       "f4": {
         "title": "Marketplace",
         "you": "Publiques equip o material (l'administració l'aprova) o t'interesses per un.",
-        "other": "El producte es reserva 72 h; en tancar la venda, qui ven paga un 10 % de comissió."
+        "other": "El producte es reserva 72 h; en tancar la venda, qui ven paga un 10 % de comissió.",
+        "short": "Compres o vens equip entre metges."
       },
       "f5": {
         "title": "Residents",
         "you": "Un resident et demana connexió; l'acceptes o la rebutges des del teu Inici.",
-        "other": "Amb la connexió acceptada et pot escriure i reservar una orientació."
+        "other": "Amb la connexió acceptada et pot escriure i reservar una orientació.",
+        "short": "Acceptes o rebutges les connexions de residents."
       },
       "g1": {
         "title": "El teu wallet",
         "you": "Recarregues saldo amb targeta (des de $50 MXN) per comprar dins la plataforma.",
-        "other": "Paga consultes i contingut amb el seu saldo o amb targeta."
+        "other": "Paga consultes i contingut amb el seu saldo o amb targeta.",
+        "short": "Recarregues saldo amb targeta des de $50 MXN."
       },
       "g2": {
         "title": "Ingressos",
         "you": "Cada venda entra ja neta: es descompta la comissió de la plataforma (avui un 20 %).",
-        "other": "Paga el preu que has fixat."
+        "other": "Paga el preu que has fixat.",
+        "short": "Cada venda entra ja sense la comissió (20 %)."
       },
       "g3": {
         "title": "Compte bancari",
         "you": "Registra la teva CLABE de 18 dígits i connecta el teu compte de cobrament.",
-        "other": "Fa servir aquestes dades per pagar-te."
+        "other": "Fa servir aquestes dades per pagar-te.",
+        "short": "Registres la teva CLABE per rebre els pagaments."
       },
       "g4": {
         "title": "Factura",
         "you": "Puja la factura del període: és necessària per cobrar.",
-        "other": "Revisa la factura i l'aprova."
+        "other": "Revisa la factura i l'aprova.",
+        "short": "Puges la factura del període."
       },
       "g5": {
         "title": "Retirada setmanal",
         "you": "Es paga cada setmana a partir de $100 MXN acumulats. T'avisem quan surt i quan arriba.",
-        "other": "Processa el pagament i t'envia el comprovant."
+        "other": "Processa el pagament i t'envia el comprovant.",
+        "short": "Et paguem cada setmana des de $100 MXN."
       }
     },
     "notif": {
@@ -11760,6 +11795,74 @@ export const ca = {
         "meetings": "Invitacions a reunions",
         "refunds": "Reemborsaments",
         "moderation": "Revisió de contingut"
+      }
+    },
+    "metro": {
+      "title": "El recorregut complet",
+      "sub": "Toca una estació per veure'n els passos.",
+      "legendMain": "Recorregut principal",
+      "legendBranch": "En paral·lel",
+      "stations": {
+        "registro": "Registre",
+        "verificacion": "Verificació",
+        "perfil": "Perfil",
+        "pacientes": "Arriben pacients",
+        "agenda": "Agenda",
+        "consulta": "Consulta",
+        "expediente": "Expedient i recepta",
+        "cobro": "Cobrament",
+        "retiro": "Retirada",
+        "lives": "Lives i contingut",
+        "comunidad": "Xat, comunitat i marketplace"
+      }
+    },
+    "status": {
+      "title": "El teu avanç",
+      "done": "Fet",
+      "pending": "Pendent"
+    },
+    "tags": {
+      "doctor": "Metge",
+      "patient": "Pacient",
+      "team": "Admin",
+      "resident": "Resident",
+      "community": "Col·legues"
+    },
+    "more": "Veure'n més",
+    "less": "Veure'n menys",
+    "go": "Ves a la pantalla",
+    "index": "En aquesta pàgina",
+    "stepsCount": "{n} passos",
+    "showSteps": "Veure passos",
+    "hideSteps": "Amagar passos",
+    "progressLabel": "Avanç de lectura",
+    "faq": {
+      "title": "Preguntes ràpides",
+      "items": {
+        "q1": {
+          "q": "Quan em paguen?",
+          "a": "Cada setmana, quan tens almenys $100 MXN acumulats i has pujat la factura del període. El pagament arriba al compte que has registrat a Finances."
+        },
+        "q2": {
+          "q": "Quant cobra la plataforma?",
+          "a": "Un 20 % de cada venda: consultes, xat, lives, enregistraments i contingut. Els teus ingressos ja apareixen nets. Al marketplace, qui ven paga un 10 % en tancar la venda."
+        },
+        "q3": {
+          "q": "Què veu el pacient del meu perfil?",
+          "a": "La teva foto, trajectòria, serveis amb preu i modalitat, els teus plans de subscripció i els teus lives, amb els botons Reservar, Xat i Subscriure's."
+        },
+        "q4": {
+          "q": "Com m'arriben els pacients?",
+          "a": "Pel directori de metges, per Double Check, pel teu enllaç d'invitació o important la teva llista des de Pacients."
+        },
+        "q5": {
+          "q": "I si encara no m'aproven?",
+          "a": "Veus l'estat de la teva cédula a Verificació pendent i pots veure lives i enregistraments. Agenda, pacients, lives i contingut s'obren en aprovar-te."
+        },
+        "q6": {
+          "q": "Com valida una farmàcia la meva recepta?",
+          "a": "Escaneja el QR del PDF i s'obre una pàgina pública que diu si la recepta és vàlida."
+        }
       }
     }
   },
