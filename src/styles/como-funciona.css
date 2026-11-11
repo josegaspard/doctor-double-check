@@ -58,7 +58,8 @@
 }
 
 /* Sección */
-.hiw-sec { padding: 1rem; scroll-margin-top: 90px; }
+.hiw-sec { padding: 1rem; scroll-margin-top: 150px; }
+@media (min-width: 1024px) { .hiw-sec { scroll-margin-top: 100px; } }
 @media (min-width: 640px) { .hiw-sec { padding: 1.25rem 1.4rem 1.4rem; } }
 .hiw-sec-head { display: flex; align-items: flex-start; gap: .8rem; margin-bottom: 1rem; }
 .hiw-sec-title {
