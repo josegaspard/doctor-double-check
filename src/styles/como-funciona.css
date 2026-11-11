@@ -3,7 +3,7 @@
 
 .hiw {
   --hiw-branch: var(--pro-info);
-  --hiw-ease: cubic-bezier(.2, .8, .2, 1);
+  --hiw-ease: cubic-bezier(.23, 1, .32, 1);
   --hiw-ink-2: #3c4b59;
   display: flex; flex-direction: column; gap: 1rem;
 }
@@ -79,7 +79,7 @@
 .hiw-st.is-branch .hiw-st-dot { border-style: dashed; border-color: var(--hiw-branch); width: 36px; height: 36px; }
 .hiw-st.is-branch .hiw-st-dot svg { color: var(--hiw-branch); }
 .hiw-st.is-branch .hiw-st-label { color: var(--hiw-branch); font-weight: 600; font-size: .84rem; }
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
   .hiw-st-btn:hover .hiw-st-dot { transform: scale(1.08); }
   .hiw-st-btn:hover .hiw-st-label { text-decoration: underline; text-underline-offset: 3px; }
 }
@@ -184,7 +184,7 @@
   font-size: .86rem; font-weight: 600; color: var(--hiw-ink-2); background: transparent;
   transition: background-color .15s ease, color .15s ease;
 }
-.hiw-index button:hover { background: #f2f7f8; }
+@media (hover: hover) and (pointer: fine) { .hiw-index button:hover { background: #f2f7f8; } }
 .hiw-index button.is-on { background: var(--pro-teal-soft); color: var(--pro-teal-ink); }
 .hiw-index-name { min-width: 0; line-height: 1.25; }
 .hiw-index-ok { width: 15px; height: 15px; margin-left: auto; flex-shrink: 0; color: var(--pro-ok); stroke-width: 3; }
@@ -272,7 +272,7 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
   font-size: .8rem; font-weight: 600; color: var(--pro-teal-ink); background: transparent;
   transition: background-color .15s ease;
 }
-.hiw-more:hover { background: var(--pro-teal-soft); }
+@media (hover: hover) and (pointer: fine) { .hiw-more:hover { background: var(--pro-teal-soft); } }
 .hiw-more .hiw-chev { width: 16px; height: 16px; }
 
 .hiw-detail {
@@ -288,9 +288,11 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
   font-size: .82rem; font-weight: 600; color: var(--pro-teal-ink);
   transition: background-color .15s ease, border-color .15s ease;
 }
-.hiw-go:hover { background: var(--pro-teal-soft); border-color: var(--pro-teal); }
 .hiw-go svg { width: 15px; height: 15px; transition: transform .18s var(--hiw-ease); }
-.hiw-go:hover svg { transform: translateX(2px); }
+@media (hover: hover) and (pointer: fine) {
+  .hiw-go:hover { background: var(--pro-teal-soft); border-color: var(--pro-teal); }
+  .hiw-go:hover svg { transform: translateX(2px); }
+}
 .hiw-go-block { margin: 1rem 1rem 0; }
 @media (min-width: 640px) { .hiw-go-block { margin: 1rem 1.4rem 0; } }
 
@@ -316,3 +318,10 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
 .hiw-faq-item p { font-size: .9rem; color: var(--hiw-ink-2); line-height: 1.5; padding: 0 0 1rem; max-width: 68ch; }
 
 .hiw-foot { color: #fff; font-size: .85rem; opacity: .9; text-align: center; padding-bottom: .5rem; }
+
+/* Respuesta al pulsar */
+.hiw-more, .hiw-go, .hiw-secbar button, .hiw-index button, .hiw-lang button { transition-property: background-color, color, border-color, transform; }
+.hiw-more:active, .hiw-go:active, .hiw-secbar button:active, .hiw-index button:active, .hiw-lang button:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .hiw-more:active, .hiw-go:active, .hiw-secbar button:active, .hiw-index button:active, .hiw-lang button:active, .hiw-st-btn:active .hiw-st-dot { transform: none; }
+}
