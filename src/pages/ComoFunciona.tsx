@@ -334,8 +334,8 @@ export default function ComoFunciona() {
           </ol>
 
           <div className="hiw-legend" aria-hidden>
-            <span><i className="hiw-legend-main" />{k('metro.legendMain')}</span>
-            <span><i className="hiw-legend-branch" />{k('metro.legendBranch')}</span>
+            <span><span className="hiw-legend-main" />{k('metro.legendMain')}</span>
+            <span><span className="hiw-legend-branch" />{k('metro.legendBranch')}</span>
           </div>
         </section>
 

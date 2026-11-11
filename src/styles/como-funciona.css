@@ -8,7 +8,7 @@
   display: flex; flex-direction: column; gap: 1rem;
 }
 .hiw .pro-page-head { margin-bottom: 0; }
-.hiw button { font: inherit; }
+:where(.hiw) button { font: inherit; }
 .hiw-muted { font-size: .88rem; color: var(--pro-muted); margin-top: .15rem; }
 .hiw-h2 {
   font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
@@ -64,11 +64,11 @@
   order: 1; position: relative; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 50%;
-  background: #fff; border: 3px solid var(--pro-teal);
+  background: #fff !important; border: 3px solid var(--pro-teal) !important;
   transition: transform .18s var(--hiw-ease), background-color .2s ease;
 }
 .hiw-st-dot svg { width: 18px; height: 18px; color: var(--pro-teal); }
-.hiw-st.is-done .hiw-st-dot { background: var(--pro-teal); }
+.hiw-st.is-done .hiw-st-dot { background: var(--pro-teal) !important; }
 .hiw-st.is-done .hiw-st-dot > svg { color: #fff; }
 .hiw-st-ok {
   position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; border-radius: 50%;
@@ -76,7 +76,7 @@
   background: var(--pro-ok); border: 2px solid #fff;
 }
 .hiw-st-ok svg { width: 10px; height: 10px; color: #fff; stroke-width: 3; }
-.hiw-st.is-branch .hiw-st-dot { border-style: dashed; border-color: var(--hiw-branch); width: 36px; height: 36px; }
+.hiw-st.is-branch .hiw-st-dot { border: 3px dashed var(--hiw-branch) !important; width: 36px; height: 36px; }
 .hiw-st.is-branch .hiw-st-dot svg { color: var(--hiw-branch); }
 .hiw-st.is-branch .hiw-st-label { color: var(--hiw-branch); font-weight: 600; font-size: .84rem; }
 @media (hover: hover) and (pointer: fine) {
@@ -135,9 +135,9 @@
 
 .hiw-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin-top: .9rem; font-size: .78rem; color: var(--pro-muted); }
 .hiw-legend span { display: inline-flex; align-items: center; gap: .45rem; }
-.hiw-legend i { display: inline-block; width: 20px; }
-.hiw-legend-main { height: 4px; border-radius: 2px; background: var(--pro-teal); }
-.hiw-legend-branch { border-top: 3px dashed var(--hiw-branch); }
+.hiw-legend-main, .hiw-legend-branch { display: inline-block; width: 22px; flex-shrink: 0; }
+.hiw-legend-main { height: 4px; border-radius: 2px; background: var(--pro-teal) !important; }
+.hiw-legend-branch { height: 0; border-top: 3px dashed var(--hiw-branch) !important; }
 
 /* ---------- Barra de etapas fija (móvil) ---------- */
 .hiw-secbar {
@@ -269,7 +269,7 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
 .hiw-more {
   margin-left: auto; display: inline-flex; align-items: center; gap: 2px;
   min-height: 32px; padding: 0 6px 0 8px; border-radius: 8px;
-  font-size: .8rem; font-weight: 600; color: var(--pro-teal-ink); background: transparent;
+  font-size: .8rem; font-weight: 600; color: var(--pro-teal-ink) !important; background: transparent;
   transition: background-color .15s ease;
 }
 @media (hover: hover) and (pointer: fine) { .hiw-more:hover { background: var(--pro-teal-soft); } }
