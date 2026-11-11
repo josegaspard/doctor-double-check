@@ -220,7 +220,8 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
 .hiw-collapse-inner { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s linear .24s; }
 .hiw-collapse.is-open > .hiw-collapse-inner { visibility: visible; transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) {
-  .hiw-collapse, .hiw-chev, .hiw-st-dot, }
+  .hiw-collapse, .hiw-chev, .hiw-st-dot { transition: none; }
+}
 
 /* ---------- Pasos ---------- */
 .hiw-steps { padding: 0 1rem 1rem; border-top: 1px solid var(--pro-line); }
