@@ -50,7 +50,6 @@ import {
   ChevronDown,
   BookOpen,
   PlayCircle,
-  Workflow,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -117,18 +116,12 @@ const doctorMarketplaceNav: DoctorNavItem = {
   labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['doctor'],
   sectionId: 'marketplace', navId: 'marketplace',
 };
-// «Cómo funciona» (11-nov-2026): el recorrido del médico en un diagrama.
-const doctorComoFuncionaNav: DoctorNavItem = {
-  labelKey: 'howItWorks.nav', href: '/como-funciona', icon: Workflow, roles: ['doctor'],
-  sectionId: 'comoFunciona', navId: 'comoFunciona',
-};
 const doctorMoreNav: DoctorNavItem[] = [
   doctorNavOf('agenda', { navId: 'consultas', labelKey: 'mm2.common.nav.consultas', href: doctorHref('agenda', { tab: 'consultas' }), icon: Stethoscope }),
   doctorNavOf('comunidad'),
   doctorDirectorioNav,
   ...(FEATURE_FLAGS.marketplaceFeeModel ? [doctorMarketplaceNav] : []),
   doctorNavOf('aprendizaje'),
-  doctorComoFuncionaNav,
 ];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
 // Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
@@ -156,8 +149,6 @@ const navItems: NavItem[] = [
   { labelKey: 'nav.meetings', href: '/meetings', icon: Calendar, roles: ['resident'], hidden: true },
   { labelKey: 'nav.hospitalLocator', href: '/hospital-locator', icon: MapPin, roles: ['patient', 'resident'], hidden: true },
   { labelKey: 'nav.admin', href: '/admin', icon: Settings, roles: ['admin'] },
-  // «Cómo funciona» al final: residente y admin lo ven dentro de «Más» (11-nov-2026).
-  { labelKey: 'howItWorks.nav', href: '/como-funciona', icon: Workflow, roles: ['resident', 'admin'] },
 ];
 
 const pathOf = (href: string) => href.split('?')[0];
@@ -358,7 +349,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     if (item.navId === 'lives') return onLives;
     if (item.navId === 'directorio') return location.pathname === '/doctors';
     if (item.navId === 'marketplace') return location.pathname.startsWith('/marketplace');
-    if (item.navId === 'comoFunciona') return location.pathname === '/como-funciona';
     if (item.sectionId === 'contenido') return activeSection === 'contenido' && !onLives;
     return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
   };
@@ -590,12 +580,6 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       <DropdownMenuItem onClick={() => navigate('/residentes/lo-que-debo-saber')} className="py-3 text-sm">
                         <GraduationCap className="w-4 h-4 mr-2" />
                         Lo que debo saber
-                      </DropdownMenuItem>
-                    )}
-                    {(role === 'doctor' || role === 'resident' || role === 'admin') && (
-                      <DropdownMenuItem onClick={() => navigate('/como-funciona')} className="py-3 text-sm">
-                        <Workflow className="w-4 h-4 mr-2" />
-                        {t('howItWorks.nav')}
                       </DropdownMenuItem>
                     )}
                     {(role === 'patient' || role === 'resident' || role === 'doctor') && (

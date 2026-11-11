@@ -15,6 +15,14 @@
   font-size: 1.15rem; font-weight: 800; color: var(--pro-ink); line-height: 1.25;
 }
 
+/* ---------- Volver al panel ---------- */
+.hiw-back {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-bottom: .35rem;
+  font-size: .85rem; font-weight: 600; color: #fff; opacity: .9;
+}
+.hiw-back svg { width: 16px; height: 16px; }
+@media (hover: hover) and (pointer: fine) { .hiw-back:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; } }
+
 /* ---------- Conmutador de idioma ---------- */
 .hiw-lang {
   display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
@@ -46,11 +54,6 @@
 .hiw-metro { padding: 1.1rem 1rem 1rem; }
 @media (min-width: 640px) { .hiw-metro { padding: 1.4rem 1.5rem 1.2rem; } }
 .hiw-metro-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.1rem; }
-.hiw-avance { display: grid; grid-template-columns: auto auto; align-items: baseline; gap: 2px 8px; flex-shrink: 0; }
-.hiw-avance-label { font-size: .75rem; font-weight: 600; color: var(--pro-muted); }
-.hiw-avance-num { font-size: 1.05rem; font-weight: 800; color: var(--pro-ink); text-align: right; }
-.hiw-avance-bar { grid-column: 1 / -1; width: 112px; height: 6px; border-radius: 4px; background: var(--pro-line); overflow: hidden; }
-.hiw-avance-bar span { display: block; height: 100%; background: var(--pro-ok); border-radius: 4px; transition: width .4s var(--hiw-ease); }
 
 .hiw-line { position: relative; display: flex; flex-direction: column; }
 .hiw-st { position: relative; min-width: 0; }
@@ -68,14 +71,6 @@
   transition: transform .18s var(--hiw-ease), background-color .2s ease;
 }
 .hiw-st-dot svg { width: 18px; height: 18px; color: var(--pro-teal); }
-.hiw-st.is-done .hiw-st-dot { background: var(--pro-teal) !important; }
-.hiw-st.is-done .hiw-st-dot > svg { color: #fff; }
-.hiw-st-ok {
-  position: absolute; right: -5px; bottom: -5px; width: 18px; height: 18px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--pro-ok); border: 2px solid #fff;
-}
-.hiw-st-ok svg { width: 10px; height: 10px; color: #fff; stroke-width: 3; }
 .hiw-st.is-branch .hiw-st-dot { border: 3px dashed var(--hiw-branch) !important; width: 36px; height: 36px; }
 .hiw-st.is-branch .hiw-st-dot svg { color: var(--hiw-branch); }
 .hiw-st.is-branch .hiw-st-label { color: var(--hiw-branch); font-weight: 600; font-size: .84rem; }
@@ -187,7 +182,6 @@
 @media (hover: hover) and (pointer: fine) { .hiw-index button:hover { background: #f2f7f8; } }
 .hiw-index button.is-on { background: var(--pro-teal-soft); color: var(--pro-teal-ink); }
 .hiw-index-name { min-width: 0; line-height: 1.25; }
-.hiw-index-ok { width: 15px; height: 15px; margin-left: auto; flex-shrink: 0; color: var(--pro-ok); stroke-width: 3; }
 
 .hiw-main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
 
@@ -226,7 +220,7 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
 .hiw-collapse-inner { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s linear .24s; }
 .hiw-collapse.is-open > .hiw-collapse-inner { visibility: visible; transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) {
-  .hiw-collapse, .hiw-chev, .hiw-st-dot, .hiw-avance-bar span { transition: none; }
+  .hiw-collapse, .hiw-chev, .hiw-st-dot { transition: none; }
 }
 
 /* ---------- Pasos ---------- */
@@ -258,13 +252,6 @@ button.hiw-sec-head:focus-visible { outline: 2px solid var(--pro-teal); outline-
 .hiw-tag-team { background: #eef1f4; color: #46525e; }
 .hiw-tag-community { background: var(--pro-ok-bg); color: var(--pro-ok); }
 
-.hiw-state {
-  display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 7px; border-radius: 6px;
-  font-size: .72rem; font-weight: 700;
-}
-.hiw-state svg { width: 12px; height: 12px; stroke-width: 3; }
-.hiw-state.is-done { background: var(--pro-ok-bg); color: var(--pro-ok); }
-.hiw-state.is-pending { background: var(--pro-warn-bg); color: var(--pro-warn); }
 
 .hiw-more {
   margin-left: auto; display: inline-flex; align-items: center; gap: 2px;

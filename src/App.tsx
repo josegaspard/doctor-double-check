@@ -396,7 +396,9 @@ const App = () => {
                       <Route path="/tutoriales" element={<Tutoriales />} />
                       <Route path="/tutorials" element={<Navigate to="/tutoriales" replace />} />
                       <Route path="/residentes/lo-que-debo-saber" element={<ResidenteLoQueDeboSaber />} />
-                      <Route path="/como-funciona" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><ComoFunciona /></AccessGuard>} />
+                      {/* «Cómo funciona» solo en el panel de administración (Jose, 11-nov-2026); la ruta vieja lleva allí y la página saca a quien no sea admin. */}
+                      <Route path="/admin/como-funciona" element={<ComoFunciona />} />
+                      <Route path="/como-funciona" element={<Navigate to="/admin/como-funciona" replace />} />
                       <Route path="/access-denied" element={<AccessDenied />} />
                       <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />
