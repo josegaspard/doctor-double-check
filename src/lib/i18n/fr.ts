@@ -11543,4 +11543,243 @@ export const fr = {
     strong: "Forte",
     veryStrong: "Très forte",
   },
+  howItWorks: {
+    "nav": "Comment ça marche",
+    "title": "Comment fonctionne Medical Masters",
+    "subtitle": "Le parcours complet du médecin sur la plateforme, de l'inscription au paiement. Chaque étape t'amène à son écran.",
+    "rolesNote": "Guide pour médecins, internes et administration.",
+    "mapTitle": "Le parcours en un coup d'œil",
+    "stepLabel": "Étape",
+    "open": "Ouvrir l'écran",
+    "langLabel": "Langue",
+    "who": {
+      "you": "Toi, médecin",
+      "patient": "Le patient",
+      "resident": "L'interne",
+      "team": "Administration",
+      "community": "Confrères et abonnés"
+    },
+    "sections": {
+      "a": {
+        "title": "Inscription et vérification",
+        "sub": "Tu t'inscris, tu envoies ta cédula et l'administration valide ton compte."
+      },
+      "b": {
+        "title": "Ton profil et l'arrivée des patients",
+        "sub": "Ton profil public est la porte d'entrée : de là, on t'écrit, on réserve ou on s'abonne."
+      },
+      "c": {
+        "title": "Agenda et consultations",
+        "sub": "Tu indiques tes disponibilités, confirmes les rendez-vous et consultes en ligne ou au cabinet."
+      },
+      "d": {
+        "title": "Dossier médical et ordonnances",
+        "sub": "Toutes les infos du patient dans une fiche et des ordonnances signées avec code QR."
+      },
+      "e": {
+        "title": "Lives chirurgicaux et contenu",
+        "sub": "Tu diffuses en direct, vends des replays et du contenu et proposes des abonnements."
+      },
+      "f": {
+        "title": "Chat, groupes, communauté et Marketplace",
+        "sub": "Tu échanges avec patients et confrères, partages des cas et achètes ou vends du matériel."
+      },
+      "g": {
+        "title": "Wallet, paiements et retraits",
+        "sub": "Tu es payé pour les consultations, lives et contenu ; la plateforme prélève sa commission et te paie chaque semaine."
+      }
+    },
+    "steps": {
+      "a1": {
+        "title": "Tu crées ton compte",
+        "you": "Choisis « Médecin », ta spécialité et confirme ton téléphone avec un code.",
+        "other": "Reçoit l'alerte d'un nouveau médecin."
+      },
+      "a2": {
+        "title": "Cédula et COFEPRIS",
+        "you": "Saisis ton numéro de licence professionnelle (cédula, 7 ou 8 chiffres) et envoie sa photo. COFEPRIS est facultatif.",
+        "other": "Vérifie la cédula dans le registre de la SEP."
+      },
+      "a3": {
+        "title": "Signature et contrat",
+        "you": "Tu signes le contrat de médecin et acceptes conditions et confidentialité. Ta signature est gardée pour tes ordonnances.",
+        "other": "Un justificatif signé et daté est conservé."
+      },
+      "a4": {
+        "title": "Vérifie ton identité",
+        "you": "Valide ton identité avec une pièce officielle et un selfie.",
+        "other": "Voit le résultat de la vérification et le contrôle."
+      },
+      "a5": {
+        "title": "Validation",
+        "you": "En attendant, tu vois le statut de ta cédula. Une fois validé, tu reçois un e-mail et agenda, patients, lives et contenu s'ouvrent.",
+        "other": "Valide ou refuse le compte et peut t'attribuer un badge."
+      },
+      "b1": {
+        "title": "Profil et services",
+        "you": "Complète photo, parcours et services avec prix et mode : sur place, en ligne ou les deux.",
+        "other": "Voit ton profil avec les onglets Profil, Services, Abonnements et Lives."
+      },
+      "b2": {
+        "title": "On te trouve",
+        "you": "Tu apparais dans l'annuaire des médecins et dans Double Check (deuxième avis) si tu l'actives.",
+        "other": "Cherche par spécialité et ouvre ton profil."
+      },
+      "b3": {
+        "title": "Invite tes patients",
+        "you": "Depuis Patients, envoie des invitations personnelles ou importe ta liste en CSV.",
+        "other": "Reçoit un lien et arrive directement dans ton cabinet."
+      },
+      "b4": {
+        "title": "Premier contact",
+        "you": "Tu reçois l'alerte d'un nouveau chat ou d'une demande de rendez-vous.",
+        "other": "Réserve ou ouvre un chat : gratuit si ton tarif est 0 ; sinon, paie avec son wallet ou sa carte."
+      },
+      "b5": {
+        "title": "Vérifie ton profil public",
+        "you": "Regarde comment les patients te voient avant de partager ton lien.",
+        "other": "Trouve les boutons Réserver, Chat et S'abonner."
+      },
+      "c1": {
+        "title": "Disponibilités",
+        "you": "Définis tes horaires par jour et bloque les créneaux que tu ne peux pas assurer.",
+        "other": "À la réservation, ne voit que les créneaux libres."
+      },
+      "c2": {
+        "title": "La demande arrive",
+        "you": "Tu reçois la notification avec le type : consultation, deuxième avis ou orientation.",
+        "other": "Choisit service et horaire ; le rendez-vous reste « demandé »."
+      },
+      "c3": {
+        "title": "Tu confirmes",
+        "you": "À la confirmation, la salle de visio est créée et l'e-mail part. Tu peux aussi refuser.",
+        "other": "Reçoit la confirmation avec la date et le lien."
+      },
+      "c4": {
+        "title": "Tu consultes",
+        "you": "En ligne, rejoins la visio depuis le rendez-vous. Sur place, tu reçois à ton cabinet.",
+        "other": "Rejoint la même salle ; sans connexion, reçoit une alerte d'appel manqué."
+      },
+      "c5": {
+        "title": "Clôture la consultation",
+        "you": "Marque-la comme terminée et ouvre de là le dossier ou l'ordonnance.",
+        "other": "Voit la consultation dans son historique."
+      },
+      "d1": {
+        "title": "Tes patients",
+        "you": "La liste se construit seule avec ceux qui te consultent ou acceptent ton invitation.",
+        "other": "Ses données te sont partagées dès qu'il te consulte."
+      },
+      "d2": {
+        "title": "Fiche patient",
+        "you": "Onglets Résumé, Historique, Consultations, Documents, Ordonnances et Agenda ; ajoute notes et vaccins.",
+        "other": "Remplit son dossier : antécédents, habitudes, vaccins et examens."
+      },
+      "d3": {
+        "title": "Examens et documents",
+        "you": "Vois les examens que le patient partage avec toi depuis son coffre.",
+        "other": "Envoie ses examens et choisit à quel médecin donner l'accès."
+      },
+      "d4": {
+        "title": "Ordonnance numérique",
+        "you": "Crée l'ordonnance et un PDF est généré avec ta signature et un code QR.",
+        "other": "Reçoit l'alerte et télécharge son ordonnance."
+      },
+      "d5": {
+        "title": "Ordonnance vérifiable",
+        "you": "Consulte tes ordonnances émises quand tu veux.",
+        "other": "La pharmacie scanne le QR et vérifie que l'ordonnance est valide."
+      },
+      "e1": {
+        "title": "Prépare le live",
+        "you": "Indique titre, prix du replay, chat gratuit, payant ou mixte et traduction si besoin.",
+        "other": "Tes abonnés voient le live annoncé."
+      },
+      "e2": {
+        "title": "Passe en direct",
+        "you": "Au démarrage, tes abonnés reçoivent une notification push et un e-mail.",
+        "other": "Médecins et internes rejoignent depuis Lives et posent leurs questions dans le chat."
+      },
+      "e3": {
+        "title": "Le replay",
+        "you": "Le replay reste dans ton Contenu au prix que tu as fixé.",
+        "other": "L'achète avec son wallet ou sa carte."
+      },
+      "e4": {
+        "title": "Contenu et livres",
+        "you": "Publie des vidéos, des posts et des livres PDF payants.",
+        "other": "L'achète et le voit dans sa bibliothèque."
+      },
+      "e5": {
+        "title": "Abonnements",
+        "you": "Propose un suivi gratuit ou des formules Basique et Premium.",
+        "other": "S'abonne depuis ton profil."
+      },
+      "f1": {
+        "title": "Chat",
+        "you": "Échange avec des patients (consultation gratuite ou payante) et d'autres médecins.",
+        "other": "T'écrit depuis ton profil ou son rendez-vous."
+      },
+      "f2": {
+        "title": "Groupes",
+        "you": "Crée des groupes avec médecins et internes et ajoute des membres.",
+        "other": "Chaque membre reçoit l'alerte et discute en temps réel."
+      },
+      "f3": {
+        "title": "Communauté",
+        "you": "Publie des cas et sujets dans Communauté et organise des séances cliniques sur invitation.",
+        "other": "Commentent et rejoignent la séance."
+      },
+      "f4": {
+        "title": "Marketplace",
+        "you": "Publie du matériel ou des fournitures (l'administration valide) ou montre ton intérêt pour un article.",
+        "other": "L'article est réservé 72 h ; à la vente conclue, le vendeur paie 10 % de commission."
+      },
+      "f5": {
+        "title": "Internes",
+        "you": "Un interne demande une connexion ; accepte ou refuse depuis ton Accueil.",
+        "other": "Connexion acceptée, il peut t'écrire et réserver une orientation."
+      },
+      "g1": {
+        "title": "Ton wallet",
+        "you": "Recharge ton solde par carte (dès $50 MXN) pour acheter sur la plateforme.",
+        "other": "Paie consultations et contenu avec son solde ou sa carte."
+      },
+      "g2": {
+        "title": "Revenus",
+        "you": "Chaque vente arrive nette : la commission de la plateforme est déduite (aujourd'hui 20 %).",
+        "other": "Paie le prix que tu as fixé."
+      },
+      "g3": {
+        "title": "Compte bancaire",
+        "you": "Enregistre ta CLABE à 18 chiffres et connecte ton compte de paiement.",
+        "other": "Utilise ces données pour te payer."
+      },
+      "g4": {
+        "title": "Facture",
+        "you": "Envoie la facture de la période : elle est nécessaire pour être payé.",
+        "other": "Vérifie la facture et la valide."
+      },
+      "g5": {
+        "title": "Retrait hebdomadaire",
+        "you": "Paiement chaque semaine dès $100 MXN cumulés. On t'avise au départ et à l'arrivée.",
+        "other": "Traite le paiement et t'envoie le justificatif."
+      }
+    },
+    "notif": {
+      "title": "Les alertes que tu reçois",
+      "sub": "L'essentiel t'arrive dans la cloche, en notification push et par e-mail.",
+      "open": "Voir les notifications",
+      "items": {
+        "chat": "Nouveau chat",
+        "appointment": "Demande de rendez-vous",
+        "messages": "Messages",
+        "payouts": "Paiements et retraits",
+        "community": "Communauté",
+        "meetings": "Invitations à des réunions",
+        "refunds": "Remboursements",
+        "moderation": "Vérification du contenu"
+      }
+    }
+  },
 };
