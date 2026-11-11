@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import {
   UserPlus, IdCard, PenLine, ScanFace, BadgeCheck,
   Stethoscope, Search, Send, MessageSquare, Eye,
@@ -8,12 +8,11 @@ import {
   Radio, PlayCircle, BookOpen, Star,
   MessagesSquare, Package, GraduationCap,
   Wallet, TrendingUp, Landmark, Receipt, Banknote,
-  Bell, ChevronDown, ArrowRight, Check, Map as MapIcon, Languages, HelpCircle,
+  Bell, ChevronDown, ArrowRight, ArrowLeft, Map as MapIcon, Languages, HelpCircle,
 } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
 import { doctorHref } from '@/lib/doctorSections';
 import '@/styles/como-funciona.css';
 
@@ -21,11 +20,10 @@ import '@/styles/como-funciona.css';
 // Arriba un diagrama tipo metro del recorrido; debajo, cada etapa paso a paso
 // en filas cortas con el detalle plegado. El contenido sale de las pantallas
 // reales (App.tsx, doctorSections.ts) y de la configuración vigente en la BD.
-// Los ✓ de avance solo usan datos que la app ya lee del médico (perfil,
-// horario y cuenta bancaria); si no hay dato, no se marca nada.
+// Solo para administración (Jose, 11-nov-2026): vive en /admin/como-funciona
+// y cualquier otro rol vuelve a su inicio.
 
 type Who = 'patient' | 'resident' | 'team' | 'community';
-type CheckKey = 'registro' | 'verificacion' | 'perfil' | 'agenda' | 'banco';
 
 interface Step {
   id: string;
@@ -34,7 +32,6 @@ interface Step {
   href: (uid: string) => string;
   doctorOnly?: boolean;
   adminHref?: string;
-  check?: CheckKey;
 }
 
 interface Section { id: string; icon: React.ElementType; steps: Step[] }
@@ -45,16 +42,16 @@ const perfil = (b: string) => doctorHref('cuenta', { tab: 'perfil', b });
 const SECTIONS: Section[] = [
   {
     id: 'a', icon: BadgeCheck, steps: [
-      { id: 'a1', icon: UserPlus, other: 'team', href: () => perfil('identidad'), doctorOnly: true, adminHref: '/admin/users', check: 'registro' },
+      { id: 'a1', icon: UserPlus, other: 'team', href: () => perfil('identidad'), doctorOnly: true, adminHref: '/admin/users' },
       { id: 'a2', icon: IdCard, other: 'team', href: () => perfil('trayectoria'), doctorOnly: true, adminHref: '/admin/doctors' },
       { id: 'a3', icon: PenLine, other: 'team', href: () => perfil('identidad'), doctorOnly: true },
       { id: 'a4', icon: ScanFace, other: 'team', href: () => '/verify-identity', doctorOnly: true, adminHref: '/admin/verifications' },
-      { id: 'a5', icon: BadgeCheck, other: 'team', href: () => '/verification-pending', doctorOnly: true, adminHref: '/admin/doctors', check: 'verificacion' },
+      { id: 'a5', icon: BadgeCheck, other: 'team', href: () => '/verification-pending', doctorOnly: true, adminHref: '/admin/doctors' },
     ],
   },
   {
     id: 'b', icon: Stethoscope, steps: [
-      { id: 'b1', icon: Stethoscope, other: 'patient', href: () => perfil('servicios'), doctorOnly: true, check: 'perfil' },
+      { id: 'b1', icon: Stethoscope, other: 'patient', href: () => perfil('servicios'), doctorOnly: true },
       { id: 'b2', icon: Search, other: 'patient', href: () => '/doctors' },
       { id: 'b3', icon: Send, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
       { id: 'b4', icon: MessageSquare, other: 'patient', href: () => '/chat' },
@@ -63,7 +60,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'c', icon: CalendarClock, steps: [
-      { id: 'c1', icon: CalendarClock, other: 'patient', href: () => doctorHref('agenda', { tab: 'disponibilidad' }), doctorOnly: true, check: 'agenda' },
+      { id: 'c1', icon: CalendarClock, other: 'patient', href: () => doctorHref('agenda', { tab: 'disponibilidad' }), doctorOnly: true },
       { id: 'c2', icon: Inbox, other: 'patient', href: () => doctorHref('agenda', { tab: 'consultas' }), doctorOnly: true },
       { id: 'c3', icon: CheckCircle2, other: 'patient', href: () => doctorHref('agenda', { tab: 'consultas' }), doctorOnly: true },
       { id: 'c4', icon: Video, other: 'patient', href: () => doctorHref('agenda', { tab: 'calendario' }), doctorOnly: true },
@@ -101,7 +98,7 @@ const SECTIONS: Section[] = [
     id: 'g', icon: Wallet, steps: [
       { id: 'g1', icon: Wallet, other: 'patient', href: () => finanzas('recargas'), doctorOnly: true },
       { id: 'g2', icon: TrendingUp, other: 'patient', href: () => finanzas('ingresos'), doctorOnly: true },
-      { id: 'g3', icon: Landmark, other: 'team', href: () => finanzas('banco'), doctorOnly: true, check: 'banco' },
+      { id: 'g3', icon: Landmark, other: 'team', href: () => finanzas('banco'), doctorOnly: true },
       { id: 'g4', icon: Receipt, other: 'team', href: () => finanzas('facturas'), doctorOnly: true, adminHref: '/admin/invoices' },
       { id: 'g5', icon: Banknote, other: 'team', href: () => finanzas('movimientos'), doctorOnly: true, adminHref: '/admin/payouts' },
     ],
@@ -109,18 +106,18 @@ const SECTIONS: Section[] = [
 ];
 
 // Metro: recorrido principal + dos ramas que corren en paralelo.
-interface Station { id: string; icon: React.ElementType; sec: string; branch?: boolean; check?: CheckKey }
+interface Station { id: string; icon: React.ElementType; sec: string; branch?: boolean }
 const STATIONS: Station[] = [
-  { id: 'registro', icon: UserPlus, sec: 'a', check: 'registro' },
-  { id: 'verificacion', icon: BadgeCheck, sec: 'a', check: 'verificacion' },
-  { id: 'perfil', icon: Stethoscope, sec: 'b', check: 'perfil' },
+  { id: 'registro', icon: UserPlus, sec: 'a' },
+  { id: 'verificacion', icon: BadgeCheck, sec: 'a' },
+  { id: 'perfil', icon: Stethoscope, sec: 'b' },
   { id: 'lives', icon: Radio, sec: 'e', branch: true },
   { id: 'pacientes', icon: Users, sec: 'b' },
-  { id: 'agenda', icon: CalendarClock, sec: 'c', check: 'agenda' },
+  { id: 'agenda', icon: CalendarClock, sec: 'c' },
   { id: 'consulta', icon: Video, sec: 'c' },
   { id: 'comunidad', icon: MessagesSquare, sec: 'f', branch: true },
   { id: 'expediente', icon: FileText, sec: 'd' },
-  { id: 'cobro', icon: Wallet, sec: 'g', check: 'banco' },
+  { id: 'cobro', icon: Wallet, sec: 'g' },
   { id: 'retiro', icon: Banknote, sec: 'g' },
 ];
 
@@ -152,39 +149,11 @@ function useIsMobile() {
 }
 
 export default function ComoFunciona() {
-  const { user, role } = useAuth();
+  const { user, role, isLoading } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const k = useCallback((key: string) => t(`howItWorks.${key}`), [t]);
   const uid = user?.id || '';
-  const isDoctor = role === 'doctor';
   const isMobile = useIsMobile();
-
-  // ---- Avance del médico (solo datos que la app ya consulta) ----
-  const [checks, setChecks] = useState<Partial<Record<CheckKey, boolean>>>({});
-  useEffect(() => {
-    if (!isDoctor || !uid) return;
-    let alive = true;
-    const sb = supabase as any;
-    Promise.all([
-      sb.from('doctor_profiles').select('status, bio').eq('user_id', uid).maybeSingle(),
-      sb.from('doctor_schedule_ranges').select('id', { count: 'exact', head: true }).eq('doctor_id', uid).eq('is_active', true),
-      sb.from('doctor_bank_accounts').select('id').eq('doctor_id', uid).maybeSingle(),
-    ]).then(([dp, sched, bank]: any[]) => {
-      if (!alive) return;
-      const next: Partial<Record<CheckKey, boolean>> = {};
-      if (!dp.error && dp.data) {
-        next.registro = true;
-        next.verificacion = dp.data.status === 'approved';
-        next.perfil = Boolean(user?.avatarUrl) && Boolean((dp.data.bio || '').trim());
-      }
-      if (!sched.error && typeof sched.count === 'number') next.agenda = sched.count > 0;
-      if (!bank.error) next.banco = Boolean(bank.data);
-      setChecks(next);
-    }).catch(() => { /* sin datos: no se marca nada */ });
-    return () => { alive = false; };
-  }, [isDoctor, uid, user?.avatarUrl]);
-  const checkKeys = Object.keys(checks) as CheckKey[];
-  const doneCount = checkKeys.filter(c => checks[c]).length;
 
   // ---- Barras fijas, sección activa y avance de lectura ----
   const [barsTop, setBarsTop] = useState(0);
@@ -261,22 +230,10 @@ export default function ComoFunciona() {
   const navLabel = (id: string) =>
     id === 'faq' ? k('faq.title') : id === 'avisos' ? k('notif.title') : k(`sections.${id}.title`);
 
-  const statusChip = (c?: CheckKey) => {
-    if (!c || checks[c] === undefined) return null;
-    return checks[c]
-      ? <span className="hiw-state is-done"><Check aria-hidden />{k('status.done')}</span>
-      : <span className="hiw-state is-pending">{k('status.pending')}</span>;
-  };
-
-  const sectionHasCheck = useMemo(() => {
-    const m: Record<string, boolean | undefined> = {};
-    SECTIONS.forEach(sec => {
-      const cs = sec.steps.map(s => s.check).filter(Boolean) as CheckKey[];
-      const known = cs.filter(c => checks[c] !== undefined);
-      if (known.length) m[sec.id] = known.every(c => checks[c]);
-    });
-    return m;
-  }, [checks]);
+  // Solo administración; los demás roles vuelven a su inicio.
+  if (!isLoading && role !== 'admin') {
+    return <Navigate to={!role ? '/login' : role === 'doctor' ? '/doctor/dashboard' : '/lives'} replace />;
+  }
 
   return (
     <MainLayout>
@@ -284,6 +241,7 @@ export default function ComoFunciona() {
         {/* Cabecera */}
         <div className="pro-page-head hiw-head">
           <div className="min-w-0">
+            <Link to="/admin" className="hiw-back"><ArrowLeft aria-hidden />{t('autoI18n.clAdminFeat1')}</Link>
             <h1 className="pro-page-title"><MapIcon className="w-5 h-5" /><span>{k('title')}</span></h1>
             <p className="pro-page-sub">{k('subtitle')}</p>
           </div>
@@ -305,27 +263,18 @@ export default function ComoFunciona() {
               <h2 id="hiw-metro-t" className="hiw-h2">{k('metro.title')}</h2>
               <p className="hiw-muted">{k('metro.sub')}</p>
             </div>
-            {isDoctor && checkKeys.length > 0 && (
-              <div className="hiw-avance" aria-label={`${k('status.title')}: ${doneCount}/${checkKeys.length}`}>
-                <span className="hiw-avance-label">{k('status.title')}</span>
-                <span className="hiw-avance-num">{doneCount}/{checkKeys.length}</span>
-                <span className="hiw-avance-bar"><span style={{ width: `${(doneCount / checkKeys.length) * 100}%` }} /></span>
-              </div>
-            )}
           </div>
 
           <ol className="hiw-line">
             {STATIONS.map(st => {
               const Icon = st.icon;
-              const done = st.check ? checks[st.check] : undefined;
               return (
-                <li key={st.id} className={`hiw-st hiw-st-${st.id}${st.branch ? ' is-branch' : ''}${done ? ' is-done' : ''}`}>
+                <li key={st.id} className={`hiw-st hiw-st-${st.id}${st.branch ? ' is-branch' : ''}`}>
                   <button type="button" className="hiw-st-btn" onClick={() => goTo(st.sec)}
-                    aria-label={`${k(`metro.stations.${st.id}`)} · ${k(`sections.${st.sec}.title`)}${done ? ` · ${k('status.done')}` : ''}`}>
+                    aria-label={`${k(`metro.stations.${st.id}`)} · ${k(`sections.${st.sec}.title`)}`}>
                     <span className="hiw-st-label">{k(`metro.stations.${st.id}`)}</span>
                     <span className="hiw-st-dot">
                       <Icon aria-hidden />
-                      {done && <span className="hiw-st-ok"><Check aria-hidden /></span>}
                     </span>
                   </button>
                 </li>
@@ -367,7 +316,6 @@ export default function ComoFunciona() {
                       ? <span className="hiw-letter hiw-letter-sm">{id.toUpperCase()}</span>
                       : <span className="hiw-letter hiw-letter-sm hiw-letter-soft">{id === 'faq' ? <HelpCircle aria-hidden /> : <Bell aria-hidden />}</span>}
                     <span className="hiw-index-name">{navLabel(id)}</span>
-                    {sectionHasCheck[id] && <Check className="hiw-index-ok" aria-label={k('status.done')} />}
                   </button>
                 </li>
               ))}
@@ -416,7 +364,6 @@ export default function ComoFunciona() {
                               <div className="hiw-step-body">
                                 <div className="hiw-step-top">
                                   <h3 className="hiw-step-title">{k(`steps.${s.id}.title`)}</h3>
-                                  {isDoctor && statusChip(s.check)}
                                 </div>
                                 <p className="hiw-step-short">{k(`steps.${s.id}.short`)}</p>
                                 <div className="hiw-step-foot">

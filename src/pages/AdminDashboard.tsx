@@ -11,7 +11,7 @@ import {
   Users, UserCheck, Stethoscope, GraduationCap, FileCheck, ArrowRight,
   LayoutDashboard, Loader2, Settings, RefreshCcw, Banknote, FileText,
   Newspaper, ShieldCheck, Flag, BarChart3, MessageSquare, Building2, Package, Star, Megaphone,
-  ClipboardCheck, Presentation, QrCode, Ticket, Search, FileSignature, Gauge
+  ClipboardCheck, Presentation, QrCode, Ticket, Search, FileSignature, Gauge, Workflow
 } from 'lucide-react';
 
 interface AdminModule {
@@ -112,6 +112,8 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash35'), desc: t('autoI18n.clAdminDash36'), badge: stats.pendingReports },
         { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash37'), desc: t('autoI18n.clAdminDash38') },
         { id: 'handover', icon: FileSignature, href: '/admin/entrega', color: 'text-primary', borderColor: 'border-l-primary', title: 'Entrega de la plataforma', desc: 'Guía de entrega y botón para confirmarla' },
+        // «Cómo funciona» (Jose, 11-nov-2026): el recorrido del médico, solo para administración.
+        { id: 'como-funciona', icon: Workflow, href: '/admin/como-funciona', color: 'text-primary', borderColor: 'border-l-primary', title: t('howItWorks.nav'), desc: t('howItWorks.subtitle') },
       ],
     },
     {
