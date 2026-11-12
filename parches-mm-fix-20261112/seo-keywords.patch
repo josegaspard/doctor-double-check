@@ -1,0 +1,160 @@
+diff --git a/index.html b/index.html
+index 7a1e87f1..f648d04b 100644
+--- a/index.html
++++ b/index.html
+@@ -20,7 +20,7 @@
+     <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+     <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+     <meta property="og:type" content="website" />
+-    <meta property="og:locale" content="es_ES" />
++    <meta property="og:locale" content="es_MX" />
+     <meta property="og:url" content="https://medical-masters.com/" />
+     <meta property="og:site_name" content="Medical Masters" />
+     <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
+@@ -46,9 +46,9 @@
+       "url": "https://medical-masters.com/",
+       "logo": "https://medical-masters.com/icon-512.png?v=18",
+       "image": "https://medical-masters.com/icon-512.png?v=18",
+-      "alternateName": "Medical Masters",
++      "alternateName": ["Medical Master", "MedicalMasters"],
+       "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
+-      "areaServed": "Worldwide",
++      "areaServed": [{ "@type": "Country", "name": "México" }, "Latinoamérica"],
+       "medicalSpecialty": ["GeneralPractice", "Cardiovascular", "Pediatric", "Dermatologic", "Psychiatric", "Gynecologic"],
+       "sameAs": [
+         "https://www.facebook.com/MedicalMasters",
+diff --git a/public/llms.txt b/public/llms.txt
+new file mode 100644
+index 00000000..b46e9629
+--- /dev/null
++++ b/public/llms.txt
+@@ -0,0 +1,16 @@
++# Medical Masters
++
++> Plataforma médica para médicos especialistas certificados, residentes y pacientes, con base en México. Reúne orientación médica en vivo, lives quirúrgicos, educación médica continua, expediente clínico, receta digital y un directorio de médicos con cédula profesional verificada.
++
++Sitio: https://medical-masters.com/
++Contacto: soporte@medical-masters.com
++
++## Páginas públicas
++
++- [Inicio](https://medical-masters.com/): qué es Medical Masters y a quién sirve.
++- [Para médicos](https://medical-masters.com/for-doctors): red de médicos especialistas certificados.
++- [Para residentes](https://medical-masters.com/for-residents): formación y herramientas para médicos residentes.
++- [Para pacientes](https://medical-masters.com/for-patients): acceso para pacientes (próximamente).
++- [Centro de ayuda](https://medical-masters.com/help): preguntas frecuentes.
++- [Aviso de privacidad](https://medical-masters.com/privacy)
++- [Términos y condiciones](https://medical-masters.com/terms)
+diff --git a/public/robots.txt b/public/robots.txt
+index a175803f..2016f993 100644
+--- a/public/robots.txt
++++ b/public/robots.txt
+@@ -19,6 +19,9 @@ Allow: /icon-512.png
+ Allow: /manifest.json
+ Allow: /sitemap.xml
+ Allow: /robots.txt
++Allow: /llms.txt
++Allow: /assets/
++Allow: /gtag-init.js
+ Disallow: /
+ 
+ Sitemap: https://medical-masters.com/sitemap.xml
+diff --git a/src/components/seo/SeoRouteSync.tsx b/src/components/seo/SeoRouteSync.tsx
+index 8a8c2465..b06f3718 100644
+--- a/src/components/seo/SeoRouteSync.tsx
++++ b/src/components/seo/SeoRouteSync.tsx
+@@ -1,10 +1,10 @@
+-import { useEffect, useRef } from 'react';
++import { useEffect } from 'react';
+ import { useLocation } from 'react-router-dom';
+ import { isPrivatePath, normalizePath, type ResolvedSeo } from '@/lib/seo';
+ 
+-// La primera carga de cada URL ya trae su <head> escrito por middleware.ts. Esto solo
+-// actualiza título, descripción, robots y canonical cuando se navega dentro de la app
+-// sin recargar, para que la pestaña no se quede con el título de la página anterior.
++// Con Caddy (VPS) middleware.ts ya no reescribe el <head>: index.html trae siempre el de
++// la home. Por eso esto corre también en la primera carga (la de Googlebot) y en cada
++// navegación: título, descripción, robots y canonical de la ruta real.
+ const FN = 'https://api.medical-masters.com/functions/v1/seo-meta';
+ const TTL_MS = 30_000;
+ const cache = new Map<string, { at: number; value: ResolvedSeo }>();
+@@ -44,13 +44,7 @@ function apply(r: ResolvedSeo) {
+ 
+ export function SeoRouteSync() {
+   const { pathname } = useLocation();
+-  const firstLoad = useRef(true);
+-
+   useEffect(() => {
+-    if (firstLoad.current) {
+-      firstLoad.current = false;
+-      return;
+-    }
+     const path = normalizePath(pathname);
+     if (isPrivatePath(path)) {
+       // Zona privada: sin llamada a la red, solo que la pestaña no mienta.
+diff --git a/src/contexts/LanguageContext.tsx b/src/contexts/LanguageContext.tsx
+index a5493790..1aa23163 100644
+--- a/src/contexts/LanguageContext.tsx
++++ b/src/contexts/LanguageContext.tsx
+@@ -53,9 +53,14 @@ function writeStored(lang: SupportedLanguage, explicit: boolean) {
+   }
+ }
+ 
++const BOT_UA = /bot\b|crawler|spider|Googlebot|bingbot|GPTBot|ClaudeBot|PerplexityBot|Google-InspectionTool|Chrome-Lighthouse/i;
++
+ export function initialLanguage(): SupportedLanguage {
+   const stored = readStored();
+   if (stored) return stored.lang;
++  // Los rastreadores (Googlebot renderiza en en-US) ven el idioma por defecto: el
++  // mercado es México y no hay URLs por idioma ni hreflang.
++  if (typeof navigator !== 'undefined' && BOT_UA.test(navigator.userAgent || '')) return DEFAULT_LANGUAGE;
+   // Sin nada guardado se usa el idioma del navegador como PISTA (no cuenta como
+   // elección: al iniciar sesión manda el perfil).
+   if (typeof navigator !== 'undefined' && navigator.language) return normalizeLanguage(navigator.language);
+diff --git a/src/pages/Help.tsx b/src/pages/Help.tsx
+index 01abab10..9474d8a4 100644
+--- a/src/pages/Help.tsx
++++ b/src/pages/Help.tsx
+@@ -1,3 +1,4 @@
++import { useEffect } from 'react';
+ import { Link } from 'react-router-dom';
+ import { HelpCircle, MessageCircle, Mail, ChevronRight } from 'lucide-react';
+ import MainLayout from '@/components/layout/MainLayout';
+@@ -13,6 +14,25 @@ export default function Help() {
+     { question: t('help.faq4_q'), answer: t('help.faq4_a') },
+   ];
+ 
++  // FAQPage JSON-LD con el mismo texto que se ve (Google lee el JSON-LD que pone JS).
++  const faqJson = JSON.stringify({
++    '@context': 'https://schema.org',
++    '@type': 'FAQPage',
++    mainEntity: faqItems.map((f) => ({
++      '@type': 'Question',
++      name: f.question,
++      acceptedAnswer: { '@type': 'Answer', text: f.answer },
++    })),
++  });
++  useEffect(() => {
++    const el = document.createElement('script');
++    el.type = 'application/ld+json';
++    el.id = 'faq-jsonld';
++    el.text = faqJson;
++    document.head.appendChild(el);
++    return () => el.remove();
++  }, [faqJson]);
++
+   return (
+     <MainLayout>
+       {/* Hero */}
+diff --git a/supabase/functions/_shared/seo-render.ts b/supabase/functions/_shared/seo-render.ts
+index 9e7dcd5d..93e11590 100644
+--- a/supabase/functions/_shared/seo-render.ts
++++ b/supabase/functions/_shared/seo-render.ts
+@@ -116,6 +116,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
+   { path: '/for-doctors', label: 'Para médicos', group: 'Para quién', title: 'Únete a la red global de médicos VIP', description: 'Únete a la plataforma líder de telemedicina y conecta con pacientes de todo el país mientras generas ingresos adicionales.' },
+   { path: '/for-patients', label: 'Para pacientes', group: 'Para quién', title: 'Tu salud, nuestra prioridad', description: 'Accede a los mejores especialistas médicos desde cualquier lugar. Obtén orientación médica, segundas opiniones y contenido educativo de calidad.' },
+   { path: '/for-residents', label: 'Para residentes', group: 'Para quién', title: 'Potencia tu formación médica', description: 'Únete a la comunidad académica más grande de residentes médicos. Aprende, colabora y crece profesionalmente.' },
++  { path: '/residentes/lo-que-debo-saber', label: 'Residentes: lo que debo saber', group: 'Para quién', title: 'Lo que debo saber antes de ejercer', description: 'Estás por terminar tu residencia. Esto es lo que conviene resolver para ejercer como médico en México: trámites, dinero, legal y los asesores que te ayudan.' },
+   { path: '/enterprise', label: 'Empresas', group: 'Para quién', title: 'Salud corporativa de clase mundial', description: 'Potencia el bienestar de tu equipo con nuestra plataforma de telemedicina diseñada para empresas.' },
+   { path: '/advertising', label: 'Publicidad', group: 'Para quién', title: 'Publicita en Medical Masters', ignoreTemplate: true, description: 'Llega a miles de profesionales de la salud y pacientes con banners inteligentes, segmentados y medibles.' },
+   { path: '/success-stories', label: 'Casos de éxito', group: 'Para quién', title: 'Historias que inspiran', description: 'Conoce cómo médicos y pacientes están transformando la atención médica con nuestra plataforma.' },

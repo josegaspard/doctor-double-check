@@ -1,0 +1,253 @@
+diff --git a/src/index.css b/src/index.css
+index 8d0f8ad..d84ed3a 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -1715,6 +1715,12 @@
+ .app-bg-image > main textarea:where([class*="bg-white"], [class*="bg-card"], [class*="bg-popover"], [class*="bg-background"], [class*="bg-muted"])::placeholder {
+   color: hsl(220, 10%, 55%) !important;
+ }
++/* Lupa/icono absoluto junto a un input con fondo blanco forzado: si no, hereda blanco y no se ve. */
++.app-bg-image > main .relative:has(> input) > svg.absolute {
++  color: hsl(220 10% 46%) !important;
++  z-index: 1;
++  pointer-events: none;
++}
+ 
+ /* ---------- 12. Tabs sueltas ---------- */
+ .app-bg-image > main [role="tablist"]:not(:where(
+diff --git a/src/lib/i18n/ca.ts b/src/lib/i18n/ca.ts
+index 08cde01..3a7fa24 100644
+--- a/src/lib/i18n/ca.ts
++++ b/src/lib/i18n/ca.ts
+@@ -10376,6 +10376,7 @@ export const ca = {
+     statsByDay: 'Per dia (últims 14 dies)',
+     auditHint: 'Cada vegada que un superadmin revela l\'autor d\'una complicació anònima queda registrat aquí: qui, quan i per què.',
+     auditEmpty: 'Encara ningú no ha revelat cap autor.',
++    auditDeletedPost: 'Publicació eliminada',
+     auditWho: 'Admin',
+     auditWhen: 'Quan',
+     auditPost: 'Publicació',
+diff --git a/src/lib/i18n/de.ts b/src/lib/i18n/de.ts
+index 329806c..e1db6c0 100644
+--- a/src/lib/i18n/de.ts
++++ b/src/lib/i18n/de.ts
+@@ -11482,6 +11482,7 @@ export const de = {
+     statsByDay: 'Nach Tag (letzte 14 Tage)',
+     auditHint: 'Jedes Mal, wenn ein Super-Admin den Autor einer anonymen Komplikation offenlegt, wird es hier festgehalten: wer, wann und warum.',
+     auditEmpty: 'Bisher hat niemand einen Autor offengelegt.',
++    auditDeletedPost: 'Gelöschter Beitrag',
+     auditWho: 'Admin',
+     auditWhen: 'Wann',
+     auditPost: 'Beitrag',
+diff --git a/src/lib/i18n/en.ts b/src/lib/i18n/en.ts
+index 2a5c8e0..67d5814 100644
+--- a/src/lib/i18n/en.ts
++++ b/src/lib/i18n/en.ts
+@@ -7365,6 +7365,7 @@ export const en = {
+     statsByDay: "By day (last 14 days)",
+     auditHint: "Every time a super admin reveals the author of an anonymous complication it is logged here: who, when and why.",
+     auditEmpty: "Nobody has revealed an author yet.",
++    auditDeletedPost: 'Deleted post',
+     auditWho: "Admin",
+     auditWhen: "When",
+     auditPost: "Post",
+diff --git a/src/lib/i18n/es.ts b/src/lib/i18n/es.ts
+index 025aaa6..634718a 100644
+--- a/src/lib/i18n/es.ts
++++ b/src/lib/i18n/es.ts
+@@ -7423,6 +7423,7 @@ export const es = {
+     statsByDay: 'Por día (últimos 14 días)',
+     auditHint: 'Cada vez que un súper admin revela el autor de una complicación anónima queda aquí: quién, cuándo y por qué.',
+     auditEmpty: 'Nadie ha revelado ningún autor todavía.',
++    auditDeletedPost: 'Publicación eliminada',
+     auditWho: 'Admin',
+     auditWhen: 'Cuándo',
+     auditPost: 'Publicación',
+diff --git a/src/lib/i18n/fr.ts b/src/lib/i18n/fr.ts
+index c480acb..2e92f40 100644
+--- a/src/lib/i18n/fr.ts
++++ b/src/lib/i18n/fr.ts
+@@ -11482,6 +11482,7 @@ export const fr = {
+     statsByDay: 'Par jour (14 derniers jours)',
+     auditHint: 'Chaque fois qu\'un super admin révèle l\'auteur d\'une complication anonyme, c\'est consigné ici : qui, quand et pourquoi.',
+     auditEmpty: 'Personne n\'a encore révélé d\'auteur.',
++    auditDeletedPost: 'Publication supprimée',
+     auditWho: 'Admin',
+     auditWhen: 'Quand',
+     auditPost: 'Publication',
+diff --git a/src/lib/i18n/it.ts b/src/lib/i18n/it.ts
+index ccda70f..fbf7efb 100644
+--- a/src/lib/i18n/it.ts
++++ b/src/lib/i18n/it.ts
+@@ -11482,6 +11482,7 @@ export const it = {
+     statsByDay: 'Per giorno (ultimi 14 giorni)',
+     auditHint: 'Ogni volta che un super admin rivela l\'autore di una complicanza anonima, viene registrato qui: chi, quando e perché.',
+     auditEmpty: 'Nessuno ha ancora rivelato un autore.',
++    auditDeletedPost: 'Post eliminato',
+     auditWho: 'Admin',
+     auditWhen: 'Quando',
+     auditPost: 'Pubblicazione',
+diff --git a/src/lib/i18n/pt.ts b/src/lib/i18n/pt.ts
+index a65a6c5..6e5b68f 100644
+--- a/src/lib/i18n/pt.ts
++++ b/src/lib/i18n/pt.ts
+@@ -11482,6 +11482,7 @@ export const pt = {
+     statsByDay: 'Por dia (últimos 14 dias)',
+     auditHint: 'Cada vez que um super admin revela o autor de uma complicação anônima, fica registrado aqui: quem, quando e por quê.',
+     auditEmpty: 'Ninguém revelou nenhum autor ainda.',
++    auditDeletedPost: 'Publicação excluída',
+     auditWho: 'Admin',
+     auditWhen: 'Quando',
+     auditPost: 'Publicação',
+diff --git a/src/lib/i18n/zh.ts b/src/lib/i18n/zh.ts
+index 6644e4c..dcd9c07 100644
+--- a/src/lib/i18n/zh.ts
++++ b/src/lib/i18n/zh.ts
+@@ -10503,6 +10503,7 @@ export const zh = {
+     statsByDay: '按天（最近 14 天）',
+     auditHint: '每当超级管理员揭示匿名并发症帖子的作者时，都会记录在这里：谁、何时以及原因。',
+     auditEmpty: '还没有人揭示过任何作者。',
++    auditDeletedPost: '帖子已删除',
+     auditWho: '管理员',
+     auditWhen: '时间',
+     auditPost: '帖子',
+diff --git a/src/pages/AdminApiUsage.tsx b/src/pages/AdminApiUsage.tsx
+index 4e3ecf5..65b4acb 100644
+--- a/src/pages/AdminApiUsage.tsx
++++ b/src/pages/AdminApiUsage.tsx
+@@ -23,7 +23,7 @@ interface Provider {
+   usage: number | null; requests: number | null;
+   consumedUsd: number | null; balanceUsd: number | null; remaining: string;
+   revenueMxn: number; costMxn: number | null; netMxn: number | null; roi: number | null;
+-  currency?: string; available: boolean; note: string;
++  currency?: string; available: boolean; note: string; testMode?: boolean;
+ }
+ interface UsageData {
+   generatedAt: string; days: number; usdMxn: number;
+@@ -147,7 +147,7 @@ export default function AdminApiUsage() {
+               <p className="text-xs sm:text-sm text-muted-foreground">Gasto, saldo, peticiones y retorno de cada servicio externo que paga la plataforma</p>
+             </div>
+           </div>
+-          <div className="flex items-center gap-2 justify-between sm:justify-end">
++          <div className="flex flex-wrap items-center gap-2 justify-between sm:justify-end">
+             <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v) as 7 | 30 | 90)}>
+               <TabsList className="h-8">
+                 <TabsTrigger value="7" className="text-xs h-7 px-2.5">7 días</TabsTrigger>
+@@ -211,13 +211,13 @@ export default function AdminApiUsage() {
+                           </div>
+                         </div>
+                         {p.available
+-                          ? <Badge variant="outline" className="text-[10px]">{roiFmt(p.roi)} ROI</Badge>
++                          ? (p.testMode ? <Badge variant="secondary" className="text-[10px] gap-1"><AlertTriangle className="w-3 h-3" />Modo prueba</Badge> : <Badge variant="outline" className="text-[10px]">{roiFmt(p.roi)} ROI</Badge>)
+                           : <Badge variant="secondary" className="text-[10px] gap-1"><AlertTriangle className="w-3 h-3" />sin datos</Badge>}
+                       </div>
+                       {p.available ? (
+                         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                           <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p>{p.currency !== 'MXN' && <p className="text-[10.5px] text-muted-foreground">{usd(p.consumedUsd)}</p>}</div>
+-                          <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
++                          <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' && !p.testMode ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
+                           <div><p className="text-muted-foreground text-[10px]">Peticiones</p><p className="font-semibold">{num(p.requests)}</p></div>
+                           <div><p className="text-muted-foreground text-[10px]">Consumo{p.unit ? ` (${p.unit})` : ''}</p><p className="font-semibold">{num(p.usage)}</p></div>
+                           <div><p className="text-muted-foreground text-[10px]">Saldo</p><p className="font-semibold">{p.balanceUsd != null ? (p.currency === 'MXN' ? mxn(p.balanceUsd) : usd(p.balanceUsd)) : '—'}</p></div>
+diff --git a/src/pages/AdminDashboard.tsx b/src/pages/AdminDashboard.tsx
+index 5897611..de9ea26 100644
+--- a/src/pages/AdminDashboard.tsx
++++ b/src/pages/AdminDashboard.tsx
+@@ -76,6 +76,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
+         { id: 'campaigns', icon: Ticket, href: '/admin/campaigns', color: 'text-warning', borderColor: 'border-l-warning', title: 'Campañas de registro', desc: 'Códigos por tandas de 50 o 100 para dar de alta médicos y residentes' },
+         { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash4'), desc: t('autoI18n.clAdminDash5') },
+         { id: 'invoices', icon: FileText, href: '/admin/invoices', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash6'), desc: t('autoI18n.clAdminDash7'), badge: stats.pendingInvoices },
++        { id: 'accounting', icon: BarChart3, href: '/admin/accounting', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminAccount2'), desc: t('autoI18n.clAdminAccount3') },
+         { id: 'payout-settings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground', borderColor: 'border-l-muted-foreground', title: t('autoI18n.clAdminDash8'), desc: t('autoI18n.clAdminDash9') },
+         { id: 'refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash10'), desc: t('autoI18n.clAdminDash11'), badge: stats.pendingRefundRequests },
+       ],
+@@ -110,6 +111,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
+       title: t('autoI18n.clAdminDash34'),
+       modules: [
+         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash35'), desc: t('autoI18n.clAdminDash36'), badge: stats.pendingReports },
++        { id: 'content-moderation', icon: ShieldCheck, href: '/admin/content-moderation', color: 'text-warning', borderColor: 'border-l-warning', title: t('adminContentModeration.heading'), desc: t('adminContentModeration.subheading') },
+         { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash37'), desc: t('autoI18n.clAdminDash38') },
+         { id: 'handover', icon: FileSignature, href: '/admin/entrega', color: 'text-primary', borderColor: 'border-l-primary', title: 'Entrega de la plataforma', desc: 'Guía de entrega y botón para confirmarla' },
+         // «Cómo funciona» (Jose, 11-nov-2026): el recorrido del médico, solo para administración.
+diff --git a/src/pages/AdminForum.tsx b/src/pages/AdminForum.tsx
+index 0ebbca4..03af204 100644
+--- a/src/pages/AdminForum.tsx
++++ b/src/pages/AdminForum.tsx
+@@ -45,7 +45,7 @@ const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n
+ 
+ interface Prompt { id: string; prompt_date: string; category: Cat; title: string; body: string | null; image_url: string | null; source: 'admin' | 'bank'; }
+ interface BankRow { id: string; category: Cat; title: string; body: string | null; is_active: boolean; last_used_on: string | null; use_count: number; }
+-interface AuditRow { id: string; post_id: string; admin_id: string; reason: string | null; revealed_at: string; adminName?: string; postTitle?: string; }
++interface AuditRow { id: string; post_id: string | null; admin_id: string; reason: string | null; revealed_at: string; adminName?: string; postTitle?: string; }
+ 
+ export default function AdminForum() {
+   const { t, language } = useLanguage();
+@@ -108,14 +108,14 @@ export default function AdminForum() {
+       const aRows: AuditRow[] = a.data || [];
+       if (aRows.length > 0) {
+         const adminIds = [...new Set(aRows.map((r) => r.admin_id))];
+-        const postIds = [...new Set(aRows.map((r) => r.post_id))];
++        const postIds = [...new Set(aRows.map((r) => r.post_id).filter(Boolean))];
+         const [names, titles] = await Promise.all([
+           supabase.from('profiles_public').select('id, name').in('id', adminIds),
+-          sb.from('forum_posts_feed').select('id, title').in('id', postIds),
++          postIds.length > 0 ? sb.from('forum_posts_feed').select('id, title').in('id', postIds) : Promise.resolve({ data: [] }),
+         ]);
+         const nm = Object.fromEntries(((names.data || []) as any[]).map((r) => [r.id, r.name]));
+         const tt = Object.fromEntries(((titles.data || []) as any[]).map((r) => [r.id, r.title]));
+-        setAudit(aRows.map((r) => ({ ...r, adminName: nm[r.admin_id] || r.admin_id.slice(0, 8), postTitle: tt[r.post_id] || '—' })));
++        setAudit(aRows.map((r) => ({ ...r, adminName: nm[r.admin_id] || r.admin_id.slice(0, 8), postTitle: r.post_id ? (tt[r.post_id] || '—') : t('forumAdmin.auditDeletedPost') })));
+       } else {
+         setAudit([]);
+       }
+@@ -425,7 +425,7 @@ export default function AdminForum() {
+                         <tr key={a.id} className="border-t border-border">
+                           <td className="p-2 whitespace-nowrap">{dtFmt.format(new Date(a.revealed_at))}</td>
+                           <td className="p-2">{a.adminName}</td>
+-                          <td className="p-2 max-w-[280px] truncate"><Link to={`/foro?post=${a.post_id}`} className="text-primary underline">{a.postTitle}</Link></td>
++                          <td className="p-2 max-w-[280px] truncate">{a.post_id ? <Link to={`/foro?post=${a.post_id}`} className="text-primary underline">{a.postTitle}</Link> : <span className="text-muted-foreground">{a.postTitle}</span>}</td>
+                           <td className="p-2 text-muted-foreground">{a.reason || '—'}</td>
+                         </tr>
+                       ))}
+diff --git a/supabase/functions/admin-api-usage/index.ts b/supabase/functions/admin-api-usage/index.ts
+index df2e818..d421074 100644
+--- a/supabase/functions/admin-api-usage/index.ts
++++ b/supabase/functions/admin-api-usage/index.ts
+@@ -31,7 +31,7 @@ type Card = {
+   key: string; name: string; billing: string; unit: string | null;
+   usage: number | null; requests: number | null;
+   consumedUsd: number | null; balanceUsd: number | null; remaining: string;
+-  revenueMxn: number; available: boolean; note: string;
++  revenueMxn: number; available: boolean; note: string; testMode?: boolean;
+ };
+ 
+ const nz = (n: unknown) => (typeof n === "number" && isFinite(n) ? n : 0);
+@@ -122,6 +122,15 @@ Deno.serve(async (req) => {
+       card.revenueMxn = grossTotal;                // volumen procesado (MXN)
+       card.remaining = `Disponible ${new Intl.NumberFormat("es-MX").format(Math.round(available))} MXN · en tránsito ${new Intl.NumberFormat("es-MX").format(Math.round(pending))}`;
+       card.note = `${count} cobros · volumen ${grossTotal.toFixed(0)} · comisión ${feeTotal.toFixed(2)}`;
++      // Clave de prueba o saldo no-live: los importes de Stripe son ficticios.
++      if (sk.startsWith("sk_test_") || balance.livemode === false) {
++        card.testMode = true;
++        card.consumedUsd = null;      // comisiones de prueba: no cuentan como coste
++        card.balanceUsd = null;       // saldo ficticio: no se muestra
++        card.revenueMxn = rev.gross;  // ventas reales en BD, no el volumen de prueba
++        card.remaining = "Modo prueba: saldo ficticio, no es dinero real";
++        card.note = `Modo prueba · ${card.note}`;
++      }
+     } catch (e) { card.note = `No se pudo leer: ${String((e as Error).message).slice(0, 80)}`; }
+     cards.push(card);
+   }
+diff --git a/vercel.json b/vercel.json
+index fd3b008..6a446e0 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -28,7 +28,7 @@
+         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+         { "key": "Cross-Origin-Resource-Policy", "value": "same-site" },
+         { "key": "Origin-Agent-Cluster", "value": "?1" },
+-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://*.daily.co https://c.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob: https://ouawwfqexfwuptlgoksr.supabase.co https://*.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net https://*.backblazeb2.com https://*.b-cdn.net; connect-src 'self' https://ouawwfqexfwuptlgoksr.supabase.co wss://ouawwfqexfwuptlgoksr.supabase.co https://api.stripe.com https://api.daily.co https://*.daily.co wss://*.daily.co https://*.dailywebrtc.com wss://*.dailywebrtc.com https://*.dailywebrtc.net wss://*.dailywebrtc.net https://api.veriff.com https://stationapi.veriff.com https://api.resend.com https://www.google-analytics.com https://www.google.com https://stats.g.doubleclick.net https://generativelanguage.googleapis.com https://*.backblazeb2.com https://video.bunnycdn.com https://*.b-cdn.net; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests; block-all-mixed-content" }
++        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://*.daily.co https://c.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob: https://ouawwfqexfwuptlgoksr.supabase.co https://*.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net https://*.backblazeb2.com https://*.b-cdn.net; connect-src 'self' https://ouawwfqexfwuptlgoksr.supabase.co wss://ouawwfqexfwuptlgoksr.supabase.co https://api.stripe.com https://api.daily.co https://*.daily.co wss://*.daily.co https://*.dailywebrtc.com wss://*.dailywebrtc.com https://*.dailywebrtc.net wss://*.dailywebrtc.net https://api.veriff.com https://stationapi.veriff.com https://api.resend.com https://www.google-analytics.com https://www.google.com https://stats.g.doubleclick.net https://generativelanguage.googleapis.com https://*.backblazeb2.com https://video.bunnycdn.com https://*.b-cdn.net https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.daily.co https://*.dailywebrtc.com https://*.dailywebrtc.net; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests; block-all-mixed-content" }
+       ]
+     },
+     {

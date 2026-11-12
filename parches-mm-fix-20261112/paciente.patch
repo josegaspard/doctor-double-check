@@ -1,0 +1,213 @@
+diff --git a/src/components/layout/MainLayout.tsx b/src/components/layout/MainLayout.tsx
+index 1ae9d521..e3d6f5c0 100644
+--- a/src/components/layout/MainLayout.tsx
++++ b/src/components/layout/MainLayout.tsx
+@@ -133,8 +133,8 @@ const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
+ const navItems: NavItem[] = [
+   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
+   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
+-  // Residente: el Chat ya está en el icono de la cabecera; en el menú salía repetido (cliente 4-nov-2026).
+-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient'] },
++  // Residente y paciente: el Chat ya está en el botón de la cabecera; en la píldora salía repetido
++  // (cliente 4-nov-2026; paciente 11-nov-2026: a 1440 px la píldora se cortaba).
+   { labelKey: 'nav.soyMedico', shortLabelKey: 'nav.soyMedicoShort', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
+   ...(FEATURE_FLAGS.marketplaceFeeModel
+     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
+@@ -453,9 +453,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode
+                     </Link>
+                   ) : (
+                     <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} title={label}>
+-                      {/* Residente: siempre la etiqueta corta, para que sus 4 pestañas quepan enteras. */}
+-                      <span className={role === 'resident' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
+-                      <span className={role === 'resident' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
++                      {/* Residente y paciente: siempre la etiqueta corta, para que sus pestañas quepan enteras. */}
++                      <span className={role === 'resident' || role === 'patient' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
++                      <span className={role === 'resident' || role === 'patient' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
+                     </Link>
+                   );
+                 })}
+diff --git a/src/lib/i18n/ca.ts b/src/lib/i18n/ca.ts
+index 08cde017..bba03a0d 100644
+--- a/src/lib/i18n/ca.ts
++++ b/src/lib/i18n/ca.ts
+@@ -8098,6 +8098,7 @@ export const ca = {
+   "videoCall": {
+     "title": "Videotrucada",
+     "noConsultation": "No s'ha especificat cap orientació",
++    "consultationEnded": "Aquesta orientació ja ha acabat",
+     "backToChat": "Tornar al Xat",
+     "back": "Tornar",
+     "startCall": "Iniciar videotrucada",
+diff --git a/src/lib/i18n/de.ts b/src/lib/i18n/de.ts
+index 329806cd..d6c87fa3 100644
+--- a/src/lib/i18n/de.ts
++++ b/src/lib/i18n/de.ts
+@@ -8489,6 +8489,7 @@ export const de = {
+   videoCall: {
+     title: "Videoanruf",
+     noConsultation: "Es wurde keine Beratung angegeben",
++    consultationEnded: "Diese Beratung ist bereits beendet",
+     backToChat: "Zurück zum Chat",
+     back: "Zurück",
+     startCall: "Videoanruf starten",
+diff --git a/src/lib/i18n/en.ts b/src/lib/i18n/en.ts
+index 2a5c8e0c..c43dc9b4 100644
+--- a/src/lib/i18n/en.ts
++++ b/src/lib/i18n/en.ts
+@@ -8535,6 +8535,7 @@ export const en = {
+   videoCall: {
+     title: "Video Call",
+     noConsultation: "No guidance session specified",
++    consultationEnded: "This guidance session has already ended",
+     backToChat: "Back to Chat",
+     back: "Back",
+     startCall: "Start video call",
+diff --git a/src/lib/i18n/es.ts b/src/lib/i18n/es.ts
+index 025aaa69..bd493632 100644
+--- a/src/lib/i18n/es.ts
++++ b/src/lib/i18n/es.ts
+@@ -8593,6 +8593,7 @@ export const es = {
+   videoCall: {
+     title: 'Videollamada',
+     noConsultation: 'No se especificó una orientación',
++    consultationEnded: 'Esta orientación ya terminó',
+     backToChat: 'Volver al Chat',
+     back: 'Volver',
+     startCall: 'Iniciar videollamada',
+diff --git a/src/lib/i18n/fr.ts b/src/lib/i18n/fr.ts
+index c480acb6..c0411847 100644
+--- a/src/lib/i18n/fr.ts
++++ b/src/lib/i18n/fr.ts
+@@ -8489,6 +8489,7 @@ export const fr = {
+   videoCall: {
+     title: "Appel Vidéo",
+     noConsultation: "Aucune consultation spécifiée",
++    consultationEnded: "Cette consultation est déjà terminée",
+     backToChat: "Retour au Chat",
+     back: "Retour",
+     startCall: "Démarrer l'appel vidéo",
+diff --git a/src/lib/i18n/it.ts b/src/lib/i18n/it.ts
+index ccda70fc..e3726d40 100644
+--- a/src/lib/i18n/it.ts
++++ b/src/lib/i18n/it.ts
+@@ -8489,6 +8489,7 @@ export const it = {
+   videoCall: {
+     title: "Videochiamata",
+     noConsultation: "Nessun consulto specificato",
++    consultationEnded: "Questo consulto è già terminato",
+     backToChat: "Torna alla Chat",
+     back: "Indietro",
+     startCall: "Avvia videochiamata",
+diff --git a/src/lib/i18n/pt.ts b/src/lib/i18n/pt.ts
+index a65a6c59..9f757341 100644
+--- a/src/lib/i18n/pt.ts
++++ b/src/lib/i18n/pt.ts
+@@ -8489,6 +8489,7 @@ export const pt = {
+   videoCall: {
+     title: "Videochamada",
+     noConsultation: "Nenhuma orientação foi especificada",
++    consultationEnded: "Esta orientação já terminou",
+     backToChat: "Voltar ao Chat",
+     back: "Voltar",
+     startCall: "Iniciar videochamada",
+diff --git a/src/lib/i18n/zh.ts b/src/lib/i18n/zh.ts
+index 6644e4cf..956b6b5c 100644
+--- a/src/lib/i18n/zh.ts
++++ b/src/lib/i18n/zh.ts
+@@ -8117,6 +8117,7 @@ export const zh = {
+   "videoCall": {
+     "title": "视频通话",
+     "noConsultation": "未指定咨询",
++    "consultationEnded": "本次咨询已结束",
+     "backToChat": "返回聊天",
+     "back": "返回",
+     "startCall": "发起视频通话",
+diff --git a/src/lib/sessionGuard.ts b/src/lib/sessionGuard.ts
+index 7a41be0e..783ac71a 100644
+--- a/src/lib/sessionGuard.ts
++++ b/src/lib/sessionGuard.ts
+@@ -42,7 +42,7 @@ export async function enforceBrowserSessionGuard(): Promise<void> {
+     // Brand new browser session: force a sign-out so the user must log in again.
+     try {
+       localStorage.removeItem('mm_cached_user');
+-      await supabase.auth.signOut();
++      await supabase.auth.signOut({ scope: 'local' });
+     } catch (e) {
+       console.warn('[SessionGuard] signOut failed:', e);
+     }
+diff --git a/src/pages/BookAppointment.tsx b/src/pages/BookAppointment.tsx
+index 72896668..dc9db590 100644
+--- a/src/pages/BookAppointment.tsx
++++ b/src/pages/BookAppointment.tsx
+@@ -715,7 +715,7 @@ export default function BookAppointment() {
+               <div className="flex-1">
+                 <CardTitle className="text-lg">
+                   <span className="inline-flex items-center gap-1 min-w-0">
+-                    {t('bookAppointment.header.titlePrefix')} Dr. {doctor.name}
++                    {t('bookAppointment.header.titlePrefix')} {/^dra?\.?\s/i.test(doctor.name || '') ? doctor.name : `Dr. ${doctor.name}`}
+                     <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
+                   </span>
+                 </CardTitle>
+diff --git a/src/pages/Eventos.tsx b/src/pages/Eventos.tsx
+index 6babbcf7..2f0d9ca6 100644
+--- a/src/pages/Eventos.tsx
++++ b/src/pages/Eventos.tsx
+@@ -276,9 +276,11 @@ export default function Eventos() {
+   return (
+     <MainLayout>
+       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
+-        <Button variant="back" size="sm" onClick={() => navigate('/foro')} className="mb-3 -ml-2 gap-1.5 hidden sm:inline-flex">
+-          <ArrowLeft className="w-4 h-4" /> {t('eventos.backToForo')}
+-        </Button>
++        {(role === 'doctor' || role === 'resident' || role === 'admin') && (
++          <Button variant="back" size="sm" onClick={() => navigate('/foro')} className="mb-3 -ml-2 gap-1.5 hidden sm:inline-flex">
++            <ArrowLeft className="w-4 h-4" /> {t('eventos.backToForo')}
++          </Button>
++        )}
+ 
+         {/* Hero */}
+         <div className="mb-6 rounded-2xl bg-card border border-border shadow-sm p-5 sm:p-6">
+diff --git a/src/pages/VideoCall.tsx b/src/pages/VideoCall.tsx
+index 475b2c23..58f63fc1 100644
+--- a/src/pages/VideoCall.tsx
++++ b/src/pages/VideoCall.tsx
+@@ -216,6 +216,8 @@ export default function VideoCall() {
+   const timer = useCallTimer();
+ 
+   const consultationId = searchParams.get('consultation');
++  // La orientación ya terminó (completed/cancelled): no dejar al paciente «esperando al médico».
++  const [consultationEnded, setConsultationEnded] = useState(false);
+   const autoJoin = searchParams.get('autojoin') === '1';
+   const isDoctor = role === 'doctor';
+   // Reunión multi-médico (no consulta 1:1): trae meetingId en la URL.
+@@ -291,10 +293,11 @@ export default function VideoCall() {
+     (async () => {
+       const { data } = await supabase
+         .from('consultations')
+-        .select('doctor_id, patient_id, chat_session_id')
++        .select('doctor_id, patient_id, chat_session_id, status')
+         .eq('id', consultationId)
+         .maybeSingle();
+       if (!data) return;
++      setConsultationEnded(['completed', 'cancelled', 'canceled'].includes((data as any).status));
+       setPatientId(data.patient_id);
+       const otherId = isDoctor ? data.patient_id : data.doctor_id;
+       // Only the doctor gets a badge; when current user is the doctor, the other
+@@ -580,6 +583,17 @@ export default function VideoCall() {
+     );
+   }
+ 
++  if (consultationEnded && callState === 'idle') {
++    return (
++      <MainLayout>
++        <div className="container mx-auto px-4 py-12 text-center">
++          <h2 className="text-xl font-bold mb-4">{t('videoCall.consultationEnded')}</h2>
++          <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
++        </div>
++      </MainLayout>
++    );
++  }
++
+   const isInCall = callState === 'connecting' || callState === 'connected';
+ 
+   const videoLayoutJSX = (

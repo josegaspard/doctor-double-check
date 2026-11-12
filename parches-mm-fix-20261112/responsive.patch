@@ -1,0 +1,513 @@
+diff --git a/index.html b/index.html
+index 7a1e87f1..ca5350ca 100644
+--- a/index.html
++++ b/index.html
+@@ -2,8 +2,8 @@
+ <html lang="es">
+   <head>
+     <meta charset="UTF-8" />
+-    <!-- maximum-scale=1.0 + user-scalable=no previene el "stuck zoom" en iOS Safari cuando el usuario toca controles. La accesibilidad de pinch-zoom queda preservada por iOS Accessibility Settings. -->
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
++    <!-- Sin maximum-scale ni user-scalable=no: el zoom con los dedos tiene que funcionar (WCAG 1.4.4). El zoom automático de iOS al enfocar un campo se evita con font-size 16px en los campos (index.css, bloque «zoom iOS»). -->
++    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+ 
+     <!-- SEO: lo que va entre seo:start y seo:end lo reescribe middleware.ts en cada
+          petición con lo que el súper admin fija en /admin/seo (función seo-meta):
+diff --git a/src/App.tsx b/src/App.tsx
+index cb85e169..82fefe65 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -257,6 +257,8 @@ const App = () => {
+                       <Route path="/" element={<Landing />} />
+                       <Route path="/app" element={<RoleSelector />} />
+                       <Route path="/login" element={<Login />} />
++                      <Route path="/register" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
++                      <Route path="/signup" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
+                       <Route path="/lives" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate></DoctorLegacyRedirect>} />
+                       <Route path="/live/:id" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate>} />
+                       <Route path="/recordings" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate></DoctorLegacyRedirect>} />
+diff --git a/src/components/common/SectionTabs.tsx b/src/components/common/SectionTabs.tsx
+index 9afffee0..f7a4fb3f 100644
+--- a/src/components/common/SectionTabs.tsx
++++ b/src/components/common/SectionTabs.tsx
+@@ -75,7 +75,7 @@ export function SectionTabs<T extends string = string>({
+       aria-label={ariaLabel}
+       onKeyDown={onKeyDown}
+       className={[
+-        'flex items-center gap-1 p-1 rounded-2xl max-w-full overflow-x-auto',
++        'mm-scroll-fade flex items-center gap-1 p-1 rounded-2xl max-w-full overflow-x-auto',
+         '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+         onLight ? 'border border-[#d6e1e7] bg-white' : 'border border-white/25 bg-white/10 backdrop-blur-sm',
+         className || '',
+@@ -85,7 +85,7 @@ export function SectionTabs<T extends string = string>({
+         const active = item.id === value;
+         const Icon = item.icon;
+         const base =
+-          'inline-flex flex-none items-center gap-2 h-9 px-3.5 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
++          'inline-flex flex-none items-center gap-2 h-10 sm:h-9 px-3.5 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+         const skin = active
+           ? onLight
+             ? 'bg-primary text-white shadow-sm focus-visible:ring-primary'
+diff --git a/src/components/doctor/schedule/ScheduleEditor.tsx b/src/components/doctor/schedule/ScheduleEditor.tsx
+index 294811d4..d041d20c 100644
+--- a/src/components/doctor/schedule/ScheduleEditor.tsx
++++ b/src/components/doctor/schedule/ScheduleEditor.tsx
+@@ -362,7 +362,7 @@ export function ScheduleEditor({
+               <div key={w} className={`rounded-2xl border bg-white p-3 ${err ? 'border-red-300' : 'border-[#d6e1e7]'}`}>
+                 <div className="flex items-center justify-between gap-2">
+                   <label className="flex items-center gap-3 min-w-0 cursor-pointer">
+-                    <Switch checked={on} onCheckedChange={v => toggleWeekday(w, v)} aria-label={dayName} />
++                    <Switch checked={on} onCheckedChange={v => toggleWeekday(w, v)} aria-label={dayName} className="relative after:absolute after:-inset-2 after:content-['']" />
+                     <span className="font-semibold text-slate-900 truncate">{dayName}</span>
+                     {!on && <span className="text-xs text-slate-500">{t('mm2.schedule.closed')}</span>}
+                   </label>
+@@ -455,7 +455,7 @@ export function ScheduleEditor({
+                     {[...selectedDates].sort((a, b) => a.getTime() - b.getTime()).map(d => fmt.formatDate(d, 'EEE d MMM').replace(/\./g, '')).join(' · ')}
+                   </p>
+                   <label className="flex items-center gap-2 mb-2 cursor-pointer">
+-                    <Switch checked={dateClosed} onCheckedChange={setDateClosed} />
++                    <Switch checked={dateClosed} onCheckedChange={setDateClosed} className="relative after:absolute after:-inset-2 after:content-['']" />
+                     <span className="text-sm text-slate-800">{t('mm2.schedule.closedToggle')}</span>
+                   </label>
+                   {!dateClosed && (
+@@ -588,7 +588,7 @@ export function ScheduleEditor({
+       </section>
+ 
+       {/* ------------------------------------------------------- guardar */}
+-      <div className="sticky bottom-3 z-20">
++      <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] sm:bottom-3 z-20">
+         <div className={`rounded-2xl border bg-white p-3 shadow-lg flex flex-col sm:flex-row sm:items-center gap-2 ${dirty ? 'border-primary/40' : 'border-[#d6e1e7]'}`}>
+           <p className="text-sm text-slate-700 min-w-0 flex-1">
+             {hasErrors ? <span className="font-medium text-red-600">{t('mm2.schedule.errors.fix')}</span>
+diff --git a/src/components/layout/MainLayout.tsx b/src/components/layout/MainLayout.tsx
+index 1ae9d521..b1246719 100644
+--- a/src/components/layout/MainLayout.tsx
++++ b/src/components/layout/MainLayout.tsx
+@@ -611,7 +611,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode
+       <MobileBackHeader />
+ 
+       {/* Main Content - add bottom padding on mobile for tab bar */}
+-      <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px)] sm:min-h-0 relative z-10">
++      <main className="flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px-env(safe-area-inset-bottom))] sm:min-h-0 relative z-10">
+         <motion.div
+           key={location.pathname}
+           initial={{ opacity: 0, y: 10 }}
+@@ -650,7 +650,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode
+                       </span>
+                     )}
+                   </div>
+-                  <span className={`text-[10.5px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
++                  <span className={`text-[11px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
+                     {tab.label}
+                   </span>
+                 </Link>
+@@ -673,7 +673,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode
+                   </span>
+                 )}
+               </span>
+-              <span className="text-[10.5px] font-medium leading-tight">{t('nav.more')}</span>
++              <span className="text-[11px] font-medium leading-tight">{t('nav.more')}</span>
+             </button>
+           </div>
+         </nav>
+diff --git a/src/components/layout/UnifiedFooter.tsx b/src/components/layout/UnifiedFooter.tsx
+index e66c0a2b..f216f938 100644
+--- a/src/components/layout/UnifiedFooter.tsx
++++ b/src/components/layout/UnifiedFooter.tsx
+@@ -50,7 +50,7 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
+           <li key={i}>
+             <Link
+               to={link.href}
+-              className={`inline-flex min-h-[36px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
++              className={`inline-flex min-h-[40px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
+                 link.href === '/report-issue'
+                   ? 'text-warning hover:text-white'
+                   : 'text-white hover:text-white hover:underline'
+@@ -177,7 +177,7 @@ export function UnifiedFooter({ variant }: Props) {
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
+             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
+               <img src={logoWhite} alt="Medical Masters" className="h-6 sm:h-7 mb-3" />
+-              <p className="text-[11px] sm:text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
++              <p className="text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
+                 {t('landingFooter.brandDescription')}
+               </p>
+               <SocialIcons socialLinks={socialLinks} />
+diff --git a/src/index.css b/src/index.css
+index 8d0f8adb..c6999a4c 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -2295,9 +2295,9 @@ html body .bg-secondary [class*="bg-white"]:not([class*="bg-white/"]) svg {
+ /* Controles de la derecha (lupa, idioma, campana, wallet, cuenta) */
+ .pro-topbar .app-header-control,
+ .app-bg-image header.pro-topbar .app-header-control {
+-  height: 38px !important;
+-  min-height: 38px !important;
+-  min-width: 38px !important;
++  height: 40px !important;
++  min-height: 40px !important;
++  min-width: 40px !important;
+   border-radius: 11px !important;
+   border: 0 !important;
+   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+@@ -2808,7 +2808,7 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
+ /* En móvil el carril se convierte en fila de chips desplazable */
+ .pro-lane-row { flex-direction: row; gap: 6px; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
+ .pro-lane-row::-webkit-scrollbar { display: none; }
+-.pro-lane-row .pro-lane-item { width: auto; flex: 0 0 auto; height: 38px; border-radius: 9999px; border: 1px solid #e3ecf0; }
++.pro-lane-row .pro-lane-item { width: auto; flex: 0 0 auto; height: 40px; border-radius: 9999px; border: 1px solid #e3ecf0; }
+ .pro-lane-row .pro-lane-item.is-active { border-color: var(--pro-teal-soft); }
+ 
+ /* ---------- Lista de conversaciones ---------- */
+@@ -2835,7 +2835,7 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
+ }
+ .pro-tag {
+   display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 9999px;
+-  font-size: 10.5px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; flex-shrink: 0;
++  font-size: 11px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; flex-shrink: 0;
+   background: #eef2f5; color: var(--pro-ink-2);
+ }
+ .pro-tag-patient { background: #e8f0fd; color: #2560c8; }
+@@ -3309,3 +3309,35 @@ html.dark body .bg-warning:not(.bg-warning\/10):not(.bg-warning\/20):not(:is(.pr
+ }
+ html.dark body [class*="bg-warning/"].text-warning:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(var(--warning)); }
+ html.dark body [class*="bg-premium/"].text-premium:not(:is(.pro-card, .pro-tile, [role="dialog"], [role="alertdialog"], .bg-white) *) { color: hsl(var(--premium)); }
++
++
++/* ── Responsive móvil (revisión 11-nov-2026) ─────────────────────────────── */
++/* Zoom iOS: al quitar user-scalable=no, iOS amplía la página al enfocar un campo
++   con letra < 16 px. Solo en iOS (Android no hace ese zoom). */
++@supports (-webkit-touch-callout: none) {
++  @media (max-width: 640px) {
++    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
++    textarea,
++    select { font-size: 16px !important; }
++  }
++}
++/* Filas con desplazamiento lateral: desvanecido en el borde derecho para que se
++   note que hay más opciones. */
++@media (max-width: 639px) {
++  .mm-scroll-fade,
++  .pro-lane-row {
++    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
++    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
++  }
++  /* Zonas de toque de 40 px como mínimo */
++  .pro-link:not(.inline),
++  .auth-link-inline { min-height: 40px; }
++  .pro-prof-avatar .cam { width: 36px; height: 36px; }
++  .pro-prof-avatar .cam::after { content: ''; position: absolute; inset: -4px; }
++  .di-kpi-eye { position: relative; }
++  .di-kpi-eye::after { content: ''; position: absolute; inset: -8px; }
++}
++/* Portada a < 360 px: logo más bajo para que no pise el globo ni «Entrar». */
++@media (max-width: 359px) {
++  .landing-nav .mm-landing-logo { height: 2.5rem; }
++}
+diff --git a/src/pages/Doctors.tsx b/src/pages/Doctors.tsx
+index 6738acbb..62589005 100644
+--- a/src/pages/Doctors.tsx
++++ b/src/pages/Doctors.tsx
+@@ -649,13 +649,14 @@ export default function Doctors({
+       </div>
+ 
+       {/* Fila de filtros SIEMPRE visible: especialidad, ciudad, hospital y «ahora» */}
+-      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
++      <div className="mm-scroll-fade flex gap-2 mb-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+         <div className="md:hidden flex gap-2">
+           <SearchableFilter
+             options={specialtyOptions}
+             value={selectedSpecialty}
+             onChange={(val) => setSelectedSpecialty(val || '')}
+             placeholder={t('mm2.community.specialtyLabel')}
++            label={t('mm2.community.specialtyLabel')}
+             searchPlaceholder={t('mm2.community.specialtySearch')}
+             icon={Stethoscope}
+             allLabel={allLabel}
+@@ -665,6 +666,7 @@ export default function Doctors({
+             value={locationFilter}
+             onChange={setLocationFilter}
+             placeholder={t('mm2.community.cityLabel')}
++            label={t('mm2.community.cityLabel')}
+             searchPlaceholder={t('mm2.community.citySearch')}
+             icon={MapPin}
+             allLabel={allLabel}
+@@ -675,6 +677,7 @@ export default function Doctors({
+               value={selectedHospital}
+               onChange={setSelectedHospital}
+               placeholder={t('mm2.community.hospitalLabel')}
++              label={t('mm2.community.hospitalLabel')}
+               searchPlaceholder={t('mm2.community.hospitalSearch')}
+               icon={Building2}
+               allLabel={allLabel}
+diff --git a/src/pages/Landing.tsx b/src/pages/Landing.tsx
+index a4872cd4..970c5aa1 100644
+--- a/src/pages/Landing.tsx
++++ b/src/pages/Landing.tsx
+@@ -151,7 +151,7 @@ export default function Landing() {
+             </div>
+             {/* Logo: centrado y grande en móvil/tablet, a la izquierda en desktop; misma altura en todos los breakpoints */}
+             <Link to={homeHref} className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 flex items-center gap-2 group">
+-              <div className="relative h-14">
++              <div className="mm-landing-logo relative h-14">
+                 <img src={logoWhite} alt={t('landing.nav.logoAlt')} className={`h-full object-contain transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-0' : 'opacity-100'}`} />
+                 <img src={logoBlue} alt={t('landing.nav.logoAlt')} className={`h-full object-contain absolute top-0 left-0 transition-all duration-500 group-hover:scale-105 ${scrolled ? 'opacity-100' : 'opacity-0'}`} />
+               </div>
+@@ -245,19 +245,19 @@ export default function Landing() {
+           <div className="hidden md:flex land:hidden absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl whitespace-nowrap">
+             <div className="flex items-center gap-2">
+               <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+-              <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.countriesConnected')}</p>
++              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.countriesConnected')}</p>
+             </div>
+             <div className="w-px h-7 bg-white/15" />
+             <div className="flex items-center gap-2">
+               <img src={iconMedicos} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+-              <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.activeDoctors')}</p>
++              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.activeDoctors')}</p>
+             </div>
+             <div className="w-px h-7 bg-white/15" />
+             <div className="flex items-center gap-2">
+               <img src={iconStream} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
+               <div className="leading-tight">
+-                <p className="text-[10px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.streaming')}</p>
+-                <p className="text-[10.5px] lg:text-[10px] text-slate-300/80 normal-case tracking-normal">{t('landing.hero.streamingSub')}</p>
++                <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.streaming')}</p>
++                <p className="text-[10.5px] lg:text-[11px] text-slate-300/80 normal-case tracking-normal">{t('landing.hero.streamingSub')}</p>
+               </div>
+             </div>
+           </div>
+@@ -277,7 +277,7 @@ export default function Landing() {
+                   <div key={i} className="flex items-center gap-1 shrink-0">
+                     {i > 0 && <span className="w-px h-5 bg-white/15 mr-1 shrink-0" />}
+                     <img src={s.img} alt="" className="w-[15px] h-[15px] shrink-0" />
+-                    <p className="text-[10px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
++                    <p className="text-[11px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
+                   </div>
+                 ))}
+               </div>
+@@ -287,8 +287,8 @@ export default function Landing() {
+                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
+                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
+                 </span>
+-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.hero.liveBadge')}</span>
+-                <span className="text-[10px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">{t('landing.hero.liveTagline')}</span>
++                <span className="text-[11px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.hero.liveBadge')}</span>
++                <span className="text-[11px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">{t('landing.hero.liveTagline')}</span>
+               </div>
+ 
+               <h1 className="text-[26px] sm:text-3xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.05] tracking-tight">
+@@ -422,7 +422,7 @@ export default function Landing() {
+ 
+                 {/* Actividad global */}
+                 <div className="rounded-xl border border-white/15 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform p-2" style={{ animationDuration: '6.5s', animationDelay: '1.2s' }}>
+-                  <p className="text-[10px] font-semibold text-white/85 leading-tight">{t('landing.hero.globalActivity')}</p>
++                  <p className="text-[11px] font-semibold text-white/85 leading-tight">{t('landing.hero.globalActivity')}</p>
+                   <div className="h-6 rounded bg-[#0b1d45]/50 mt-1 flex items-end justify-around px-0.5 gap-0.5">
+                     {[40, 70, 55, 85, 60, 90, 45, 75, 65, 95].map((h, i) => (
+                       <div key={i} className="w-0.5 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+@@ -453,7 +453,7 @@ export default function Landing() {
+                 {/* Signos vitales */}
+                 <div className="rounded-xl border border-white/15 bg-white/10 backdrop-blur-xl shadow-2xl animate-float will-change-transform p-2" style={{ animationDuration: '5s', animationDelay: '0.8s' }}>
+                   <div className="flex items-center justify-between gap-1">
+-                    <span className="text-[10px] font-semibold text-white/85 leading-tight">{t('landing.hero.vitalSigns')}</span>
++                    <span className="text-[11px] font-semibold text-white/85 leading-tight">{t('landing.hero.vitalSigns')}</span>
+                     <HeartPulse className="w-3 h-3 text-[#aed3d9] shrink-0" />
+                   </div>
+                   <p className="text-[10.5px] text-slate-300/80 leading-tight">{t('landing.hero.realTime')}</p>
+@@ -472,12 +472,12 @@ export default function Landing() {
+                       className="absolute inset-0 w-full h-full object-cover"
+                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                     />
+-                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
++                    <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                       <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                     </span>
+                   </div>
+                   <div className="px-1.5 py-1.5">
+-                    <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
++                    <p className="text-[11px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+                     <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1 leading-tight">
+                       <span className="w-1 h-1 rounded-full bg-[#aed3d9] shrink-0" />
+                       {t('landing.hero.watchingNow')}
+@@ -545,12 +545,12 @@ export default function Landing() {
+                   className="absolute inset-0 w-full h-full object-cover"
+                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                 />
+-                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
++                <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                 </span>
+               </div>
+               <div className="p-2">
+-                <p className="text-[10px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
++                <p className="text-[11px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+                 <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-primary" />
+                   {t('landing.hero.watchingNow')}
+@@ -588,7 +588,7 @@ export default function Landing() {
+                   </div>
+                   <div className="min-w-0">
+                     <p className="text-[11px] sm:text-xs lg:text-sm font-bold text-white leading-tight">{f.title}</p>
+-                    <p className="text-[10.5px] sm:text-[10px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 line-clamp-2 md:hidden lg:block lg:line-clamp-none land:hidden">{f.desc}</p>
++                    <p className="text-[10.5px] sm:text-[11px] lg:text-[11px] text-slate-300/85 leading-snug mt-0.5 line-clamp-2 md:hidden lg:block lg:line-clamp-none land:hidden">{f.desc}</p>
+                   </div>
+                 </div>
+               ))}
+@@ -609,7 +609,7 @@ export default function Landing() {
+         <div className="relative z-10">
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/20 border border-[#aed3d9]/30 mb-3">
+             <span className="flex h-1.5 w-1.5 rounded-full bg-[#aed3d9] animate-pulse" />
+-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#aed3d9]">{t('landing.hero.showcaseEyebrow')}</span>
++            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#aed3d9]">{t('landing.hero.showcaseEyebrow')}</span>
+           </div>
+           <h2 className="text-2xl land:text-xl font-bold text-white leading-tight mb-2">{t('landing.hero.showcaseTitle')}</h2>
+           <p className="text-sm text-slate-300/85 font-light leading-relaxed mb-5 land:mb-4">{t('landing.hero.description')}</p>
+@@ -654,13 +654,13 @@ export default function Landing() {
+                   className="block w-full aspect-[4/3] object-cover object-center"
+                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                 />
+-                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
++                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                 </span>
+               </div>
+               <div className="px-3 py-2">
+                 <p className="text-[11px] font-semibold text-white/90 leading-tight">{t('landing.hero.streaming')}</p>
+-                <p className="text-[10px] text-slate-300/80 leading-tight">{t('landing.hero.streamingSub')}</p>
++                <p className="text-[11px] text-slate-300/80 leading-tight">{t('landing.hero.streamingSub')}</p>
+               </div>
+             </div>
+ 
+@@ -674,13 +674,13 @@ export default function Landing() {
+                   className="block w-full aspect-[16/7] object-cover"
+                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                 />
+-                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
++                <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                 </span>
+               </div>
+               <div className="px-3 py-2.5">
+                 <p className="text-xs font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
+-                <p className="text-[10px] text-slate-300/80 mt-0.5 flex items-center gap-1">
++                <p className="text-[11px] text-slate-300/80 mt-0.5 flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-[#aed3d9]" />
+                   {t('landing.hero.watchingNow')}
+                 </p>
+@@ -693,7 +693,7 @@ export default function Landing() {
+                 <span className="text-[11px] font-semibold text-white/90">{t('landing.hero.vitalSigns')}</span>
+                 <HeartPulse className="w-3.5 h-3.5 text-[#aed3d9]" />
+               </div>
+-              <p className="text-[10px] text-slate-300/80 mt-0.5">{t('landing.hero.realTime')}</p>
++              <p className="text-[11px] text-slate-300/80 mt-0.5">{t('landing.hero.realTime')}</p>
+               <svg className="w-full h-8 text-[#aed3d9] mt-2" viewBox="0 0 100 20" fill="none" stroke="currentColor" strokeWidth="2">
+                 <path d="M0 10 Q10 10, 15 5 T25 10 T35 15 T45 10 T55 5 T65 10 T75 15 T85 10 T100 10" />
+               </svg>
+@@ -707,7 +707,7 @@ export default function Landing() {
+                   <div key={i} className="w-1 bg-[#aed3d9]/80 rounded-t" style={{ height: `${h}%` }} />
+                 ))}
+               </div>
+-              <p className="text-[10px] text-slate-300/80 mt-2 flex items-center gap-1">
++              <p className="text-[11px] text-slate-300/80 mt-2 flex items-center gap-1">
+                 <span className="w-1 h-1 rounded-full bg-[#aed3d9] animate-pulse" />
+                 {t('landing.hero.realTime')}
+               </p>
+@@ -838,7 +838,7 @@ export default function Landing() {
+                 <div className="relative z-10">
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-5">
+                     <span className="w-1.5 h-1.5 rounded-full bg-[#aed3d9]" />
+-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.profiles.doctors.badge')}</span>
++                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.profiles.doctors.badge')}</span>
+                   </div>
+                   <h3 className="text-2xl font-bold mb-3">{t('landing.profiles.doctors.title')}</h3>
+                   <p className="text-blue-100/90 text-sm leading-relaxed mb-6">
+@@ -862,7 +862,7 @@ export default function Landing() {
+                 <div className="relative z-10">
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/10 border border-[#227787]/20 mb-5">
+                     <span className="w-1.5 h-1.5 rounded-full bg-[#227787]" />
+-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#227787]">{t('landing.profiles.residents.badge')}</span>
++                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#227787]">{t('landing.profiles.residents.badge')}</span>
+                   </div>
+                   <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.residents.title')}</h3>
+                   <p className="text-gray-600 text-sm leading-relaxed mb-6">
+@@ -887,7 +887,7 @@ export default function Landing() {
+                 <div className="relative z-10">
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 border border-white/80 mb-5">
+                     <span className="w-1.5 h-1.5 rounded-full bg-[#163a83]" />
+-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#163a83]">{t('landing.profiles.patients.badge')}</span>
++                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#163a83]">{t('landing.profiles.patients.badge')}</span>
+                   </div>
+                   <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.patients.title')}</h3>
+                   <p className="text-gray-700 text-sm leading-relaxed mb-6">
+diff --git a/src/pages/MedicalMarketplace.tsx b/src/pages/MedicalMarketplace.tsx
+index 717134b6..78cc3cd6 100644
+--- a/src/pages/MedicalMarketplace.tsx
++++ b/src/pages/MedicalMarketplace.tsx
+@@ -458,7 +458,7 @@ export default function MedicalMarketplace() {
+           <Input type="number" placeholder={t('mkt.max')} value={priceRange[1] || ''} onChange={e => { setPriceRange([priceRange[0], Number(e.target.value) || maxPrice]); setQuick(''); }} className="h-8 text-xs" />
+         </div>
+         <Slider value={priceRange} onValueChange={([a, b]) => { setPriceRange([a, b]); setQuick(''); }} min={0} max={maxPrice} step={50} className="py-2" />
+-        <div className="flex justify-between text-[10.5px] text-muted-foreground mt-1">
++        <div className="flex justify-between text-[11px] text-muted-foreground mt-1">
+           <span>${priceRange[0].toLocaleString()}</span>
+           <span>${priceRange[1].toLocaleString()}</span>
+         </div>
+@@ -562,7 +562,7 @@ export default function MedicalMarketplace() {
+             <SheetTrigger asChild>
+               <Button type="button" aria-label={t('mkt.openFilters')} variant="outline" size="icon" className="h-11 w-11 relative sm:hidden flex-shrink-0">
+                 <SlidersHorizontal className="w-4 h-4" />
+-                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10.5px] flex items-center justify-center">{activeFilterCount}</span>}
++                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[11px] flex items-center justify-center">{activeFilterCount}</span>}
+               </Button>
+             </SheetTrigger>
+             <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
+@@ -717,11 +717,11 @@ export default function MedicalMarketplace() {
+                     const reserved = isReserved(p);
+                     return (
+                       <Card key={p.id} className="overflow-hidden flex flex-col">
+-                        {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" />}
++                        {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" onError={e => { const img = e.currentTarget; if (!img.src.endsWith('/placeholder.svg')) img.src = '/placeholder.svg'; }} />}
+                         <CardContent className="p-4 flex flex-col flex-1">
+                           <div className="flex items-center gap-1.5 flex-wrap mb-1">
+-                            {p.brandName && <Badge variant="outline" className="text-[10.5px] px-1.5 py-0 gap-0.5"><Tag className="w-2.5 h-2.5" />{p.brandName}</Badge>}
+-                            {p.category && <Badge variant="secondary" className="text-[10.5px] px-1.5 py-0">{p.category}</Badge>}
++                            {p.brandName && <Badge variant="outline" className="text-[11px] px-1.5 py-0 gap-0.5"><Tag className="w-2.5 h-2.5" />{p.brandName}</Badge>}
++                            {p.category && <Badge variant="secondary" className="text-[11px] px-1.5 py-0">{p.category}</Badge>}
+                           </div>
+                           <h3 className="font-semibold text-sm leading-tight">{p.name}</h3>
+                           {p.vendorName && <p className="text-xs text-muted-foreground mt-0.5">{p.vendorName}</p>}
+@@ -730,7 +730,7 @@ export default function MedicalMarketplace() {
+                             <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
+                             {mine(p) && <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> {t('mkt.feeOnSale')} ${feeFor(Number(p.price)).toLocaleString()}</span>}
+                           </div>
+-                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? t('mkt.unit') : t('mkt.units')}` : t('mkt.noUnits')}</p>
++                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? t('mkt.unit') : t('mkt.units')}` : t('mkt.noUnits')}</p>
+                           <div className="mt-auto pt-2">
+                             {mine(p) ? (
+                               <Badge variant="outline" className="w-full justify-center py-1">{t('mkt.yourProduct')}</Badge>
+diff --git a/src/pages/Notifications.tsx b/src/pages/Notifications.tsx
+index 23bc66e9..0e0cc914 100644
+--- a/src/pages/Notifications.tsx
++++ b/src/pages/Notifications.tsx
+@@ -261,7 +261,7 @@ export default function Notifications() {
+                             <div className="flex items-center gap-2 flex-wrap">
+                               <p className="font-medium text-sm flex-1 min-w-0">{stripEmoji(notification.title)}</p>
+                               {!notification.isRead && (
+-                                <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
++                                <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
+                                   {t('notificationsPage.new')}
+                                 </span>
+                               )}
+diff --git a/src/styles/diseno-comunidad.css b/src/styles/diseno-comunidad.css
+index fe12040e..0e871949 100644
+--- a/src/styles/diseno-comunidad.css
++++ b/src/styles/diseno-comunidad.css
+@@ -69,7 +69,7 @@
+ .dc-prompt.is-anon { border-color: #f1dca4; background: #fffaf0; }
+ .dc-prompt-cat {
+   display: flex; align-items: center; gap: 6px;
+-  font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.25;
++  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.25;
+   color: var(--pro-teal, #227787);
+ }
+ .dc-prompt-cat svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--pro-teal, #227787) !important; }

@@ -1,0 +1,503 @@
+diff --git a/index.html b/index.html
+index 7a1e87f1..1c5e2e12 100644
+--- a/index.html
++++ b/index.html
+@@ -12,12 +12,12 @@
+          la app nativa (Capacitor) y el desarrollo local. No metas nada que no sea SEO
+          entre las dos marcas: se sustituye entero. -->
+     <!-- seo:start -->
+-    <title>Medical Masters | Plataforma de Médicos Especialistas Certificados</title>
++    <title>Medical Masters | Médicos especialistas certificados</title>
+     <meta name="description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+     <meta name="keywords" content="telemedicina, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
+     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+     <link rel="canonical" href="https://medical-masters.com/" />
+-    <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
++    <meta property="og:title" content="Medical Masters | Médicos especialistas certificados" />
+     <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+     <meta property="og:type" content="website" />
+     <meta property="og:locale" content="es_ES" />
+@@ -26,10 +26,10 @@
+     <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
+     <meta property="og:image:width" content="512" />
+     <meta property="og:image:height" content="512" />
+-    <meta property="og:image:alt" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
++    <meta property="og:image:alt" content="Medical Masters | Médicos especialistas certificados" />
+     <meta name="twitter:card" content="summary" />
+     <meta name="twitter:site" content="@MedicalMasters" />
+-    <meta name="twitter:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
++    <meta name="twitter:title" content="Medical Masters | Médicos especialistas certificados" />
+     <meta name="twitter:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
+     <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=18" />
+     <link rel="icon" href="/favicon.ico?v=18" sizes="any" />
+diff --git a/public/llms.txt b/public/llms.txt
+new file mode 100644
+index 00000000..5d0dd17c
+--- /dev/null
++++ b/public/llms.txt
+@@ -0,0 +1,19 @@
++# Medical Masters
++
++> Plataforma médica internacional que conecta médicos especialistas certificados, residentes y pacientes: orientación médica en vivo, lives quirúrgicos, contenido premium, consultas presenciales y digitales, recetas digitales y expediente clínico seguro.
++
++Sitio en español; la interfaz también está disponible en inglés, portugués, francés, italiano, alemán, catalán y chino.
++
++## Páginas principales
++
++- [Inicio](https://medical-masters.com/): presentación de la red global de médicos.
++- [Para médicos](https://medical-masters.com/for-doctors): cómo unirse a la red y qué ofrece a los especialistas.
++- [Para pacientes](https://medical-masters.com/for-patients): acceso a especialistas, orientación médica y segundas opiniones.
++- [Para residentes](https://medical-masters.com/for-residents): comunidad académica y formación para residentes médicos.
++
++## Legal
++
++- [Términos y condiciones](https://medical-masters.com/terms)
++- [Aviso de privacidad](https://medical-masters.com/privacy)
++- [Código de ética](https://medical-masters.com/codigo-etica)
++- [Derechos ARCO](https://medical-masters.com/arco)
+diff --git a/public/robots.txt b/public/robots.txt
+index a175803f..14ff1dbe 100644
+--- a/public/robots.txt
++++ b/public/robots.txt
+@@ -3,6 +3,9 @@
+ 
+ User-agent: *
+ Allow: /$
++Allow: /assets/
++Allow: /gtag-init.js
++Allow: /llms.txt
+ Allow: /favicon.ico
+ Allow: /favicon.png
+ Allow: /apple-touch-icon.png
+diff --git a/scripts/mm-seo.service b/scripts/mm-seo.service
+new file mode 100644
+index 00000000..ab162938
+--- /dev/null
++++ b/scripts/mm-seo.service
+@@ -0,0 +1,16 @@
++# Servidor SEO de medical-masters.com (sustituye a middleware.ts de Vercel).
++# Instalar: cp scripts/mm-seo.service /etc/systemd/system/ && systemctl enable --now mm-seo
++[Unit]
++Description=Medical Masters SEO (head por URL, robots.txt, sitemap.xml)
++After=network.target
++
++[Service]
++WorkingDirectory=/srv/mm-seo
++ExecStart=/usr/local/bin/node /srv/mm-seo/scripts/seo-server.mjs
++Environment=PORT=8871
++Restart=always
++RestartSec=2
++User=root
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/scripts/seo-server.mjs b/scripts/seo-server.mjs
+new file mode 100644
+index 00000000..ab5c31a9
+--- /dev/null
++++ b/scripts/seo-server.mjs
+@@ -0,0 +1,197 @@
++// Servidor SEO de medical-masters.com en el VPS: hace lo que hacía middleware.ts en Vercel.
++//
++// Caddy le pasa las páginas HTML (rutas sin extensión), /robots.txt y /sitemap.xml. Por
++// cada página toma index.html del disco, pide a seo-meta el <head> de esa URL y sustituye
++// lo que hay entre <!-- seo:start --> y <!-- seo:end -->. Pone X-Robots-Tag con el robots
++// resuelto y responde 404 a las URLs que no existen en la app.
++//
++// Nunca tumba la web: si seo-meta no contesta, sirve el <head> por defecto; si este
++// proceso cae, Caddy sirve index.html tal cual (handle_errors en medical-masters.caddy).
++//
++// Despliegue: /srv/mm-seo/scripts/seo-server.mjs junto a
++// /srv/mm-seo/supabase/functions/_shared/seo-render.ts (misma ruta relativa que aquí),
++// servicio systemd mm-seo (Node 24, que ejecuta el .ts sin compilar).
++import http from 'node:http';
++import { readFile, stat } from 'node:fs/promises';
++import path from 'node:path';
++import {
++  DEFAULT_ROBOTS_NOINDEX, buildHeadHtml, createDefaultSeoConfig, injectHead, matchRoute, resolveSeo,
++} from '../supabase/functions/_shared/seo-render.ts';
++
++const PORT = Number(process.env.PORT || 8871);
++const ROOT = process.env.SITE_ROOT || '/srv/sitios/medical-masters';
++// Directo a Kong del Supabase local: sin salir a internet ni pasar por Caddy.
++const FN = process.env.SEO_FN || 'http://127.0.0.1:8000/functions/v1/seo-meta';
++const TTL_MS = 30_000;
++const STALE_MS = 10 * 60_000;
++const TIMEOUT_MS = 2_500;
++
++// Rutas de src/App.tsx (path="*" aparte). Lo que no case con ninguna, ni con una página
++// del panel, responde 404. Si se añade una ruta a App.tsx, añadirla aquí también.
++const APP_ROUTES = [
++  '/', '/access-denied', '/admin/*', '/advertiser/*', '/advertising', '/app', '/arco', '/badge-chat', '/book/:p',
++  '/chat', '/clinical-sessions', '/codigo-etica', '/como-funciona', '/compliance', '/congreso/:p', '/congresos',
++  '/congresses', '/contact', '/contenido', '/content', '/dmca', '/doctor/*', '/doctores', '/doctors',
++  '/double-check', '/education', '/email-confirmed', '/emergencia', '/emergency', '/enterprise', '/eventos',
++  '/events', '/for-doctors', '/foro', '/for-patients', '/for-residents', '/help', '/hospital-locator', '/live/:p',
++  '/lives', '/login', '/marketplace', '/medical-history', '/medical-record', '/medical-supplies', '/meetings',
++  '/my-appointments', '/my-books', '/my-orders', '/news', '/news/:p', '/notifications', '/nutricion', '/nutrition',
++  '/onboarding', '/order-success', '/prescriptions', '/prescriptions/*', '/privacy', '/profile', '/psicologia',
++  '/psychology', '/recording/:p', '/recordings', '/register', '/registro', '/report-issue', '/reset-password',
++  '/residentes/lo-que-debo-saber', '/resident-groups', '/security', '/settings', '/success-stories', '/terms',
++  '/tutoriales', '/tutorials', '/vault', '/vendor/*', '/verificar-receta/:p', '/verification-pending',
++  '/verify-identity', '/video-call', '/wallet', '/wallet/*',
++].map((r) => new RegExp(`^${r.replace(/\/\*$/, '(/.*)?').replace(/:p/g, '[^/]+')}$`));
++
++// HTML mínimo de la portada dentro de #root para quien no ejecuta JavaScript (y para
++// que Google vea el H1 y el texto aunque no renderice). React lo sustituye al montar.
++const HOME_STATIC = `<div style="min-height:100vh;background:#163a83;color:#fff;font-family:system-ui,sans-serif;padding:48px 24px">
++      <main style="max-width:720px;margin:0 auto">
++        <h1 style="font-size:2.2rem;line-height:1.1;margin:0 0 16px">La red global de médicos</h1>
++        <p style="margin:0 0 8px">Conectando a los líderes de la medicina mundial.</p>
++        <p style="margin:0 0 24px;opacity:.85">Conectamos médicos, hospitales y conocimiento en todo el mundo. Desde una segunda opinión hasta retransmisiones quirúrgicas en directo.</p>
++        <nav style="display:flex;flex-wrap:wrap;gap:12px 20px">
++          <a style="color:#aed3d9" href="/app">Acceder a la plataforma</a>
++          <a style="color:#aed3d9" href="/for-doctors">Para médicos</a>
++          <a style="color:#aed3d9" href="/for-patients">Para pacientes</a>
++          <a style="color:#aed3d9" href="/for-residents">Para residentes</a>
++          <a style="color:#aed3d9" href="/terms">Términos y condiciones</a>
++          <a style="color:#aed3d9" href="/privacy">Aviso de privacidad</a>
++        </nav>
++      </main>
++    </div>`;
++
++const metaCache = new Map();
++const refreshing = new Set();
++let shell = null; // { html, mtimeMs }
++
++async function fetchWithTimeout(url, ms = TIMEOUT_MS) {
++  const controller = new AbortController();
++  const timer = setTimeout(() => controller.abort(), ms);
++  try {
++    return await fetch(url, { signal: controller.signal });
++  } finally {
++    clearTimeout(timer);
++  }
++}
++
++// index.html cambia con cada despliegue del front: se relee si cambió su fecha.
++async function getShell() {
++  const file = path.join(ROOT, 'index.html');
++  const st = await stat(file);
++  if (!shell || shell.mtimeMs !== st.mtimeMs) shell = { html: await readFile(file, 'utf8'), mtimeMs: st.mtimeMs };
++  return shell.html;
++}
++
++async function fetchMeta(p) {
++  const res = await fetchWithTimeout(`${FN}?path=${encodeURIComponent(p)}`);
++  if (!res.ok) throw new Error(`seo-meta ${res.status}`);
++  const value = await res.json();
++  if (typeof value?.title !== 'string' || typeof value?.robots !== 'string') throw new Error('seo-meta: respuesta rara');
++  if (metaCache.size > 500) metaCache.clear();
++  metaCache.set(p, { at: Date.now(), value });
++  return value;
++}
++
++// 30 s fresco; hasta 10 min se sirve lo guardado al instante y se refresca por detrás.
++async function getMeta(p) {
++  const hit = metaCache.get(p);
++  const age = hit ? Date.now() - hit.at : Infinity;
++  if (hit && age < TTL_MS) return hit.value;
++  if (hit && age < STALE_MS) {
++    if (!refreshing.has(p)) {
++      refreshing.add(p);
++      fetchMeta(p).catch(() => {}).finally(() => refreshing.delete(p));
++    }
++    return hit.value;
++  }
++  try {
++    return await fetchMeta(p);
++  } catch (error) {
++    console.error('[seo] meta', p, error.message);
++    return hit ? hit.value : null;
++  }
++}
++
++async function renderHtml(pathname, isHead, res) {
++  const html = await getShell();
++  const route = matchRoute(pathname);
++  const meta = await getMeta(route.path);
++  let head;
++  let robots;
++  if (meta) {
++    head = buildHeadHtml(meta);
++    robots = meta.robots;
++  } else {
++    // Sin la función: <head> por defecto. Solo se cierra lo privado o desconocido.
++    const fallback = resolveSeo(createDefaultSeoConfig(), route.path, route.kind === 'entity' ? { exists: true, vars: {} } : null);
++    const closed = route.kind === 'private' || route.kind === 'alias' || route.kind === 'unknown';
++    head = buildHeadHtml(fallback);
++    if (!closed && route.path !== '/') head = head.replace(/<meta name="robots"[^>]*>\s*/, '');
++    robots = closed ? DEFAULT_ROBOTS_NOINDEX : route.path === '/' ? fallback.robots : null;
++  }
++  const notFound = route.kind === 'unknown' && (!meta || meta.source === 'unknown') && !APP_ROUTES.some((re) => re.test(route.path));
++  if (notFound) {
++    robots = DEFAULT_ROBOTS_NOINDEX;
++    head = head.replace(/<meta name="robots"[^>]*>/, `<meta name="robots" content="${DEFAULT_ROBOTS_NOINDEX}" />`)
++      .replace(/<link rel="canonical"[^>]*>\s*/, '');
++  }
++  let body = injectHead(html, head);
++  if (route.path === '/') body = body.replace('<div id="root"></div>', `<div id="root">${HOME_STATIC}</div>`);
++  const headers = {
++    'content-type': 'text/html; charset=utf-8',
++    'cache-control': 'public, max-age=0, must-revalidate',
++    'x-seo': meta ? 'panel' : 'fallback',
++  };
++  if (robots) headers['x-robots-tag'] = robots;
++  res.writeHead(notFound ? 404 : 200, headers);
++  res.end(isHead ? undefined : body);
++}
++
++async function proxyText(kind, contentType, isHead, res) {
++  let text;
++  let source = 'panel';
++  try {
++    const r = await fetchWithTimeout(`${FN}?kind=${kind}`, kind === 'sitemap' ? 5_000 : TIMEOUT_MS);
++    if (!r.ok) throw new Error(`seo-meta ${kind} ${r.status}`);
++    text = await r.text();
++  } catch (error) {
++    console.error('[seo]', kind, error.message);
++    // El fichero estático de public/ sigue ahí de respaldo.
++    text = await readFile(path.join(ROOT, kind === 'robots' ? 'robots.txt' : 'sitemap.xml'), 'utf8');
++    source = 'fallback';
++  }
++  res.writeHead(200, {
++    'content-type': contentType,
++    'cache-control': 'public, max-age=0, must-revalidate',
++    'x-robots-tag': 'index, follow, max-image-preview:large',
++    'x-seo': source,
++  });
++  res.end(isHead ? undefined : text);
++}
++
++http.createServer(async (req, res) => {
++  const isHead = req.method === 'HEAD';
++  try {
++    if (req.method !== 'GET' && !isHead) {
++      res.writeHead(405, { allow: 'GET, HEAD' });
++      return res.end();
++    }
++    const { pathname } = new URL(req.url, 'http://localhost');
++    if (pathname === '/robots.txt') return await proxyText('robots', 'text/plain; charset=utf-8', isHead, res);
++    if (pathname === '/sitemap.xml') return await proxyText('sitemap', 'application/xml; charset=utf-8', isHead, res);
++    return await renderHtml(pathname, isHead, res);
++  } catch (error) {
++    console.error('[seo]', req.url, error.message);
++    if (res.headersSent) return res.end();
++    // Último recurso: index.html tal cual, como antes de este servicio.
++    try {
++      const html = await readFile(path.join(ROOT, 'index.html'), 'utf8');
++      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache', 'x-seo': 'error' });
++      res.end(isHead ? undefined : html);
++    } catch {
++      res.writeHead(502);
++      res.end();
++    }
++  }
++}).listen(PORT, '127.0.0.1', () => console.log(`[seo] escuchando en 127.0.0.1:${PORT}`));
+diff --git a/src/App.tsx b/src/App.tsx
+index cb85e169..f35a45a8 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -403,6 +403,8 @@ const App = () => {
+                       <Route path="/emergency" element={<EmergencyDoctors />} />
+                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />
+                       <Route path="/doctores" element={<Navigate to="/doctors" replace />} />
++                      <Route path="/registro" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
++                      <Route path="/register" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
+                       <Route path="/arco" element={<ArcoRights />} />
+                       <Route path="*" element={<NotFound />} />
+                     </Routes>
+diff --git a/src/components/BrandLaunchAnimation.tsx b/src/components/BrandLaunchAnimation.tsx
+index 1553d727..3251c990 100644
+--- a/src/components/BrandLaunchAnimation.tsx
++++ b/src/components/BrandLaunchAnimation.tsx
+@@ -68,12 +68,12 @@ export function BrandLaunchAnimation({ onFinish, title = 'Medical Masters', subt
+           />
+         </div>
+ 
+-        <h1
++        <div
+           className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight mb-1"
+           style={{ animation: 'splash-fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both' }}
+         >
+           {title}
+-        </h1>
++        </div>
+         {subtitle && (
+           <p
+             className="text-sm text-white mb-8"
+diff --git a/src/contexts/LanguageContext.tsx b/src/contexts/LanguageContext.tsx
+index a5493790..98c602b1 100644
+--- a/src/contexts/LanguageContext.tsx
++++ b/src/contexts/LanguageContext.tsx
+@@ -58,6 +58,9 @@ export function initialLanguage(): SupportedLanguage {
+   if (stored) return stored.lang;
+   // Sin nada guardado se usa el idioma del navegador como PISTA (no cuenta como
+   // elección: al iniciar sesión manda el perfil).
++  // Los buscadores (Googlebot va en en-US) ven el idioma por defecto, el mismo del
++  // <title>, la descripción y og:locale que sirve el servidor.
++  if (typeof navigator !== 'undefined' && /bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent || '')) return DEFAULT_LANGUAGE;
+   if (typeof navigator !== 'undefined' && navigator.language) return normalizeLanguage(navigator.language);
+   return DEFAULT_LANGUAGE;
+ }
+diff --git a/src/pages/CodigoEtica.tsx b/src/pages/CodigoEtica.tsx
+index d15f0866..c16df058 100644
+--- a/src/pages/CodigoEtica.tsx
++++ b/src/pages/CodigoEtica.tsx
+@@ -1,5 +1,5 @@
+ import React, { useState, useEffect } from 'react';
+-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
++import { Card, CardContent, CardHeader } from '@/components/ui/card';
+ import { Scale, Loader2 } from 'lucide-react';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useLanguage } from '@/contexts/LanguageContext';
+@@ -106,9 +106,9 @@ Entiendo que la aceptación de este Código de Ética es requisito indispensable
+           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+             <div className="flex items-center gap-2 sm:gap-3">
+               <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+-              <CardTitle className="text-lg sm:text-xl">
++              <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">
+                 {t('codeOfEthics.title')}
+-              </CardTitle>
++              </h1>
+             </div>
+             <p className="text-xs text-muted-foreground mt-1">
+               {t('codeOfEthics.subtitle')}
+diff --git a/src/pages/Dmca.tsx b/src/pages/Dmca.tsx
+index 80b2f84a..8ef93fa9 100644
+--- a/src/pages/Dmca.tsx
++++ b/src/pages/Dmca.tsx
+@@ -1,5 +1,5 @@
+ import { useState, useEffect } from 'react';
+-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
++import { Card, CardContent, CardHeader } from '@/components/ui/card';
+ import { ShieldCheck, Loader2 } from 'lucide-react';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useLanguage } from '@/contexts/LanguageContext';
+@@ -163,7 +163,7 @@ export default function Dmca() {
+             <div className="flex items-center justify-between gap-3">
+               <div className="flex items-center gap-2 sm:gap-3">
+                 <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+-                <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
++                <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">{title}</h1>
+               </div>
+               <DmcaBadge className="hidden sm:inline-flex" />
+             </div>
+diff --git a/src/pages/Doctors.tsx b/src/pages/Doctors.tsx
+index 6738acbb..b34adb0f 100644
+--- a/src/pages/Doctors.tsx
++++ b/src/pages/Doctors.tsx
+@@ -196,7 +196,7 @@ export default function Doctors({
+   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
+   const [totalCount, setTotalCount] = useState(0);
+   const [isLoading, setIsLoading] = useState(true);
+-  const [searchQuery, setSearchQuery] = useState('');
++  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
+   const [locationFilter, setLocationFilter] = useState('');
+   const [dynamicCities, setDynamicCities] = useState<string[]>([]);
+   const [selectedSpecialty, setSelectedSpecialty] = useState('');
+diff --git a/src/pages/NotFound.tsx b/src/pages/NotFound.tsx
+index 3ebbe6d7..b3ddf79d 100644
+--- a/src/pages/NotFound.tsx
++++ b/src/pages/NotFound.tsx
+@@ -10,6 +10,15 @@ const NotFound = () => {
+ 
+   useEffect(() => {
+     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
++    // Página inexistente: que Google no la indexe ni la tome por la home.
++    let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
++    if (!robots) {
++      robots = document.createElement('meta');
++      robots.name = 'robots';
++      document.head.appendChild(robots);
++    }
++    robots.content = 'noindex, nofollow';
++    document.head.querySelector('link[rel="canonical"]')?.remove();
+   }, [location.pathname]);
+ 
+   return (
+diff --git a/src/pages/Privacy.tsx b/src/pages/Privacy.tsx
+index 6a21488a..e754fda4 100644
+--- a/src/pages/Privacy.tsx
++++ b/src/pages/Privacy.tsx
+@@ -1,7 +1,7 @@
+ import React, { useState, useEffect } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { Button } from '@/components/ui/button';
+-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
++import { Card, CardContent, CardHeader } from '@/components/ui/card';
+ import { ArrowLeft, Lock, Loader2 } from 'lucide-react';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useLanguage } from '@/contexts/LanguageContext';
+@@ -146,9 +146,9 @@ Para ejercer sus derechos o realizar consultas sobre privacidad, contáctenos en
+           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+             <div className="flex items-center gap-2 sm:gap-3">
+               <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+-              <CardTitle className="text-lg sm:text-xl">
++              <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">
+                 {t('autoI18n.privacy1')}
+-              </CardTitle>
++              </h1>
+             </div>
+             <p className="text-xs text-muted-foreground mt-1">
+               {t('autoI18n.privacy2')}
+diff --git a/src/pages/Terms.tsx b/src/pages/Terms.tsx
+index ae30f230..bafcfc3f 100644
+--- a/src/pages/Terms.tsx
++++ b/src/pages/Terms.tsx
+@@ -1,7 +1,7 @@
+ import React, { useState, useEffect } from 'react';
+ import { useNavigate } from 'react-router-dom';
+ import { Button } from '@/components/ui/button';
+-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
++import { Card, CardContent, CardHeader } from '@/components/ui/card';
+ import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
+ import { supabase } from '@/integrations/supabase/client';
+ import { useLanguage } from '@/contexts/LanguageContext';
+@@ -121,9 +121,9 @@ Para cualquier consulta sobre estos términos, puede contactarnos a través de l
+           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
+             <div className="flex items-center gap-2 sm:gap-3">
+               <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+-              <CardTitle className="text-lg sm:text-xl">
++              <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">
+                 {t('autoI18n.terms1')}
+-              </CardTitle>
++              </h1>
+             </div>
+             <p className="text-xs text-muted-foreground mt-1">
+               {t('autoI18n.terms2')}
+diff --git a/src/test/seo-core.test.ts b/src/test/seo-core.test.ts
+index 56a53503..7c18fed2 100644
+--- a/src/test/seo-core.test.ts
++++ b/src/test/seo-core.test.ts
+@@ -41,7 +41,7 @@ describe('resolver', () => {
+   it('sin tocar nada reproduce el estado anterior: solo la home abierta a Google', () => {
+     const home = resolveSeo(config, '/');
+     expect(home.index).toBe(true);
+-    expect(home.title).toBe('Medical Masters | Plataforma de Médicos Especialistas Certificados');
++    expect(home.title).toBe('Medical Masters | Médicos especialistas certificados');
+     expect(resolveSeo(config, '/doctors').index).toBe(false);
+     expect(resolveSeo(config, `/doctor/${PATRICIA}`, doctorEntity({ user_id: PATRICIA, name: 'Dra. Patricia' })).index).toBe(false);
+   });
+diff --git a/supabase/functions/_shared/seo-render.ts b/supabase/functions/_shared/seo-render.ts
+index 9e7dcd5d..3e6cb004 100644
+--- a/supabase/functions/_shared/seo-render.ts
++++ b/supabase/functions/_shared/seo-render.ts
+@@ -92,7 +92,7 @@ export interface PublicPage {
+ export const DEFAULT_ROBOTS_INDEX = 'index, follow, max-image-preview:large, max-snippet:-1';
+ export const DEFAULT_ROBOTS_NOINDEX = 'noindex, nofollow, noarchive, nosnippet, noimageindex';
+ 
+-const HOME_TITLE = 'Medical Masters | Plataforma de Médicos Especialistas Certificados';
++const HOME_TITLE = 'Medical Masters | Médicos especialistas certificados';
+ const HOME_DESCRIPTION =
+   'Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro.';
+ 
+@@ -836,7 +836,7 @@ export function injectHead(html: string, headHtml: string): string {
+ const STATIC_ALLOW = [
+   '/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/icon-16.png', '/icon-32.png', '/icon-72.png',
+   '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png',
+-  '/icon-512.png', '/manifest.json', '/sitemap.xml', '/robots.txt',
++  '/icon-512.png', '/manifest.json', '/sitemap.xml', '/robots.txt', '/llms.txt',
+ ];
+ 
+ // Rutas de panel que cuelgan de prefijos públicos: si se abre /doctor/ a Google,

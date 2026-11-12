@@ -1,0 +1,700 @@
+diff --git a/src/components/chat/ChatMessageBubble.tsx b/src/components/chat/ChatMessageBubble.tsx
+index 4b296525..90cec1a7 100644
+--- a/src/components/chat/ChatMessageBubble.tsx
++++ b/src/components/chat/ChatMessageBubble.tsx
+@@ -85,7 +85,11 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }:
+     const prescriptionMatch = content.match(/\/prescriptions\/([a-f0-9-]+)/);
+     if (prescriptionMatch) {
+       const prescriptionId = prescriptionMatch[1];
+-      const textPart = stripEmoji(content.split('/prescriptions/')[0]);
++      const rawText = stripEmoji(content.split('/prescriptions/')[0]);
++      // Aviso automático de receta (se guarda en español): se muestra en el idioma del lector.
++      const textPart = /^\s*Se te ha generado tu receta médica/i.test(rawText)
++        ? t('chatMessageBubble.prescriptionReady')
++        : rawText;
+       return (
+         <div 
+           className="cursor-pointer"
+diff --git a/src/components/prescriptions/PrescriptionForm.tsx b/src/components/prescriptions/PrescriptionForm.tsx
+index 22ff0525..cfc274c4 100644
+--- a/src/components/prescriptions/PrescriptionForm.tsx
++++ b/src/components/prescriptions/PrescriptionForm.tsx
+@@ -56,6 +56,8 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
+     const ensureCedulaVerified = async () => {
+       const cedula = (user as any)?.doctorProfile?.cedulaProfesional;
+       if (!user?.id || !cedula) return;
++      // SEP solo acepta 7-8 dígitos: con otro formato la llamada falla siempre.
++      if (!/^\d{7,8}$/.test(String(cedula).trim())) return;
+       const { data: existing } = await supabase
+         .from('cedula_verifications')
+         .select('id')
+@@ -117,7 +119,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
+ 
+   const handleSubmit = async () => {
+     if (!user?.id || !user.doctorProfile) return;
+-
++    if (!patientId) {
++      toast.error(t('rxExtra.patientRequired'));
++      return;
++    }
+     // Credenciales completas del médico (firma + universidad, hospital, cédulas…)
+     // para que la receta muestre el membrete completo.
+     const credentials = await fetchDoctorCredentials(user.id);
+diff --git a/src/hooks/useDoctorPatients.ts b/src/hooks/useDoctorPatients.ts
+index b4219b97..bb38f819 100644
+--- a/src/hooks/useDoctorPatients.ts
++++ b/src/hooks/useDoctorPatients.ts
+@@ -83,7 +83,7 @@ export function useDoctorPatients() {
+           .order('last_message_at', { ascending: false }),
+         supabase
+           .from('consultations')
+-          .select('patient_id, started_at')
++          .select('patient_id, status, started_at, ended_at, completed_at')
+           .eq('doctor_id', me)
+           .order('started_at', { ascending: false }),
+         supabase
+@@ -132,7 +132,10 @@ export function useDoctorPatients() {
+       (consultsRes.data || []).forEach((c: any) => {
+         const e = entryFor(c.patient_id, 'consultation');
+         e.consultationsCount += 1;
+-        e.lastConsultationAt = later(e.lastConsultationAt, c.started_at || null);
++        // Mismo criterio que la ficha del paciente: fecha de cierre y sin las reembolsadas.
++        if (c.status !== 'refunded') {
++          e.lastConsultationAt = later(e.lastConsultationAt, c.completed_at || c.ended_at || c.started_at || null);
++        }
+         e.lastInteraction = later(e.lastInteraction, c.started_at || null);
+       });
+ 
+diff --git a/src/index.css b/src/index.css
+index 8d0f8adb..367d7894 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -2766,7 +2766,7 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
+ @media (min-width: 768px) { .pro-work-chat { grid-template-columns: 300px minmax(0, 1fr); } }
+ /* A 1280 px ya caben las CUATRO columnas de la maqueta apretando un poco:
+    antes el contexto clínico se escondía tras un botón en cualquier portátil. */
+-@media (min-width: 1280px) { .pro-work-chat { grid-template-columns: 180px 268px minmax(0, 1fr) 250px; } }
++@media (min-width: 1280px) { .pro-work-chat { grid-template-columns: 180px 320px minmax(0, 1fr) 230px; } }
+ @media (min-width: 1536px) { .pro-work-chat { grid-template-columns: 200px 320px minmax(0, 1fr) 288px; } }
+ @media (min-width: 768px) { .pro-work-chat > * + * { border-left: 1px solid var(--pro-line); } }
+ /* Consultas: lista · detalle */
+@@ -2827,7 +2827,7 @@ button.pro-kpi:hover, a.pro-kpi:hover { box-shadow: 0 14px 34px -14px rgba(3, 32
+ .pro-conv .time { margin-left: auto; font-size: 11.5px; color: var(--pro-muted); flex-shrink: 0; }
+ .pro-conv .sub { font-size: 12px; color: var(--pro-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ .pro-conv .prev { font-size: 12.5px; color: var(--pro-ink-2); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+-.pro-conv .foot { display: flex; align-items: center; gap: 8px; margin-top: 5px; min-width: 0; }
++.pro-conv .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 5px; min-width: 0; }
+ .pro-conv .unread {
+   flex-shrink: 0; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px;
+   display: inline-flex; align-items: center; justify-content: center;
+diff --git a/src/lib/i18n/ca.ts b/src/lib/i18n/ca.ts
+index 08cde017..7516c12e 100644
+--- a/src/lib/i18n/ca.ts
++++ b/src/lib/i18n/ca.ts
+@@ -4029,6 +4029,8 @@ export const ca = {
+       "failed": "Fallit"
+     },
+     "emailTypeLabels": {
++      "appointmentReminder": "Recordatori de cita",
++      "other": "Altre avís",
+       "newContent": "Contingut nou",
+       "liveStarted": "Directe iniciat",
+       "reminder": "Recordatori"
+@@ -4042,6 +4044,7 @@ export const ca = {
+       "clear": "Esborrar filtres",
+       "types": {
+         "all": "Tots els tipus",
++        "appointmentReminders": "Recordatoris de cita",
+         "newContent": "Contingut nou",
+         "liveStarted": "Directe iniciat",
+         "reminders": "Recordatoris"
+@@ -6570,6 +6573,7 @@ export const ca = {
+     }
+   },
+   "medicalRecordPage": {
++    "loadError": "No s'ha pogut carregar el teu historial clínic. Revisa la connexió i torna-ho a provar.",
+     "autoSave": {
+       "saving": "S'està desant…",
+       "saved": "Desat",
+@@ -7478,6 +7482,7 @@ export const ca = {
+     "logout": "Tancar sessió"
+   },
+   "chatMessageBubble": {
++    "prescriptionReady": "S'ha generat la teva recepta mèdica. Toca per veure-la.",
+     "viewPrescription": "Veure recepta mèdica",
+     "previewNotAvailable": "Vista prèvia no disponible",
+     "replyToMessage": "Respondre a aquest missatge",
+@@ -10462,6 +10467,7 @@ export const ca = {
+     commercialName: 'Nom comercial',
+     genericName: 'Nom genèric (substància activa)',
+     genericShort: 'Genèric',
++    "patientRequired": "Selecciona un pacient abans d’emetre la recepta.",
+     genericRequired: 'Cada medicament ha de portar nom comercial i nom genèric.',
+     birthDate: 'Data de naixement',
+     routeLabel: 'Via',
+diff --git a/src/lib/i18n/de.ts b/src/lib/i18n/de.ts
+index 329806cd..d6f0a600 100644
+--- a/src/lib/i18n/de.ts
++++ b/src/lib/i18n/de.ts
+@@ -4155,6 +4155,8 @@ export const de = {
+       failed: "Fehlgeschlagen"
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Terminerinnerung",
++      other: "Sonstige Benachrichtigung",
+       newContent: "Neuer Inhalt",
+       liveStarted: "Live gestartet",
+       reminder: "Erinnerung"
+@@ -4168,6 +4170,7 @@ export const de = {
+       clear: "Filter zurücksetzen",
+       types: {
+         all: "Alle Typen",
++        appointmentReminders: "Terminerinnerungen",
+         newContent: "Neuer Inhalt",
+         liveStarted: "Live gestartet",
+         reminders: "Erinnerungen"
+@@ -6849,6 +6852,7 @@ export const de = {
+     }
+   },
+   medicalRecordPage: {
++    loadError: "Deine Krankengeschichte konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+     autoSave: {
+       saving: "Speichern…",
+       saved: "Gespeichert",
+@@ -7405,6 +7409,7 @@ export const de = {
+     commercialName: "Handelsname",
+     genericName: "Wirkstoffname (Generikum)",
+     genericShort: "Generikum",
++    patientRequired: "Wähle einen Patienten aus, bevor du das Rezept ausstellst.",
+     genericRequired: "Jedes Medikament braucht Handelsnamen und Wirkstoffnamen.",
+     birthDate: "Geburtsdatum",
+     routeLabel: "Verabreichungsweg",
+@@ -7869,6 +7874,7 @@ export const de = {
+     logout: "Abmelden"
+   },
+   chatMessageBubble: {
++    prescriptionReady: "Dein ärztliches Rezept ist bereit. Tippe, um es anzusehen.",
+     viewPrescription: "Ärztliches Rezept ansehen",
+     previewNotAvailable: "Vorschau nicht verfügbar",
+     replyToMessage: "Auf diese Nachricht antworten",
+diff --git a/src/lib/i18n/en.ts b/src/lib/i18n/en.ts
+index 2a5c8e0c..01d6d5f4 100644
+--- a/src/lib/i18n/en.ts
++++ b/src/lib/i18n/en.ts
+@@ -4155,6 +4155,8 @@ export const en = {
+       failed: "Failed"
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Appointment reminder",
++      other: "Other notice",
+       newContent: "New content",
+       liveStarted: "Live started",
+       reminder: "Reminder"
+@@ -4168,6 +4170,7 @@ export const en = {
+       clear: "Clear filters",
+       types: {
+         all: "All types",
++        appointmentReminders: "Appointment reminders",
+         newContent: "New content",
+         liveStarted: "Live started",
+         reminders: "Reminders"
+@@ -6847,6 +6850,7 @@ export const en = {
+     }
+   },
+   medicalRecordPage: {
++    loadError: "We couldn't load your medical history. Check your connection and try again.",
+     autoSave: {
+       saving: "Saving…",
+       saved: "Saved",
+@@ -7451,6 +7455,7 @@ export const en = {
+     commercialName: "Brand name",
+     genericName: "Generic name (active substance)",
+     genericShort: "Generic",
++    patientRequired: "Select a patient before issuing the prescription.",
+     genericRequired: "Each medication must include both brand and generic names.",
+     birthDate: "Date of birth",
+     routeLabel: "Route",
+@@ -7915,6 +7920,7 @@ export const en = {
+     logout: "Log out"
+   },
+   chatMessageBubble: {
++    prescriptionReady: "Your medical prescription is ready. Tap to view it.",
+     viewPrescription: "View medical prescription",
+     previewNotAvailable: "Preview not available",
+     replyToMessage: "Reply to this message",
+diff --git a/src/lib/i18n/es.ts b/src/lib/i18n/es.ts
+index 025aaa69..2c35c1c1 100644
+--- a/src/lib/i18n/es.ts
++++ b/src/lib/i18n/es.ts
+@@ -4212,6 +4212,8 @@ export const es = {
+       failed: 'Fallido',
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Recordatorio de cita",
++      other: "Otro aviso",
+       newContent: 'Nuevo contenido',
+       liveStarted: 'Live iniciado',
+       reminder: 'Recordatorio',
+@@ -4225,6 +4227,7 @@ export const es = {
+       clear: 'Limpiar filtros',
+       types: {
+         all: 'Todos los tipos',
++        appointmentReminders: "Recordatorios de cita",
+         newContent: 'Nuevo contenido',
+         liveStarted: 'Live iniciado',
+         reminders: 'Recordatorios',
+@@ -6904,6 +6907,7 @@ export const es = {
+     },
+   },
+   medicalRecordPage: {
++    loadError: "No se pudo cargar tu historial clínico. Revisa tu conexión y vuelve a intentarlo.",
+     autoSave: {
+       saving: 'Guardando…',
+       saved: 'Guardado',
+@@ -7509,6 +7513,7 @@ export const es = {
+     commercialName: 'Nombre comercial',
+     genericName: 'Nombre genérico (sustancia activa)',
+     genericShort: 'Genérico',
++    patientRequired: "Selecciona un paciente antes de emitir la receta.",
+     genericRequired: 'Cada medicamento debe llevar nombre comercial y nombre genérico.',
+     birthDate: 'Fecha de nacimiento',
+     routeLabel: 'Vía',
+@@ -7973,6 +7978,7 @@ export const es = {
+     logout: 'Cerrar sesión',
+   },
+   chatMessageBubble: {
++    prescriptionReady: "Se te ha generado tu receta médica. Toca para verla.",
+     viewPrescription: 'Ver receta médica',
+     previewNotAvailable: 'Vista previa no disponible',
+     replyToMessage: 'Responder a este mensaje',
+diff --git a/src/lib/i18n/fr.ts b/src/lib/i18n/fr.ts
+index c480acb6..c7215d1d 100644
+--- a/src/lib/i18n/fr.ts
++++ b/src/lib/i18n/fr.ts
+@@ -4155,6 +4155,8 @@ export const fr = {
+       failed: "Échoué"
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Rappel de rendez-vous",
++      other: "Autre avis",
+       newContent: "Nouveau contenu",
+       liveStarted: "Live démarré",
+       reminder: "Rappel"
+@@ -4168,6 +4170,7 @@ export const fr = {
+       clear: "Effacer les filtres",
+       types: {
+         all: "Tous les types",
++        appointmentReminders: "Rappels de rendez-vous",
+         newContent: "Nouveau contenu",
+         liveStarted: "Live démarré",
+         reminders: "Rappels"
+@@ -6849,6 +6852,7 @@ export const fr = {
+     }
+   },
+   medicalRecordPage: {
++    loadError: "Impossible de charger votre dossier médical. Vérifiez votre connexion et réessayez.",
+     autoSave: {
+       saving: "Enregistrement…",
+       saved: "Enregistré",
+@@ -7405,6 +7409,7 @@ export const fr = {
+     commercialName: "Nom commercial",
+     genericName: "Nom générique (substance active)",
+     genericShort: "Générique",
++    patientRequired: "Sélectionnez un patient avant d’émettre l’ordonnance.",
+     genericRequired: "Chaque médicament doit comporter le nom commercial et le nom générique.",
+     birthDate: "Date de naissance",
+     routeLabel: "Voie",
+@@ -7869,6 +7874,7 @@ export const fr = {
+     logout: "Se déconnecter"
+   },
+   chatMessageBubble: {
++    prescriptionReady: "Votre ordonnance est prête. Touchez pour la voir.",
+     viewPrescription: "Voir l'ordonnance",
+     previewNotAvailable: "Aperçu indisponible",
+     replyToMessage: "Répondre à ce message",
+diff --git a/src/lib/i18n/it.ts b/src/lib/i18n/it.ts
+index ccda70fc..9df4ee0f 100644
+--- a/src/lib/i18n/it.ts
++++ b/src/lib/i18n/it.ts
+@@ -4155,6 +4155,8 @@ export const it = {
+       failed: "Fallito"
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Promemoria appuntamento",
++      other: "Altro avviso",
+       newContent: "Nuovo contenuto",
+       liveStarted: "Live avviato",
+       reminder: "Promemoria"
+@@ -4168,6 +4170,7 @@ export const it = {
+       clear: "Cancella filtri",
+       types: {
+         all: "Tutti i tipi",
++        appointmentReminders: "Promemoria appuntamenti",
+         newContent: "Nuovo contenuto",
+         liveStarted: "Live avviato",
+         reminders: "Promemoria"
+@@ -6849,6 +6852,7 @@ export const it = {
+     }
+   },
+   medicalRecordPage: {
++    loadError: "Impossibile caricare la tua cartella clinica. Controlla la connessione e riprova.",
+     autoSave: {
+       saving: "Salvataggio…",
+       saved: "Salvato",
+@@ -7405,6 +7409,7 @@ export const it = {
+     commercialName: "Nome commerciale",
+     genericName: "Nome generico (principio attivo)",
+     genericShort: "Generico",
++    patientRequired: "Seleziona un paziente prima di emettere la ricetta.",
+     genericRequired: "Ogni farmaco deve avere nome commerciale e nome generico.",
+     birthDate: "Data di nascita",
+     routeLabel: "Via",
+@@ -7869,6 +7874,7 @@ export const it = {
+     logout: "Esci"
+   },
+   chatMessageBubble: {
++    prescriptionReady: "La tua ricetta medica è pronta. Tocca per vederla.",
+     viewPrescription: "Vedi ricetta medica",
+     previewNotAvailable: "Anteprima non disponibile",
+     replyToMessage: "Rispondi a questo messaggio",
+diff --git a/src/lib/i18n/pt.ts b/src/lib/i18n/pt.ts
+index a65a6c59..91f5deaf 100644
+--- a/src/lib/i18n/pt.ts
++++ b/src/lib/i18n/pt.ts
+@@ -4155,6 +4155,8 @@ export const pt = {
+       failed: "Falhou"
+     },
+     emailTypeLabels: {
++      appointmentReminder: "Lembrete de consulta",
++      other: "Outro aviso",
+       newContent: "Novo conteúdo",
+       liveStarted: "Live iniciada",
+       reminder: "Lembrete"
+@@ -4168,6 +4170,7 @@ export const pt = {
+       clear: "Limpar filtros",
+       types: {
+         all: "Todos os tipos",
++        appointmentReminders: "Lembretes de consulta",
+         newContent: "Novo conteúdo",
+         liveStarted: "Live iniciada",
+         reminders: "Lembretes"
+@@ -6849,6 +6852,7 @@ export const pt = {
+     }
+   },
+   medicalRecordPage: {
++    loadError: "Não foi possível carregar seu histórico clínico. Verifique sua conexão e tente novamente.",
+     autoSave: {
+       saving: "Salvando…",
+       saved: "Salvo",
+@@ -7405,6 +7409,7 @@ export const pt = {
+     commercialName: "Nome comercial",
+     genericName: "Nome genérico (substância ativa)",
+     genericShort: "Genérico",
++    patientRequired: "Selecione um paciente antes de emitir a receita.",
+     genericRequired: "Cada medicamento deve ter nome comercial e nome genérico.",
+     birthDate: "Data de nascimento",
+     routeLabel: "Via",
+@@ -7869,6 +7874,7 @@ export const pt = {
+     logout: "Sair"
+   },
+   chatMessageBubble: {
++    prescriptionReady: "Sua receita médica foi gerada. Toque para vê-la.",
+     viewPrescription: "Ver receita médica",
+     previewNotAvailable: "Visualização indisponível",
+     replyToMessage: "Responder a esta mensagem",
+diff --git a/src/lib/i18n/zh.ts b/src/lib/i18n/zh.ts
+index 6644e4cf..448858e6 100644
+--- a/src/lib/i18n/zh.ts
++++ b/src/lib/i18n/zh.ts
+@@ -4048,6 +4048,8 @@ export const zh = {
+       "failed": "失败"
+     },
+     "emailTypeLabels": {
++      appointmentReminder: "预约提醒",
++      other: "其他通知",
+       "newContent": "新内容",
+       "liveStarted": "直播已开始",
+       "reminder": "提醒"
+@@ -4061,6 +4063,7 @@ export const zh = {
+       "clear": "清除筛选",
+       "types": {
+         "all": "所有类型",
++        appointmentReminders: "预约提醒",
+         "newContent": "新内容",
+         "liveStarted": "直播已开始",
+         "reminders": "提醒"
+@@ -6589,6 +6592,7 @@ export const zh = {
+     }
+   },
+   "medicalRecordPage": {
++    loadError: "无法加载您的病历，请检查网络连接后重试。",
+     "autoSave": {
+       "saving": "保存中……",
+       "saved": "已保存",
+@@ -7497,6 +7501,7 @@ export const zh = {
+     "logout": "退出登录"
+   },
+   "chatMessageBubble": {
++    prescriptionReady: "您的处方已生成，点击查看。",
+     "viewPrescription": "查看处方",
+     "previewNotAvailable": "预览不可用",
+     "replyToMessage": "回复此消息",
+@@ -10589,6 +10594,7 @@ export const zh = {
+     commercialName: '商品名',
+     genericName: '通用名（活性成分）',
+     genericShort: '通用名',
++    patientRequired: "开具处方前请先选择患者。",
+     genericRequired: '每种药品都必须填写商品名和通用名。',
+     birthDate: '出生日期',
+     routeLabel: '给药途径',
+diff --git a/src/pages/ComoFunciona.tsx b/src/pages/ComoFunciona.tsx
+index 9f7f1532..176f0882 100644
+--- a/src/pages/ComoFunciona.tsx
++++ b/src/pages/ComoFunciona.tsx
+@@ -72,7 +72,7 @@ const SECTIONS: Section[] = [
+       { id: 'd1', icon: Users, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
+       { id: 'd2', icon: FileText, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
+       { id: 'd3', icon: FolderOpen, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
+-      { id: 'd4', icon: Pill, other: 'patient', href: () => '/prescriptions/new', doctorOnly: true },
++      { id: 'd4', icon: Pill, other: 'patient', href: () => '/prescriptions', doctorOnly: true },
+       { id: 'd5', icon: QrCode, other: 'patient', href: () => '/prescriptions', doctorOnly: true },
+     ],
+   },
+diff --git a/src/pages/CreatePrescription.tsx b/src/pages/CreatePrescription.tsx
+index 9d6f9c6d..6e363ed1 100644
+--- a/src/pages/CreatePrescription.tsx
++++ b/src/pages/CreatePrescription.tsx
+@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
+ import MainLayout from '@/components/layout/MainLayout';
+ import { Card, CardContent } from '@/components/ui/card';
+ import { PrescriptionForm } from '@/components/prescriptions/PrescriptionForm';
+-import { useSearchParams, useNavigate } from 'react-router-dom';
++import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
+ import { Button } from '@/components/ui/button';
+ import { ArrowLeft } from 'lucide-react';
+ import { supabase } from '@/integrations/supabase/client';
+@@ -21,6 +21,8 @@ export default function CreatePrescription() {
+   }
+ 
+   const patientId = params.get('patientId') || '';
++  // Sin paciente no se puede emitir: el selector de paciente vive en /prescriptions.
++  if (!patientId) return <Navigate to="/prescriptions" replace />;
+   const patientName = params.get('patientName') || '';
+   const consultationId = params.get('consultationId') || undefined;
+   const sessionId = params.get('sessionId') || undefined;
+diff --git a/src/pages/DoctorEmailHistory.tsx b/src/pages/DoctorEmailHistory.tsx
+index adf5ef30..56acf738 100644
+--- a/src/pages/DoctorEmailHistory.tsx
++++ b/src/pages/DoctorEmailHistory.tsx
+@@ -34,14 +34,15 @@ interface EmailItem {
+   createdAt: Date;
+ }
+ 
+-type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder';
++type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder' | 'appointment_reminder';
+ type DateRangeFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
+ 
+ const getEmailTypeIcon = (type: string) => {
+   switch (type) {
+     case 'new_content': return <Video className="w-4 h-4" />;
+     case 'live_started': return <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />;
+-    case 'availability_reminder': return <CalendarIcon className="w-4 h-4" />;
++    case 'availability_reminder':
++    case 'appointment_reminder': return <CalendarIcon className="w-4 h-4" />;
+     default: return <Mail className="w-4 h-4" />;
+   }
+ };
+@@ -69,6 +70,7 @@ export default function DoctorEmailHistory() {
+     { value: 'new_content', label: t('doctorEmailHistoryPage.filters.types.newContent') },
+     { value: 'live_started', label: t('doctorEmailHistoryPage.filters.types.liveStarted') },
+     { value: 'availability_reminder', label: t('doctorEmailHistoryPage.filters.types.reminders') },
++    { value: 'appointment_reminder', label: t('doctorEmailHistoryPage.filters.types.appointmentReminders') },
+   ];
+ 
+   const DATE_RANGES: { value: DateRangeFilter; label: string }[] = [
+@@ -84,7 +86,8 @@ export default function DoctorEmailHistory() {
+       case 'new_content': return t('doctorEmailHistoryPage.emailTypeLabels.newContent');
+       case 'live_started': return t('doctorEmailHistoryPage.emailTypeLabels.liveStarted');
+       case 'availability_reminder': return t('doctorEmailHistoryPage.emailTypeLabels.reminder');
+-      default: return type;
++      case 'appointment_reminder': return t('doctorEmailHistoryPage.emailTypeLabels.appointmentReminder');
++      default: return t('doctorEmailHistoryPage.emailTypeLabels.other');
+     }
+   };
+ 
+@@ -192,7 +195,7 @@ export default function DoctorEmailHistory() {
+           <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorEmailHistoryPage.actions.back')}
+         </Button>
+         <MobileBackHeader />
+-
++        <h1 className="pro-page-title"><Mail className="w-7 h-7" /> <span>{t('emailHistoryCard.title')}</span></h1>
+         {/* Stats */}
+         <div className="grid grid-cols-3 gap-3">
+           <Card className="p-3 text-center">
+diff --git a/src/pages/DoctorPatientDetail.tsx b/src/pages/DoctorPatientDetail.tsx
+index 5e3a8848..49316711 100644
+--- a/src/pages/DoctorPatientDetail.tsx
++++ b/src/pages/DoctorPatientDetail.tsx
+@@ -135,10 +135,21 @@ export default function DoctorPatientDetail() {
+     shared_files: sharedFiles.length,
+     notes: data.notes.length,
+   };
+-  const lastConsultationAt =
+-    overview?.last_consultation_at ||
+-    data.consultations[0]?.completed_at || data.consultations[0]?.ended_at || data.consultations[0]?.started_at || null;
+-
++  // Mismo criterio que la lista de pacientes (useDoctorPatients): consultas no
++  // reembolsadas por su fecha de cierre y citas pasadas no canceladas.
++  const lastConsultationAt = (() => {
++    const nowIso = new Date().toISOString();
++    let last: string | null = null;
++    for (const c of data.consultations as any[]) {
++      if (c.status === 'refunded') continue;
++      const d = c.completed_at || c.ended_at || c.started_at;
++      if (d && (!last || d > last)) last = d;
++    }
++    for (const a of data.appointments as any[]) {
++      if (a.scheduled_at < nowIso && a.status !== 'cancelled' && (!last || a.scheduled_at > last)) last = a.scheduled_at;
++    }
++    return last;
++  })();
+   const hasAnyRelation =
+     !!overview || !!listEntry || data.appointments.length + data.consultations.length + data.prescriptions.length + sharedFiles.length > 0 || !!data.chatSessionId;
+   const stillLoading = loading || loadingList || status === 'loading';
+diff --git a/src/pages/IdentityVerification.tsx b/src/pages/IdentityVerification.tsx
+index e2ddb5e9..0b53f0e8 100644
+--- a/src/pages/IdentityVerification.tsx
++++ b/src/pages/IdentityVerification.tsx
+@@ -81,16 +81,27 @@ export default function IdentityVerification() {
+         .limit(1)
+         .maybeSingle();
+ 
+-      if (data && !error) {
+-        setVerification(data as unknown as VerificationRecord);
++      let current = data && !error ? (data as unknown as VerificationRecord) : null;
++      // Un médico ya aprobado está verificado aunque su último intento de Veriff fallara.
++      if (role === 'doctor' && current?.status !== 'verified') {
++        const { data: dp } = await supabase
++          .from('doctor_profiles')
++          .select('status')
++          .eq('user_id', user.id)
++          .maybeSingle();
++        if ((dp as any)?.status === 'approved') {
++          current = { id: 'doctor-approved', status: 'verified', provider: 'manual', created_at: '', verified_at: null, metadata: null };
++        }
++      }
++      if (current) {
++        setVerification(current);
+       }
+     } catch {
+       // No verification found
+     } finally {
+       setIsLoading(false);
+     }
+-  }, [user?.id]);
+-
++  }, [user?.id, role]);
+   useEffect(() => {
+     fetchVerification();
+   }, [fetchVerification]);
+diff --git a/src/pages/MedicalRecord.tsx b/src/pages/MedicalRecord.tsx
+index 1566af53..83c4d11a 100644
+--- a/src/pages/MedicalRecord.tsx
++++ b/src/pages/MedicalRecord.tsx
+@@ -231,24 +231,33 @@ export default function MedicalRecord() {
+   const [isLoading, setIsLoading] = useState(true);
+   const [isSaving, setIsSaving] = useState(false);
+   const [hasRecord, setHasRecord] = useState(false);
++  const [loadError, setLoadError] = useState(false);
+   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const initialLoadDoneRef = useRef(false);
+   const hasRecordRef = useRef(false);
+   const dataRef = useRef<ClinicalData>(DEFAULT_DATA);
++  // Solo se guarda si el usuario cambió algo (abrir la página no escribe en la BD).
++  const isDirtyRef = useRef(false);
++  const prevDataRef = useRef<ClinicalData | null>(null);
+   useEffect(() => { dataRef.current = data; }, [data]);
+   useEffect(() => { hasRecordRef.current = hasRecord; }, [hasRecord]);
+ 
+   useEffect(() => {
+     if (!user?.id) return;
+     const fetch = async () => {
+-      const { data: record } = await supabase
++      const { data: record, error: loadErr } = await supabase
+         .from('patient_clinical_history')
+         .select('*')
+         .eq('patient_id', user.id)
+         .maybeSingle();
+-
++      if (loadErr) {
++        console.error('[MedicalRecord] load failed:', loadErr);
++        setLoadError(true);
++        setIsLoading(false);
++        return;
++      }
+       if (record) {
+         setHasRecord(true);
+         setData({
+@@ -450,32 +459,38 @@ export default function MedicalRecord() {
+   // del header para que el usuario vea "Guardando…" / "Guardado" sin spam
+   // de toasts.
+   useEffect(() => {
+-    if (isLoading) return;
++    if (isLoading || loadError) return;
+     if (!initialLoadDoneRef.current) {
+       initialLoadDoneRef.current = true;
++      prevDataRef.current = data;
+       return;
+     }
++    if (prevDataRef.current === data && !isDirtyRef.current) return;
++    prevDataRef.current = data;
++    isDirtyRef.current = true;
+     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+     setAutoSaveStatus('saving');
+     autosaveTimerRef.current = setTimeout(() => {
+-      persistData({ silent: true });
++      isDirtyRef.current = false;
++      persistData({ silent: true }).then((r) => { if (!r?.ok) isDirtyRef.current = true; });
+     }, 1500);
+     return () => {
+       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+     };
+-  }, [data, isLoading, persistData]);
++  }, [data, isLoading, loadError, persistData]);
+ 
+   // Guardado final al salir de la página: el debounce de 1.5s puede no
+   // haber disparado todavía. visibilitychange (cuando el tab pasa a hidden)
+   // dispara un save sincrónico para no perder el último input.
+   useEffect(() => {
+     const flushOnHide = () => {
+-      if (document.visibilityState === 'hidden' && initialLoadDoneRef.current) {
++      if (document.visibilityState === 'hidden' && initialLoadDoneRef.current && isDirtyRef.current) {
+         if (autosaveTimerRef.current) {
+           clearTimeout(autosaveTimerRef.current);
+           autosaveTimerRef.current = null;
+         }
+-        persistData({ silent: true });
++        isDirtyRef.current = false;
++        persistData({ silent: true }).then((r) => { if (!r?.ok) isDirtyRef.current = true; });
+       }
+     };
+     document.addEventListener('visibilitychange', flushOnHide);
+@@ -497,7 +512,15 @@ export default function MedicalRecord() {
+       </MainLayout>
+     );
+   }
+-
++  if (loadError) {
++    return (
++      <MainLayout>
++        <div className="flex items-center justify-center py-20 px-4 text-center text-sm text-destructive" role="alert">
++          {t('medicalRecordPage.loadError')}
++        </div>
++      </MainLayout>
++    );
++  }
+   return (
+     <MainLayout>
+       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-4xl">

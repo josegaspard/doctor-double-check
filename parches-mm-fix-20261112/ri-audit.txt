@@ -1,0 +1,76 @@
+
+=== CLAVES POR IDIOMA (referencia: es.ts, 10,204 claves) ===
+
+es  10,204 claves   faltan     0   sobran    0   100,0 %
+en  10,204 claves   faltan     0   sobran    0   100,0 %
+pt  10,204 claves   faltan     0   sobran    0   100,0 %
+fr  10,204 claves   faltan     0   sobran    0   100,0 %
+it  10,204 claves   faltan     0   sobran    0   100,0 %
+de  10,204 claves   faltan     0   sobran    0   100,0 %
+ca  10,204 claves   faltan     0   sobran    0   100,0 %
+zh  10,204 claves   faltan     0   sobran    0   100,0 %
+
+=== TEXTOS EN DURO (área del médico: 162 ficheros, 30 hallazgos) ===
+
+Detección heurística: revisa cada línea antes de tocarla.
+
+src/components/chat/ChatHeader.tsx  (2)
+     274  prop:title   «FaceTime»
+     277  jsx          «FaceTime»
+src/components/layout/DmcaBadge.tsx  (2)
+      32  prop:title   «DMCA.com Protection Status»
+      39  prop:alt     «DMCA.com Protection Status»
+src/pages/Doctors.tsx  (2)
+     511  jsx          «0 && d.rating»
+     512  jsx          «0 && d.total_consultations»
+src/components/chat/ConsultationSummaryCard.tsx  (1)
+     150  prop:placeholder «paciente@correo.com»
+src/components/common/ConfirmActionDialog.tsx  (1)
+     182  jsx          «Promise»
+src/components/content/hub/ContentCollectionsPanel.tsx  (1)
+     217  jsx          «: c.is_public ?»
+src/components/doctor/DoctorBooks.tsx  (1)
+     348  jsx          «Visa, Mastercard, AMEX»
+src/components/doctor/DoctorCredentials.tsx  (1)
+     723  prop:placeholder «ABC-12345»
+src/components/doctor/EmailStatsCard.tsx  (1)
+      48  jsx          «0 ? 'up' : change»
+src/components/doctor/patients/ImportPatientsDialog.tsx  (1)
+      42  jsx          «Promise»
+src/components/doctor/patients/InvitePatientForm.tsx  (1)
+      18  jsx          «Promise»
+src/components/doctor/public-profile/SubscriptionsCard.tsx  (1)
+      28  jsx          «void | Promise»
+src/components/doctor/subscriptions/PlansEditor.tsx  (1)
+     246  jsx          «Promise»
+src/components/layout/MainLayout.tsx  (1)
+     803  jsx          «Marketplace»
+src/components/layout/UnifiedFooter.tsx  (1)
+     218  prop:alt     «Medical Logo»
+src/components/live/LiveSetupForm.tsx  (1)
+      36  jsx          «Promise»
+src/components/recordings/BunnyHLSPlayer.tsx  (1)
+     402  jsx          «5 && vid.duration && saved»
+src/components/recordings/RecordingPaywall.tsx  (1)
+      36  jsx          «Promise»
+src/components/recordings/RecordingVideoPlayer.tsx  (1)
+     454  jsx          «5 && vid.duration && saved»
+src/components/wallet/ReceiptModal.tsx  (1)
+      97  jsx          «Stripe Payment Intent»
+src/components/wallet/UserBankAccountForm.tsx  (1)
+     205  prop:placeholder «XXXX000000XXX»
+src/pages/ContentGallery.tsx  (1)
+     447  jsx          «0 && balance»
+src/pages/DoctorAgenda.tsx  (1)
+     472  jsx          «maxEvents &&»
+src/pages/DoctorBankAccount.tsx  (1)
+     337  prop:placeholder «XXXX000000XXX»
+src/pages/DoctorContentLibrary.tsx  (1)
+     367  jsx          «: c.is_public ?»
+src/pages/DoctorInvoices.tsx  (1)
+     605  prop:placeholder «F-001»
+src/pages/Settings.tsx  (1)
+    1036  jsx          «ELIMINAR»
+
+RESUMEN: 0 claves sin traducir en 8 idiomas · 30 textos en duro en 27 de 162 ficheros.
+
