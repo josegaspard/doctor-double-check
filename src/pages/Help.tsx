@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HelpCircle, MessageCircle, Mail, ChevronRight } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
@@ -12,6 +13,25 @@ export default function Help() {
     { question: t('help.faq3_q'), answer: t('help.faq3_a') },
     { question: t('help.faq4_q'), answer: t('help.faq4_a') },
   ];
+
+  // FAQPage JSON-LD con el mismo texto que se ve (Google lee el JSON-LD que pone JS).
+  const faqJson = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  });
+  useEffect(() => {
+    const el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'faq-jsonld';
+    el.text = faqJson;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [faqJson]);
 
   return (
     <MainLayout>

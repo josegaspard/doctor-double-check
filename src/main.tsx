@@ -14,8 +14,9 @@ import "@fontsource/plus-jakarta-sans/600.css";
 import "@fontsource/plus-jakarta-sans/700.css";
 import "./index.css";
 import { enforceBrowserSessionGuard } from "./lib/sessionGuard";
-import { loadLanguage } from "./lib/i18n";
+import { loadPrimaryLanguage } from "./lib/i18n";
 import { initialLanguage } from "./contexts/LanguageContext";
+import { canDoBackgroundWork } from "./lib/backgroundWork";
 
 // Register Service Worker for PWA + Push Notifications
 if ('serviceWorker' in navigator) {
@@ -35,6 +36,9 @@ if ('serviceWorker' in navigator) {
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     const warm = async () => {
+      // Solo con sesión iniciada: los visitantes anónimos no abren grabaciones
+      // ni cierran lives, y la portada no debe gastar red en esto.
+      if (!canDoBackgroundWork()) return;
       try {
         const { supabase } = await import('@/integrations/supabase/client');
         // Fire-and-forget en paralelo. Cualquier 4xx es OK, solo necesitamos que
@@ -57,10 +61,13 @@ if (typeof window !== 'undefined') {
 // Force re-login when all browser windows are closed (sessionStorage flag).
 // Must run BEFORE the React tree mounts so AuthProvider hydrates against a clean state.
 // El diccionario del idioma de la sesión se descarga en paralelo y se espera
-// antes de pintar (solo el castellano va en el chunk inicial).
+// antes de pintar; el inglés puente ya no bloquea la primera pintura (llega
+// después). Si el del idioma falla, se intenta el castellano.
 Promise.all([
   enforceBrowserSessionGuard(),
-  loadLanguage(initialLanguage()).catch(() => {}),
+  loadPrimaryLanguage(initialLanguage())
+    .catch(() => loadPrimaryLanguage("es"))
+    .catch(() => {}),
 ]).finally(() => {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

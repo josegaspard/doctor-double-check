@@ -1264,7 +1264,7 @@ export default function DoctorRecordings({ embedded = false, initialTab: initial
                             {(() => {
                               const vs = viewStats.get(recording.id);
                               return vs && vs.viewers > 0 ? (
-                                <span className="flex items-center gap-1" title="Espectadores · % visto medio">
+                                <span className="flex items-center gap-1" title={t('uiLabels.viewersAvgWatched')}>
                                   <Eye className="w-3 h-3" /> {vs.viewers} · {vs.avgPct}%
                                 </span>
                               ) : null;

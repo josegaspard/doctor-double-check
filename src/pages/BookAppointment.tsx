@@ -715,7 +715,7 @@ export default function BookAppointment() {
               <div className="flex-1">
                 <CardTitle className="text-lg">
                   <span className="inline-flex items-center gap-1 min-w-0">
-                    {t('bookAppointment.header.titlePrefix')} Dr. {doctor.name}
+                    {t('bookAppointment.header.titlePrefix')} {/^dra?\.?\s/i.test(doctor.name || '') ? doctor.name : `Dr. ${doctor.name}`}
                     <DoctorBadgeIcon userId={doctorId} size="sm" className="flex-shrink-0" />
                   </span>
                 </CardTitle>

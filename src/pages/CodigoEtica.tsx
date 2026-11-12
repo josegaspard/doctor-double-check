@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Scale, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -106,9 +106,9 @@ Entiendo que la aceptación de este Código de Ética es requisito indispensable
           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-              <CardTitle className="text-lg sm:text-xl">
+              <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">
                 {t('codeOfEthics.title')}
-              </CardTitle>
+              </h1>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t('codeOfEthics.subtitle')}

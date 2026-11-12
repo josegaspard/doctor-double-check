@@ -41,7 +41,7 @@ describe('resolver', () => {
   it('sin tocar nada reproduce el estado anterior: solo la home abierta a Google', () => {
     const home = resolveSeo(config, '/');
     expect(home.index).toBe(true);
-    expect(home.title).toBe('Medical Masters | Plataforma de Médicos Especialistas Certificados');
+    expect(home.title).toBe('Medical Masters | Médicos especialistas certificados');
     expect(resolveSeo(config, '/doctors').index).toBe(false);
     expect(resolveSeo(config, `/doctor/${PATRICIA}`, doctorEntity({ user_id: PATRICIA, name: 'Dra. Patricia' })).index).toBe(false);
   });

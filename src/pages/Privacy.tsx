@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ArrowLeft, Lock, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -146,9 +146,9 @@ Para ejercer sus derechos o realizar consultas sobre privacidad, contáctenos en
           <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-              <CardTitle className="text-lg sm:text-xl">
+              <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">
                 {t('autoI18n.privacy1')}
-              </CardTitle>
+              </h1>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t('autoI18n.privacy2')}

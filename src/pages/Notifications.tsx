@@ -261,7 +261,7 @@ export default function Notifications() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm flex-1 min-w-0">{stripEmoji(notification.title)}</p>
                               {!notification.isRead && (
-                                <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
+                                <span className="flex-shrink-0 inline-flex items-center h-5 px-2 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap leading-none">
                                   {t('notificationsPage.new')}
                                 </span>
                               )}

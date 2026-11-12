@@ -29,7 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { CredentialStatusBadge } from '@/components/doctor/CredentialStatusBadge';
-import logoWhite from '@/assets/logo-medical-masters-white.png';
+import logoWhite from '@/assets/logo-medical-masters-white-sm.webp';
 import {
   Dialog,
   DialogContent,
@@ -539,7 +539,7 @@ export default function LivePlayer() {
                 />
                 <DynamicWatermark email={user?.email} userId={user?.id} />
                 {/* Logo Medical Masters (marca del live, transparente) arriba-izquierda — cliente 2026-06-15 */}
-                <img src={logoWhite} alt="Medical Masters" className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
+                <img src={logoWhite} alt="Medical Masters" width={455} height={168} className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
                 {/* Lower-third con datos del doctor abajo a la derecha:
                     nombre, especialidad, cédula profesional y correo (cliente
                     2026-06-16: el correo es visible para TODOS los espectadores). */}

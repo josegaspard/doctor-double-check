@@ -4155,6 +4155,8 @@ export const en = {
       failed: "Failed"
     },
     emailTypeLabels: {
+      appointmentReminder: "Appointment reminder",
+      other: "Other notice",
       newContent: "New content",
       liveStarted: "Live started",
       reminder: "Reminder"
@@ -4168,6 +4170,7 @@ export const en = {
       clear: "Clear filters",
       types: {
         all: "All types",
+        appointmentReminders: "Appointment reminders",
         newContent: "New content",
         liveStarted: "Live started",
         reminders: "Reminders"
@@ -6847,6 +6850,7 @@ export const en = {
     }
   },
   medicalRecordPage: {
+    loadError: "We couldn't load your medical history. Check your connection and try again.",
     autoSave: {
       saving: "Saving…",
       saved: "Saved",
@@ -7365,6 +7369,7 @@ export const en = {
     statsByDay: "By day (last 14 days)",
     auditHint: "Every time a super admin reveals the author of an anonymous complication it is logged here: who, when and why.",
     auditEmpty: "Nobody has revealed an author yet.",
+    auditDeletedPost: 'Deleted post',
     auditWho: "Admin",
     auditWhen: "When",
     auditPost: "Post",
@@ -7451,6 +7456,7 @@ export const en = {
     commercialName: "Brand name",
     genericName: "Generic name (active substance)",
     genericShort: "Generic",
+    patientRequired: "Select a patient before issuing the prescription.",
     genericRequired: "Each medication must include both brand and generic names.",
     birthDate: "Date of birth",
     routeLabel: "Route",
@@ -7915,6 +7921,7 @@ export const en = {
     logout: "Log out"
   },
   chatMessageBubble: {
+    prescriptionReady: "Your medical prescription is ready. Tap to view it.",
     viewPrescription: "View medical prescription",
     previewNotAvailable: "Preview not available",
     replyToMessage: "Reply to this message",
@@ -8535,6 +8542,7 @@ export const en = {
   videoCall: {
     title: "Video Call",
     noConsultation: "No guidance session specified",
+    consultationEnded: "This guidance session has already ended",
     backToChat: "Back to Chat",
     back: "Back",
     startCall: "Start video call",
@@ -12094,5 +12102,59 @@ export const en = {
         }
       }
     }
+  },
+  residentGroupChat: {
+    errMembersRequired: "Choose at least one resident for the group.",
+    errNameRequired: "Give the group a name.",
+    errOnlyResidents: "Groups are only between residents.",
+    errOnlyAdmins: "Only the group admin can change the name.",
+    errNotMember: "You are no longer a member of this group.",
+    errGeneric: "Could not complete. Please try again.",
+    search: "Search group",
+    newGroup: "New group",
+    noMatch: "No group matches your search.",
+    empty: "You are not in any group yet. Create one with other residents to chat.",
+    tag: "Group",
+    member: "member",
+    members: "members",
+    noMessagesYet: "No messages yet",
+    resident: "Resident",
+    pickGroup: "Choose a group to see the conversation or create a new one with other residents.",
+    residentGroup: "resident group",
+    membersButton: "Members",
+    membersAria: "Group members",
+    emptyThread: "No messages yet. Write the first one.",
+    messagePlaceholder: "Write a message to the group",
+    send: "Send",
+    searchResident: "Search resident by name",
+    noResidents: "No residents to add.",
+    selectedOne: "selected",
+    selectedMany: "selected",
+    created: "Group created",
+    createTitle: "New resident group",
+    createDescription: "Name it and choose which residents you want to talk with.",
+    namePlaceholder: "Group name (e.g. R1 Internal Medicine on-call)",
+    nameLabel: "Group name",
+    cancel: "Cancel",
+    create: "Create group",
+    pickGroupMembers: "Choose a group to see its members.",
+    addedOne: "Resident added",
+    addedMany: "{n} residents added",
+    renamed: "Name updated",
+    leave: "Leave group",
+    leaveDescription: "You will stop seeing this group's messages. Someone in the group can add you back.",
+    left: "You left the group",
+    newNameLabel: "New group name",
+    save: "Save",
+    rename: "Rename",
+    you: "You",
+    admin: "Admin",
+    add: "Add",
+    addResidents: "Add residents",
+  },
+  uiLabels: {
+    fullscreen: "Full screen",
+    document: "Document",
+    viewersAvgWatched: "Viewers · average % watched",
   },
 };

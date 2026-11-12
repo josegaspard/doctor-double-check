@@ -2,8 +2,8 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- maximum-scale=1.0 + user-scalable=no previene el "stuck zoom" en iOS Safari cuando el usuario toca controles. La accesibilidad de pinch-zoom queda preservada por iOS Accessibility Settings. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <!-- Sin maximum-scale ni user-scalable=no: el zoom con los dedos tiene que funcionar (WCAG 1.4.4). El zoom automático de iOS al enfocar un campo se evita con font-size 16px en los campos (index.css, bloque «zoom iOS»). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- SEO: lo que va entre seo:start y seo:end lo reescribe middleware.ts en cada
          petición con lo que el súper admin fija en /admin/seo (función seo-meta):
@@ -12,24 +12,24 @@
          la app nativa (Capacitor) y el desarrollo local. No metas nada que no sea SEO
          entre las dos marcas: se sustituye entero. -->
     <!-- seo:start -->
-    <title>Medical Masters | Plataforma de Médicos Especialistas Certificados</title>
+    <title>Medical Masters | Médicos especialistas certificados</title>
     <meta name="description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta name="keywords" content="telemedicina, doctores en línea, consulta médica online, médicos certificados, expediente clínico digital, recetas digitales, segunda opinión médica, lives quirúrgicos, formación médica continua, residentes médicos" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <link rel="canonical" href="https://medical-masters.com/" />
-    <meta property="og:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta property="og:title" content="Medical Masters | Médicos especialistas certificados" />
     <meta property="og:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale" content="es_MX" />
     <meta property="og:url" content="https://medical-masters.com/" />
     <meta property="og:site_name" content="Medical Masters" />
     <meta property="og:image" content="https://medical-masters.com/icon-512.png?v=18" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
-    <meta property="og:image:alt" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta property="og:image:alt" content="Medical Masters | Médicos especialistas certificados" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@MedicalMasters" />
-    <meta name="twitter:title" content="Medical Masters | Plataforma de Médicos Especialistas Certificados" />
+    <meta name="twitter:title" content="Medical Masters | Médicos especialistas certificados" />
     <meta name="twitter:description" content="Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro." />
     <meta name="twitter:image" content="https://medical-masters.com/icon-512.png?v=18" />
     <link rel="icon" href="/favicon.ico?v=18" sizes="any" />
@@ -46,9 +46,9 @@
       "url": "https://medical-masters.com/",
       "logo": "https://medical-masters.com/icon-512.png?v=18",
       "image": "https://medical-masters.com/icon-512.png?v=18",
-      "alternateName": "Medical Masters",
+      "alternateName": ["Medical Master", "MedicalMasters"],
       "description": "Plataforma médica para doctores, residentes y pacientes: orientación médica en vivo, lives de doctores, contenido premium, recetas digitales y expediente clínico seguro.",
-      "areaServed": "Worldwide",
+      "areaServed": [{ "@type": "Country", "name": "México" }, "Latinoamérica"],
       "medicalSpecialty": ["GeneralPractice", "Cardiovascular", "Pediatric", "Dermatologic", "Psychiatric", "Gynecologic"],
       "sameAs": [
         "https://www.facebook.com/MedicalMasters",

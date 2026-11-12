@@ -50,7 +50,7 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
           <li key={i}>
             <Link
               to={link.href}
-              className={`inline-flex min-h-[36px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-[40px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
                 link.href === '/report-issue'
                   ? 'text-warning hover:text-white'
                   : 'text-white hover:text-white hover:underline'
@@ -177,7 +177,7 @@ export function UnifiedFooter({ variant }: Props) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-6">
             <div className="col-span-2 md:col-span-1 flex flex-col items-start">
               <img src={logoWhite} alt="Medical Masters" className="h-6 sm:h-7 mb-3" />
-              <p className="text-[11px] sm:text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
+              <p className="text-xs text-white mb-3 max-w-xs leading-relaxed text-left">
                 {t('landingFooter.brandDescription')}
               </p>
               <SocialIcons socialLinks={socialLinks} />

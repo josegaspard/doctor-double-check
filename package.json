@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/i18n-audit.mjs --strict --keys-only > /dev/null",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

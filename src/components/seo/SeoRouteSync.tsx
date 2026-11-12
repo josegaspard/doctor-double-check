@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { isPrivatePath, normalizePath, type ResolvedSeo } from '@/lib/seo';
 
-// La primera carga de cada URL ya trae su <head> escrito por middleware.ts. Esto solo
-// actualiza título, descripción, robots y canonical cuando se navega dentro de la app
-// sin recargar, para que la pestaña no se quede con el título de la página anterior.
+// Con Caddy (VPS) middleware.ts ya no reescribe el <head>: index.html trae siempre el de
+// la home. Por eso esto corre también en la primera carga (la de Googlebot) y en cada
+// navegación: título, descripción, robots y canonical de la ruta real.
 const FN = 'https://api.medical-masters.com/functions/v1/seo-meta';
 const TTL_MS = 30_000;
 const cache = new Map<string, { at: number; value: ResolvedSeo }>();
@@ -44,13 +44,7 @@ function apply(r: ResolvedSeo) {
 
 export function SeoRouteSync() {
   const { pathname } = useLocation();
-  const firstLoad = useRef(true);
-
   useEffect(() => {
-    if (firstLoad.current) {
-      firstLoad.current = false;
-      return;
-    }
     const path = normalizePath(pathname);
     if (isPrivatePath(path)) {
       // Zona privada: sin llamada a la red, solo que la pestaña no mienta.

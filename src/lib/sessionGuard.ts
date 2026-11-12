@@ -42,7 +42,7 @@ export async function enforceBrowserSessionGuard(): Promise<void> {
     // Brand new browser session: force a sign-out so the user must log in again.
     try {
       localStorage.removeItem('mm_cached_user');
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
     } catch (e) {
       console.warn('[SessionGuard] signOut failed:', e);
     }

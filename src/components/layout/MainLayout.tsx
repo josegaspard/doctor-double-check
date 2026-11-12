@@ -60,8 +60,8 @@ import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { ActiveLiveBanner } from '@/components/live/ActiveLiveBanner';
 import { DiscoverGate } from '@/components/DiscoverGate';
 import { useResidentGroups } from '@/components/chat/ResidentGroups';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMasters from '@/assets/logo-medical-masters-sm.webp';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 interface NavItem {
   labelKey: string;
@@ -133,8 +133,8 @@ const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 const navItems: NavItem[] = [
   { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
-  // Residente: el Chat ya está en el icono de la cabecera; en el menú salía repetido (cliente 4-nov-2026).
-  { labelKey: 'nav.chat', href: '/chat', icon: MessageSquare, roles: ['patient'] },
+  // Residente y paciente: el Chat ya está en el botón de la cabecera; en la píldora salía repetido
+  // (cliente 4-nov-2026; paciente 11-nov-2026: a 1440 px la píldora se cortaba).
   { labelKey: 'nav.soyMedico', shortLabelKey: 'nav.soyMedicoShort', href: '/doctors', icon: Stethoscope, roles: ['patient', 'resident', 'admin'] },
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
@@ -453,9 +453,9 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                     </Link>
                   ) : (
                     <Link key={item.href} to={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} title={label}>
-                      {/* Residente: siempre la etiqueta corta, para que sus 4 pestañas quepan enteras. */}
-                      <span className={role === 'resident' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
-                      <span className={role === 'resident' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
+                      {/* Residente y paciente: siempre la etiqueta corta, para que sus pestañas quepan enteras. */}
+                      <span className={role === 'resident' || role === 'patient' ? 'hidden' : 'hidden xl:inline'}>{label}</span>
+                      <span className={role === 'resident' || role === 'patient' ? '' : 'xl:hidden'}>{t(item.shortLabelKey || item.labelKey)}</span>
                     </Link>
                   );
                 })}
@@ -611,7 +611,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
       <MobileBackHeader />
 
       {/* Main Content - add bottom padding on mobile for tab bar */}
-      <main className="flex-1 pb-[72px] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px)] sm:min-h-0 relative z-10">
+      <main className="flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] sm:pb-0 overflow-x-clip min-h-[calc(100vh-56px-72px-env(safe-area-inset-bottom))] sm:min-h-0 relative z-10">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}
@@ -650,7 +650,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       </span>
                     )}
                   </div>
-                  <span className={`text-[10.5px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
+                  <span className={`text-[11px] font-medium leading-tight max-w-full truncate whitespace-nowrap ${isActive ? 'text-primary' : ''}`}>
                     {tab.label}
                   </span>
                 </Link>
@@ -673,7 +673,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                   </span>
                 )}
               </span>
-              <span className="text-[10.5px] font-medium leading-tight">{t('nav.more')}</span>
+              <span className="text-[11px] font-medium leading-tight">{t('nav.more')}</span>
             </button>
           </div>
         </nav>
@@ -684,7 +684,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
         <SheetContent side="bottom" hideClose className="h-[85vh] rounded-t-2xl p-0 overflow-hidden">
           <div className="flex flex-col h-full overflow-y-auto">
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-7 w-auto" />
+              <img src={logoMedicalMasters} alt="Medical Masters" width={455} height={168} className="h-7 w-auto" />
               <button
                 onClick={() => setMoreSheetOpen(false)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"

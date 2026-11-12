@@ -196,7 +196,7 @@ export default function Doctors({
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [locationFilter, setLocationFilter] = useState('');
   const [dynamicCities, setDynamicCities] = useState<string[]>([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
@@ -649,13 +649,14 @@ export default function Doctors({
       </div>
 
       {/* Fila de filtros SIEMPRE visible: especialidad, ciudad, hospital y «ahora» */}
-      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mm-scroll-fade flex gap-2 mb-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="md:hidden flex gap-2">
           <SearchableFilter
             options={specialtyOptions}
             value={selectedSpecialty}
             onChange={(val) => setSelectedSpecialty(val || '')}
             placeholder={t('mm2.community.specialtyLabel')}
+            label={t('mm2.community.specialtyLabel')}
             searchPlaceholder={t('mm2.community.specialtySearch')}
             icon={Stethoscope}
             allLabel={allLabel}
@@ -665,6 +666,7 @@ export default function Doctors({
             value={locationFilter}
             onChange={setLocationFilter}
             placeholder={t('mm2.community.cityLabel')}
+            label={t('mm2.community.cityLabel')}
             searchPlaceholder={t('mm2.community.citySearch')}
             icon={MapPin}
             allLabel={allLabel}
@@ -675,6 +677,7 @@ export default function Doctors({
               value={selectedHospital}
               onChange={setSelectedHospital}
               placeholder={t('mm2.community.hospitalLabel')}
+              label={t('mm2.community.hospitalLabel')}
               searchPlaceholder={t('mm2.community.hospitalSearch')}
               icon={Building2}
               allLabel={allLabel}

@@ -216,6 +216,8 @@ export default function VideoCall() {
   const timer = useCallTimer();
 
   const consultationId = searchParams.get('consultation');
+  // La orientación ya terminó (completed/cancelled): no dejar al paciente «esperando al médico».
+  const [consultationEnded, setConsultationEnded] = useState(false);
   const autoJoin = searchParams.get('autojoin') === '1';
   const isDoctor = role === 'doctor';
   // Reunión multi-médico (no consulta 1:1): trae meetingId en la URL.
@@ -291,10 +293,11 @@ export default function VideoCall() {
     (async () => {
       const { data } = await supabase
         .from('consultations')
-        .select('doctor_id, patient_id, chat_session_id')
+        .select('doctor_id, patient_id, chat_session_id, status')
         .eq('id', consultationId)
         .maybeSingle();
       if (!data) return;
+      setConsultationEnded(['completed', 'cancelled', 'canceled'].includes((data as any).status));
       setPatientId(data.patient_id);
       const otherId = isDoctor ? data.patient_id : data.doctor_id;
       // Only the doctor gets a badge; when current user is the doctor, the other
@@ -574,6 +577,17 @@ export default function VideoCall() {
       <MainLayout>
         <div className="container mx-auto px-4 py-12 text-center">
           <h2 className="text-xl font-bold mb-4">{t('videoCall.noConsultation')}</h2>
+          <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (consultationEnded && callState === 'idle') {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-12 text-center">
+          <h2 className="text-xl font-bold mb-4">{t('videoCall.consultationEnded')}</h2>
           <Button onClick={() => navigate('/chat')}>{t('videoCall.backToChat')}</Button>
         </div>
       </MainLayout>

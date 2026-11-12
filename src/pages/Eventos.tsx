@@ -276,9 +276,11 @@ export default function Eventos() {
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl">
-        <Button variant="back" size="sm" onClick={() => navigate('/foro')} className="mb-3 -ml-2 gap-1.5 hidden sm:inline-flex">
-          <ArrowLeft className="w-4 h-4" /> {t('eventos.backToForo')}
-        </Button>
+        {(role === 'doctor' || role === 'resident' || role === 'admin') && (
+          <Button variant="back" size="sm" onClick={() => navigate('/foro')} className="mb-3 -ml-2 gap-1.5 hidden sm:inline-flex">
+            <ArrowLeft className="w-4 h-4" /> {t('eventos.backToForo')}
+          </Button>
+        )}
 
         {/* Hero */}
         <div className="mb-6 rounded-2xl bg-card border border-border shadow-sm p-5 sm:p-6">

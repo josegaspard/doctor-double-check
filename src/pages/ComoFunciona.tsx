@@ -72,7 +72,7 @@ const SECTIONS: Section[] = [
       { id: 'd1', icon: Users, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
       { id: 'd2', icon: FileText, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
       { id: 'd3', icon: FolderOpen, other: 'patient', href: () => doctorHref('pacientes'), doctorOnly: true },
-      { id: 'd4', icon: Pill, other: 'patient', href: () => '/prescriptions/new', doctorOnly: true },
+      { id: 'd4', icon: Pill, other: 'patient', href: () => '/prescriptions', doctorOnly: true },
       { id: 'd5', icon: QrCode, other: 'patient', href: () => '/prescriptions', doctorOnly: true },
     ],
   },

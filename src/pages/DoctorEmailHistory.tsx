@@ -34,14 +34,15 @@ interface EmailItem {
   createdAt: Date;
 }
 
-type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder';
+type EmailTypeFilter = 'all' | 'new_content' | 'live_started' | 'availability_reminder' | 'appointment_reminder';
 type DateRangeFilter = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 const getEmailTypeIcon = (type: string) => {
   switch (type) {
     case 'new_content': return <Video className="w-4 h-4" />;
     case 'live_started': return <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />;
-    case 'availability_reminder': return <CalendarIcon className="w-4 h-4" />;
+    case 'availability_reminder':
+    case 'appointment_reminder': return <CalendarIcon className="w-4 h-4" />;
     default: return <Mail className="w-4 h-4" />;
   }
 };
@@ -69,6 +70,7 @@ export default function DoctorEmailHistory() {
     { value: 'new_content', label: t('doctorEmailHistoryPage.filters.types.newContent') },
     { value: 'live_started', label: t('doctorEmailHistoryPage.filters.types.liveStarted') },
     { value: 'availability_reminder', label: t('doctorEmailHistoryPage.filters.types.reminders') },
+    { value: 'appointment_reminder', label: t('doctorEmailHistoryPage.filters.types.appointmentReminders') },
   ];
 
   const DATE_RANGES: { value: DateRangeFilter; label: string }[] = [
@@ -84,7 +86,8 @@ export default function DoctorEmailHistory() {
       case 'new_content': return t('doctorEmailHistoryPage.emailTypeLabels.newContent');
       case 'live_started': return t('doctorEmailHistoryPage.emailTypeLabels.liveStarted');
       case 'availability_reminder': return t('doctorEmailHistoryPage.emailTypeLabels.reminder');
-      default: return type;
+      case 'appointment_reminder': return t('doctorEmailHistoryPage.emailTypeLabels.appointmentReminder');
+      default: return t('doctorEmailHistoryPage.emailTypeLabels.other');
     }
   };
 
@@ -192,7 +195,7 @@ export default function DoctorEmailHistory() {
           <ArrowLeft className="w-4 h-4 mr-1" /> {t('doctorEmailHistoryPage.actions.back')}
         </Button>
         <MobileBackHeader />
-
+        <h1 className="pro-page-title"><Mail className="w-7 h-7" /> <span>{t('emailHistoryCard.title')}</span></h1>
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="p-3 text-center">

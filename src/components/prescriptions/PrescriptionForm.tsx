@@ -56,6 +56,8 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
     const ensureCedulaVerified = async () => {
       const cedula = (user as any)?.doctorProfile?.cedulaProfesional;
       if (!user?.id || !cedula) return;
+      // SEP solo acepta 7-8 dígitos: con otro formato la llamada falla siempre.
+      if (!/^\d{7,8}$/.test(String(cedula).trim())) return;
       const { data: existing } = await supabase
         .from('cedula_verifications')
         .select('id')
@@ -117,7 +119,10 @@ export function PrescriptionForm({ patientId, patientName, consultationId, onCre
 
   const handleSubmit = async () => {
     if (!user?.id || !user.doctorProfile) return;
-
+    if (!patientId) {
+      toast.error(t('rxExtra.patientRequired'));
+      return;
+    }
     // Credenciales completas del médico (firma + universidad, hospital, cédulas…)
     // para que la receta muestre el membrete completo.
     const credentials = await fetchDoctorCredentials(user.id);

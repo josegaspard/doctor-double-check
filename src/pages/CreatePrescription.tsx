@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { PrescriptionForm } from '@/components/prescriptions/PrescriptionForm';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,8 @@ export default function CreatePrescription() {
   }
 
   const patientId = params.get('patientId') || '';
+  // Sin paciente no se puede emitir: el selector de paciente vive en /prescriptions.
+  if (!patientId) return <Navigate to="/prescriptions" replace />;
   const patientName = params.get('patientName') || '';
   const consultationId = params.get('consultationId') || undefined;
   const sessionId = params.get('sessionId') || undefined;

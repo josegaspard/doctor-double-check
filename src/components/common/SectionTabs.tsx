@@ -75,7 +75,7 @@ export function SectionTabs<T extends string = string>({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       className={[
-        'flex items-center gap-1 p-1 rounded-2xl max-w-full overflow-x-auto',
+        'mm-scroll-fade flex items-center gap-1 p-1 rounded-2xl max-w-full overflow-x-auto',
         '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
         onLight ? 'border border-[#d6e1e7] bg-white' : 'border border-white/25 bg-white/10 backdrop-blur-sm',
         className || '',
@@ -85,7 +85,7 @@ export function SectionTabs<T extends string = string>({
         const active = item.id === value;
         const Icon = item.icon;
         const base =
-          'inline-flex flex-none items-center gap-2 h-9 px-3.5 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+          'inline-flex flex-none items-center gap-2 h-10 sm:h-9 px-3.5 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
         const skin = active
           ? onLight
             ? 'bg-primary text-white shadow-sm focus-visible:ring-primary'

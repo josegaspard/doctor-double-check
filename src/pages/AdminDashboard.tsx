@@ -76,6 +76,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
         { id: 'campaigns', icon: Ticket, href: '/admin/campaigns', color: 'text-warning', borderColor: 'border-l-warning', title: 'Campañas de registro', desc: 'Códigos por tandas de 50 o 100 para dar de alta médicos y residentes' },
         { id: 'payouts', icon: Banknote, href: '/admin/payouts', color: 'text-success', borderColor: 'border-l-success', title: t('autoI18n.clAdminDash4'), desc: t('autoI18n.clAdminDash5') },
         { id: 'invoices', icon: FileText, href: '/admin/invoices', color: 'text-secondary', borderColor: 'border-l-secondary', title: t('autoI18n.clAdminDash6'), desc: t('autoI18n.clAdminDash7'), badge: stats.pendingInvoices },
+        { id: 'accounting', icon: BarChart3, href: '/admin/accounting', color: 'text-primary', borderColor: 'border-l-primary', title: t('autoI18n.clAdminAccount2'), desc: t('autoI18n.clAdminAccount3') },
         { id: 'payout-settings', icon: Settings, href: '/admin/payout-settings', color: 'text-muted-foreground', borderColor: 'border-l-muted-foreground', title: t('autoI18n.clAdminDash8'), desc: t('autoI18n.clAdminDash9') },
         { id: 'refunds', icon: RefreshCcw, href: '/admin/refunds', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash10'), desc: t('autoI18n.clAdminDash11'), badge: stats.pendingRefundRequests },
       ],
@@ -110,6 +111,7 @@ const AdminDashboard = React.forwardRef<HTMLDivElement, object>(function AdminDa
       title: t('autoI18n.clAdminDash34'),
       modules: [
         { id: 'reports', icon: Flag, href: '/admin/reports', color: 'text-destructive', borderColor: 'border-l-destructive', title: t('autoI18n.clAdminDash35'), desc: t('autoI18n.clAdminDash36'), badge: stats.pendingReports },
+        { id: 'content-moderation', icon: ShieldCheck, href: '/admin/content-moderation', color: 'text-warning', borderColor: 'border-l-warning', title: t('adminContentModeration.heading'), desc: t('adminContentModeration.subheading') },
         { id: 'qa-checklist', icon: ClipboardCheck, href: '/admin/qa-checklist', color: 'text-info', borderColor: 'border-l-info', title: t('autoI18n.clAdminDash37'), desc: t('autoI18n.clAdminDash38') },
         { id: 'handover', icon: FileSignature, href: '/admin/entrega', color: 'text-primary', borderColor: 'border-l-primary', title: 'Entrega de la plataforma', desc: 'Guía de entrega y botón para confirmarla' },
         // «Cómo funciona» (Jose, 11-nov-2026): el recorrido del médico, solo para administración.

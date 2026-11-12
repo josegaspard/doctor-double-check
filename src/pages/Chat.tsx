@@ -657,8 +657,8 @@ export default function Chat() {
                     onOpenMembers={() => setContextOpen(true)}
                   />
                 </div>
-                <aside className="hidden xl:flex pro-col p-3 overflow-y-auto" aria-label="Miembros del grupo">
-                  <h2 className="pro-card-title text-[15px] mb-2"><UsersRound /> Miembros</h2>
+                <aside className="hidden xl:flex pro-col p-3 overflow-y-auto" aria-label={t('residentGroupChat.membersAria')}>
+                  <h2 className="pro-card-title text-[15px] mb-2"><UsersRound /> {t('residentGroupChat.membersButton')}</h2>
                   <ResidentGroupMembers
                     group={selectedGroup}
                     userId={user?.id}

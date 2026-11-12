@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -163,7 +163,7 @@ export default function Dmca() {
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 sm:gap-3">
                 <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
-                <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+                <h1 className="text-lg sm:text-xl font-semibold leading-none tracking-tight">{title}</h1>
               </div>
               <DmcaBadge className="hidden sm:inline-flex" />
             </div>

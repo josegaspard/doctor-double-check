@@ -53,9 +53,14 @@ function writeStored(lang: SupportedLanguage, explicit: boolean) {
   }
 }
 
+const BOT_UA = /bot\b|crawler|spider|Googlebot|bingbot|GPTBot|ClaudeBot|PerplexityBot|Google-InspectionTool|slurp|lighthouse|headless|Chrome-Lighthouse/i;
+
 export function initialLanguage(): SupportedLanguage {
   const stored = readStored();
   if (stored) return stored.lang;
+  // Los rastreadores (Googlebot renderiza en en-US) ven el idioma por defecto: el
+  // mercado es México y no hay URLs por idioma ni hreflang.
+  if (typeof navigator !== 'undefined' && BOT_UA.test(navigator.userAgent || '')) return DEFAULT_LANGUAGE;
   // Sin nada guardado se usa el idioma del navegador como PISTA (no cuenta como
   // elección: al iniciar sesión manda el perfil).
   if (typeof navigator !== 'undefined' && navigator.language) return normalizeLanguage(navigator.language);

@@ -37,14 +37,14 @@ interface GroupMsg {
 
 interface Person { id: string; name: string | null; avatar_url: string | null }
 
-const errText = (e: any) => {
+const errText = (e: any, t: (k: string) => string) => {
   const m = String(e?.message || '');
-  if (m.includes('MEMBERS_REQUIRED')) return 'Elige al menos un residente para el grupo.';
-  if (m.includes('NAME_REQUIRED')) return 'Ponle un nombre al grupo.';
-  if (m.includes('ONLY_RESIDENTS')) return 'Los grupos son solo entre residentes.';
-  if (m.includes('ONLY_ADMINS')) return 'Solo quien administra el grupo puede cambiar el nombre.';
-  if (m.includes('NOT_A_MEMBER')) return 'Ya no perteneces a este grupo.';
-  return 'No se pudo completar. Inténtalo de nuevo.';
+  if (m.includes('MEMBERS_REQUIRED')) return t('residentGroupChat.errMembersRequired');
+  if (m.includes('NAME_REQUIRED')) return t('residentGroupChat.errNameRequired');
+  if (m.includes('ONLY_RESIDENTS')) return t('residentGroupChat.errOnlyResidents');
+  if (m.includes('ONLY_ADMINS')) return t('residentGroupChat.errOnlyAdmins');
+  if (m.includes('NOT_A_MEMBER')) return t('residentGroupChat.errNotMember');
+  return t('residentGroupChat.errGeneric');
 };
 
 const GROUPS_READ_EVENT = 'mm:resident-groups-read';
@@ -118,9 +118,9 @@ export function ResidentGroupList({
       <div className="flex items-center gap-2 p-2.5 pb-2">
         <label className="pro-search flex-1">
           <Search />
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar grupo" aria-label="Buscar grupo" />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={t('residentGroupChat.search')} aria-label={t('residentGroupChat.search')} />
         </label>
-        <button type="button" className="pro-btn pro-btn-live pro-btn-icon" onClick={onCreate} aria-label="Nuevo grupo" title="Nuevo grupo">
+        <button type="button" className="pro-btn pro-btn-live pro-btn-icon" onClick={onCreate} aria-label={t('residentGroupChat.newGroup')} title={t('residentGroupChat.newGroup')}>
           <Plus />
         </button>
       </div>
@@ -131,10 +131,10 @@ export function ResidentGroupList({
           <div className="text-center py-10 px-3">
             <span className="pro-icon-box mx-auto mb-2"><UsersRound /></span>
             <p className="text-[13px] pro-muted mb-3">
-              {query.trim() ? 'Ningún grupo coincide con la búsqueda.' : 'Todavía no estás en ningún grupo. Crea uno con otros residentes para conversar.'}
+              {query.trim() ? t('residentGroupChat.noMatch') : t('residentGroupChat.empty')}
             </p>
             {!query.trim() && (
-              <button type="button" className="pro-btn pro-btn-live pro-btn-sm" onClick={onCreate}><Plus /> Nuevo grupo</button>
+              <button type="button" className="pro-btn pro-btn-live pro-btn-sm" onClick={onCreate}><Plus /> {t('residentGroupChat.newGroup')}</button>
             )}
           </div>
         ) : visible.map(g => (
@@ -146,14 +146,14 @@ export function ResidentGroupList({
               <span className="body">
                 <span className="top">
                   <span className="name">{g.name}</span>
-                  <span className="pro-tag">Grupo</span>
+                  <span className="pro-tag">{t('residentGroupChat.tag')}</span>
                   <span className="time">{timeOf(g.last_message_at || g.created_at, language, t)}</span>
                 </span>
-                <span className="sub block">{g.member_count} {g.member_count === 1 ? 'miembro' : 'miembros'}</span>
+                <span className="sub block">{g.member_count} {g.member_count === 1 ? t('residentGroupChat.member') : t('residentGroupChat.members')}</span>
                 <span className="prev block">
                   {g.last_message
                     ? `${g.last_sender_name ? g.last_sender_name.split(' ')[0] + ': ' : ''}${g.last_message.slice(0, 80)}`
-                    : 'Sin mensajes todavía'}
+                    : t('residentGroupChat.noMessagesYet')}
                 </span>
                 {g.unread_count > 0 && (
                   <span className="foot"><span className="unread ml-auto">{g.unread_count}</span></span>
@@ -194,7 +194,7 @@ export function ResidentGroupThread({
     const { data } = await (supabase as any).rpc('resident_group_members', { p_group: groupId });
     setNames(prev => {
       const next = new Map(prev);
-      ((data as any[]) || []).forEach(p => next.set(p.user_id, p.name || 'Residente'));
+      ((data as any[]) || []).forEach(p => next.set(p.user_id, p.name || t('residentGroupChat.resident')));
       return next;
     });
   }, [names, groupId]);
@@ -247,7 +247,7 @@ export function ResidentGroupThread({
       .select('id, group_id, sender_id, content, created_at')
       .single();
     setSending(false);
-    if (error) { toast.error(errText(error)); return; }
+    if (error) { toast.error(errText(error, t)); return; }
     setDraft('');
     if (data) setMessages(prev => (prev.some(m => m.id === data.id) ? prev : [...prev, data as GroupMsg]));
   };
@@ -256,7 +256,7 @@ export function ResidentGroupThread({
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
         <span className="pro-icon-box mx-auto mb-2"><UsersRound /></span>
-        <p className="text-[13px] pro-muted max-w-xs">Elige un grupo para ver la conversación o crea uno nuevo con otros residentes.</p>
+        <p className="text-[13px] pro-muted max-w-xs">{t('residentGroupChat.pickGroup')}</p>
       </div>
     );
   }
@@ -281,10 +281,10 @@ export function ResidentGroupThread({
         <span className="pro-initials" style={{ width: 38, height: 38, fontSize: 13 }}>{initialsOf(group.name)}</span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-sm truncate">{group.name}</p>
-          <p className="text-[11px] text-muted-foreground truncate">{group.member_count} {group.member_count === 1 ? 'miembro' : 'miembros'} · grupo de residentes</p>
+          <p className="text-[11px] text-muted-foreground truncate">{group.member_count} {group.member_count === 1 ? t('residentGroupChat.member') : t('residentGroupChat.members')} · {t('residentGroupChat.residentGroup')}</p>
         </div>
         <button type="button" className="pro-btn pro-btn-outline pro-btn-xs xl:hidden" onClick={onOpenMembers}>
-          <UsersRound /> Miembros
+          <UsersRound /> {t('residentGroupChat.membersButton')}
         </button>
       </div>
 
@@ -292,7 +292,7 @@ export function ResidentGroupThread({
         {loading ? (
           <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : messages.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-8">Aún no hay mensajes. Escribe el primero.</p>
+          <p className="text-center text-sm text-muted-foreground py-8">{t('residentGroupChat.emptyThread')}</p>
         ) : days.map(d => (
           <div key={d.key} className="space-y-2">
             <div className="flex justify-center">
@@ -303,7 +303,7 @@ export function ResidentGroupThread({
               return (
                 <div key={m.id} className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${own ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                    {!own && <p className="text-[11px] font-semibold opacity-75 mb-0.5 truncate">{names.get(m.sender_id) || 'Residente'}</p>}
+                    {!own && <p className="text-[11px] font-semibold opacity-75 mb-0.5 truncate">{names.get(m.sender_id) || t('residentGroupChat.resident')}</p>}
                     <p className="whitespace-pre-wrap break-words">{m.content}</p>
                     <p className={`text-[10px] mt-0.5 text-right ${own ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
                       {fmtTime(new Date(m.created_at), language)}
@@ -323,12 +323,12 @@ export function ResidentGroupThread({
           maxLength={4000}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-          placeholder="Escribe un mensaje al grupo"
-          aria-label="Escribe un mensaje al grupo"
+          placeholder={t('residentGroupChat.messagePlaceholder')}
+          aria-label={t('residentGroupChat.messagePlaceholder')}
           className="flex-1 resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm max-h-32 focus:outline-none focus:ring-2 focus:ring-primary/30"
           disabled={sending}
         />
-        <button type="button" className="pro-btn pro-btn-live pro-btn-icon" onClick={send} disabled={sending || !draft.trim()} aria-label="Enviar">
+        <button type="button" className="pro-btn pro-btn-live pro-btn-icon" onClick={send} disabled={sending || !draft.trim()} aria-label={t('residentGroupChat.send')}>
           {sending ? <Loader2 className="animate-spin" /> : <Send />}
         </button>
       </div>
@@ -340,6 +340,7 @@ export function ResidentGroupThread({
 function ResidentPicker({
   excludeIds, selected, onToggle,
 }: { excludeIds: Set<string>; selected: Set<string>; onToggle: (id: string) => void }) {
+  const { t } = useLanguage();
   const [q, setQ] = useState('');
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -359,24 +360,24 @@ function ResidentPicker({
     <div className="space-y-2">
       <label className="pro-search">
         <Search />
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar residente por nombre" aria-label="Buscar residente por nombre" />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder={t('residentGroupChat.searchResident')} aria-label={t('residentGroupChat.searchResident')} />
       </label>
       <div className="max-h-64 overflow-y-auto rounded-xl border border-border divide-y divide-border">
         {loading ? (
           <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : list.length === 0 ? (
-          <p className="text-[13px] pro-muted text-center py-6 px-3">No hay residentes para agregar.</p>
+          <p className="text-[13px] pro-muted text-center py-6 px-3">{t('residentGroupChat.noResidents')}</p>
         ) : list.map(p => (
           <label key={p.id} className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/60">
             <Checkbox checked={selected.has(p.id)} onCheckedChange={() => onToggle(p.id)} className="h-4 w-4" />
             <span className="pro-initials" style={{ width: 32, height: 32, fontSize: 12 }}>
               {p.avatar_url ? <img src={p.avatar_url} alt="" /> : initialsOf(p.name || 'R')}
             </span>
-            <span className="text-sm font-medium truncate">{p.name || 'Residente'}</span>
+            <span className="text-sm font-medium truncate">{p.name || t('residentGroupChat.resident')}</span>
           </label>
         ))}
       </div>
-      <p className="text-[12px] pro-muted">{selected.size} {selected.size === 1 ? 'seleccionado' : 'seleccionados'}</p>
+      <p className="text-[12px] pro-muted">{selected.size} {selected.size === 1 ? t('residentGroupChat.selectedOne') : t('residentGroupChat.selectedMany')}</p>
     </div>
   );
 }
@@ -384,6 +385,7 @@ function ResidentPicker({
 export function CreateResidentGroupDialog({
   open, onOpenChange, onCreated,
 }: { open: boolean; onOpenChange: (v: boolean) => void; onCreated: (id: string) => void }) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -400,8 +402,8 @@ export function CreateResidentGroupDialog({
     setSaving(true);
     const { data, error } = await (supabase as any).rpc('resident_group_create', { p_name: name, p_member_ids: [...selected] });
     setSaving(false);
-    if (error) { toast.error(errText(error)); return; }
-    toast.success('Grupo creado');
+    if (error) { toast.error(errText(error, t)); return; }
+    toast.success(t('residentGroupChat.created'));
     onOpenChange(false);
     onCreated(data as string);
   };
@@ -410,24 +412,24 @@ export function CreateResidentGroupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card">
         <DialogHeader>
-          <DialogTitle>Nuevo grupo de residentes</DialogTitle>
-          <DialogDescription>Ponle nombre y elige con qué residentes quieres conversar.</DialogDescription>
+          <DialogTitle>{t('residentGroupChat.createTitle')}</DialogTitle>
+          <DialogDescription>{t('residentGroupChat.createDescription')}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <input
             value={name}
             onChange={e => setName(e.target.value)}
             maxLength={80}
-            placeholder="Nombre del grupo (ej. Guardia R1 Medicina Interna)"
-            aria-label="Nombre del grupo"
+            placeholder={t('residentGroupChat.namePlaceholder')}
+            aria-label={t('residentGroupChat.nameLabel')}
             className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <ResidentPicker excludeIds={new Set()} selected={selected} onToggle={toggle} />
         </div>
         <DialogFooter className="gap-2">
-          <button type="button" className="pro-btn pro-btn-outline" onClick={() => onOpenChange(false)}>Cancelar</button>
+          <button type="button" className="pro-btn pro-btn-outline" onClick={() => onOpenChange(false)}>{t('residentGroupChat.cancel')}</button>
           <button type="button" className="pro-btn pro-btn-live" onClick={create} disabled={saving || !name.trim() || selected.size === 0}>
-            {saving ? <Loader2 className="animate-spin" /> : <Plus />} Crear grupo
+            {saving ? <Loader2 className="animate-spin" /> : <Plus />} {t('residentGroupChat.create')}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -439,6 +441,7 @@ export function CreateResidentGroupDialog({
 export function ResidentGroupMembers({
   group, userId, onChanged, onLeft,
 }: { group: ResidentGroup | null; userId?: string; onChanged: () => void; onLeft: () => void }) {
+  const { t } = useLanguage();
   const [members, setMembers] = useState<(Person & { is_admin: boolean })[]>([]);
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -454,7 +457,7 @@ export function ResidentGroupMembers({
     const { data: rows } = await (supabase as any).rpc('resident_group_members', { p_group: groupId });
     setMembers(((rows as any[]) || []).map(r => ({
       id: r.user_id,
-      name: r.name || 'Residente',
+      name: r.name || t('residentGroupChat.resident'),
       avatar_url: r.avatar_url ?? null,
       is_admin: r.is_admin,
     })));
@@ -462,7 +465,7 @@ export function ResidentGroupMembers({
 
   useEffect(() => { load(); setAdding(false); setRenaming(false); }, [load, group?.member_count]);
 
-  if (!group) return <p className="text-[12.5px] pro-muted">Elige un grupo para ver sus miembros.</p>;
+  if (!group) return <p className="text-[12.5px] pro-muted">{t('residentGroupChat.pickGroupMembers')}</p>;
 
   const toggle = (id: string) => setSelected(prev => {
     const next = new Set(prev);
@@ -474,8 +477,8 @@ export function ResidentGroupMembers({
     setSaving(true);
     const { data, error } = await (supabase as any).rpc('resident_group_add_members', { p_group: group.id, p_member_ids: [...selected] });
     setSaving(false);
-    if (error) { toast.error(errText(error)); return; }
-    toast.success(Number(data) === 1 ? 'Residente agregado' : `${data} residentes agregados`);
+    if (error) { toast.error(errText(error, t)); return; }
+    toast.success(Number(data) === 1 ? t('residentGroupChat.addedOne') : t('residentGroupChat.addedMany').replace('{n}', String(data)));
     setAdding(false);
     setSelected(new Set());
     await load();
@@ -486,24 +489,24 @@ export function ResidentGroupMembers({
     setSaving(true);
     const { error } = await (supabase as any).rpc('resident_group_rename', { p_group: group.id, p_name: newName });
     setSaving(false);
-    if (error) { toast.error(errText(error)); return; }
-    toast.success('Nombre actualizado');
+    if (error) { toast.error(errText(error, t)); return; }
+    toast.success(t('residentGroupChat.renamed'));
     setRenaming(false);
     onChanged();
   };
 
   const leave = async () => {
     const ok = await confirm({
-      title: 'Salir del grupo',
-      description: 'Dejarás de ver los mensajes de este grupo. Alguien del grupo puede volver a agregarte.',
+      title: t('residentGroupChat.leave'),
+      description: t('residentGroupChat.leaveDescription'),
       tone: 'destructive',
-      details: [{ label: 'Grupo', value: group.name }],
-      confirmLabel: 'Salir del grupo',
+      details: [{ label: t('residentGroupChat.tag'), value: group.name }],
+      confirmLabel: t('residentGroupChat.leave'),
     });
     if (!ok) return;
     const { error } = await (supabase as any).rpc('resident_group_leave', { p_group: group.id });
-    if (error) { toast.error(errText(error)); return; }
-    toast.success('Saliste del grupo');
+    if (error) { toast.error(errText(error, t)); return; }
+    toast.success(t('residentGroupChat.left'));
     onLeft();
   };
 
@@ -516,22 +519,22 @@ export function ResidentGroupMembers({
               value={newName}
               onChange={e => setNewName(e.target.value)}
               maxLength={80}
-              aria-label="Nuevo nombre del grupo"
+              aria-label={t('residentGroupChat.newNameLabel')}
               className="flex-1 min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
             />
-            <button type="button" className="pro-btn pro-btn-live pro-btn-xs" onClick={rename} disabled={saving || !newName.trim()}>Guardar</button>
+            <button type="button" className="pro-btn pro-btn-live pro-btn-xs" onClick={rename} disabled={saving || !newName.trim()}>{t('residentGroupChat.save')}</button>
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
             <p className="font-semibold text-sm truncate flex-1">{group.name}</p>
             {group.is_admin && (
-              <button type="button" className="pro-kebab" aria-label="Cambiar nombre" onClick={() => { setNewName(group.name); setRenaming(true); }}>
+              <button type="button" className="pro-kebab" aria-label={t('residentGroupChat.rename')} onClick={() => { setNewName(group.name); setRenaming(true); }}>
                 <Pencil className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         )}
-        <p className="text-[12px] pro-muted">{members.length} {members.length === 1 ? 'miembro' : 'miembros'}</p>
+        <p className="text-[12px] pro-muted">{members.length} {members.length === 1 ? t('residentGroupChat.member') : t('residentGroupChat.members')}</p>
       </div>
 
       <ul className="space-y-1.5">
@@ -540,8 +543,8 @@ export function ResidentGroupMembers({
             <span className="pro-initials" style={{ width: 30, height: 30, fontSize: 11 }}>
               {m.avatar_url ? <img src={m.avatar_url} alt="" /> : initialsOf(m.name || 'R')}
             </span>
-            <span className="text-[13px] truncate flex-1">{m.id === userId ? 'Tú' : m.name}</span>
-            {m.is_admin && <span className="pro-tag inline-flex items-center gap-1"><Crown className="w-3 h-3" /> Admin</span>}
+            <span className="text-[13px] truncate flex-1">{m.id === userId ? t('residentGroupChat.you') : m.name}</span>
+            {m.is_admin && <span className="pro-tag inline-flex items-center gap-1"><Crown className="w-3 h-3" /> {t('residentGroupChat.admin')}</span>}
           </li>
         ))}
       </ul>
@@ -550,20 +553,20 @@ export function ResidentGroupMembers({
         <div className="space-y-2">
           <ResidentPicker excludeIds={new Set(members.map(m => m.id))} selected={selected} onToggle={toggle} />
           <div className="flex gap-1.5">
-            <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={() => { setAdding(false); setSelected(new Set()); }}>Cancelar</button>
+            <button type="button" className="pro-btn pro-btn-outline pro-btn-xs" onClick={() => { setAdding(false); setSelected(new Set()); }}>{t('residentGroupChat.cancel')}</button>
             <button type="button" className="pro-btn pro-btn-live pro-btn-xs" onClick={addMembers} disabled={saving || selected.size === 0}>
-              {saving ? <Loader2 className="animate-spin" /> : <UserPlus />} Agregar
+              {saving ? <Loader2 className="animate-spin" /> : <UserPlus />} {t('residentGroupChat.add')}
             </button>
           </div>
         </div>
       ) : (
         <button type="button" className="pro-btn pro-btn-outline pro-btn-sm w-full" onClick={() => setAdding(true)}>
-          <UserPlus /> Agregar residentes
+          <UserPlus /> {t('residentGroupChat.addResidents')}
         </button>
       )}
 
       <button type="button" className="pro-btn pro-btn-outline pro-btn-sm w-full text-destructive" onClick={leave}>
-        <LogOut /> Salir del grupo
+        <LogOut /> {t('residentGroupChat.leave')}
       </button>
       {dialog}
     </div>

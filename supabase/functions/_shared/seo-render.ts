@@ -92,7 +92,7 @@ export interface PublicPage {
 export const DEFAULT_ROBOTS_INDEX = 'index, follow, max-image-preview:large, max-snippet:-1';
 export const DEFAULT_ROBOTS_NOINDEX = 'noindex, nofollow, noarchive, nosnippet, noimageindex';
 
-const HOME_TITLE = 'Medical Masters | Plataforma de Médicos Especialistas Certificados';
+const HOME_TITLE = 'Medical Masters | Médicos especialistas certificados';
 const HOME_DESCRIPTION =
   'Plataforma médica internacional de especialistas certificados. Análisis en vivo, Lives Quirúrgicos, consultas presenciales y digitales y expediente clínico seguro.';
 
@@ -116,6 +116,7 @@ export const PUBLIC_PAGES: PublicPage[] = [
   { path: '/for-doctors', label: 'Para médicos', group: 'Para quién', title: 'Únete a la red global de médicos VIP', description: 'Únete a la plataforma líder de telemedicina y conecta con pacientes de todo el país mientras generas ingresos adicionales.' },
   { path: '/for-patients', label: 'Para pacientes', group: 'Para quién', title: 'Tu salud, nuestra prioridad', description: 'Accede a los mejores especialistas médicos desde cualquier lugar. Obtén orientación médica, segundas opiniones y contenido educativo de calidad.' },
   { path: '/for-residents', label: 'Para residentes', group: 'Para quién', title: 'Potencia tu formación médica', description: 'Únete a la comunidad académica más grande de residentes médicos. Aprende, colabora y crece profesionalmente.' },
+  { path: '/residentes/lo-que-debo-saber', label: 'Residentes: lo que debo saber', group: 'Para quién', title: 'Lo que debo saber antes de ejercer', description: 'Estás por terminar tu residencia. Esto es lo que conviene resolver para ejercer como médico en México: trámites, dinero, legal y los asesores que te ayudan.' },
   { path: '/enterprise', label: 'Empresas', group: 'Para quién', title: 'Salud corporativa de clase mundial', description: 'Potencia el bienestar de tu equipo con nuestra plataforma de telemedicina diseñada para empresas.' },
   { path: '/advertising', label: 'Publicidad', group: 'Para quién', title: 'Publicita en Medical Masters', ignoreTemplate: true, description: 'Llega a miles de profesionales de la salud y pacientes con banners inteligentes, segmentados y medibles.' },
   { path: '/success-stories', label: 'Casos de éxito', group: 'Para quién', title: 'Historias que inspiran', description: 'Conoce cómo médicos y pacientes están transformando la atención médica con nuestra plataforma.' },
@@ -836,7 +837,7 @@ export function injectHead(html: string, headHtml: string): string {
 const STATIC_ALLOW = [
   '/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/icon-16.png', '/icon-32.png', '/icon-72.png',
   '/icon-96.png', '/icon-128.png', '/icon-144.png', '/icon-152.png', '/icon-192.png', '/icon-384.png',
-  '/icon-512.png', '/manifest.json', '/sitemap.xml', '/robots.txt',
+  '/icon-512.png', '/manifest.json', '/sitemap.xml', '/robots.txt', '/llms.txt',
 ];
 
 // Rutas de panel que cuelgan de prefijos públicos: si se abre /doctor/ a Google,

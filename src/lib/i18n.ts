@@ -1,7 +1,8 @@
-// Solo el castellano (idioma por defecto y última red de `t`) va en el chunk
-// inicial. Los otros 7 diccionarios (~480 kB cada uno) se cargan bajo demanda
-// con `loadLanguage` (main.tsx precarga el de la sesión antes de pintar).
-import { es } from './i18n/es';
+// Ningún diccionario va en el chunk inicial (antes el castellano metía ~480 kB
+// en index.js). Los 8 se cargan bajo demanda: main.tsx espera SOLO el del
+// idioma de la sesión antes de pintar y el inglés puente llega después.
+// El build añade <link rel="modulepreload"> del castellano (vite.config.ts).
+import type { es } from './i18n/es';
 
 // Idiomas que ofrece la plataforma. Decisión del cliente (11-sep-2026): se
 // mantienen los 8 y se traduce TODO; ninguno se oculta.
@@ -30,7 +31,8 @@ export const LANGUAGE_AUTONYMS: Record<SupportedLanguage, string> = {
 
 type Dictionary = typeof es;
 
-const loaders: Record<Exclude<SupportedLanguage, 'es'>, () => Promise<Dictionary>> = {
+const loaders: Record<SupportedLanguage, () => Promise<Dictionary>> = {
+  es: () => import('./i18n/es').then((m) => m.es),
   en: () => import('./i18n/en').then((m) => m.en as unknown as Dictionary),
   pt: () => import('./i18n/pt').then((m) => m.pt as unknown as Dictionary),
   fr: () => import('./i18n/fr').then((m) => m.fr as unknown as Dictionary),
@@ -40,13 +42,13 @@ const loaders: Record<Exclude<SupportedLanguage, 'es'>, () => Promise<Dictionary
   zh: () => import('./i18n/zh').then((m) => m.zh as unknown as Dictionary),
 };
 
-/** Diccionarios ya cargados. El castellano siempre está. */
-export const translations: Partial<Record<SupportedLanguage, Dictionary>> = { es };
+/** Diccionarios ya cargados. */
+export const translations: Partial<Record<SupportedLanguage, Dictionary>> = {};
 
 const pending = new Map<SupportedLanguage, Promise<void>>();
 
 function loadOne(lang: SupportedLanguage): Promise<void> {
-  if (lang === 'es' || translations[lang]) return Promise.resolve();
+  if (translations[lang]) return Promise.resolve();
   let p = pending.get(lang);
   if (!p) {
     p = loaders[lang]()
@@ -65,8 +67,16 @@ export function isLanguageLoaded(language: SupportedLanguage | string): boolean 
 /** Carga el diccionario del idioma y, si no es castellano, el del idioma puente. */
 export function loadLanguage(language: SupportedLanguage | string): Promise<void> {
   const lang = normalizeLanguage(language);
-  if (lang === 'es') return Promise.resolve();
+  if (lang === 'es') return loadOne('es');
   return Promise.all([loadOne(lang), loadOne(BRIDGE_LANGUAGE)]).then(() => undefined);
+}
+
+/**
+ * Solo el diccionario del idioma, sin el puente: es lo que espera la primera
+ * pintura. El puente lo completa LanguageProvider (isLanguageLoaded → recarga).
+ */
+export function loadPrimaryLanguage(language: SupportedLanguage | string): Promise<void> {
+  return loadOne(normalizeLanguage(language));
 }
 
 export type TranslationKey = keyof Dictionary;
@@ -88,7 +98,11 @@ export function normalizeLanguage(value: string | null | undefined): SupportedLa
 }
 
 export function getTranslations(language: SupportedLanguage | string): Dictionary {
-  return translations[normalizeLanguage(language)] ?? translations[BRIDGE_LANGUAGE] ?? es;
+  return translations[normalizeLanguage(language)]
+    ?? translations[BRIDGE_LANGUAGE]
+    ?? translations[DEFAULT_LANGUAGE]
+    ?? Object.values(translations)[0]
+    ?? ({} as Dictionary);
 }
 
 // ---------------------------------------------------------------------------

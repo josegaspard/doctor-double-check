@@ -1,0 +1,21 @@
+# Medical Masters
+
+> Plataforma médica para médicos especialistas certificados, residentes y pacientes, con base en México. Reúne orientación médica en vivo, lives quirúrgicos, educación médica continua, expediente clínico, receta digital y un directorio de médicos con cédula profesional verificada.
+
+Sitio: https://medical-masters.com/
+Contacto: soporte@medical-masters.com
+
+## Páginas públicas
+
+- [Inicio](https://medical-masters.com/): qué es Medical Masters y a quién sirve.
+- [Para médicos](https://medical-masters.com/for-doctors): red de médicos especialistas certificados.
+- [Para residentes](https://medical-masters.com/for-residents): formación y herramientas para médicos residentes.
+- [Para pacientes](https://medical-masters.com/for-patients): acceso para pacientes (próximamente).
+- [Centro de ayuda](https://medical-masters.com/help): preguntas frecuentes.
+
+## Legal
+
+- [Términos y condiciones](https://medical-masters.com/terms)
+- [Aviso de privacidad](https://medical-masters.com/privacy)
+- [Código de ética](https://medical-masters.com/codigo-etica)
+- [Derechos ARCO](https://medical-masters.com/arco)
