@@ -81,16 +81,27 @@ export default function IdentityVerification() {
         .limit(1)
         .maybeSingle();
 
-      if (data && !error) {
-        setVerification(data as unknown as VerificationRecord);
+      let current = data && !error ? (data as unknown as VerificationRecord) : null;
+      // Un médico ya aprobado está verificado aunque su último intento de Veriff fallara.
+      if (role === 'doctor' && current?.status !== 'verified') {
+        const { data: dp } = await supabase
+          .from('doctor_profiles')
+          .select('status')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if ((dp as any)?.status === 'approved') {
+          current = { id: 'doctor-approved', status: 'verified', provider: 'manual', created_at: '', verified_at: null, metadata: null };
+        }
+      }
+      if (current) {
+        setVerification(current);
       }
     } catch {
       // No verification found
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id]);
-
+  }, [user?.id, role]);
   useEffect(() => {
     fetchVerification();
   }, [fetchVerification]);

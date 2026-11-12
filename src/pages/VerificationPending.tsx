@@ -11,7 +11,7 @@ import { doctorHref } from '@/lib/doctorSections';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 // Shell con el MISMO header + footer que Login/Onboarding/ResetPassword
 // (app-shell-header / app-shell-footer) para que la pantalla no salga "pelada".
@@ -29,7 +29,7 @@ function VerificationShell({ children }: { children: React.ReactNode }) {
             </Button>
             {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
             <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 w-auto" />
             </Link>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>

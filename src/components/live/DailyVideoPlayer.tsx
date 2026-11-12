@@ -35,7 +35,7 @@ import { ConnectionQualityIndicator } from '@/components/videocall/ConnectionQua
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useLiveBackgrounds } from '@/hooks/useLiveBackgrounds';
 import { VirtualBackgroundEngine, type BgMode } from '@/lib/virtualBackground';
-import logoMmWhite from '@/assets/logo-medical-masters-white.png';
+import logoMmWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 // Selección de fondo virtual del broadcaster (estilo Google Meet):
 // cámara normal, difuminado, o una imagen gestionada por el súper admin.
@@ -650,7 +650,7 @@ export const DailyVideoPlayer = forwardRef<DailyVideoPlayerHandle, DailyVideoPla
           style={{ background: 'radial-gradient(circle at 50% 38%, rgba(174,211,217,0.18) 0%, transparent 60%)' }}
         />
         <div className="relative z-10 text-center px-6">
-          <img src={logoMmWhite} alt="Medical Masters" className="h-7 sm:h-9 w-auto mx-auto mb-6 opacity-90 drop-shadow" />
+          <img src={logoMmWhite} alt="Medical Masters" width={455} height={168} className="h-7 sm:h-9 w-auto mx-auto mb-6 opacity-90 drop-shadow" />
           {/* Spinner con doble anillo en colores de marca */}
           <div className="relative w-14 h-14 mx-auto mb-5">
             <div className="absolute inset-0 rounded-full border-4 border-white/15" />

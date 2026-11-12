@@ -362,7 +362,7 @@ export function ScheduleEditor({
               <div key={w} className={`rounded-2xl border bg-white p-3 ${err ? 'border-red-300' : 'border-[#d6e1e7]'}`}>
                 <div className="flex items-center justify-between gap-2">
                   <label className="flex items-center gap-3 min-w-0 cursor-pointer">
-                    <Switch checked={on} onCheckedChange={v => toggleWeekday(w, v)} aria-label={dayName} />
+                    <Switch checked={on} onCheckedChange={v => toggleWeekday(w, v)} aria-label={dayName} className="relative after:absolute after:-inset-2 after:content-['']" />
                     <span className="font-semibold text-slate-900 truncate">{dayName}</span>
                     {!on && <span className="text-xs text-slate-500">{t('mm2.schedule.closed')}</span>}
                   </label>
@@ -455,7 +455,7 @@ export function ScheduleEditor({
                     {[...selectedDates].sort((a, b) => a.getTime() - b.getTime()).map(d => fmt.formatDate(d, 'EEE d MMM').replace(/\./g, '')).join(' · ')}
                   </p>
                   <label className="flex items-center gap-2 mb-2 cursor-pointer">
-                    <Switch checked={dateClosed} onCheckedChange={setDateClosed} />
+                    <Switch checked={dateClosed} onCheckedChange={setDateClosed} className="relative after:absolute after:-inset-2 after:content-['']" />
                     <span className="text-sm text-slate-800">{t('mm2.schedule.closedToggle')}</span>
                   </label>
                   {!dateClosed && (
@@ -588,7 +588,7 @@ export function ScheduleEditor({
       </section>
 
       {/* ------------------------------------------------------- guardar */}
-      <div className="sticky bottom-3 z-20">
+      <div className="sticky bottom-[calc(76px+env(safe-area-inset-bottom))] sm:bottom-3 z-20">
         <div className={`rounded-2xl border bg-white p-3 shadow-lg flex flex-col sm:flex-row sm:items-center gap-2 ${dirty ? 'border-primary/40' : 'border-[#d6e1e7]'}`}>
           <p className="text-sm text-slate-700 min-w-0 flex-1">
             {hasErrors ? <span className="font-medium text-red-600">{t('mm2.schedule.errors.fix')}</span>

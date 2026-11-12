@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Shield, ShieldCheck, Loader2, User, Stethoscope, GraduationCap, CheckCircle, Sparkles, PartyPopper, ArrowRight, AlertCircle, MapPin, Navigation, Globe, Phone, MessageSquare } from 'lucide-react';
 import { COUNTRY_CURRENCIES, detectCountry } from '@/hooks/useCurrency';
 import { CountryTag } from '@/components/common/CountryTag';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
+import logoMedicalMasters from '@/assets/logo-medical-masters-sm.webp';
 import { toast } from 'sonner';
 import { AppRole as UserRole } from '@/types/database';
 import { AvatarUpload } from '@/components/onboarding/AvatarUpload';
@@ -901,7 +901,7 @@ export default function Onboarding() {
             <div className="relative flex items-center justify-between min-h-14">
               {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul); meta solo en tablet+ para no chocar */}
               <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-                <img src={logoMedicalMasters} alt="Medical Masters" className="h-14 w-auto" />
+                <img src={logoMedicalMasters} alt="Medical Masters" width={455} height={168} className="h-14 w-auto" />
               </Link>
               <span className="app-shell-header-meta text-xs font-medium ml-auto hidden sm:inline">{t('onboardingPage.headerAccountSetup')}</span>
             </div>
@@ -1015,7 +1015,7 @@ export default function Onboarding() {
           <div className="relative flex items-center justify-between min-h-14">
             {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul); meta solo en tablet+ para no chocar */}
             <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-              <img src={logoMedicalMasters} alt="Medical Masters" className="h-14 w-auto" />
+              <img src={logoMedicalMasters} alt="Medical Masters" width={455} height={168} className="h-14 w-auto" />
             </Link>
             <span className="app-shell-header-meta text-xs font-medium ml-auto hidden sm:inline">{t('onboardingPage.headerAccountSetup')}</span>
           </div>

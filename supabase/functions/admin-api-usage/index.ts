@@ -31,7 +31,7 @@ type Card = {
   key: string; name: string; billing: string; unit: string | null;
   usage: number | null; requests: number | null;
   consumedUsd: number | null; balanceUsd: number | null; remaining: string;
-  revenueMxn: number; available: boolean; note: string;
+  revenueMxn: number; available: boolean; note: string; testMode?: boolean;
 };
 
 const nz = (n: unknown) => (typeof n === "number" && isFinite(n) ? n : 0);
@@ -122,6 +122,15 @@ Deno.serve(async (req) => {
       card.revenueMxn = grossTotal;                // volumen procesado (MXN)
       card.remaining = `Disponible ${new Intl.NumberFormat("es-MX").format(Math.round(available))} MXN · en tránsito ${new Intl.NumberFormat("es-MX").format(Math.round(pending))}`;
       card.note = `${count} cobros · volumen ${grossTotal.toFixed(0)} · comisión ${feeTotal.toFixed(2)}`;
+      // Clave de prueba o saldo no-live: los importes de Stripe son ficticios.
+      if (sk.startsWith("sk_test_") || balance.livemode === false) {
+        card.testMode = true;
+        card.consumedUsd = null;      // comisiones de prueba: no cuentan como coste
+        card.balanceUsd = null;       // saldo ficticio: no se muestra
+        card.revenueMxn = rev.gross;  // ventas reales en BD, no el volumen de prueba
+        card.remaining = "Modo prueba: saldo ficticio, no es dinero real";
+        card.note = `Modo prueba · ${card.note}`;
+      }
     } catch (e) { card.note = `No se pudo leer: ${String((e as Error).message).slice(0, 80)}`; }
     cards.push(card);
   }

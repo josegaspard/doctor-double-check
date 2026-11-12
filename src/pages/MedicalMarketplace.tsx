@@ -458,7 +458,7 @@ export default function MedicalMarketplace() {
           <Input type="number" placeholder={t('mkt.max')} value={priceRange[1] || ''} onChange={e => { setPriceRange([priceRange[0], Number(e.target.value) || maxPrice]); setQuick(''); }} className="h-8 text-xs" />
         </div>
         <Slider value={priceRange} onValueChange={([a, b]) => { setPriceRange([a, b]); setQuick(''); }} min={0} max={maxPrice} step={50} className="py-2" />
-        <div className="flex justify-between text-[10.5px] text-muted-foreground mt-1">
+        <div className="flex justify-between text-[11px] text-muted-foreground mt-1">
           <span>${priceRange[0].toLocaleString()}</span>
           <span>${priceRange[1].toLocaleString()}</span>
         </div>
@@ -562,7 +562,7 @@ export default function MedicalMarketplace() {
             <SheetTrigger asChild>
               <Button type="button" aria-label={t('mkt.openFilters')} variant="outline" size="icon" className="h-11 w-11 relative sm:hidden flex-shrink-0">
                 <SlidersHorizontal className="w-4 h-4" />
-                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10.5px] flex items-center justify-center">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[11px] flex items-center justify-center">{activeFilterCount}</span>}
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl">
@@ -717,11 +717,11 @@ export default function MedicalMarketplace() {
                     const reserved = isReserved(p);
                     return (
                       <Card key={p.id} className="overflow-hidden flex flex-col">
-                        {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" />}
+                        {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-40 object-cover" onError={e => { const img = e.currentTarget; if (!img.src.endsWith('/placeholder.svg')) img.src = '/placeholder.svg'; }} />}
                         <CardContent className="p-4 flex flex-col flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                            {p.brandName && <Badge variant="outline" className="text-[10.5px] px-1.5 py-0 gap-0.5"><Tag className="w-2.5 h-2.5" />{p.brandName}</Badge>}
-                            {p.category && <Badge variant="secondary" className="text-[10.5px] px-1.5 py-0">{p.category}</Badge>}
+                            {p.brandName && <Badge variant="outline" className="text-[11px] px-1.5 py-0 gap-0.5"><Tag className="w-2.5 h-2.5" />{p.brandName}</Badge>}
+                            {p.category && <Badge variant="secondary" className="text-[11px] px-1.5 py-0">{p.category}</Badge>}
                           </div>
                           <h3 className="font-semibold text-sm leading-tight">{p.name}</h3>
                           {p.vendorName && <p className="text-xs text-muted-foreground mt-0.5">{p.vendorName}</p>}
@@ -730,7 +730,7 @@ export default function MedicalMarketplace() {
                             <span className="text-lg font-bold">${Number(p.price).toLocaleString()}</span>
                             {mine(p) && <span className="text-[11px] text-muted-foreground flex items-center gap-0.5"><Tag className="w-3 h-3" /> {t('mkt.feeOnSale')} ${feeFor(Number(p.price)).toLocaleString()}</span>}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? t('mkt.unit') : t('mkt.units')}` : t('mkt.noUnits')}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1"><Boxes className="w-3 h-3" /> {(p.stock ?? 0) > 0 ? `${p.stock} ${p.stock === 1 ? t('mkt.unit') : t('mkt.units')}` : t('mkt.noUnits')}</p>
                           <div className="mt-auto pt-2">
                             {mine(p) ? (
                               <Badge variant="outline" className="w-full justify-center py-1">{t('mkt.yourProduct')}</Badge>

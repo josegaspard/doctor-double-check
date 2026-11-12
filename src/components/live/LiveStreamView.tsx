@@ -4,7 +4,7 @@ import { DailyVideoPlayer, DailyVideoPlayerHandle } from './DailyVideoPlayer';
 import { LiveChat } from './LiveChat';
 import { AnimatedViewerCount } from './AnimatedViewerCount';
 import { DynamicWatermark } from '@/components/recordings/DynamicWatermark';
-import logoMmWhite from '@/assets/logo-medical-masters-white.png';
+import logoMmWhite from '@/assets/logo-medical-masters-white-sm.webp';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
@@ -150,7 +150,7 @@ export function LiveStreamView({
   // cédula y correo) abajo a la derecha — cliente 2026-06-16, en la vista del que transmite.
   const doctorBadge = (
     <>
-      <img src={logoMmWhite} alt="Medical Masters" className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
+      <img src={logoMmWhite} alt="Medical Masters" width={455} height={168} className="absolute top-3 left-3 z-20 h-5 sm:h-6 w-auto opacity-40 pointer-events-none drop-shadow" />
       <div className="absolute bottom-16 right-3 z-[25] max-w-[70%] rounded-lg bg-black/55 backdrop-blur-sm px-3 py-1.5 text-right pointer-events-none">
         <span className="inline-flex items-center gap-1 min-w-0">
           <span className="text-white text-xs sm:text-sm font-semibold leading-tight truncate">{user?.name}</span>

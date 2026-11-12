@@ -65,6 +65,7 @@ import NotFound from "./pages/NotFound";
 import AccessGuard from "./components/AccessGuard";
 import { DoctorLegacyRedirect } from "./components/routing/DoctorLegacyRedirect";
 import { PendingPatientInvite } from '@/hooks/usePendingPatientInvite';
+import { canDoBackgroundWork } from "@/lib/backgroundWork";
 
 // Lazy loaded pages
 const LivesGrid = React.lazy(() => import("./pages/LivesGrid"));
@@ -202,9 +203,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Prefetch popular route chunks during browser idle time
+// Prefetch popular route chunks during browser idle time (solo con sesión y
+// buena red: ver canDoBackgroundWork).
 if (typeof window !== 'undefined') {
   const prefetch = () => {
+    if (!canDoBackgroundWork()) return;
     import("./pages/Doctors");
     import("./pages/RecordingsGrid");
     import("./pages/LivesGrid");
@@ -257,6 +260,8 @@ const App = () => {
                       <Route path="/" element={<Landing />} />
                       <Route path="/app" element={<RoleSelector />} />
                       <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
+                      <Route path="/signup" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
                       <Route path="/lives" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate></DoctorLegacyRedirect>} />
                       <Route path="/live/:id" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate>} />
                       <Route path="/recordings" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate></DoctorLegacyRedirect>} />
@@ -403,6 +408,7 @@ const App = () => {
                       <Route path="/emergency" element={<EmergencyDoctors />} />
                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />
                       <Route path="/doctores" element={<Navigate to="/doctors" replace />} />
+                      <Route path="/registro" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
                       <Route path="/arco" element={<ArcoRights />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>

@@ -207,7 +207,7 @@ export default function RecordingControls({ videoRef, containerRef, recordingId,
               </div>
             )}
           </div>
-          <button onClick={toggleFs} aria-label="pantalla completa" className="hover:text-primary transition-colors">
+          <button onClick={toggleFs} aria-label={t('uiLabels.fullscreen')} className="hover:text-primary transition-colors">
             {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
           </button>
         </div>

@@ -116,7 +116,7 @@ export function InlineFileViewer({ fileUrl, bucket = 'doctor-content', ttlSecond
       <div className={wrapClass} {...noDownloadProps} style={{ aspectRatio: '4 / 3' }}>
         <iframe
           src={officeUrl}
-          title="Documento"
+          title={t('uiLabels.document')}
           className="absolute inset-0 w-full h-full"
           style={{ border: 0 }}
           allowFullScreen

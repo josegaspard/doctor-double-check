@@ -3,6 +3,9 @@
 
 User-agent: *
 Allow: /$
+Allow: /assets/
+Allow: /gtag-init.js
+Allow: /llms.txt
 Allow: /favicon.ico
 Allow: /favicon.png
 Allow: /apple-touch-icon.png

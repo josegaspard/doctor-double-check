@@ -6,18 +6,12 @@
 // import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
 
 // ─── NATIVE-IMPL (active, post-migration) ───────────────────────────────────
-import { Resend } from 'npm:resend@4.0.0'
+// ARRANQUE EN FRÍO (BE-1, 2026-11-12): solo standardwebhooks se importa de forma
+// estática. React, react-email, Resend, supabase-js y las plantillas se cargan con
+// import() dinámico DESPUÉS de responder a GoTrue (que corta a los 5 s), así el
+// worker arranca rápido y el 422 hook_timeout desaparece.
 import { Webhook } from 'npm:standardwebhooks@1.0.0'
 
-import * as React from 'npm:react@18.3.1'
-import { renderAsync } from 'npm:@react-email/components@0.0.22'
-import { createClient } from 'npm:@supabase/supabase-js@2.49.4'
-import { SignupEmail } from '../_shared/email-templates/signup.tsx'
-import { InviteEmail } from '../_shared/email-templates/invite.tsx'
-import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
-import { RecoveryEmail } from '../_shared/email-templates/recovery.tsx'
-import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
-import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
 import { maskEmail } from "../_shared/log-redact.ts";
 
 const corsHeaders = {
@@ -35,13 +29,25 @@ const EMAIL_SUBJECTS: Record<string, string> = {
   reauthentication: 'Tu código de verificación - Medical Masters',
 }
 
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
-  signup: SignupEmail,
-  invite: InviteEmail,
-  magiclink: MagicLinkEmail,
-  recovery: RecoveryEmail,
-  email_change: EmailChangeEmail,
-  reauthentication: ReauthenticationEmail,
+// Cargadores perezosos de las plantillas (ver nota de arranque en frío arriba).
+const EMAIL_TEMPLATES: Record<string, () => Promise<any>> = {
+  signup: () => import('../_shared/email-templates/signup.tsx').then((m) => m.SignupEmail),
+  invite: () => import('../_shared/email-templates/invite.tsx').then((m) => m.InviteEmail),
+  magiclink: () => import('../_shared/email-templates/magic-link.tsx').then((m) => m.MagicLinkEmail),
+  recovery: () => import('../_shared/email-templates/recovery.tsx').then((m) => m.RecoveryEmail),
+  email_change: () => import('../_shared/email-templates/email-change.tsx').then((m) => m.EmailChangeEmail),
+  reauthentication: () => import('../_shared/email-templates/reauthentication.tsx').then((m) => m.ReauthenticationEmail),
+}
+// Renderiza HTML + texto plano cargando React/react-email solo cuando hace falta.
+async function renderEmail(type: string, props: Record<string, any>): Promise<{ html: string; text: string }> {
+  const [React, { renderAsync }, Template] = await Promise.all([
+    import('npm:react@18.3.1'),
+    import('npm:@react-email/components@0.0.22'),
+    EMAIL_TEMPLATES[type](),
+  ])
+  const html = await renderAsync(React.createElement(Template, props))
+  const text = await renderAsync(React.createElement(Template, props), { plainText: true })
+  return { html, text }
 }
 
 const SITE_NAME = "Medical Masters"
@@ -92,6 +98,7 @@ async function getUserRole(userId: string): Promise<string | null> {
       console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for role lookup')
       return null
     }
+    const { createClient } = await import('npm:@supabase/supabase-js@2.49.4')
     const supabase = createClient(supabaseUrl, serviceRoleKey)
     const { data, error } = await supabase
       .from('user_roles')
@@ -149,9 +156,8 @@ async function handlePreview(req: Request): Promise<Response> {
     })
   }
 
-  const EmailTemplate = EMAIL_TEMPLATES[type]
 
-  if (!EmailTemplate) {
+  if (!EMAIL_TEMPLATES[type]) {
     return new Response(JSON.stringify({ error: `Unknown email type: ${type}` }), {
       status: 400,
       headers: { ...previewCorsHeaders, 'Content-Type': 'application/json' },
@@ -159,7 +165,7 @@ async function handlePreview(req: Request): Promise<Response> {
   }
 
   const sampleData = SAMPLE_DATA[type] || {}
-  const html = await renderAsync(React.createElement(EmailTemplate, sampleData))
+  const { html } = await renderEmail(type, sampleData)
 
   return new Response(html, {
     status: 200,
@@ -258,8 +264,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   const emailType = payload.data.action_type
   console.log('Received auth event', { emailType, email: maskEmail(payload.data.email), run_id })
 
-  const EmailTemplate = EMAIL_TEMPLATES[emailType]
-  if (!EmailTemplate) {
+  if (!EMAIL_TEMPLATES[emailType]) {
     console.error('Unknown email type', { emailType, run_id })
     return new Response(
       JSON.stringify({ error: `Unknown email type: ${emailType}` }),
@@ -271,18 +276,21 @@ async function handleWebhook(req: Request): Promise<Response> {
   // flood a target's inbox by repeatedly POSTing to /auth endpoints.
   if (['recovery', 'email_change', 'signup', 'invite'].includes(emailType) && payload.data.email) {
     try {
-      const sb = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      )
-      const { data: allowed, error: rlErr } = await sb.rpc('check_and_record_rate_limit', {
-        p_bucket: `auth_email_${emailType}`,
-        p_key: String(payload.data.email).toLowerCase(),
-        p_max: emailType === 'recovery' ? 3 : 5,
-        p_window_seconds: 3600,
+      // fetch directo a PostgREST: evita cargar supabase-js antes de responder (BE-1)
+      const srk = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      const rlRes = await fetch(`${(Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '')}/rest/v1/rpc/check_and_record_rate_limit`, {
+        method: 'POST',
+        headers: { apikey: srk, Authorization: `Bearer ${srk}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          p_bucket: `auth_email_${emailType}`,
+          p_key: String(payload.data.email).toLowerCase(),
+          p_max: emailType === 'recovery' ? 3 : 5,
+          p_window_seconds: 3600,
+        }),
       })
-      if (rlErr) {
-        console.warn('Rate-limit RPC error (allowing through)', { error: rlErr.message, run_id })
+      const allowed = rlRes.ok ? await rlRes.json() : null
+      if (!rlRes.ok) {
+        console.warn('Rate-limit RPC error (allowing through)', { error: `${rlRes.status} ${await rlRes.text()}`, run_id })
       } else if (allowed === false) {
         console.warn('Auth email rate-limited', { emailType, email: payload.data.email, run_id })
         // Return 200 silently so we don't leak existence of the email
@@ -325,10 +333,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     }
   }
 
-  const html = await renderAsync(React.createElement(EmailTemplate, templateProps))
-  const text = await renderAsync(React.createElement(EmailTemplate, templateProps), {
-    plainText: true,
-  })
+  const { html, text } = await renderEmail(emailType, templateProps)
 
   // Customize subject for doctor/resident signup
   let subject = EMAIL_SUBJECTS[emailType] || 'Notification'
@@ -359,6 +364,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     console.error('RESEND_API_KEY not configured', { run_id })
     return
   }
+  const { Resend } = await import('npm:resend@4.0.0')
   const resend = new Resend(resendApiKey)
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev'
   // El sandbox de Resend (onboarding@resend.dev) SOLO entrega al dueño de la cuenta.
@@ -412,6 +418,12 @@ Deno.serve(async (req) => {
 
   if (url.pathname.endsWith('/preview')) {
     return handlePreview(req)
+  }
+  // Ping de calentamiento del cron warm-auth-email-hook: body {"__warmup__":true}.
+  // Se responde 204 sin verificar firma para no llenar los logs de 401 (BE-6).
+  if (req.method === 'POST' && !req.headers.get('webhook-signature')) {
+    const warmBody = await req.clone().json().catch(() => null)
+    if (warmBody?.__warmup__ === true) return new Response(null, { status: 204 })
   }
 
   try {

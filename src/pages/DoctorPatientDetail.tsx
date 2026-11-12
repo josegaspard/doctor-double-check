@@ -135,10 +135,21 @@ export default function DoctorPatientDetail() {
     shared_files: sharedFiles.length,
     notes: data.notes.length,
   };
-  const lastConsultationAt =
-    overview?.last_consultation_at ||
-    data.consultations[0]?.completed_at || data.consultations[0]?.ended_at || data.consultations[0]?.started_at || null;
-
+  // Mismo criterio que la lista de pacientes (useDoctorPatients): consultas no
+  // reembolsadas por su fecha de cierre y citas pasadas no canceladas.
+  const lastConsultationAt = (() => {
+    const nowIso = new Date().toISOString();
+    let last: string | null = null;
+    for (const c of data.consultations as any[]) {
+      if (c.status === 'refunded') continue;
+      const d = c.completed_at || c.ended_at || c.started_at;
+      if (d && (!last || d > last)) last = d;
+    }
+    for (const a of data.appointments as any[]) {
+      if (a.scheduled_at < nowIso && a.status !== 'cancelled' && (!last || a.scheduled_at > last)) last = a.scheduled_at;
+    }
+    return last;
+  })();
   const hasAnyRelation =
     !!overview || !!listEntry || data.appointments.length + data.consultations.length + data.prescriptions.length + sharedFiles.length > 0 || !!data.chatSessionId;
   const stillLoading = loading || loadingList || status === 'loading';

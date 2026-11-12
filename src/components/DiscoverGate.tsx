@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Lock, Timer } from 'lucide-react';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 // Modo "Descubre MedicalMasters" (cliente 15-jul-2026): el visitante navega
 // libre 10 minutos; al agotarse se bloquea TODO con un overlay que pide
@@ -77,7 +77,7 @@ export function DiscoverGate() {
     >
       <div className="min-h-full flex items-center justify-center p-6 py-10">
       <div className="max-w-md w-full text-center text-white">
-        <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto mx-auto mb-6 drop-shadow-lg" />
+        <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 w-auto mx-auto mb-6 drop-shadow-lg" />
         <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
           <Lock className="w-7 h-7 text-white" />
         </div>

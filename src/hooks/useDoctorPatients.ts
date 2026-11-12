@@ -83,7 +83,7 @@ export function useDoctorPatients() {
           .order('last_message_at', { ascending: false }),
         supabase
           .from('consultations')
-          .select('patient_id, started_at')
+          .select('patient_id, status, started_at, ended_at, completed_at')
           .eq('doctor_id', me)
           .order('started_at', { ascending: false }),
         supabase
@@ -132,7 +132,10 @@ export function useDoctorPatients() {
       (consultsRes.data || []).forEach((c: any) => {
         const e = entryFor(c.patient_id, 'consultation');
         e.consultationsCount += 1;
-        e.lastConsultationAt = later(e.lastConsultationAt, c.started_at || null);
+        // Mismo criterio que la ficha del paciente: fecha de cierre y sin las reembolsadas.
+        if (c.status !== 'refunded') {
+          e.lastConsultationAt = later(e.lastConsultationAt, c.completed_at || c.ended_at || c.started_at || null);
+        }
         e.lastInteraction = later(e.lastInteraction, c.started_at || null);
       });
 

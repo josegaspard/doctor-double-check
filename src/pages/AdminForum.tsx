@@ -45,7 +45,7 @@ const addDays = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n
 
 interface Prompt { id: string; prompt_date: string; category: Cat; title: string; body: string | null; image_url: string | null; source: 'admin' | 'bank'; }
 interface BankRow { id: string; category: Cat; title: string; body: string | null; is_active: boolean; last_used_on: string | null; use_count: number; }
-interface AuditRow { id: string; post_id: string; admin_id: string; reason: string | null; revealed_at: string; adminName?: string; postTitle?: string; }
+interface AuditRow { id: string; post_id: string | null; admin_id: string; reason: string | null; revealed_at: string; adminName?: string; postTitle?: string; }
 
 export default function AdminForum() {
   const { t, language } = useLanguage();
@@ -108,14 +108,14 @@ export default function AdminForum() {
       const aRows: AuditRow[] = a.data || [];
       if (aRows.length > 0) {
         const adminIds = [...new Set(aRows.map((r) => r.admin_id))];
-        const postIds = [...new Set(aRows.map((r) => r.post_id))];
+        const postIds = [...new Set(aRows.map((r) => r.post_id).filter(Boolean))];
         const [names, titles] = await Promise.all([
           supabase.from('profiles_public').select('id, name').in('id', adminIds),
-          sb.from('forum_posts_feed').select('id, title').in('id', postIds),
+          postIds.length > 0 ? sb.from('forum_posts_feed').select('id, title').in('id', postIds) : Promise.resolve({ data: [] }),
         ]);
         const nm = Object.fromEntries(((names.data || []) as any[]).map((r) => [r.id, r.name]));
         const tt = Object.fromEntries(((titles.data || []) as any[]).map((r) => [r.id, r.title]));
-        setAudit(aRows.map((r) => ({ ...r, adminName: nm[r.admin_id] || r.admin_id.slice(0, 8), postTitle: tt[r.post_id] || '—' })));
+        setAudit(aRows.map((r) => ({ ...r, adminName: nm[r.admin_id] || r.admin_id.slice(0, 8), postTitle: r.post_id ? (tt[r.post_id] || '—') : t('forumAdmin.auditDeletedPost') })));
       } else {
         setAudit([]);
       }
@@ -425,7 +425,7 @@ export default function AdminForum() {
                         <tr key={a.id} className="border-t border-border">
                           <td className="p-2 whitespace-nowrap">{dtFmt.format(new Date(a.revealed_at))}</td>
                           <td className="p-2">{a.adminName}</td>
-                          <td className="p-2 max-w-[280px] truncate"><Link to={`/foro?post=${a.post_id}`} className="text-primary underline">{a.postTitle}</Link></td>
+                          <td className="p-2 max-w-[280px] truncate">{a.post_id ? <Link to={`/foro?post=${a.post_id}`} className="text-primary underline">{a.postTitle}</Link> : <span className="text-muted-foreground">{a.postTitle}</span>}</td>
                           <td className="p-2 text-muted-foreground">{a.reason || '—'}</td>
                         </tr>
                       ))}

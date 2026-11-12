@@ -69,7 +69,7 @@
 .dc-prompt.is-anon { border-color: #f1dca4; background: #fffaf0; }
 .dc-prompt-cat {
   display: flex; align-items: center; gap: 6px;
-  font-size: 10.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.25;
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; line-height: 1.25;
   color: var(--pro-teal, #227787);
 }
 .dc-prompt-cat svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--pro-teal, #227787) !important; }

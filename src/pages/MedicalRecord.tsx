@@ -231,24 +231,33 @@ export default function MedicalRecord() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasRecord, setHasRecord] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialLoadDoneRef = useRef(false);
   const hasRecordRef = useRef(false);
   const dataRef = useRef<ClinicalData>(DEFAULT_DATA);
+  // Solo se guarda si el usuario cambió algo (abrir la página no escribe en la BD).
+  const isDirtyRef = useRef(false);
+  const prevDataRef = useRef<ClinicalData | null>(null);
   useEffect(() => { dataRef.current = data; }, [data]);
   useEffect(() => { hasRecordRef.current = hasRecord; }, [hasRecord]);
 
   useEffect(() => {
     if (!user?.id) return;
     const fetch = async () => {
-      const { data: record } = await supabase
+      const { data: record, error: loadErr } = await supabase
         .from('patient_clinical_history')
         .select('*')
         .eq('patient_id', user.id)
         .maybeSingle();
-
+      if (loadErr) {
+        console.error('[MedicalRecord] load failed:', loadErr);
+        setLoadError(true);
+        setIsLoading(false);
+        return;
+      }
       if (record) {
         setHasRecord(true);
         setData({
@@ -450,32 +459,38 @@ export default function MedicalRecord() {
   // del header para que el usuario vea "Guardando…" / "Guardado" sin spam
   // de toasts.
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || loadError) return;
     if (!initialLoadDoneRef.current) {
       initialLoadDoneRef.current = true;
+      prevDataRef.current = data;
       return;
     }
+    if (prevDataRef.current === data && !isDirtyRef.current) return;
+    prevDataRef.current = data;
+    isDirtyRef.current = true;
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     setAutoSaveStatus('saving');
     autosaveTimerRef.current = setTimeout(() => {
-      persistData({ silent: true });
+      isDirtyRef.current = false;
+      persistData({ silent: true }).then((r) => { if (!r?.ok) isDirtyRef.current = true; });
     }, 1500);
     return () => {
       if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
     };
-  }, [data, isLoading, persistData]);
+  }, [data, isLoading, loadError, persistData]);
 
   // Guardado final al salir de la página: el debounce de 1.5s puede no
   // haber disparado todavía. visibilitychange (cuando el tab pasa a hidden)
   // dispara un save sincrónico para no perder el último input.
   useEffect(() => {
     const flushOnHide = () => {
-      if (document.visibilityState === 'hidden' && initialLoadDoneRef.current) {
+      if (document.visibilityState === 'hidden' && initialLoadDoneRef.current && isDirtyRef.current) {
         if (autosaveTimerRef.current) {
           clearTimeout(autosaveTimerRef.current);
           autosaveTimerRef.current = null;
         }
-        persistData({ silent: true });
+        isDirtyRef.current = false;
+        persistData({ silent: true }).then((r) => { if (!r?.ok) isDirtyRef.current = true; });
       }
     };
     document.addEventListener('visibilitychange', flushOnHide);
@@ -497,7 +512,15 @@ export default function MedicalRecord() {
       </MainLayout>
     );
   }
-
+  if (loadError) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center py-20 px-4 text-center text-sm text-destructive" role="alert">
+          {t('medicalRecordPage.loadError')}
+        </div>
+      </MainLayout>
+    );
+  }
   return (
     <MainLayout>
       <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 max-w-4xl">

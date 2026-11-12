@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { CedulaVerifyLink } from '@/components/doctor/CedulaVerifyLink';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { translateAuthError } from '@/lib/translateAuthError';
@@ -200,7 +200,7 @@ export default function Login() {
 
   const resolvePostLoginRoute = async (userId: string) => {
     const { data: profile } = await supabase
-      .from('profiles').select('onboarding_completed').eq('id', userId).single();
+      .from('profiles').select('onboarding_completed').eq('id', userId).maybeSingle();
 
     if (!profile?.onboarding_completed) return '/onboarding';
 
@@ -477,7 +477,7 @@ export default function Login() {
             </Button>
             {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
             <button type="button" onClick={() => navigate('/')} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm" aria-label="Inicio">
-              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 land:h-9 w-auto" />
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 land:h-9 w-auto" />
             </button>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>

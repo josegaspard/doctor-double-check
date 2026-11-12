@@ -10,8 +10,8 @@ import { Loader2, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 import { PasswordStrength, getPasswordStrength } from '@/components/ui/password-strength';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
-import logoMedicalMasters from '@/assets/logo-medical-masters.png';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMasters from '@/assets/logo-medical-masters-sm.webp';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 import { AppBackground } from '@/components/layout/AppBackground';
 import { UnifiedFooter } from '@/components/layout/UnifiedFooter';
 export default function ResetPassword() {
@@ -85,7 +85,7 @@ export default function ResetPassword() {
               </Button>
               {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
               <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+                <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 w-auto" />
               </Link>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function ResetPassword() {
             </Button>
             {/* Logo GRANDE y centrado, mismo tamaño que el landing (cliente 10-jul) */}
             <Link to="/" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 w-auto" />
+              <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 w-auto" />
             </Link>
             <LanguageSwitcher className="text-white hover:text-white hover:bg-white/15" />
           </div>

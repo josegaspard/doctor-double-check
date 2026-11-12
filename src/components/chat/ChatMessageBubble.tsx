@@ -85,7 +85,11 @@ export function ChatMessageBubble({ message, isOwn, isSessionClosed, onReply }: 
     const prescriptionMatch = content.match(/\/prescriptions\/([a-f0-9-]+)/);
     if (prescriptionMatch) {
       const prescriptionId = prescriptionMatch[1];
-      const textPart = stripEmoji(content.split('/prescriptions/')[0]);
+      const rawText = stripEmoji(content.split('/prescriptions/')[0]);
+      // Aviso automático de receta (se guarda en español): se muestra en el idioma del lector.
+      const textPart = /^\s*Se te ha generado tu receta médica/i.test(rawText)
+        ? t('chatMessageBubble.prescriptionReady')
+        : rawText;
       return (
         <div 
           className="cursor-pointer"

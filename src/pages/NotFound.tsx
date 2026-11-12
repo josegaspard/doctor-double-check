@@ -10,6 +10,15 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    // Página inexistente: que Google no la indexe ni la tome por la home.
+    let robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.content = 'noindex, nofollow';
+    document.head.querySelector('link[rel="canonical"]')?.remove();
   }, [location.pathname]);
 
   return (

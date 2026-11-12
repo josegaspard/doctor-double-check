@@ -18,6 +18,7 @@
 //   node scripts/i18n-audit.mjs --max=20        cuántos ejemplos por bloque
 //   node scripts/i18n-audit.mjs --json          salida en JSON
 //   node scripts/i18n-audit.mjs --strict        sale con código 1 si falta algo
+//   node scripts/i18n-audit.mjs --strict --keys-only   solo falla por claves sin traducir
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -45,6 +46,7 @@ const ONLY_LANG = flag('lang');
 const AREA = flag('area', 'doctor');
 const MAX = Number(flag('max', 12)) || 12;
 const AS_JSON = Boolean(flag('json', false));
+const KEYS_ONLY = Boolean(flag('keys-only', false));
 const STRICT = Boolean(flag('strict', false));
 
 const num = (n) => n.toLocaleString('es-MX');
@@ -284,7 +286,7 @@ async function main() {
   }
 
   if (STRICT) {
-    const broken = keyReport.some((r) => r.missing > 0) || hardcodedTotal > 0;
+    const broken = keyReport.some((r) => r.missing > 0) || (!KEYS_ONLY && hardcodedTotal > 0);
     if (broken) process.exitCode = 1;
   }
 }

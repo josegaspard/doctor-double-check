@@ -23,7 +23,7 @@ interface Provider {
   usage: number | null; requests: number | null;
   consumedUsd: number | null; balanceUsd: number | null; remaining: string;
   revenueMxn: number; costMxn: number | null; netMxn: number | null; roi: number | null;
-  currency?: string; available: boolean; note: string;
+  currency?: string; available: boolean; note: string; testMode?: boolean;
 }
 interface UsageData {
   generatedAt: string; days: number; usdMxn: number;
@@ -147,7 +147,7 @@ export default function AdminApiUsage() {
               <p className="text-xs sm:text-sm text-muted-foreground">Gasto, saldo, peticiones y retorno de cada servicio externo que paga la plataforma</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 justify-between sm:justify-end">
+          <div className="flex flex-wrap items-center gap-2 justify-between sm:justify-end">
             <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v) as 7 | 30 | 90)}>
               <TabsList className="h-8">
                 <TabsTrigger value="7" className="text-xs h-7 px-2.5">7 días</TabsTrigger>
@@ -211,13 +211,13 @@ export default function AdminApiUsage() {
                           </div>
                         </div>
                         {p.available
-                          ? <Badge variant="outline" className="text-[10px]">{roiFmt(p.roi)} ROI</Badge>
+                          ? (p.testMode ? <Badge variant="secondary" className="text-[10px] gap-1"><AlertTriangle className="w-3 h-3" />Modo prueba</Badge> : <Badge variant="outline" className="text-[10px]">{roiFmt(p.roi)} ROI</Badge>)
                           : <Badge variant="secondary" className="text-[10px] gap-1"><AlertTriangle className="w-3 h-3" />sin datos</Badge>}
                       </div>
                       {p.available ? (
                         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                           <div><p className="text-muted-foreground text-[10px]">Consumo</p><p className="font-bold">{mxn(p.costMxn)}</p>{p.currency !== 'MXN' && <p className="text-[10.5px] text-muted-foreground">{usd(p.consumedUsd)}</p>}</div>
-                          <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
+                          <div><p className="text-muted-foreground text-[10px]">{p.currency === 'MXN' && !p.testMode ? 'Volumen procesado' : 'Ingreso atribuido'}</p><p className="font-bold text-success">{mxn(p.revenueMxn)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Peticiones</p><p className="font-semibold">{num(p.requests)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Consumo{p.unit ? ` (${p.unit})` : ''}</p><p className="font-semibold">{num(p.usage)}</p></div>
                           <div><p className="text-muted-foreground text-[10px]">Saldo</p><p className="font-semibold">{p.balanceUsd != null ? (p.currency === 'MXN' ? mxn(p.balanceUsd) : usd(p.balanceUsd)) : '—'}</p></div>

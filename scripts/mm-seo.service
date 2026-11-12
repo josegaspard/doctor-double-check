@@ -1,0 +1,16 @@
+# Servidor SEO de medical-masters.com (sustituye a middleware.ts de Vercel).
+# Instalar: cp scripts/mm-seo.service /etc/systemd/system/ && systemctl enable --now mm-seo
+[Unit]
+Description=Medical Masters SEO (head por URL, robots.txt, sitemap.xml)
+After=network.target
+
+[Service]
+WorkingDirectory=/srv/mm-seo
+ExecStart=/usr/local/bin/node /srv/mm-seo/scripts/seo-server.mjs
+Environment=PORT=8871
+Restart=always
+RestartSec=2
+User=root
+
+[Install]
+WantedBy=multi-user.target

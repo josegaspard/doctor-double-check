@@ -19,7 +19,7 @@ import { fill } from '@/lib/proFormat';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { BrandLaunchAnimation } from '@/components/BrandLaunchAnimation';
 import { hasAppBooted } from '@/lib/appBootFlag';
-import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white.png';
+import logoMedicalMastersWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 type RoleOption = {
   id: 'visitor' | 'patient' | 'doctor' | 'resident';
@@ -229,7 +229,7 @@ export default function RoleSelector() {
         <div className="relative flex items-center justify-between min-h-14 land:min-h-0">
           {/* Logo GRANDE y centrado en móvil/tablet, mismo tamaño que el landing (cliente 10-jul); desktop a la izquierda */}
           <button type="button" onClick={() => navigate('/')} aria-label="Inicio" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:static lg:translate-x-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm">
-            <img src={logoMedicalMastersWhite} alt="Medical Masters" className="h-14 land:h-9 w-auto drop-shadow-lg" />
+            <img src={logoMedicalMastersWhite} alt="Medical Masters" width={455} height={168} className="h-14 land:h-9 w-auto drop-shadow-lg" />
           </button>
           <LanguageSwitcher className="bg-white/10 hover:bg-white/20 text-white border-white/20" />
         </div>
