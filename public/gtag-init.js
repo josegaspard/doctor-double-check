@@ -8,3 +8,4 @@ gtag('config', 'G-NB9CJEJYPV', {
   anonymize_ip: true,
   cookie_flags: 'SameSite=None;Secure'
 });
+gtag('config', 'G-FYNGDNQP6Y');
