@@ -4,6 +4,7 @@ import Doctors from '@/pages/Doctors';
 import { Apple, Calculator } from 'lucide-react';
 import HealthToolsPanel from '@/components/healthTools/HealthToolsPanel';
 import { useHealthToolsText } from '@/lib/healthTools/i18n';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Directorio de Nutrición (11-sep-2026): atajo de Comunidad > Descubrir > Médicos.
 // Mismo motivo que Psicología: la especialidad real en la base es «Nutriología
@@ -12,6 +13,9 @@ import { useHealthToolsText } from '@/lib/healthTools/i18n';
 export default function NutritionDirectory() {
   const { t } = useLanguage();
   const { ht } = useHealthToolsText();
+  // Las herramientas son de la app: solo con sesión iniciada (el directorio sigue público como antes).
+  const { isAuthenticated, role } = useAuth();
+  const inApp = isAuthenticated && !!role && role !== 'visitor';
   return (
     <MainLayout>
       <div className="pro-container pro-page">
@@ -25,12 +29,12 @@ export default function NutritionDirectory() {
           </div>
         </div>
         {/* Calculadoras de nutrición (18-nov-2026, a petición de los médicos tras ver Quirónsalud). */}
-        <HealthToolsPanel
+        {inApp && <HealthToolsPanel
           title={ht('panel.nutritionTitle')}
           subtitle={ht('panel.nutritionSub')}
           icon={Calculator}
           tools={['bmi', 'idealWeight', 'calories', 'waist', 'water']}
-        />
+        />}
         <Doctors embedded specialtyPrefix="Nutriología" />
       </div>
     </MainLayout>

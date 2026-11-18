@@ -4,6 +4,7 @@ import Doctors from '@/pages/Doctors';
 import { Brain, ClipboardList } from 'lucide-react';
 import HealthToolsPanel from '@/components/healthTools/HealthToolsPanel';
 import { useHealthToolsText } from '@/lib/healthTools/i18n';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Directorio de Psicología (11-sep-2026): atajo de Comunidad > Descubrir > Médicos.
 // Antes traía su PROPIA lista y comparaba la especialidad EXACTA contra el RPC
@@ -17,6 +18,9 @@ import { useHealthToolsText } from '@/lib/healthTools/i18n';
 export default function PsychologyDirectory() {
   const { t } = useLanguage();
   const { ht } = useHealthToolsText();
+  // Las herramientas son de la app: solo con sesión iniciada (el directorio sigue público como antes).
+  const { isAuthenticated, role } = useAuth();
+  const inApp = isAuthenticated && !!role && role !== 'visitor';
   return (
     <MainLayout>
       <div className="pro-container pro-page">
@@ -30,12 +34,12 @@ export default function PsychologyDirectory() {
           </div>
         </div>
         {/* Cuestionarios validados de ánimo y ansiedad (18-nov-2026). */}
-        <HealthToolsPanel
+        {inApp && <HealthToolsPanel
           title={ht('panel.mindTitle')}
           subtitle={ht('panel.mindSub')}
           icon={ClipboardList}
           tools={['phq9', 'gad7']}
-        />
+        />}
         <Doctors embedded specialtyPrefix="Psicología" />
       </div>
     </MainLayout>

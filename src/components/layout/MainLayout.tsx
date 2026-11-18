@@ -143,9 +143,9 @@ const navItems: NavItem[] = [
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
     : []),
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'resident', 'admin'], toggleKey: 'show_news_section' },
-  // Herramientas de salud (18-nov-2026): en la píldora del visitante y en «Más» de residente y admin.
-  // El paciente las tiene en Para pacientes y en el pie (su píldora ya va llena a 1440 px).
-  { labelKey: 'nav.healthTools', shortLabelKey: 'nav.healthToolsShort', href: '/herramientas', icon: Calculator, roles: ['visitor', 'resident', 'admin'] },
+  // Herramientas de salud (18-nov-2026): solo dentro de la app. Residente y admin, en «Más»;
+  // el paciente, en el menú de su perfil y en el cajón del móvil (su píldora ya va llena a 1440 px).
+  { labelKey: 'nav.healthTools', shortLabelKey: 'nav.healthToolsShort', href: '/herramientas', icon: Calculator, roles: ['resident', 'admin'] },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident'] },
   { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['patient', 'resident'] },
@@ -562,6 +562,12 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                         {t('mm2.common.tabs.cuenta.finanzas')}
                       </DropdownMenuItem>
                     )}
+                    {role === 'patient' && (
+                      <DropdownMenuItem onClick={() => navigate('/herramientas')} className="py-3 text-sm">
+                        <Calculator className="w-4 h-4 mr-2" />
+                        {t('nav.healthTools')}
+                      </DropdownMenuItem>
+                    )}
                     {(role === 'patient' || role === 'resident') && hasCampaigns && (
                       <DropdownMenuItem onClick={() => navigate('/advertiser/dashboard')} className="py-3 text-sm">
                         <Megaphone className="w-4 h-4 mr-2" />
@@ -796,6 +802,18 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
                       >
                         <Wallet className="w-5 h-5 text-primary" />
                         <span className="text-sm font-medium">{t('nav.wallet')}</span>
+                      </Link>
+                    )}
+                    {role === 'patient' && (
+                      <Link
+                        to="/herramientas"
+                        onClick={() => setMoreSheetOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                          location.pathname === '/herramientas' ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Calculator className="w-5 h-5" />
+                        <span className="text-sm font-medium">{t('nav.healthTools')}</span>
                       </Link>
                     )}
                     {FEATURE_FLAGS.marketplaceFeeModel && role === 'resident' && (
