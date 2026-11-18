@@ -204,6 +204,7 @@ export const fr: HealthToolsDict = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "Voir toutes les questions",
     period2w: 'Au cours des 2 dernières semaines, à quelle fréquence as-tu été gêné(e) par les problèmes suivants ?',
     period7d: 'Au cours des 7 derniers jours…',
     opt0: 'Jamais',

@@ -278,3 +278,70 @@ select.ht-input { appearance: auto; }
 .ht-disclaimer > span { min-width: 0; }
 /* Las etapas/grupos siempre en una fila (3 en Salud de la mujer, 4 en /herramientas) */
 .ht-stages { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+
+/* ===================== Mejora UX/UI (18-nov tarde, sobre todo móvil) ===================== */
+/* Iconos en grupos y pestañas */
+.ht-stage-icon, .ht-tab-icon { width: 18px; height: 18px; flex-shrink: 0; }
+.ht-panel .ht-stages > button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ht-panel .ht-stages > button span { overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.ht-panel .ht-tabs > button { display: inline-flex; align-items: center; gap: 7px; }
+.ht-panel .ht-tabs > button .ht-tab-icon { opacity: 0.8; }
+
+/* Aparición suave del resultado y del cambio de herramienta */
+@keyframes ht-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ht-tabpanel, .ht-result, .ht-crisis { animation: ht-in 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .ht-tabpanel, .ht-result, .ht-crisis { animation: none; } }
+
+/* Cuestionario paso a paso (móvil) */
+.ht-quiz-step > li { border-top: 0; padding-top: 0; }
+.ht-quiz-step .ht-q { font-size: 1.02rem; font-weight: 600; }
+.ht-step-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; margin-top: 0.75rem; }
+.ht-step-nav .pro-btn, .ht-row-end .pro-btn { display: inline-flex; align-items: center; gap: 6px; }
+.ht-row-end { gap: 0.5rem; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .ht-panel { padding: 14px; border-radius: 16px; }
+  .ht-panel-head { gap: 0.6rem; margin-bottom: 0.85rem; }
+  .ht-panel-icon { width: 36px !important; height: 36px !important; }
+  .ht-panel-title { font-size: 1.08rem; }
+  .ht-panel-sub { font-size: 0.86rem; }
+
+  /* Grupos/etapas: icono encima del texto; con 4 grupos, rejilla 2×2 */
+  .ht-panel .ht-stages > button { flex-direction: column; gap: 4px; min-height: 58px; padding: 8px 6px; font-size: 13px; }
+  .ht-stages[data-count="4"] { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ht-stages[data-count="4"] > button { flex-direction: row !important; min-height: 48px !important; }
+
+  /* Pestañas: rejilla de botones, todas a la vista (antes se cortaban a la derecha) */
+  .ht-tabs {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px;
+    overflow: visible; margin: 0 0 1rem; padding: 0; border-bottom: 0;
+  }
+  .app-bg-image .ht-panel [role="tablist"].ht-tabs { border: 0 !important; }
+  .ht-panel .ht-tabs > button {
+    flex-direction: column; justify-content: center; gap: 4px; min-height: 60px; padding: 8px 6px; margin: 0;
+    border: 1px solid #d6e3e8; border-radius: 12px; background: #ffffff;
+    font-size: 12.5px; line-height: 1.2; white-space: normal; text-align: center; color: var(--pro-ink) !important;
+  }
+  .ht-panel .ht-tabs > button .ht-tab-icon { width: 20px; height: 20px; opacity: 1; color: var(--pro-teal); }
+  .ht-panel .ht-tabs > button.is-active {
+    background: var(--pro-teal) !important; border-color: var(--pro-teal); color: #ffffff !important;
+  }
+  .ht-panel .ht-tabs > button.is-active .ht-tab-icon { color: #ffffff; }
+
+  /* Campos numéricos de dos en dos; selector y conmutadores a lo ancho */
+  .ht-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+  .ht-grid > .ht-field-wide, .ht-grid > .ht-field:has(.ht-seg) { grid-column: 1 / -1; }
+  .ht-grid > .ht-field:has(input[type="date"]) { grid-column: 1 / -1; }
+  .ht-label { font-size: 12.5px; }
+  .ht-panel .ht-seg > button { white-space: normal; line-height: 1.2; font-size: 13.5px; min-height: 42px; padding: 4px 6px; }
+
+  .ht-head { margin-bottom: 0.85rem; }
+  .ht-title { font-size: 1rem; }
+  .ht-intro { font-size: 0.9rem; }
+  .ht-result { padding: 0.85rem 0.9rem; }
+  .ht-list li { font-size: 0.88rem; }
+
+  /* Síntomas: dos columnas, texto a la izquierda */
+  .ht-symptoms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ht-panel .ht-symptoms > button { text-align: left; font-size: 13px; padding: 8px 10px; min-height: 52px; }
+}

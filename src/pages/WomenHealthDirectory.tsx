@@ -2,16 +2,16 @@
 // los «momentos» de Quirónsalud: Buscar embarazo · Embarazo · Después del parto)
 // encima del directorio de Ginecología y Obstetricia. Mismo patrón que
 // Nutrición y Psicología: el directorio compartido con prefijo de especialidad.
-import { HeartPulse, Calculator } from 'lucide-react';
+import { HeartPulse, Calculator, Sprout, Baby, HeartHandshake } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import Doctors from '@/pages/Doctors';
 import HealthToolsPanel, { type ToolGroup } from '@/components/healthTools/HealthToolsPanel';
 import { useHealthToolsText } from '@/lib/healthTools/i18n';
 
 const WOMEN_GROUPS: ToolGroup[] = [
-  { id: 'fertilidad', labelKey: 'stages.fertility', tools: ['fertilityCheck', 'ovulation'] },
-  { id: 'embarazo', labelKey: 'stages.pregnancy', tools: ['dueDate', 'pregnancyWeight'] },
-  { id: 'posparto', labelKey: 'stages.postpartum', tools: ['epds'] },
+  { id: 'fertilidad', labelKey: 'stages.fertility', icon: Sprout, tools: ['fertilityCheck', 'ovulation'] },
+  { id: 'embarazo', labelKey: 'stages.pregnancy', icon: Baby, tools: ['dueDate', 'pregnancyWeight'] },
+  { id: 'posparto', labelKey: 'stages.postpartum', icon: HeartHandshake, tools: ['epds'] },
 ];
 
 export default function WomenHealthDirectory() {

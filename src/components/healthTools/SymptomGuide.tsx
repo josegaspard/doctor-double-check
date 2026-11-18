@@ -1,7 +1,8 @@
 // Orientador de salud: síntoma o zona → especialidad sugerida → directorio.
 // Las especialidades son las de la base (lib/specialties.ts); el enlace usa la
 // búsqueda del directorio (?search=), que encuentra todas sus variantes.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useNarrow } from './useNarrow';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Siren } from 'lucide-react';
 import type { HT } from '@/lib/healthTools/i18n';
@@ -53,6 +54,11 @@ export function SymptomGuideTool({ ht }: { ht: HT }) {
   const [symptom, setSymptom] = useState<string | null>(null);
   const route = symptom ? SYMPTOMS[symptom][who] : null;
   const label = useSpecialtyLabel();
+  const narrow = useNarrow();
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (symptom && narrow) resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [symptom, who, narrow]);
   return (
     <div className="ht-tool">
       <ToolHead title={ht('guide.title')} intro={ht('guide.intro')} />
@@ -73,7 +79,7 @@ export function SymptomGuideTool({ ht }: { ht: HT }) {
         ))}
       </div>
       {route && (
-        <div className="ht-result ht-tone-ok" role="status" aria-live="polite">
+        <div className="ht-result ht-tone-ok" role="status" aria-live="polite" ref={resultRef}>
           <div className="ht-result-kicker">{ht('guide.suggestion')}</div>
           <div className="ht-result-main"><span className="ht-result-value ht-result-value-sm">{label(route.main)}</span></div>
           <div className="ht-result-body">

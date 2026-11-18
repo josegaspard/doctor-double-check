@@ -10,10 +10,10 @@ import { useHealthToolsText } from '@/lib/healthTools/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const ALL_TOOL_GROUPS: ToolGroup[] = [
-  { id: 'nutricion', labelKey: 'hub.groupNutrition', tools: ['bmi', 'idealWeight', 'calories', 'waist', 'water'] },
-  { id: 'mujer', labelKey: 'hub.groupWomen', tools: ['fertilityCheck', 'ovulation', 'dueDate', 'pregnancyWeight', 'epds'] },
-  { id: 'mente', labelKey: 'hub.groupMind', tools: ['phq9', 'gad7'] },
-  { id: 'orientador', labelKey: 'hub.groupGuide', tools: ['guide'] },
+  { id: 'nutricion', labelKey: 'hub.groupNutrition', icon: Apple, tools: ['bmi', 'idealWeight', 'calories', 'waist', 'water'] },
+  { id: 'mujer', labelKey: 'hub.groupWomen', icon: HeartPulse, tools: ['fertilityCheck', 'ovulation', 'dueDate', 'pregnancyWeight', 'epds'] },
+  { id: 'mente', labelKey: 'hub.groupMind', icon: Brain, tools: ['phq9', 'gad7'] },
+  { id: 'orientador', labelKey: 'hub.groupGuide', icon: Compass, tools: ['guide'] },
 ];
 
 export default function HealthTools() {

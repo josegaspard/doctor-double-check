@@ -205,6 +205,7 @@ export const es = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "Ver todas las preguntas",
     period2w: 'Durante las últimas 2 semanas, ¿con qué frecuencia te han molestado estos problemas?',
     period7d: 'Durante los últimos 7 días…',
     opt0: 'Ningún día',

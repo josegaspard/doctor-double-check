@@ -204,6 +204,7 @@ export const zh: HealthToolsDict = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "查看全部问题",
     period2w: '在过去的两周里，您生活中以下症状出现的频率有多少？',
     period7d: '在过去的 7 天里……',
     opt0: '完全不会',

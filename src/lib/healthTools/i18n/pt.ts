@@ -204,6 +204,7 @@ export const pt: HealthToolsDict = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "Ver todas as perguntas",
     period2w: 'Durante as últimas 2 semanas, com que frequência você foi incomodado/a por qualquer um dos problemas abaixo?',
     period7d: 'Nos últimos 7 dias…',
     opt0: 'Nenhuma vez',

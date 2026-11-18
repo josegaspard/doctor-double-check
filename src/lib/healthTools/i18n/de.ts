@@ -204,6 +204,7 @@ export const de: HealthToolsDict = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "Alle Fragen ansehen",
     period2w: 'Wie oft fühltest du dich im Verlauf der letzten 2 Wochen durch die folgenden Beschwerden beeinträchtigt?',
     period7d: 'In den letzten 7 Tagen …',
     opt0: 'Überhaupt nicht',

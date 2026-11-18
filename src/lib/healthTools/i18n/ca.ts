@@ -204,6 +204,7 @@ export const ca: HealthToolsDict = {
     source: "Institute of Medicine (IOM, 2009)",
   },
   quiz: {
+    review: "Veure totes les preguntes",
     period2w: "Durant les últimes 2 setmanes, amb quina freqüència t'han molestat aquests problemes?",
     period7d: "Durant els últims 7 dies…",
     opt0: "Mai",
