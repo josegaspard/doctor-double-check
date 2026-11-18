@@ -7,9 +7,12 @@
 //
 // La pestaña abierta va en la URL (?h=imc) para poder enlazarla, y respeta los
 // demás parámetros de la página (el directorio usa ?search y ?specialty).
-import { useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
+import {
+  Activity, Baby, CalendarHeart, Compass, Flame, GlassWater, HeartHandshake, ListChecks, Ruler, Scale, Smile, Target, Weight,
+  type LucideIcon,
+} from 'lucide-react';
 import { useHealthToolsText, type HT } from '@/lib/healthTools/i18n';
 import {
   BmiTool, CaloriesTool, IdealWeightTool, WaistTool, WaterTool, initialBody, type BodyState,
@@ -33,7 +36,13 @@ export const TOOL_SLUG: Record<ToolId, string> = {
 };
 const SLUG_TOOL = Object.fromEntries(Object.entries(TOOL_SLUG).map(([k, v]) => [v, k])) as Record<string, ToolId>;
 
-export interface ToolGroup { id: string; labelKey: string; tools: ToolId[] }
+export interface ToolGroup { id: string; labelKey: string; tools: ToolId[]; icon?: LucideIcon }
+
+const TOOL_ICON: Record<ToolId, LucideIcon> = {
+  bmi: Scale, idealWeight: Target, calories: Flame, waist: Ruler, water: GlassWater,
+  fertilityCheck: ListChecks, ovulation: CalendarHeart, dueDate: Baby, pregnancyWeight: Weight,
+  phq9: Smile, gad7: Activity, epds: HeartHandshake, guide: Compass,
+};
 
 interface Props {
   title: string;
@@ -86,6 +95,16 @@ export default function HealthToolsPanel({ title, subtitle, icon: Icon, tools, g
     setParams(next, { replace: true, preventScrollReset: true });
   };
 
+  // En móvil la fila de pestañas se desliza: la activa se trae a la vista.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = tabsRef.current;
+    const btn = row?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!row || !btn) return;
+    const left = btn.offsetLeft - (row.clientWidth - btn.offsetWidth) / 2;
+    row.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [active]);
+
   const Tool = RENDER[active];
   return (
     <section className={`pro-card bg-card ht-panel ${className}`} aria-label={title}>
@@ -98,7 +117,7 @@ export default function HealthToolsPanel({ title, subtitle, icon: Icon, tools, g
       </div>
 
       {groups && (
-        <div className="ht-stages" role="tablist" aria-label={title}>
+        <div className="ht-stages" role="tablist" aria-label={title} data-count={groups.length}>
           {groups.map(g => (
             <button
               key={g.id}
@@ -108,14 +127,15 @@ export default function HealthToolsPanel({ title, subtitle, icon: Icon, tools, g
               className={activeGroup?.id === g.id ? 'is-active' : ''}
               onClick={() => open(g.tools[0])}
             >
-              {ht(g.labelKey)}
+              {g.icon && <g.icon className="ht-stage-icon" aria-hidden="true" />}
+              <span>{ht(g.labelKey)}</span>
             </button>
           ))}
         </div>
       )}
 
       {visible.length > 1 && (
-        <div className="ht-tabs" role="tablist" aria-label={title}>
+        <div className="ht-tabs" role="tablist" aria-label={title} ref={tabsRef}>
           {visible.map(id => (
             <button
               key={id}
@@ -127,13 +147,14 @@ export default function HealthToolsPanel({ title, subtitle, icon: Icon, tools, g
               className={active === id ? 'is-active' : ''}
               onClick={() => open(id)}
             >
-              {ht(`tabs.${id}`)}
+              {(() => { const I = TOOL_ICON[id]; return <I className="ht-tab-icon" aria-hidden="true" />; })()}
+              <span>{ht(`tabs.${id}`)}</span>
             </button>
           ))}
         </div>
       )}
 
-      <div id="ht-tabpanel" role="tabpanel" aria-labelledby={`ht-tab-${active}`} className="ht-tabpanel">
+      <div id="ht-tabpanel" role="tabpanel" aria-labelledby={`ht-tab-${active}`} className="ht-tabpanel" key={active}>
         <Tool ht={ht} locale={locale} body={body} setBody={setBody} cycleState={cycleState} setCycleState={setCycleState} />
       </div>
     </section>

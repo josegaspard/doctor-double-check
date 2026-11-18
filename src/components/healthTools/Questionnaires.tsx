@@ -6,9 +6,10 @@
 // cualquier respuesta distinta de «nunca», se enseña ARRIBA la caja de crisis
 // con la Línea de la Vida y el acceso a médicos disponibles ahora, aunque no
 // estén contestadas las demás.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LifeBuoy, Phone } from 'lucide-react';
+import { ArrowLeft, LifeBuoy, ListChecks, Phone } from 'lucide-react';
+import { useNarrow } from './useNarrow';
 import { allAnswered, epdsLevel, gad7Severity, phq9Severity, sum } from '@/lib/healthTools/calc';
 import type { HT } from '@/lib/healthTools/i18n';
 import { ResultBox, ToolFooter, ToolHead, type Tone } from './parts';
@@ -40,47 +41,89 @@ function Quiz({
   result: (score: number) => { tone: Tone; label: string; msg: string }; source: string; cta: string;
 }) {
   const [answers, setAnswers] = useState<(number | null)[]>(() => items.map(() => null));
+  // Celular: una pregunta por pantalla con avance automático; computadora: la lista entera.
+  const narrow = useNarrow();
+  const [step, setStep] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
   const done = allAnswered(answers);
   const score = sum(answers);
   const crisis = (answers[crisisIndex] ?? 0) > 0;
   const r = done ? result(score) : null;
   const answered = answers.filter(a => a !== null).length;
+  const stepMode = narrow && !showAll && !done;
+  const answer = (i: number, v: number) => {
+    setAnswers(a => a.map((x, k) => (k === i ? v : x)));
+    if (stepMode) window.setTimeout(() => setStep(st => Math.min(items.length - 1, Math.max(st, i + 1))), 160);
+  };
+  const reset = () => { setAnswers(items.map(() => null)); setStep(0); setShowAll(false); };
+  // Al terminar en el celular, el resultado se trae a la vista.
+  useEffect(() => {
+    if (done && narrow) resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [done, narrow]);
+
+  const renderItem = (it: Item, i: number, cls = '') => (
+    <li key={i} className={`${answers[i] !== null ? 'is-answered' : ''} ${cls}`}>
+      <p className="ht-q"><span className="ht-qn">{i + 1}</span>{it.q}</p>
+      <div className={`ht-opts${stepMode ? ' ht-opts-col' : ''}`} role="radiogroup" aria-label={it.q}>
+        {it.options.map((o, j) => (
+          <button
+            key={j}
+            type="button"
+            role="radio"
+            aria-checked={answers[i] === o.score}
+            className={answers[i] === o.score ? 'is-active' : ''}
+            onClick={() => answer(i, o.score)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </li>
+  );
+
   return (
     <div className="ht-tool">
       <ToolHead title={title} intro={intro} />
       {crisis && <CrisisBox ht={ht} />}
       <p className="ht-period">{period}</p>
-      <ol className="ht-quiz">
-        {items.map((it, i) => (
-          <li key={i} className={answers[i] !== null ? 'is-answered' : ''}>
-            <p className="ht-q"><span className="ht-qn">{i + 1}</span>{it.q}</p>
-            <div className="ht-opts" role="radiogroup" aria-label={it.q}>
-              {it.options.map((o, j) => (
-                <button
-                  key={j}
-                  type="button"
-                  role="radio"
-                  aria-checked={answers[i] === o.score}
-                  className={answers[i] === o.score ? 'is-active' : ''}
-                  onClick={() => setAnswers(a => a.map((v, k) => (k === i ? o.score : v)))}
-                >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </li>
-        ))}
-      </ol>
+      {stepMode ? (
+        <div className="ht-stepper">
+          <div className="ht-stepper-top">
+            <span className="ht-stepper-count">{ht('fertility.stepOf', { n: step + 1, total: items.length })}</span>
+            <div className="ht-stepper-bar" aria-hidden="true"><span style={{ width: `${(answered / items.length) * 100}%` }} /></div>
+          </div>
+          <ol className="ht-quiz ht-quiz-step" start={step + 1}>{renderItem(items[step], step)}</ol>
+          <div className="ht-step-nav">
+            {step > 0 && (
+              <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setStep(st => st - 1)}>
+                <ArrowLeft className="w-4 h-4" aria-hidden="true" />{ht('fertility.back')}
+              </button>
+            )}
+            <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setShowAll(true)}>
+              <ListChecks className="w-4 h-4" aria-hidden="true" />{ht('quiz.review')}
+            </button>
+          </div>
+        </div>
+      ) : (!narrow || showAll) ? (
+        <ol className="ht-quiz">{items.map((it, i) => renderItem(it, i))}</ol>
+      ) : null}
+      <div ref={resultRef} />
       {r ? (
         <ResultBox tone={r.tone} textValue kicker={ht('quiz.score', { s: score, max })} value={r.label}>
           <p>{r.msg}</p>
           <p className="ht-muted">{ht('quiz.notDiagnosis')}</p>
         </ResultBox>
       ) : (
-        <div className="ht-empty">{ht('common.answerAll', { n: answered, total: items.length })}</div>
+        !stepMode && <div className="ht-empty">{ht('common.answerAll', { n: answered, total: items.length })}</div>
       )}
       <div className="ht-row-end">
-        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setAnswers(items.map(() => null))}>{ht('common.reset')}</button>
+        {narrow && done && !showAll && (
+          <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={() => setShowAll(true)}>
+            <ListChecks className="w-4 h-4" aria-hidden="true" />{ht('quiz.review')}
+          </button>
+        )}
+        <button type="button" className="pro-btn pro-btn-outline pro-btn-sm" onClick={reset}>{ht('common.reset')}</button>
       </div>
       <p className="ht-help">{ht('panel.privacy')}</p>
       <ToolFooter ht={ht} source={source} cta={{ href: cta }} />

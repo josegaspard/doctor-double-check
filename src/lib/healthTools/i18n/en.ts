@@ -204,6 +204,7 @@ export const en: HealthToolsDict = {
     source: 'Institute of Medicine (IOM, 2009)',
   },
   quiz: {
+    review: "See all questions",
     period2w: 'Over the last 2 weeks, how often have you been bothered by any of the following problems?',
     period7d: 'In the past 7 days…',
     opt0: 'Not at all',
