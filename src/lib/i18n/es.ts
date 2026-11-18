@@ -800,6 +800,8 @@ export const es = {
   },
   // Navigation
   nav: {
+    healthTools: "Herramientas de salud",
+    healthToolsShort: "Herramientas",
     lives: 'Lives',
     congresses: 'Congresos',
     recordings: 'Contenido Premium',

@@ -3,9 +3,12 @@ import { ArrowLeft, Heart, MessageSquare, Video, FileText, Shield, Clock, Smartp
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { Apple, Brain, Calculator, Compass, HeartPulse } from 'lucide-react';
+import { useHealthToolsText } from '@/lib/healthTools/i18n';
 
 export default function ForPatients() {
   const { t } = useLanguage();
+  const { ht } = useHealthToolsText();
   // Pacientes en "Próximamente" (cliente 2026-08-17): esta página sigue explicando
   // lo que tendrán, pero deja claro arriba que todavía no pueden entrar.
   const { toggles } = useSiteToggles();
@@ -47,6 +50,14 @@ export default function ForPatients() {
       title: t('forPatientsPage.benefits.mobileApp.title'),
       description: t('forPatientsPage.benefits.mobileApp.description'),
     },
+  ];
+
+  // Herramientas de salud (18-nov-2026): cada tarjeta abre su calculadora dentro de su sección.
+  const tools = [
+    { icon: Apple, title: ht('hub.groupNutrition'), description: ht('hub.groupNutritionSub'), href: '/nutricion?h=imc' },
+    { icon: HeartPulse, title: ht('hub.groupWomen'), description: ht('hub.groupWomenSub'), href: '/salud-mujer?h=fecha-de-parto' },
+    { icon: Brain, title: ht('hub.groupMind'), description: ht('hub.groupMindSub'), href: '/psicologia?h=animo' },
+    { icon: Compass, title: ht('hub.groupGuide'), description: ht('hub.groupGuideSub'), href: '/herramientas?h=orientador' },
   ];
 
   const howItWorks = [
@@ -115,6 +126,35 @@ export default function ForPatients() {
                 <p className="text-muted-foreground text-xs sm:text-sm">{benefit.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Herramientas de salud */}
+      <section className="py-12 sm:py-20 bg-background border-b border-border">
+        <div className="container mx-auto px-4 sm:px-6">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground mb-3 sm:mb-4">
+            {ht('hub.title')}
+          </h2>
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-6 sm:mb-10 text-sm sm:text-base">
+            {ht('hub.subtitle')}
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {tools.map(tool => (
+              <Link key={tool.href} to={tool.href} className="bg-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-border shadow-sm hover:shadow-lg hover:border-primary/30 transition-all flex flex-col">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-secondary/10 flex items-center justify-center mb-3 sm:mb-4 ring-1 ring-secondary/10">
+                  <tool.icon className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-2">{tool.title}</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm flex-1">{tool.description}</p>
+                <span className="mt-3 text-sm font-semibold text-secondary">{ht('hub.open')} →</span>
+              </Link>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link to="/herramientas" className="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline">
+              <Calculator className="w-4 h-4" />{ht('common.allTools')}
+            </Link>
           </div>
         </div>
       </section>

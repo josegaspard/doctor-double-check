@@ -771,6 +771,8 @@ export const zh = {
     vendorDashError: '错误',
   },
   "nav": {
+    "healthTools": "健康工具",
+    "healthToolsShort": "工具",
     "lives": "直播",
     "recordings": "高级内容",
     "recordingsShort": "内容",

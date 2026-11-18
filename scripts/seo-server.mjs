@@ -36,6 +36,7 @@ const APP_ROUTES = [
   '/events', '/for-doctors', '/foro', '/for-patients', '/for-residents', '/help', '/hospital-locator', '/live/:p',
   '/lives', '/login', '/marketplace', '/medical-history', '/medical-record', '/medical-supplies', '/meetings',
   '/my-appointments', '/my-books', '/my-orders', '/news', '/news/:p', '/notifications', '/nutricion', '/nutrition',
+  '/salud-mujer', '/womens-health', '/herramientas', '/herramientas-de-salud', '/health-tools',
   '/onboarding', '/order-success', '/prescriptions', '/prescriptions/*', '/privacy', '/profile', '/psicologia',
   '/psychology', '/recording/:p', '/recordings', '/register', '/registro', '/report-issue', '/reset-password',
   '/residentes/lo-que-debo-saber', '/resident-groups', '/security', '/settings', '/success-stories', '/terms',
