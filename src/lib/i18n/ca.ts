@@ -770,6 +770,8 @@ export const ca = {
     vendorDashError: 'Error',
   },
   "nav": {
+    "healthTools": "Eines de salut",
+    "healthToolsShort": "Eines",
     "lives": "Lives",
     "recordings": "Contingut Premium",
     "recordingsShort": "Contingut",

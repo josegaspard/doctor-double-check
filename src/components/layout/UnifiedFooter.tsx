@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdConfig } from '@/hooks/useAds';
 import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react';
 import { DmcaBadge } from '@/components/layout/DmcaBadge';
+import { navLabel } from '@/lib/healthTools/labels';
 import logoWhite from '@/assets/logo-medical-masters-white-sm.webp';
 
 interface Props {
@@ -132,7 +133,14 @@ export function UnifiedFooter({ variant }: Props) {
   const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
     : footerLinks.resources;
-  const resourcesLinks = resourcesLinksRaw.map(translateLink);
+  // Herramientas de salud y Salud de la mujer arriba de Recursos (18-nov-2026),
+  // para todos los roles; etiqueta en los 8 idiomas desde lib/healthTools/labels.
+  const resourcesWithTools = [
+    { label: navLabel('healthTools', language), href: '/herramientas' },
+    { label: navLabel('womenHealth', language), href: '/salud-mujer' },
+    ...resourcesLinksRaw.filter(l => l.href !== '/herramientas' && l.href !== '/salud-mujer'),
+  ];
+  const resourcesLinks = resourcesWithTools.map(translateLink);
 
   // Garantizar SIEMPRE el enlace de Términos y Condiciones en el footer
   // (cliente 2026-06-29), aunque un override de site_settings lo haya quitado.

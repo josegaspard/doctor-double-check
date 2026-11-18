@@ -30,6 +30,7 @@ import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { NewConsultationDialog } from '@/components/doctor/NewConsultationDialog';
 import { PatientDocumentsPanel } from '@/components/doctor/patient/PatientDocumentsPanel';
 import { MyNotesWidget } from '@/components/doctor/MyNotesWidget';
+import BmiChip from '@/components/healthTools/BmiChip';
 import { useAppDateFormat } from '@/lib/dateFormat';
 import { fill, initialsOf } from '@/lib/proFormat';
 
@@ -361,6 +362,12 @@ export default function DoctorPatientDetail() {
                             </div>
                           ))}
                       </dl>
+                    )}
+                    {/* IMC calculado del expediente + acceso a las calculadoras (18-nov-2026). */}
+                    {data.clinical && (
+                      <div className="mt-3">
+                        <BmiChip heightCm={data.clinical.height_cm} weightKg={data.clinical.weight_kg} showToolsLink />
+                      </div>
                     )}
                     {data.vaccinations.length > 0 && (
                       <p className="text-xs pro-muted mt-3">{fill(t('mm2.patients.history.vaccinationsCount'), { n: data.vaccinations.length })}</p>

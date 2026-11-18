@@ -164,6 +164,8 @@ const AdvertiserDashboard = React.lazy(() => import("./pages/AdvertiserDashboard
 const MedicalEducation = React.lazy(() => import("./pages/MedicalEducation"));
 const PsychologyDirectory = React.lazy(() => import("./pages/PsychologyDirectory"));
 const NutritionDirectory = React.lazy(() => import("./pages/NutritionDirectory"));
+const WomenHealthDirectory = React.lazy(() => import("./pages/WomenHealthDirectory"));
+const HealthTools = React.lazy(() => import("./pages/HealthTools"));
 const ForResidents = React.lazy(() => import("./pages/ForResidents"));
 const Tutoriales = React.lazy(() => import("./pages/Tutoriales"));
 const ResidenteLoQueDeboSaber = React.lazy(() => import("./pages/ResidenteLoQueDeboSaber"));
@@ -397,6 +399,12 @@ const App = () => {
                       <Route path="/psicologia" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<Navigate to="/nutricion" replace />} />
                       <Route path="/nutricion" element={<NutritionDirectory />} />
+                      {/* Herramientas de salud (18-nov-2026): calculadoras y cuestionarios en su sección y todas juntas en /herramientas. */}
+                      <Route path="/salud-mujer" element={<WomenHealthDirectory />} />
+                      <Route path="/womens-health" element={<Navigate to="/salud-mujer" replace />} />
+                      <Route path="/herramientas" element={<HealthTools />} />
+                      <Route path="/herramientas-de-salud" element={<Navigate to="/herramientas" replace />} />
+                      <Route path="/health-tools" element={<Navigate to="/herramientas" replace />} />
                       <Route path="/for-residents" element={<ForResidents />} />
                       <Route path="/tutoriales" element={<Tutoriales />} />
                       <Route path="/tutorials" element={<Navigate to="/tutoriales" replace />} />

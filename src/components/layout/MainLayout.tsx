@@ -50,6 +50,7 @@ import {
   ChevronDown,
   BookOpen,
   PlayCircle,
+  Calculator,
 } from 'lucide-react';
 import { MobileBackHeader } from '@/components/layout/MobileBackHeader';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -122,6 +123,8 @@ const doctorMoreNav: DoctorNavItem[] = [
   doctorDirectorioNav,
   ...(FEATURE_FLAGS.marketplaceFeeModel ? [doctorMarketplaceNav] : []),
   doctorNavOf('aprendizaje'),
+  // Herramientas de salud (18-nov-2026): calculadoras para usar en consulta.
+  { labelKey: 'nav.healthTools', href: '/herramientas', icon: Calculator, roles: ['doctor'], sectionId: 'herramientas', navId: 'herramientas' },
 ];
 const doctorNav: DoctorNavItem[] = [...doctorPrimaryNav, ...doctorMoreNav];
 // Móvil: cuatro fijas; Consultas, Lives y contenidos y Aprendizaje van en el cajón (Cuenta, en su bloque).
@@ -140,6 +143,9 @@ const navItems: NavItem[] = [
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
     : []),
   { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'resident', 'admin'], toggleKey: 'show_news_section' },
+  // Herramientas de salud (18-nov-2026): en la píldora del visitante y en «Más» de residente y admin.
+  // El paciente las tiene en Para pacientes y en el pie (su píldora ya va llena a 1440 px).
+  { labelKey: 'nav.healthTools', shortLabelKey: 'nav.healthToolsShort', href: '/herramientas', icon: Calculator, roles: ['visitor', 'resident', 'admin'] },
   { labelKey: 'nav.prescriptions', href: '/prescriptions', icon: FileText, roles: ['patient'], toggleKey: 'enable_prescriptions' },
   { labelKey: 'nav.medicalRecord', href: '/medical-record', icon: FileText, roles: ['patient', 'resident'] },
   { labelKey: 'nav.myAppointments', href: '/my-appointments', icon: Calendar, roles: ['patient', 'resident'] },
@@ -349,6 +355,7 @@ const MainLayout = React.forwardRef<HTMLDivElement, { children: React.ReactNode 
     if (item.navId === 'lives') return onLives;
     if (item.navId === 'directorio') return location.pathname === '/doctors';
     if (item.navId === 'marketplace') return location.pathname.startsWith('/marketplace');
+    if (item.navId === 'herramientas') return location.pathname === '/herramientas';
     if (item.sectionId === 'contenido') return activeSection === 'contenido' && !onLives;
     return item.sectionId ? activeSection === item.sectionId : isActiveHref(item.href);
   };

@@ -817,6 +817,8 @@ export const en = {
     admFee89: "Cancel",
   },
   nav: {
+    healthTools: "Health tools",
+    healthToolsShort: "Tools",
     lives: "Lives",
     congresses: "Congresses",
     recordings: "Premium Content",

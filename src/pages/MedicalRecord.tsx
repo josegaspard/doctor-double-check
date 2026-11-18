@@ -30,6 +30,7 @@ import {
   CloudFog,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import BmiChip from '@/components/healthTools/BmiChip';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'No sé'];
 
@@ -621,6 +622,8 @@ export default function MedicalRecord() {
                     <Input type="number" placeholder="70" value={data.weight_kg} onChange={e => update('weight_kg', e.target.value)} />
                   </div>
                 </div>
+                {/* IMC al momento con la estatura y el peso que escribe el paciente (18-nov-2026). */}
+                <BmiChip heightCm={data.height_cm} weightKg={data.weight_kg} showToolsLink />
 
                 <div>
                   <Label className="text-xs">{t('medicalRecordPage.personal.allergies')}</Label>

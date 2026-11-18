@@ -817,6 +817,8 @@ export const de = {
     admFee89: "Stornieren",
   },
   nav: {
+    healthTools: "Gesundheitstools",
+    healthToolsShort: "Tools",
     lives: "Lives",
     congresses: "Kongresse",
     recordings: "Premium-Inhalte",

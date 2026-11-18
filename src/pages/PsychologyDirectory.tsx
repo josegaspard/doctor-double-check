@@ -1,7 +1,9 @@
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Doctors from '@/pages/Doctors';
-import { Brain } from 'lucide-react';
+import { Brain, ClipboardList } from 'lucide-react';
+import HealthToolsPanel from '@/components/healthTools/HealthToolsPanel';
+import { useHealthToolsText } from '@/lib/healthTools/i18n';
 
 // Directorio de Psicología (11-sep-2026): atajo de Comunidad > Descubrir > Médicos.
 // Antes traía su PROPIA lista y comparaba la especialidad EXACTA contra el RPC
@@ -14,6 +16,7 @@ import { Brain } from 'lucide-react';
 // pierde, se gana el filtro que antes fallaba.
 export default function PsychologyDirectory() {
   const { t } = useLanguage();
+  const { ht } = useHealthToolsText();
   return (
     <MainLayout>
       <div className="pro-container pro-page">
@@ -26,6 +29,13 @@ export default function PsychologyDirectory() {
             <p className="pro-page-sub">{t('doctors.psychologyHero')}</p>
           </div>
         </div>
+        {/* Cuestionarios validados de ánimo y ansiedad (18-nov-2026). */}
+        <HealthToolsPanel
+          title={ht('panel.mindTitle')}
+          subtitle={ht('panel.mindSub')}
+          icon={ClipboardList}
+          tools={['phq9', 'gad7']}
+        />
         <Doctors embedded specialtyPrefix="Psicología" />
       </div>
     </MainLayout>
