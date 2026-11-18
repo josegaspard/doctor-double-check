@@ -133,13 +133,14 @@ export function UnifiedFooter({ variant }: Props) {
   const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
     : footerLinks.resources;
-  // Herramientas de salud y Salud de la mujer arriba de Recursos (18-nov-2026),
-  // para todos los roles; etiqueta en los 8 idiomas desde lib/healthTools/labels.
-  const resourcesWithTools = [
-    { label: navLabel('healthTools', language), href: '/herramientas' },
-    { label: navLabel('womenHealth', language), href: '/salud-mujer' },
-    ...resourcesLinksRaw.filter(l => l.href !== '/herramientas' && l.href !== '/salud-mujer'),
-  ];
+  // Herramientas de salud y Salud de la mujer arriba de Recursos (18-nov-2026);
+  // etiqueta en los 8 idiomas desde lib/healthTools/labels.
+  // Solo con sesión iniciada: fuera de la app no se ven (Jose, 18-nov).
+  const inApp = !!role && role !== 'visitor';
+  const resourcesClean = resourcesLinksRaw.filter(l => l.href !== '/herramientas' && l.href !== '/salud-mujer');
+  const resourcesWithTools = inApp
+    ? [{ label: navLabel('healthTools', language), href: '/herramientas' }, { label: navLabel('womenHealth', language), href: '/salud-mujer' }, ...resourcesClean]
+    : resourcesClean;
   const resourcesLinks = resourcesWithTools.map(translateLink);
 
   // Garantizar SIEMPRE el enlace de Términos y Condiciones en el footer

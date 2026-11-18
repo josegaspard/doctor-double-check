@@ -399,10 +399,10 @@ const App = () => {
                       <Route path="/psicologia" element={<PsychologyDirectory />} />
                       <Route path="/nutrition" element={<Navigate to="/nutricion" replace />} />
                       <Route path="/nutricion" element={<NutritionDirectory />} />
-                      {/* Herramientas de salud (18-nov-2026): calculadoras y cuestionarios en su sección y todas juntas en /herramientas. */}
-                      <Route path="/salud-mujer" element={<WomenHealthDirectory />} />
+                      {/* Herramientas de salud (18-nov-2026): SOLO dentro de la app, con sesión iniciada (Jose: «nadie puede verlas si no está logueado»). */}
+                      <Route path="/salud-mujer" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><WomenHealthDirectory /></AccessGuard>} />
                       <Route path="/womens-health" element={<Navigate to="/salud-mujer" replace />} />
-                      <Route path="/herramientas" element={<HealthTools />} />
+                      <Route path="/herramientas" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><HealthTools /></AccessGuard>} />
                       <Route path="/herramientas-de-salud" element={<Navigate to="/herramientas" replace />} />
                       <Route path="/health-tools" element={<Navigate to="/herramientas" replace />} />
                       <Route path="/for-residents" element={<ForResidents />} />

@@ -105,8 +105,6 @@ export const PUBLIC_PAGES: PublicPage[] = [
   { path: '/doctors', label: 'Directorio de médicos', group: 'Directorios', title: 'Explorar doctores', description: 'Encuentra y sigue a los mejores especialistas médicos' },
   { path: '/psicologia', label: 'Psicología', group: 'Directorios', title: 'Directorio de Psicología', description: 'Encuentra especialistas en salud mental y bienestar emocional' },
   { path: '/nutricion', label: 'Nutrición', group: 'Directorios', title: 'Directorio de Nutrición', description: 'Encuentra especialistas en nutrición y bienestar' },
-  { path: '/salud-mujer', label: 'Salud de la mujer', group: 'Directorios', title: 'Salud de la mujer: calculadoras y ginecólogos', description: 'Calcula tus días fértiles, tu fecha probable de parto y el peso recomendado en el embarazo, haz el test de fertilidad y encuentra ginecólogos certificados.' },
-  { path: '/herramientas', label: 'Herramientas de salud', group: 'Directorios', title: 'Herramientas de salud: IMC, calorías, embarazo y bienestar', description: 'Calculadora de IMC y peso saludable, calorías, cintura, agua, fecha de parto, días fértiles y cuestionarios validados de ánimo y ansiedad.' },
   { path: '/emergency', label: 'Atención inmediata', group: 'Directorios', title: 'Atención inmediata', description: 'Doctores disponibles ahora mismo para orientación médica' },
   { path: '/hospital-locator', label: 'Localiza un hospital', group: 'Directorios', title: 'Localiza un hospital', description: 'Directorio de hospitales y clínicas en México' },
   { path: '/lives', label: 'Lives', group: 'Contenido', title: 'Lives: ahora en directo' },
@@ -142,9 +140,6 @@ export const ALIASES: Record<string, string> = {
   '/psychology': '/psicologia',
   '/nutrition': '/nutricion',
   '/emergencia': '/emergency',
-  '/womens-health': '/salud-mujer',
-  '/herramientas-de-salud': '/herramientas',
-  '/health-tools': '/herramientas',
 };
 
 // Zona privada de la app (sesión, pagos, expediente, paneles). Nunca indexable,
@@ -157,6 +152,8 @@ export const PRIVATE_PREFIXES = [
   '/settings', '/book/', '/vendor/', '/verification-pending', '/reset-password',
   '/onboarding', '/notifications', '/video-call', '/prescriptions', '/verificar-receta',
   '/email-confirmed', '/advertiser/', '/access-denied',
+  // Herramientas de salud (18-nov-2026): solo dentro de la app, con sesión.
+  '/herramientas', '/salud-mujer', '/health-tools', '/womens-health',
 ];
 
 export interface EntityTypeInfo {
