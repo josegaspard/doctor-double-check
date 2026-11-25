@@ -73,6 +73,7 @@ function reverseGeocode(lat: number, lng: number): string {
 }
 
 import { useSpecialties } from '@/hooks/useSpecialties';
+import { track } from '@/lib/analytics';
 
 interface ValidationErrors {
   specialty?: string;
@@ -773,6 +774,10 @@ export default function Onboarding() {
         .eq('id', supabaseUser.id);
 
       if (profileError) throw profileError;
+
+      if (selectedRole === 'doctor' || selectedRole === 'resident') {
+        track('doctor_verification_submitted', { role: selectedRole });
+      }
 
       // Delete saved progress since onboarding is complete
       await supabase

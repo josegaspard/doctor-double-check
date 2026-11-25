@@ -32,7 +32,8 @@ export default function VerifyPrescription() {
 
   useEffect(() => {
     const run = async () => {
-      if (!id) { setLoading(false); return; }
+      // Folio que no es un uuid: no existe, sin llamar a la base (antes daba un 400).
+      if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) { setLoading(false); return; }
       const { data, error } = await supabase.rpc('verify_prescription', { p_id: id } as any);
       const row = Array.isArray(data) ? data[0] : data;
       if (!error && row) {

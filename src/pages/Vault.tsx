@@ -49,6 +49,7 @@ import { VaultAuditPanel } from '@/components/vault/VaultAuditPanel';
 import { VaultUploadSimulator } from '@/components/vault/VaultUploadSimulator';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { beginCheckout } from '@/lib/analytics';
 
 const CATEGORIES_MAP = [
   { value: 'Laboratorios', labelKey: 'ads.vaultCatLab' },
@@ -320,6 +321,7 @@ export default function Vault() {
   const handleStripeStorageCheckout = async (extraGB: number, price: number) => {
     setIsStripeProcessing(true);
     try {
+      beginCheckout('storage');
       const { data, error } = await supabase.functions.invoke('create-storage-checkout', {
         body: { extraGB, price },
       });

@@ -35,6 +35,7 @@ import {
   ExternalLink,
   AlertCircle,
 } from 'lucide-react';
+import { beginCheckout } from '@/lib/analytics';
 
 interface DoubleCheckFlowProps {
   doctor: {
@@ -228,6 +229,7 @@ export function DoubleCheckFlow({ doctor, isOpen, onClose }: DoubleCheckFlowProp
     if (!(await ensureBillingProfile())) return;
     setIsStripeProcessing(true);
     try {
+      beginCheckout('double_check');
       const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
         body: {
           doctorId: doctor.userId,

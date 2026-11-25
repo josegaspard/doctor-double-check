@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { money2, fill } from '@/lib/proFormat';
+import { beginCheckout } from '@/lib/analytics';
 
 interface SubscribeButtonProps {
   doctorId: string;
@@ -214,6 +215,7 @@ export function SubscribeButton({
 
     setIsUpgrading(true);
     try {
+      beginCheckout('subscription');
       const { data, error } = await supabase.functions.invoke('create-subscription-checkout', {
         body: { creatorId: doctorId, tier },
       });

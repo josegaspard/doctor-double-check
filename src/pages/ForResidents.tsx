@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Users, BookOpen, Video, MessageSquare, Award, Shield, CheckCircle, Microscope, Share2, PlayCircle, Briefcase, UserPlus } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 
 export default function ForResidents() {
   const { t } = useLanguage();
+  const ct = useCoherenceText();
 
   const benefits = [
     {
@@ -90,7 +92,7 @@ export default function ForResidents() {
               {t('forResidentsPage.hero.titlePart1')} <span className="text-white">{t('forResidentsPage.hero.titlePart2')}</span>
             </h1>
             <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
-              {t('forResidentsPage.hero.subtitle')}
+              {ct('res.heroSub')}
             </p>
             <Link
               to="/app"
@@ -210,7 +212,7 @@ export default function ForResidents() {
         <div className="container mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{t('forResidentsPage.cta.heading')}</h2>
           <p className="text-white mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
-            {t('forResidentsPage.cta.subtitle')}
+            {ct('res.ctaSub')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link

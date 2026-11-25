@@ -5,6 +5,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { useBillingGate, BILLING_REQUIRED_CODE } from '@/components/billing/BillingGate';
+import { beginCheckout } from '@/lib/analytics';
 
 export interface Purchase {
   id: string;
@@ -114,6 +115,7 @@ export function usePurchases() {
     if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     try {
+      beginCheckout('recording');
       const { data, error } = await supabase.functions.invoke('create-recording-checkout', {
         body: { recordingId },
       });
@@ -186,6 +188,7 @@ export function usePurchases() {
     if (!(await ensureBillingProfile())) return { success: false, error: BILLING_REQUIRED_CODE };
 
     try {
+      beginCheckout('content');
       const { data, error } = await supabase.functions.invoke('create-content-checkout', {
         body: { contentId },
       });

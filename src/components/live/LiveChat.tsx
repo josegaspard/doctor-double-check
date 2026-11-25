@@ -16,6 +16,7 @@ import { useConfirmAction } from '@/components/common/ConfirmActionDialog';
 import { money2 } from '@/lib/proFormat';
 import { Send, MessageSquare, User, LogIn, Stethoscope, AlertCircle, Sparkles, Loader2, Wallet, CreditCard, Coins, Pin, Clock } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { beginCheckout } from '@/lib/analytics';
 
 interface PaidNotification {
   id: string;
@@ -277,6 +278,7 @@ export function LiveChat({ liveId, isOwner = false, liveStartedAt }: LiveChatPro
       // Save draft so it's visible when the user returns from Stripe
       sessionStorage.setItem(`chat_draft_${liveId}`, newMessage.trim());
 
+      beginCheckout('live_chat');
       const { data, error } = await supabase.functions.invoke('create-chat-checkout', {
         body: {
           liveId,

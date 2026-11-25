@@ -29,6 +29,7 @@ import { ChatSession } from '@/contexts/ChatContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { beginCheckout } from '@/lib/analytics';
 
 // ¿Alguna de las filas de entitlement (ya filtradas por is_active) sigue vigente?
 // Una fila sin expires_at nunca expira. Tolera null/array vacío.
@@ -224,6 +225,7 @@ export function ChatMessagesPanel({
     setPaywallProcessing(true);
     setPaywallError(null);
     try {
+      beginCheckout('consultation');
       const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
         body: { doctorId: otherDoctorId },
       });

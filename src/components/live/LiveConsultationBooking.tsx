@@ -31,6 +31,7 @@ import { useBillingGate } from '@/components/billing/BillingGate';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PriceDisplay } from '@/components/currency/PriceDisplay';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
+import { beginCheckout } from '@/lib/analytics';
 
 interface LiveConsultationBookingProps {
   open: boolean;
@@ -156,6 +157,7 @@ export function LiveConsultationBooking({
         navigate(`/chat?session=${result.session_id}`);
       } else {
         // Stripe flow
+        beginCheckout('consultation');
         const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
           body: {
             doctorId,

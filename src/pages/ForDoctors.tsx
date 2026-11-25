@@ -1,10 +1,84 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Stethoscope, DollarSign, Calendar, Video, MessageSquare, Users, GraduationCap, Shield, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Stethoscope, DollarSign, Calendar, Video, MessageSquare, Users, GraduationCap, Shield, CheckCircle, Percent, Banknote, Wallet, Store } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useCoherenceText } from '@/lib/coherence/i18n';
+import { getIntlLocale } from '@/lib/dateLocale';
+
+// Condiciones reales de la plataforma (24-nov-2026). Se leen de la base cuando
+// el visitante tiene permiso; si no, quedan los valores vigentes comprobados ese
+// dia en produccion: payout_settings.commission_percentage = 20,
+// minimum_payout_amount = 100 (RPC get_payout_minimum), site_settings/app_config
+// wallet_min = 50 y marketplace_config.fee_rate = 0.10.
+const EXAMPLE_FEE = 800;
+function useDoctorTerms() {
+  const [terms, setTerms] = useState({ commission: 20, minPayout: 100, walletMin: 50, marketFee: 10 });
+  useEffect(() => {
+    let alive = true;
+    const sb = supabase as any;
+    const safe = (q: PromiseLike<any>) => Promise.resolve(q).then((r) => r, () => ({}));
+    Promise.all([
+      safe(sb.from('payout_settings_public').select('commission_percentage').limit(1).maybeSingle()),
+      safe(sb.rpc('get_payout_minimum')),
+      safe(sb.from('site_settings').select('value').eq('id', 'app_config').maybeSingle()),
+      safe(sb.from('marketplace_config').select('fee_rate').limit(1).maybeSingle()),
+    ]).then(([ps, min, app, mk]: any[]) => {
+      if (!alive) return;
+      setTerms((prev) => ({
+        commission: Number(ps?.data?.commission_percentage) || prev.commission,
+        minPayout: Number(min?.data) || prev.minPayout,
+        walletMin: Number(app?.data?.value?.wallet_min) || prev.walletMin,
+        marketFee: mk?.data?.fee_rate != null ? Math.round(Number(mk.data.fee_rate) * 1000) / 10 : prev.marketFee,
+      }));
+    });
+    return () => { alive = false; };
+  }, []);
+  return terms;
+}
+
+function DoctorPricingBlock() {
+  const ct = useCoherenceText();
+  const { language } = useLanguage();
+  const terms = useDoctorTerms();
+  const money = (n: number) => `$${n.toLocaleString(getIntlLocale(language), { maximumFractionDigits: 2 })} MXN`;
+  const net = Math.round(EXAMPLE_FEE * (100 - terms.commission)) / 100;
+  const rows = [
+    { icon: Percent, t: ct('fd.commission', { pct: terms.commission }), d: ct('fd.commissionD', { rest: 100 - terms.commission }) },
+    { icon: Banknote, t: ct('fd.payout', { min: money(terms.minPayout) }), d: ct('fd.payoutD') },
+    { icon: Wallet, t: ct('fd.wallet', { min: money(terms.walletMin) }), d: ct('fd.walletD') },
+    { icon: Store, t: ct('fd.market', { pct: terms.marketFee }), d: ct('fd.marketD') },
+  ];
+  return (
+    <section className="py-12 sm:py-20 bg-card border-b border-border" data-doctor-pricing>
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-xl sm:text-3xl font-bold text-center text-foreground">{ct('fd.pricingTitle')}</h2>
+          <p className="mt-2 mb-6 sm:mb-10 text-center text-sm sm:text-base text-muted-foreground">{ct('fd.pricingSub')}</p>
+          <div className="rounded-2xl bg-[#163a83] text-white px-5 py-4 sm:px-8 sm:py-5 text-center text-base sm:text-xl font-bold mb-4 sm:mb-6" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {ct('fd.example', { fee: money(EXAMPLE_FEE), net: money(net) })}
+          </div>
+          <ul className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            {rows.map(({ icon: Icon, t: title, d }) => (
+              <li key={title} className="flex gap-3 rounded-xl border border-border bg-background p-4">
+                <Icon className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-foreground" style={{ fontVariantNumeric: 'tabular-nums' }}>{title}</h3>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{d}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function ForDoctors() {
   const { t } = useLanguage();
+  const ct = useCoherenceText();
 
   const benefits = [
     {
@@ -63,7 +137,8 @@ export default function ForDoctors() {
               {t('forDoctorsPage.hero.titleStart')} <span className="text-white">{t('forDoctorsPage.hero.titleHighlight')}</span>
             </h1>
             <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
-              {t('forDoctorsPage.hero.subtitle')}
+              {/* Antes: «Unete a la plataforma lider de telemedicina…» (sin respaldo). */}
+              {ct('fd.subtitle')}
             </p>
             <Link
               to="/app"
@@ -99,6 +174,8 @@ export default function ForDoctors() {
           </div>
         </div>
       </section>
+
+      <DoctorPricingBlock />
 
       {/* Features List */}
       <section className="py-12 sm:py-24 bg-background">

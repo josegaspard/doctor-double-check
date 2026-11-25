@@ -2,11 +2,10 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Building2, Shield, Users, BarChart3, Headphones, Globe, CheckCircle, Zap, Briefcase, Factory, Truck, Banknote, Store, RadioTower } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useLandingStats } from '@/hooks/useLandingStats';
+import TrustSignals from '@/components/TrustSignals';
 
 export default function Enterprise() {
   const { t } = useLanguage();
-  const landingStats = useLandingStats();
 
   const features = [
     {
@@ -39,13 +38,6 @@ export default function Enterprise() {
       title: t('enterprisePage.features.apiIntegration.title'),
       description: t('enterprisePage.features.apiIntegration.description'),
     },
-  ];
-
-  const stats = [
-    { value: landingStats.enterprise_absenteeism, label: t('enterprisePage.stats.absenteeism') },
-    { value: landingStats.enterprise_roi, label: t('enterprisePage.stats.roi') },
-    { value: landingStats.enterprise_satisfaction, label: t('enterprisePage.stats.satisfaction') },
-    { value: landingStats.enterprise_support, label: t('enterprisePage.stats.support') },
   ];
 
   // Industrias representativas (placeholders genéricos, sin marcas reales).
@@ -96,17 +88,11 @@ export default function Enterprise() {
         </div>
       </header>
 
-      {/* Stats */}
-      <section className="py-8 sm:py-12 bg-card border-b border-border">
+      {/* 24-nov-2026: fuera «40 % menos ausentismo», «3x ROI», «95 %» y «24/7»
+          (sin estudio ni contrato que los respalde). Señales comprobables en su lugar. */}
+      <section className="py-10 sm:py-14 bg-card border-b border-border">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <p className="text-xl sm:text-3xl font-bold text-secondary">{stat.value}</p>
-                <p className="text-[10px] sm:text-sm text-muted-foreground mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
+          <TrustSignals />
         </div>
       </section>
 

@@ -23,6 +23,7 @@ import { serviceIcon } from '@/components/doctor/services/serviceIcons';
 import { fill } from '@/lib/proFormat';
 import { appointmentErrorMessage, isConfirmedTooLate } from '@/lib/appointmentErrors';
 import '@/styles/funciones-servicios.css';
+import { track } from '@/lib/analytics';
 
 interface Slot {
   id: string;
@@ -609,6 +610,7 @@ export default function BookAppointment() {
       console.error('notify doctor (appointment) failed:', e);
     }
 
+    if (!rescheduledFrom) track('consultation_booked', { item_category: service ? 'service' : 'orientation', value: service?.price ?? undefined, currency: 'MXN' });
     setConfirmation({
       scheduled_at: selected.scheduled_at,
       appointmentId: (data as any).id,

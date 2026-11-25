@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { SeoRouteSync } from "@/components/seo/SeoRouteSync";
+import { AnalyticsRouteListener } from "@/components/AnalyticsRouteListener";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useBackgroundUploadResumer } from "@/hooks/useBackgroundUploadResumer";
@@ -252,6 +253,7 @@ const App = () => {
               <BrowserRouter>
                 <ScrollToTop />
                 <SeoRouteSync />
+                <AnalyticsRouteListener />
                 {/* Invitación de un médico (/app?invitacion=…): tras iniciar sesión como paciente
                     pide confirmación y crea el vínculo. Sin token o sin la migración no hace nada. */}
                 <PendingPatientInvite />

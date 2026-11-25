@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from 'sonner';
+import { track } from '@/lib/analytics';
 
 interface ContactInfo {
   email: string;
@@ -80,6 +81,7 @@ export default function Contact() {
       if (error || (data && (data as { error?: string }).error)) {
         throw new Error((data as { error?: string })?.error || error?.message || 'send failed');
       }
+      track('generate_lead', { lead_type: 'contact', source: 'contact_form' });
       toast.success(t('autoI18n.contact2'));
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
