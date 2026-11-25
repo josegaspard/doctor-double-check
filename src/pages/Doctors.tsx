@@ -46,6 +46,7 @@ import { DoctorBadge, getDoctorBadgeType } from '@/components/doctor/DoctorBadge
 import { ManualBadge } from '@/components/doctor/ManualBadge';
 import { DoctorBadgeIcon } from '@/components/doctor/DoctorBadgeIcon';
 import { ProfileCategoryMark } from '@/components/profile/ProfileCategoryMark';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 import { useDebounce } from '@/hooks/use-debounce';
 import { COUNTRY_CURRENCIES } from '@/hooks/useCurrency';
 import { CountryTag } from '@/components/common/CountryTag';
@@ -190,6 +191,9 @@ export default function Doctors({
   const { specialtyValues } = useSpecialties();
   const { user, role } = useAuth();
   const { t } = useLanguage();
+  const ct = useCoherenceText();
+  // Vista de urgencias (/emergency): filtro «disponibles ahora» fijo y sin franja.
+  const emergencyView = onlyAvailableNow && hideEmergencyBanner;
   const isMobile = useIsMobile();
   const { getSubscription } = useSubscriptions();
   const { confirm, dialog } = useConfirmAction();
@@ -969,8 +973,11 @@ export default function Doctors({
           avanzados se aplican sobre la página cargada. */}
       <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground mb-3">
         <span>
-          {totalCount} {t('doctors.found')}
-          {totalPages > 1 && ` · ${t('doctors.page')} ${currentPage}/${totalPages}`}
+          {/* Con filtros de cliente (p. ej. «disponibles ahora» en /emergency) el
+              total del buscador contradecía al vacío de abajo («2 encontrados» +
+              «No se encontraron»): se cuenta lo que de verdad se muestra. */}
+          {clientFiltered ? visibleDoctors.length : totalCount} {t('doctors.found')}
+          {totalPages > 1 && !clientFiltered && ` · ${t('doctors.page')} ${currentPage}/${totalPages}`}
         </span>
         {nearbyMode && (
           <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -978,7 +985,7 @@ export default function Doctors({
             {t('doctors.nearMe')}
           </Badge>
         )}
-        {clientFiltered && (
+        {clientFiltered && visibleDoctors.length > 0 && (
           <span className="text-[11px]">
             · {fill(t('mm2.community.shownOfPage'), { shown: visibleDoctors.length, page: doctors.length })}
           </span>
@@ -1005,12 +1012,17 @@ export default function Doctors({
         </div>
       ) : visibleDoctors.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center">
+          <CardContent className="p-8 sm:p-12 text-center">
             <Stethoscope className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">{t('doctors.noDoctors')}</h3>
+            {/* En /emergency (24-nov-2026) el vacío habla de disponibilidad, no de filtros,
+                y ofrece el directorio completo. */}
+            <h3 className="font-semibold text-lg mb-2">{emergencyView ? ct('em.emptyTitle') : t('doctors.noDoctors')}</h3>
             <p className="text-muted-foreground">
-              {availableOnly ? t('mm2.community.noneAvailableNow') : t('doctors.adjustFilters')}
+              {emergencyView ? ct('em.emptyBody') : availableOnly ? t('mm2.community.noneAvailableNow') : t('doctors.adjustFilters')}
             </p>
+            {emergencyView && (
+              <Button variant="outline" className="mt-4 min-h-[44px]" onClick={() => navigate('/doctors')}>{ct('em.directory')}</Button>
+            )}
           </CardContent>
         </Card>
       ) : (

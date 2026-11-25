@@ -3,6 +3,8 @@ import { ArrowLeft, Heart, MessageSquare, Video, FileText, Shield, Clock, Smartp
 import MainLayout from '@/components/layout/MainLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { WaitlistButton } from '@/components/PatientWaitlist';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 
 export default function ForPatients() {
   const { t } = useLanguage();
@@ -10,6 +12,7 @@ export default function ForPatients() {
   // lo que tendrán, pero deja claro arriba que todavía no pueden entrar.
   const { toggles } = useSiteToggles();
   const patientsOpen = toggles.enable_patient_access === true;
+  const ct = useCoherenceText();
 
   const benefits = [
     {
@@ -83,12 +86,18 @@ export default function ForPatients() {
             <p className="text-sm sm:text-lg text-white max-w-xl mx-auto mb-6 sm:mb-8 px-4">
               {t('forPatientsPage.hero.subtitle')}
             </p>
-            <Link
-              to="/app"
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-            >
-              {t('forPatientsPage.hero.cta')}
-            </Link>
+            {/* «Comenzar ahora» llevaba a /app, donde el paciente no puede entrar
+                mientras el acceso esté cerrado (24-nov-2026): lista de espera. */}
+            {patientsOpen ? (
+              <Link
+                to="/app"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                {t('forPatientsPage.hero.cta')}
+              </Link>
+            ) : (
+              <WaitlistButton source="for-patients-hero" className="gap-2 inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300" />
+            )}
           </div>
         </div>
       </header>
@@ -149,7 +158,7 @@ export default function ForPatients() {
                 <Users className="w-10 h-10 sm:w-12 sm:h-12 text-white mb-3 sm:mb-4" />
                 <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3">{t('forPatientsPage.trust.networkTitle')}</h3>
                 <p className="text-white mb-3 sm:mb-4 text-sm sm:text-base">
-                  {t('forPatientsPage.trust.networkDescription')}
+                  {ct('fp.network')}
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2 text-xs sm:text-sm text-white">
@@ -196,12 +205,16 @@ export default function ForPatients() {
           <p className="text-white mb-6 sm:mb-8 max-w-xl mx-auto text-sm sm:text-base">
             {t('forPatientsPage.cta.description')}
           </p>
-          <Link
-            to="/app"
-            className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-          >
-            {t('forPatientsPage.cta.button')}
-          </Link>
+          {patientsOpen ? (
+            <Link
+              to="/app"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            >
+              {t('forPatientsPage.cta.button')}
+            </Link>
+          ) : (
+            <WaitlistButton source="for-patients-cta" className="gap-2 inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-bold text-secondary bg-white rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300" />
+          )}
         </div>
       </section>
 

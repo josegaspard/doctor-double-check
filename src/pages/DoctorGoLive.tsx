@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Video, Loader2, Radio, CalendarClock, X, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import Daily from '@daily-co/daily-js';
+import { track } from '@/lib/analytics';
 
 interface LiveData {
   id: string;
@@ -353,6 +354,7 @@ export default function DoctorGoLive() {
 
       await supabase.from('lives').update({ daily_room_name: room.name }).eq('id', live.id);
 
+      track('live_start', { role: role || undefined });
       setDailyRoomName(room.name);
       setDailyRoomUrl(room.url);
       setDailyOwnerToken(room.ownerToken || '');

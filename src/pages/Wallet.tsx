@@ -37,6 +37,7 @@ import { doctorHref } from '@/lib/doctorSections';
 import { money } from '@/lib/proFormat';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Banknote } from 'lucide-react';
+import { beginCheckout } from '@/lib/analytics';
 
 const TOPUP_AMOUNTS = [100, 250, 500, 1000];
 const MIN_TOPUP_AMOUNT = 50;
@@ -147,6 +148,7 @@ export default function Wallet({ embedded = false }: WalletProps = {}) {
 
     setIsProcessing(true);
     try {
+      beginCheckout('wallet', Number(amount));
       const { data, error } = await supabase.functions.invoke('create-wallet-checkout', { body: { amount } });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;

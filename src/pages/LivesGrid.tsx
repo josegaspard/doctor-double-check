@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { WaitlistButton } from '@/components/PatientWaitlist';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 import { useDoctorAvailability } from '@/hooks/useDoctorAvailability';
 import MainLayout from '@/components/layout/MainLayout';
 import { NewsFeed } from '@/components/news/NewsFeed';
@@ -675,18 +677,7 @@ export default function LivesGrid({ embedded = false }: { embedded?: boolean } =
         )}
 
         {role === 'visitor' && (
-          <div className="pro-card pro-card-pad bg-card mt-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Lock className="w-5 h-5" style={{ color: 'var(--pro-teal)' }} />
-                  <h3 className="font-bold pro-ink">{t('lives.wantMore')}</h3>
-                </div>
-                <p className="pro-muted text-sm">{t('lives.registerPrompt')}</p>
-              </div>
-              <Link to="/login" className="pro-btn pro-btn-teal">{t('lives.createAccount')}</Link>
-            </div>
-          </div>
+          <VisitorMoreCard patientsOpen={toggles.enable_patient_access === true} />
         )}
 
         {toggles.show_news_section && <div className="mt-6"><NewsFeed /></div>}
@@ -695,5 +686,34 @@ export default function LivesGrid({ embedded = false }: { embedded?: boolean } =
       {upcomingDialog}
       {!embedded && <LivesDebugPanel />}
     </Wrapper>
+  );
+}
+
+// Modo Descubre (24-nov-2026): con el acceso de pacientes cerrado, «Crear Cuenta
+// Gratis» llevaba a un registro sin opción de paciente. Ahora: lista de espera
+// para pacientes y un enlace al alta de médicos.
+function VisitorMoreCard({ patientsOpen }: { patientsOpen: boolean }) {
+  const { t } = useLanguage();
+  const ct = useCoherenceText();
+  return (
+    <div className="pro-card pro-card-pad bg-card mt-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <Lock className="w-5 h-5" style={{ color: 'var(--pro-teal)' }} />
+            <h3 className="font-bold pro-ink">{patientsOpen ? t('lives.wantMore') : ct('wl.badge')}</h3>
+          </div>
+          <p className="pro-muted text-sm">{patientsOpen ? t('lives.registerPrompt') : ct('wl.body')}</p>
+        </div>
+        {patientsOpen ? (
+          <Link to="/login" className="pro-btn pro-btn-teal">{t('lives.createAccount')}</Link>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <WaitlistButton source="descubre-lives" className="pro-btn pro-btn-teal" />
+            <Link to="/login" state={{ preferredRole: 'doctor', mode: 'signup' }} className="pro-btn pro-btn-outline">{ct('wl.doctorQ')}</Link>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

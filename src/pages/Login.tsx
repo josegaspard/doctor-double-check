@@ -27,6 +27,9 @@ import { AppBackground } from '@/components/layout/AppBackground';
 import { translateAuthError } from '@/lib/translateAuthError';
 import { useSignupCountryGate } from '@/hooks/useSignupCountryGate';
 import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { track } from '@/lib/analytics';
+import { WaitlistButton } from '@/components/PatientWaitlist';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -39,6 +42,11 @@ export default function Login() {
   // la app con replace. El ref evita pisar la navegación post-login del propio
   // formulario (que decide dashboard/onboarding según el rol).
   const loginAttemptedHere = React.useRef(false);
+  // `next` solo admite rutas internas (nada de //otro-dominio ni volver a /login).
+  const safeNext = (() => {
+    const n = new URLSearchParams(location.search).get('next') || '';
+    return n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') ? n : null;
+  })();
   useEffect(() => {
     // Al iniciar sesión, AuthenticatedProviders (App.tsx) cambia de árbol y esta página
     // se monta de nuevo: el ref vuelve a false. La marca de sessionStorage sobrevive al
@@ -59,7 +67,7 @@ export default function Login() {
       return;
     }
     if (!isLoading && isAuthenticated && role && role !== 'visitor' && !loginAttemptedHere.current && !loginFormPending) {
-      navigate('/lives', { replace: true });
+      navigate(safeNext || '/lives', { replace: true });
     }
   }, [isLoading, isAuthenticated, role, navigate]);
 
@@ -77,6 +85,7 @@ export default function Login() {
   // real vive en la base (handle_new_user + política de user_roles).
   const { toggles } = useSiteToggles();
   const patientsOpen = toggles.enable_patient_access === true;
+  const ct = useCoherenceText();
 
   const requestedRole = (location.state as any)?.preferredRole || (patientsOpen ? 'patient' : 'doctor');
   // Si alguien llega pidiendo "paciente" con el acceso cerrado, se le atiende como
@@ -204,6 +213,9 @@ export default function Login() {
 
     if (!profile?.onboarding_completed) return '/onboarding';
 
+    // Vuelta a la ruta protegida que lo mandó aquí (AccessGuard → /login?next=…).
+    if (safeNext) return safeNext;
+
     // QUIEN SEA que inicie sesión aterriza en la parrilla de Lives, SIN excepción de
     // rol: ni médicos ni admin van a su panel al entrar (cliente 21-oct-2026).
     return '/lives';
@@ -318,6 +330,7 @@ export default function Login() {
   const finishLogin = async () => {
     const result = await login(loginEmail, loginPassword);
     if (result.success) {
+      track('login', { method: 'email', role: result.role || undefined });
       // Cuenta de PACIENTE con el acceso cerrado: la contraseña era correcta, pero
       // no puede pasar. Se cierra la sesión recién abierta y se explica por qué —
       // dejarla abierta la metería en una app que no le corresponde todavía.
@@ -452,6 +465,7 @@ export default function Login() {
     });
 
     if (result.success) {
+      track('sign_up', { method: 'email', role: registerRole });
       // Con auto-confirmación de email activa (mientras Resend no verifica dominio),
       // el signup devuelve sesión al instante → mandamos al onboarding directo.
       // Si NO hay sesión (confirmación por correo activa), mostramos "revisa tu correo".
@@ -547,6 +561,19 @@ export default function Login() {
           </div>
 
           </div>
+
+          {/* Pacientes cerrados (24-nov-2026): quien llega como paciente (p. ej. por
+              /register) tiene a mano la lista de espera en vez de un formulario que
+              no le sirve. Desaparece sola al abrir el acceso de pacientes. */}
+          {!patientsOpen && (
+            <WaitlistButton
+              source="login"
+              className="mb-4 land:mb-2 w-full min-h-[44px] rounded-lg bg-white/95 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm hover:bg-white flex items-center justify-center gap-2"
+            >
+              <Clock className="h-4 w-4 text-[#227787]" aria-hidden="true" />
+              <span>{ct('wl.badge')} · <span className="underline underline-offset-2">{ct('wl.cta')}</span></span>
+            </WaitlistButton>
+          )}
 
           <Tabs defaultValue={(location.state as any)?.mode === 'signup' ? 'register' : 'login'} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 land:mb-2">

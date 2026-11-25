@@ -17,6 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useDoctorPublicCredentials } from '@/hooks/useDoctorPublicCredentials';
 import { doctorHref } from '@/lib/doctorSections';
 import { fill, norm } from '@/lib/proFormat';
+import { getIntlLocale } from '@/lib/dateLocale';
 
 type CredTab = 'certifications' | 'experience' | 'education';
 
@@ -36,6 +37,13 @@ interface CareerCardProps {
 }
 
 const yearOf = (v?: string | number | null) => (v ? String(v).slice(0, 4) : '—');
+// «2004-07-01» → «jul 2004» en el idioma activo (antes salía la fecha ISO cruda).
+const monthYear = (v: string | null | undefined, locale: string) => {
+  if (!v) return '?';
+  const m = /^(\d{4})-(\d{2})/.exec(String(v));
+  if (!m) return String(v);
+  return new Date(Number(m[1]), Number(m[2]) - 1, 1).toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+};
 
 export function CareerCard({ doctorId, isOwner }: CareerCardProps) {
   const { t, language } = useLanguage();
@@ -45,6 +53,7 @@ export function CareerCard({ doctorId, isOwner }: CareerCardProps) {
   const [manage, setManage] = useState(false);
 
   const present = t('mm2.publicProfile.present');
+  const locale = getIntlLocale(language);
   const rows = useMemo<Record<CredTab, Row[]>>(() => ({
     certifications: credentials.certifications.map(c => ({
       id: c.id,
@@ -52,7 +61,7 @@ export function CareerCard({ doctorId, isOwner }: CareerCardProps) {
       org: c.issuing_organization || '',
       place: null,
       title: c.name,
-      sub: c.expiry_date ? `${t('mm2.publicProfile.expiresLabel')}: ${c.expiry_date}` : null,
+      sub: c.expiry_date ? `${t('mm2.publicProfile.expiresLabel')}: ${monthYear(c.expiry_date, locale)}` : null,
       desc: null,
     })),
     experience: credentials.experience.map(e => ({
@@ -61,7 +70,7 @@ export function CareerCard({ doctorId, isOwner }: CareerCardProps) {
       org: e.organization || '',
       place: e.location,
       title: e.title,
-      sub: (e.start_date || e.end_date || e.is_current) ? `${e.start_date || '?'} — ${e.is_current ? present : (e.end_date || '?')}` : null,
+      sub: (e.start_date || e.end_date || e.is_current) ? `${monthYear(e.start_date, locale)} — ${e.is_current ? present : monthYear(e.end_date, locale)}` : null,
       desc: e.description,
     })),
     education: credentials.education.map(e => ({

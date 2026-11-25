@@ -53,7 +53,7 @@ function FooterLinkColumn({ title, links }: { title: string; links: { label: str
               to={link.href}
               className={`inline-flex min-h-[40px] items-center sm:min-h-0 text-xs sm:text-sm font-medium transition-colors ${
                 link.href === '/report-issue'
-                  ? 'text-warning hover:text-white'
+                  ? 'text-white font-bold underline underline-offset-2 hover:text-white/80' // antes text-warning: amarillo sobre teal no llegaba a 4,5:1
                   : 'text-white hover:text-white hover:underline'
               }`}
             >

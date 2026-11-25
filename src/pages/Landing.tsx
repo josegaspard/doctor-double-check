@@ -50,12 +50,22 @@ import {
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LanguageSwitcher } from '@/components/settings/LanguageSwitcher';
 import { useSiteVideos } from '@/hooks/useSiteVideos';
+import { useLiveNow } from '@/hooks/useLiveNow';
+import { useSiteToggles } from '@/hooks/useSiteToggles';
+import { useCoherenceText } from '@/lib/coherence/i18n';
 
 // `fetchpriority` en minúsculas: React 18 no conoce la prop `fetchPriority`.
 const HIGH_PRIORITY = { fetchpriority: 'high' } as Record<string, string>;
 
 export default function Landing() {
   const { t } = useLanguage();
+  const ct = useCoherenceText();
+  // «EN VIVO» solo si de verdad hay un live transmitiendo (24-nov-2026).
+  const liveNow = useLiveNow();
+  const liveLabel = liveNow ? t('landing.hero.liveBadge') : ct('live.upcomingShort');
+  const watchingLabel = liveNow ? t('landing.hero.watchingNow') : ct('live.soon');
+  const { toggles } = useSiteToggles();
+  const patientsOpen = toggles.enable_patient_access === true;
   const { isAuthenticated, role } = useAuth();
   // Con sesión activa el logo lleva al home de la app (/lives); sin sesión,
   // recarga el landing (cliente 2026-07-02).
@@ -245,12 +255,12 @@ export default function Landing() {
           <div className="hidden md:flex land:hidden absolute top-24 lg:top-24 left-1/2 -translate-x-1/2 items-center gap-5 lg:gap-8 px-5 py-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl whitespace-nowrap">
             <div className="flex items-center gap-2">
               <img src={iconGlobal} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
-              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.countriesConnected')}</p>
+              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{ct('hero.languages')}</p>
             </div>
             <div className="w-px h-7 bg-white/15" />
             <div className="flex items-center gap-2">
               <img src={iconMedicos} alt="" className="w-4 h-4 lg:w-5 lg:h-5" />
-              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{t('landing.hero.activeDoctors')}</p>
+              <p className="text-[11px] lg:text-[11px] uppercase tracking-wider text-slate-200 font-semibold">{ct('hero.verified')}</p>
             </div>
             <div className="w-px h-7 bg-white/15" />
             <div className="flex items-center gap-2">
@@ -268,26 +278,26 @@ export default function Landing() {
               {/* Estadísticas en móvil: MISMA píldora que en escritorio (una sola barra
                   con separadores), arriba del todo. El cliente pidió el mismo orden y
                   el mismo aspecto que el PC en el teléfono (2026-08-18). */}
-              <div className="md:hidden land:hidden flex items-center justify-between gap-0.5 px-2.5 py-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg">
+              <div className="md:hidden land:hidden flex items-center justify-between gap-1 px-2 py-2.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/15 shadow-lg">
                 {[
-                  { img: iconGlobal, label: t('landing.hero.countriesConnected') },
-                  { img: iconMedicos, label: t('landing.hero.activeDoctors') },
+                  { img: iconGlobal, label: ct('hero.languages') },
+                  { img: iconMedicos, label: ct('hero.verified') },
                   { img: iconStream, label: t('landing.hero.streaming') },
                 ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-1 shrink-0">
+                  <div key={i} className="flex items-center gap-1 min-w-0">
                     {i > 0 && <span className="w-px h-5 bg-white/15 mr-1 shrink-0" />}
                     <img src={s.img} alt="" className="w-[15px] h-[15px] shrink-0" />
-                    <p className="text-[11px] leading-tight uppercase text-slate-200 font-semibold whitespace-nowrap">{s.label}</p>
+                    <p className="text-[11px] leading-tight uppercase text-slate-200 font-semibold min-w-0 break-words">{s.label}</p>
                   </div>
                 ))}
               </div>
 
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#227787]/15 border border-[#aed3d9]/30 backdrop-blur-md">
                 <span className="flex h-2 w-2 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />
+                  {liveNow && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#aed3d9] opacity-75" />}
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#aed3d9]" />
                 </span>
-                <span className="text-[11px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{t('landing.hero.liveBadge')}</span>
+                <span className="text-[11px] sm:text-[11px] font-bold uppercase tracking-widest text-[#aed3d9]">{liveNow ? t('landing.hero.liveBadge') : ct('live.upcomingBadge')}</span>
                 <span className="text-[11px] sm:text-[11px] font-medium text-white/80 hidden xs:inline">{t('landing.hero.liveTagline')}</span>
               </div>
 
@@ -347,8 +357,8 @@ export default function Landing() {
                   ocupa las dos primeras filas. */}
               <div className="hidden land:grid grid-cols-3 gap-2">
                 {[
-                  { img: iconGlobal, label: t('landing.hero.countriesConnected') },
-                  { img: iconMedicos, label: t('landing.hero.activeDoctors') },
+                  { img: iconGlobal, label: ct('hero.languages') },
+                  { img: iconMedicos, label: ct('hero.verified') },
                   { img: iconStream, label: t('landing.hero.streaming') },
                 ].map((s, i) => (
                   <div key={i} className="bg-white/10 backdrop-blur-xl px-2 py-2 rounded-xl border border-white/15 shadow-lg flex flex-col items-center text-center gap-1">
@@ -473,14 +483,14 @@ export default function Landing() {
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
                     <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                      <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{liveLabel}
                     </span>
                   </div>
                   <div className="px-1.5 py-1.5">
                     <p className="text-[11px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
                     <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1 leading-tight">
                       <span className="w-1 h-1 rounded-full bg-[#aed3d9] shrink-0" />
-                      {t('landing.hero.watchingNow')}
+                      {watchingLabel}
                     </p>
                   </div>
                 </div>
@@ -546,14 +556,14 @@ export default function Landing() {
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
                 <span className="absolute top-1 left-1 px-1 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{liveLabel}
                 </span>
               </div>
               <div className="p-2">
                 <p className="text-[11px] font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
                 <p className="text-[10.5px] text-slate-300/80 mt-0.5 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-primary" />
-                  {t('landing.hero.watchingNow')}
+                  {watchingLabel}
                 </p>
               </div>
             </div>
@@ -655,7 +665,7 @@ export default function Landing() {
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
                 <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{liveLabel}
                 </span>
               </div>
               <div className="px-3 py-2">
@@ -675,14 +685,14 @@ export default function Landing() {
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
                 <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-red-500 text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{t('landing.hero.liveBadge')}
+                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />{liveLabel}
                 </span>
               </div>
               <div className="px-3 py-2.5">
                 <p className="text-xs font-bold text-white leading-tight">{t('landing.hero.surgicalLive')}</p>
                 <p className="text-[11px] text-slate-300/80 mt-0.5 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-[#aed3d9]" />
-                  {t('landing.hero.watchingNow')}
+                  {watchingLabel}
                 </p>
               </div>
             </div>
@@ -887,7 +897,7 @@ export default function Landing() {
                 <div className="relative z-10">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/60 border border-white/80 mb-5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#163a83]" />
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#163a83]">{t('landing.profiles.patients.badge')}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#163a83]">{patientsOpen ? t('landing.profiles.patients.badge') : ct('wl.badge')}</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">{t('landing.profiles.patients.title')}</h3>
                   <p className="text-gray-700 text-sm leading-relaxed mb-6">
@@ -900,7 +910,7 @@ export default function Landing() {
                     <li className="flex gap-2 items-start"><Check className="w-4 h-4 text-[#163a83] flex-shrink-0 mt-0.5" /> {t('landing.profiles.patients.feature4')}</li>
                   </ul>
                   <Link to="/for-patients" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[#163a83] hover:text-[#0b1d45] transition-colors">
-                    {t('landing.profiles.patients.cta')} <ArrowRight className="w-4 h-4" />
+                    {patientsOpen ? t('landing.profiles.patients.cta') : ct('wl.cta')} <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>

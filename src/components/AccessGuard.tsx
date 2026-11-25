@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { AppRole as UserRole } from '@/types/database';
@@ -34,7 +34,10 @@ export default function AccessGuard({
   const { user, role, isAuthenticated, isLoading } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const [auditOpen, setAuditOpen] = useState(false);
+  // Vuelta al sitio pedido después de entrar (24-nov-2026): /login?next=/book/…
+  const loginHref = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
 
   // Gate de "aprobado": el status vive en el perfil de doctor/residente. Admin
   // siempre pasa. Si aún no cargó el perfil, no bloqueamos (evita falso negativo).
@@ -47,16 +50,18 @@ export default function AccessGuard({
     }
   }, [isLoading, notApproved, navigate]);
 
-  // Si el usuario NO tiene sesión (p. ej. acaba de cerrar sesión estando en una
-  // página protegida), NO mostramos "Acceso denegado": lo llevamos al landing con
-  // una pantalla de carga (cliente 2026-06-19). Las páginas tipo 'login' (que
-  // invitan a iniciar sesión en línea) conservan su prompt.
-  const loggedOutRedirect = !isLoading && !isAuthenticated && fallbackType !== 'login';
+  // Si el usuario NO tiene sesión, NO mostramos "Acceso denegado". Antes se le
+  // mandaba al landing (cliente 2026-06-19); desde el 24-nov-2026 va al login con
+  // la ruta pedida en `next` y, al entrar, vuelve a ella. Cerrar sesión no pasa
+  // por aquí (logout hace window.location.replace('/')). El visitante del modo
+  // Descubre cuenta como sin sesión cuando la ruta no admite 'visitor'.
+  const noSession = !isAuthenticated || (role === 'visitor' && !allowedRoles.includes('visitor' as UserRole));
+  const loggedOutRedirect = !isLoading && noSession && fallbackType !== 'login';
   useEffect(() => {
     if (loggedOutRedirect) {
-      navigate('/', { replace: true });
+      navigate(loginHref, { replace: true });
     }
-  }, [loggedOutRedirect, navigate]);
+  }, [loggedOutRedirect, navigate, loginHref]);
 
   if (isLoading || loggedOutRedirect || notApproved) {
     return (
@@ -197,13 +202,13 @@ export default function AccessGuard({
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
               {effectiveFallback === 'login' && (
                 <>
-                  <Button onClick={() => navigate('/login')} className="gap-2 min-h-[44px]">
+                  <Button onClick={() => navigate(loginHref)} className="gap-2 min-h-[44px]">
                     <LogIn className="w-4 h-4" />
                     {t('nav.login')}
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate(loginHref, { state: { mode: 'signup' } })}
                     className="gap-2 min-h-[44px]"
                   >
                     <UserPlus className="w-4 h-4" />

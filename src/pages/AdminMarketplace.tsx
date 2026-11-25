@@ -165,7 +165,7 @@ function ProductsTab({ es }: { es: boolean }) {
         <div className="space-y-2">
           {filtered.map(p => (
             <Card key={p.id}><CardContent className="p-3 flex items-center gap-3">
-              {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
+              {p.image_url && <img src={p.image_url} alt={p.name} loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} className="w-12 h-12 rounded-lg object-cover" />}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{p.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -904,7 +904,7 @@ function OrdersTab({ es }: { es: boolean }) {
               <Card key={o.id} className={expanded ? 'ring-1 ring-border shadow-md' : ''}>
                 <CardContent className="p-0">
                   <button onClick={() => setExpandedId(expanded ? null : o.id)} className="w-full flex items-center gap-3 p-3 text-left">
-                    {o.marketplace_products?.image_url && <img src={o.marketplace_products.image_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
+                    {o.marketplace_products?.image_url && <img src={o.marketplace_products.image_url} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{o.marketplace_products?.name || t('adminMarketplacePage.orders.productDeleted')}</p>
                       <p className="text-[10px] text-muted-foreground">

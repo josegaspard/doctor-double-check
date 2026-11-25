@@ -18,6 +18,9 @@ import { SubscriptionsCard } from '@/components/doctor/public-profile/Subscripti
 import { NextLiveCard } from '@/components/doctor/public-profile/NextLiveCard';
 import { SectionTabs, useSectionParam, type SectionTabItem } from '@/components/common/SectionTabs';
 import { BOOKING_SLOT_MIN } from '@/lib/booking';
+import { WaitlistButton, WaitlistCard } from '@/components/PatientWaitlist';
+import { useCoherenceText } from '@/lib/coherence/i18n';
+import { beginCheckout, trackPurchase } from '@/lib/analytics';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,6 +100,7 @@ export default function DoctorProfile() {
   const { ensureBillingProfile, handleBillingError } = useBillingGate();
   const { t, language } = useLanguage();
   const { toggles } = useSiteToggles();
+  const ct = useCoherenceText();
   // Pagar, abrir chat y pedir conexión pasan por la revisión: el primer clic no ejecuta.
   const { confirm, dialog } = useConfirmAction();
   const [tab, setTab] = useSectionParam<ProfileTab>('tab', PROFILE_TABS, 'perfil');
@@ -457,6 +461,7 @@ export default function DoctorProfile() {
       };
 
       if (result.success) {
+        trackPurchase('consultation', result.amount_charged ?? doctor.consultationFee, result.consultation_id);
         setShowPaymentModal(false);
         toast.success(t('doctorProfile.paymentSuccess'));
         navigate(`/chat?session=${result.session_id}`);
@@ -483,6 +488,7 @@ export default function DoctorProfile() {
     if (!(await ensureBillingProfile())) return;
 
     setIsProcessingPayment(true);
+    beginCheckout('consultation', doctor.consultationFee);
     try {
       const { data, error } = await supabase.functions.invoke('create-consultation-checkout', {
         body: {
@@ -558,6 +564,12 @@ export default function DoctorProfile() {
 
   const showPendingBanner = isPending && user?.id === id;
   const isSelf = user?.id === doctor?.id;
+  // Pacientes en «Próximamente» (24-nov-2026): a quien vendría como paciente
+  // (sin sesión, modo Descubre o cuenta de paciente) no se le ofrece reservar,
+  // chatear ni suscribirse; se le invita a la lista de espera. Médicos,
+  // residentes y admin ven el perfil igual que antes. Al abrir el acceso de
+  // pacientes en Ajustes del sitio vuelve todo solo.
+  const patientGate = toggles.enable_patient_access !== true && (!isAuthenticated || role === 'visitor' || role === 'patient');
   const directoryHref = role === 'doctor' ? doctorHref('comunidad', { tab: 'descubrir', ver: 'medicos' }) : '/doctors';
   // Mismo destino que tenía el botón «Ver Lives» de siempre.
   const livesHref = `/recordings?doctor=${doctor.id}`;
@@ -627,7 +639,7 @@ export default function DoctorProfile() {
     { id: 'lives', label: t('mm2.publicProfile.tabLives'), icon: Radio },
   ];
 
-  const subsCard = (
+  const subsCard = patientGate ? <WaitlistCard source="doctor-profile" /> : (
     <SubscriptionsCard
       doctorId={doctor.id}
       doctorName={doctor.name}
@@ -727,7 +739,7 @@ export default function DoctorProfile() {
                 {doctor.isIdentityVerified && (
                   <BadgeCheck className="pp-verified" role="img" aria-label={t('doctorProfile.verified')} />
                 )}
-                {!isSelf && (
+                {!isSelf && !patientGate && (
                   <span className="pp-follow">
                     <SubscribeButton
                       key={`pp-follow-${heroKey}`}
@@ -790,15 +802,18 @@ export default function DoctorProfile() {
                   : fromPrice === 0 ? t('doctorProfile.free') : <PriceDisplay amount={fromPrice} size="lg" />}
               </b>
             </div>
-            {!isSelf && (
+            {!isSelf && !patientGate && (
               <button type="button" className="pro-btn pro-btn-teal pp-cta-primary" onClick={() => goBook()}>
                 <CalendarIcon /> {t('mm2.publicProfile.requestConsultation')}
               </button>
             )}
+            {!isSelf && patientGate && (
+              <WaitlistButton source="doctor-profile-hero" className="pro-btn pro-btn-teal pp-cta-primary" />
+            )}
             <button type="button" className="pro-btn pro-btn-outline" onClick={() => setTab('lives')}>
               <Radio /> {t('mm2.publicProfile.viewLives')}{livesCount > 0 ? ` · ${livesCount}` : ''}
             </button>
-            {!isSelf && (
+            {!isSelf && !patientGate && (
               <div className="pp-cta-row">
                 <button
                   type="button"
@@ -813,7 +828,9 @@ export default function DoctorProfile() {
               </div>
             )}
             <p className="pp-cta-phrase">
-              {fill(t('mm2.publicProfile.connectPhrase'), { name: doctor.name, specialty: doctor.specialty || '' })}
+              {patientGate
+                ? ct('wl.profileNote')
+                : fill(t('mm2.publicProfile.connectPhrase'), { name: doctor.name, specialty: doctor.specialty || '' })}
             </p>
             {(hasHours || activeDays.length > 0) && (
               <div className="pp-hours">
@@ -847,7 +864,7 @@ export default function DoctorProfile() {
                 durationMinutes={ORIENTATION_SLOT_MIN}
                 services={services}
                 loading={servicesLoading}
-                canBook={!isSelf}
+                canBook={!isSelf && !patientGate}
                 onBook={goBook}
               />
             )}

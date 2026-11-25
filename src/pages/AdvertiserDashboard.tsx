@@ -27,6 +27,7 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import { beginCheckout } from '@/lib/analytics';
 
 interface Campaign {
   id: string; name: string; status: string; budget: number; spent: number;
@@ -393,6 +394,7 @@ export default function AdvertiserDashboard() {
     });
     if (!ok) return;
     setIsPaying(true);
+    beginCheckout('ads');
     const { data, error } = await supabase.functions.invoke('create-ad-checkout', { body: { campaign_id: campaignId, amount } });
     setIsPaying(false);
     if (error || !data?.url) { toast.error(t('ads.checkoutError')); return; }

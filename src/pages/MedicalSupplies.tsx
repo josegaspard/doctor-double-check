@@ -20,6 +20,7 @@ import { Package, Search, Loader2, ShoppingCart, Store, Phone, Globe, MapPin, Sp
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
+import { beginCheckout } from '@/lib/analytics';
 
 type SortMode = 'featured' | 'price_asc' | 'price_desc' | 'name' | 'newest';
 
@@ -114,6 +115,7 @@ export default function MedicalSupplies() {
     }
     setPurchasing(true);
     try {
+      beginCheckout('marketplace');
       const { data, error } = await supabase.functions.invoke('create-marketplace-checkout', {
         body: {
           product_id: pendingProduct.id,
