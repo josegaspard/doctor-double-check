@@ -3347,3 +3347,16 @@ html.dark body [class*="bg-premium/"].text-premium:not(:is(.pro-card, .pro-tile,
 @media (max-width: 359px) {
   .landing-nav .mm-landing-logo { height: 2.5rem; }
 }
+
+/* Noticias sobre el fondo azul (.app-bg-image): el cuerpo heredaba el azul oscuro de
+   --foreground y no se leía (25-nov-2026). Texto claro, enlaces en cian de marca. */
+.app-bg-image .news-article-content,
+.app-bg-image .news-article-content :is(p, li, em, blockquote, blockquote p, td, th) {
+  color: rgb(255 255 255 / 0.92);
+}
+.app-bg-image .news-article-content :is(h1, h2, h3, h4, h5, h6, strong) {
+  color: #ffffff;
+}
+.app-bg-image .news-article-content a {
+  color: #aed3d9;
+}
