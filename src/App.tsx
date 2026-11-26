@@ -266,16 +266,16 @@ const App = () => {
                       <Route path="/login" element={<Login />} />
                       <Route path="/register" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
                       <Route path="/signup" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />
-                      <Route path="/lives" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate></DoctorLegacyRedirect>} />
-                      <Route path="/live/:id" element={<ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate>} />
-                      <Route path="/recordings" element={<DoctorLegacyRedirect><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate></DoctorLegacyRedirect>} />
-                      <Route path="/recording/:id" element={<ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingPlayer /></ToggleGate>} />
+                      <Route path="/lives" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorLegacyRedirect><ToggleGate toggleKey="enable_lives" feature="lives"><LivesGrid /></ToggleGate></DoctorLegacyRedirect></AccessGuard>} />
+                      <Route path="/live/:id" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><ToggleGate toggleKey="enable_lives" feature="lives"><LivePlayer /></ToggleGate></AccessGuard>} />
+                      <Route path="/recordings" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorLegacyRedirect><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingsGrid /></ToggleGate></DoctorLegacyRedirect></AccessGuard>} />
+                      <Route path="/recording/:id" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><ToggleGate toggleKey="enable_recordings" feature="recordings"><RecordingPlayer /></ToggleGate></AccessGuard>} />
                       <Route path="/wallet" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><Wallet /></AccessGuard></DoctorLegacyRedirect>} />
                       <Route path="/wallet/ledger" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['patient','doctor','resident']} fallbackType="forbidden"><WalletLedger /></AccessGuard></DoctorLegacyRedirect>} />
                       <Route path="/chat" element={<ToggleGate toggleKey="enable_patient_chat" feature="chat"><Chat /></ToggleGate>} />
                       {/* Chat exclusivo por distintivo (medalla/palomita) — solo doctores con badge. */}
                       <Route path="/badge-chat" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><BadgeChat /></AccessGuard>} />
-                      <Route path="/doctor/:id" element={<DoctorProfile />} />
+                      <Route path="/doctor/:id" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorProfile /></AccessGuard>} />
                       <Route path="/profile" element={<DoctorLegacyRedirect><UserProfile /></DoctorLegacyRedirect>} />
                       <Route path="/verify-identity" element={<IdentityVerification />} />
                       {/* Rutas operativas del doctor: requieren perfil APROBADO
@@ -304,13 +304,13 @@ const App = () => {
                       <Route path="/vault" element={<ToggleGate toggleKey="enable_vault" feature="vault"><Vault /></ToggleGate>} />
                       <Route path="/education" element={<AccessGuard allowedRoles={['patient', 'doctor', 'resident', 'admin']} fallbackType="forbidden"><MedicalEducation /></AccessGuard>} />
                       <Route path="/clinical-sessions" element={<AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><ClinicalSessions /></AccessGuard>} />
-                      <Route path="/meetings" element={<DoctorLegacyRedirect><Meetings /></DoctorLegacyRedirect>} />
+                      <Route path="/meetings" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorLegacyRedirect><Meetings /></DoctorLegacyRedirect></AccessGuard>} />
                       {/* Congresos (cliente 2026-07-02): series de conferencias de varios doctores. */}
-                      <Route path="/congresos" element={<Congresses />} />
-                      <Route path="/congreso/:id" element={<CongressDetail />} />
+                      <Route path="/congresos" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><Congresses /></AccessGuard>} />
+                      <Route path="/congreso/:id" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><CongressDetail /></AccessGuard>} />
                       <Route path="/congresses" element={<Navigate to="/congresos" replace />} />
                       <Route path="/foro" element={<AccessGuard allowedRoles={['doctor', 'resident', 'admin']} fallbackType="forbidden"><Foro /></AccessGuard>} />
-                      <Route path="/hospital-locator" element={<DoctorLegacyRedirect><HospitalLocator /></DoctorLegacyRedirect>} />
+                      <Route path="/hospital-locator" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorLegacyRedirect><HospitalLocator /></DoctorLegacyRedirect></AccessGuard>} />
                       {/* Marketplace / venta de productos RESTAURADO (cliente 2026-06-29).
                           Gateado por el toggle enable_marketplace desde el admin. */}
                       <Route path="/medical-supplies" element={<AccessGuard allowedRoles={['patient']} fallbackType="forbidden"><ToggleGate toggleKey="enable_marketplace" feature="marketplace"><MedicalSupplies /></ToggleGate></AccessGuard>} />
@@ -349,7 +349,7 @@ const App = () => {
                       <Route path="/admin/ranks" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminRanks /></AccessGuard>} />
                       <Route path="/doctor/news" element={<AccessGuard allowedRoles={['doctor','admin']} fallbackType="forbidden"><AdminNews /></AccessGuard>} />
                       <Route path="/verification-pending" element={<VerificationPending />} />
-                      <Route path="/doctors" element={<DoctorLegacyRedirect><Doctors /></DoctorLegacyRedirect>} />
+                      <Route path="/doctors" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><DoctorLegacyRedirect><Doctors /></DoctorLegacyRedirect></AccessGuard>} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/doctor/bank-account" element={<DoctorLegacyRedirect><AccessGuard allowedRoles={['doctor']} fallbackType="forbidden"><DoctorBankAccount /></AccessGuard></DoctorLegacyRedirect>} />
@@ -368,11 +368,11 @@ const App = () => {
                       <Route path="/for-doctors" element={<ForDoctors />} />
                       <Route path="/for-patients" element={<ForPatients />} />
                       <Route path="/enterprise" element={<Enterprise />} />
-                      <Route path="/content" element={<ContentGallery />} />
+                      <Route path="/content" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><ContentGallery /></AccessGuard>} />
                       <Route path="/notifications" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><Notifications /></AccessGuard>} />
-                      <Route path="/news" element={<MedicalNews />} />
-                      <Route path="/news/:slug" element={<NewsArticle />} />
-                      <Route path="/eventos" element={<ToggleGate toggleKey="enable_events" feature="events"><Eventos /></ToggleGate>} />
+                      <Route path="/news" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><MedicalNews /></AccessGuard>} />
+                      <Route path="/news/:slug" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><NewsArticle /></AccessGuard>} />
+                      <Route path="/eventos" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><ToggleGate toggleKey="enable_events" feature="events"><Eventos /></ToggleGate></AccessGuard>} />
                       <Route path="/events" element={<Navigate to="/eventos" replace />} />
                       <Route path="/video-call" element={<ToggleGate toggleKey="enable_video_calls" feature="videoCalls"><VideoCall /></ToggleGate>} />
                       <Route path="/prescriptions" element={<ToggleGate toggleKey="enable_prescriptions" feature="prescriptions"><Prescriptions /></ToggleGate>} />
@@ -398,9 +398,9 @@ const App = () => {
                       <Route path="/admin/featured" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminFeatured /></AccessGuard>} />
                       <Route path="/admin/qa-checklist" element={<AccessGuard allowedRoles={['admin']} fallbackType="forbidden"><AdminQAChecklist /></AccessGuard>} />
                       <Route path="/psychology" element={<Navigate to="/psicologia" replace />} />
-                      <Route path="/psicologia" element={<PsychologyDirectory />} />
+                      <Route path="/psicologia" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><PsychologyDirectory /></AccessGuard>} />
                       <Route path="/nutrition" element={<Navigate to="/nutricion" replace />} />
-                      <Route path="/nutricion" element={<NutritionDirectory />} />
+                      <Route path="/nutricion" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><NutritionDirectory /></AccessGuard>} />
                       {/* Herramientas de salud (18-nov-2026): SOLO dentro de la app, con sesión iniciada (Jose: «nadie puede verlas si no está logueado»). */}
                       <Route path="/salud-mujer" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><WomenHealthDirectory /></AccessGuard>} />
                       <Route path="/womens-health" element={<Navigate to="/salud-mujer" replace />} />
@@ -415,7 +415,7 @@ const App = () => {
                       <Route path="/admin/como-funciona" element={<ComoFunciona />} />
                       <Route path="/como-funciona" element={<Navigate to="/admin/como-funciona" replace />} />
                       <Route path="/access-denied" element={<AccessDenied />} />
-                      <Route path="/emergency" element={<EmergencyDoctors />} />
+                      <Route path="/emergency" element={<AccessGuard allowedRoles={['patient','doctor','resident','admin']} fallbackType="forbidden"><EmergencyDoctors /></AccessGuard>} />
                       <Route path="/emergencia" element={<Navigate to="/emergency" replace />} />
                       <Route path="/doctores" element={<Navigate to="/doctors" replace />} />
                       <Route path="/registro" element={<Navigate to="/login" replace state={{ mode: 'signup' }} />} />

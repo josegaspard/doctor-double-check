@@ -134,7 +134,7 @@ const DOCTOR_BOTTOM_TABS = ['inicio', 'agenda', 'pacientes', 'comunidad'];
 // RESTO DE ROLES — orden del menú definido por el cliente (2026-06-29).
 // ============================================================================
 const navItems: NavItem[] = [
-  { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['visitor', 'patient', 'resident', 'admin'] },
+  { labelKey: 'nav.lives', href: '/lives', icon: Video, roles: ['patient', 'resident', 'admin'] },
   { labelKey: 'nav.education', shortLabelKey: 'nav.educationShort', href: '/education', icon: GraduationCap, roles: ['patient', 'resident', 'admin'] },
   // Residente y paciente: el Chat ya está en el botón de la cabecera; en la píldora salía repetido
   // (cliente 4-nov-2026; paciente 11-nov-2026: a 1440 px la píldora se cortaba).
@@ -142,7 +142,7 @@ const navItems: NavItem[] = [
   ...(FEATURE_FLAGS.marketplaceFeeModel
     ? [{ labelKey: 'nav.marketplace', href: '/marketplace', icon: Package, roles: ['resident'] } as NavItem]
     : []),
-  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['visitor', 'patient', 'resident', 'admin'], toggleKey: 'show_news_section' },
+  { labelKey: 'nav.news', href: '/news', icon: Calendar, roles: ['patient', 'resident', 'admin'], toggleKey: 'show_news_section' },
   // Herramientas de salud (18-nov-2026): solo dentro de la app. Residente y admin, en «Más»;
   // el paciente, en el menú de su perfil y en el cajón del móvil (su píldora ya va llena a 1440 px).
   { labelKey: 'nav.healthTools', shortLabelKey: 'nav.healthToolsShort', href: '/herramientas', icon: Calculator, roles: ['resident', 'admin'] },
@@ -186,10 +186,11 @@ function getBottomTabs(role: string | undefined, t: (key: string) => string) {
     ];
   }
 
+  // Sin sesión solo se ve la web de presentación: la app entera va con sesión (Jose, 25-nov-2026).
   if (role === 'visitor' || !role) {
     return [
-      lives,
-      { label: t('nav.news'), href: '/news', icon: Calendar },
+      { label: t('landingFooter.forDoctors'), href: '/for-doctors', icon: Stethoscope },
+      { label: t('nav.login'), href: '/login', icon: LogIn },
     ];
   }
 
