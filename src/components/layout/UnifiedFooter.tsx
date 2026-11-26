@@ -128,7 +128,12 @@ export function UnifiedFooter({ variant }: Props) {
   const platformWithCongresses = platformWithVendors.some(l => l.href === '/congresos')
     ? platformWithVendors
     : [...platformWithVendors, { label: t('nav.congresses'), href: '/congresos' }];
-  const platformLinks = platformWithCongresses.map(translateLink);
+  // Sin sesión el pie no enlaza a secciones de la app: todas piden iniciar sesión (25-nov-2026).
+  const APP_ONLY = ['/lives', '/recordings', '/news', '/doctors', '/congresos', '/eventos', '/psicologia', '/nutricion',
+    '/emergency', '/hospital-locator', '/content', '/meetings', '/foro', '/education'];
+  const signedIn = !!role && role !== 'visitor';
+  const appFilter = (l: { href: string }) => signedIn || !APP_ONLY.includes(l.href.split('?')[0]);
+  const platformLinks = platformWithCongresses.filter(appFilter).map(translateLink);
 
   const resourcesLinksRaw = adConfig.is_active
     ? [...footerLinks.resources, { label: t('ads.advertising'), href: '/advertising' }]
@@ -141,7 +146,7 @@ export function UnifiedFooter({ variant }: Props) {
   const resourcesWithTools = inApp
     ? [{ label: navLabel('healthTools', language), href: '/herramientas' }, { label: navLabel('womenHealth', language), href: '/salud-mujer' }, ...resourcesClean]
     : resourcesClean;
-  const resourcesLinks = resourcesWithTools.map(translateLink);
+  const resourcesLinks = resourcesWithTools.filter(appFilter).map(translateLink);
 
   // Garantizar SIEMPRE el enlace de Términos y Condiciones en el footer
   // (cliente 2026-06-29), aunque un override de site_settings lo haya quitado.
